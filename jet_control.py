@@ -1,20 +1,3 @@
-'''
-Methods used for jet tracking:
-    get_burst_avg(n, image_plugin)
-    set_beam(beamX, beamY, params)
-    calibrate(injector, camera, params)
-    jet_calculate(camera, params)
-    jet_move(injector, camera, params)
-
-1. Set camera ROI to show only jet
-2. Use set_beam() to set beam position
-3. Use calibrate() to calibrate camera
-4. Use jet_calculate() to track jet position
-5. Use jet_move() to move jet to beam
-6. Use set_beam() to update beam position as needed
-[7. Update state as needed]
-'''
-
 class JetControl:
     '''
     Jet tracking control class using jet_tracking methods
@@ -244,10 +227,5 @@ def jet_move(injector, camera, params):
             sleep(5)
         except KeyboardInterrupt:
             return
-
-
-'''
-TODO set initial ROI
-'''
 
 
