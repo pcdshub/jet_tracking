@@ -688,3 +688,50 @@ class Parameters(Device):
         super().__init__(name=name, **kwargs)
 
 
+class Diffract(Device):
+    '''
+    Contains EPICS PVs used for shared memory X-ray Diffraction detector
+    used in jet trakcing.
+    
+    Attributes
+    ----------
+    cam_x : EpicsSignal
+        x-coordinate of camera position in mm
+    '''
+
+    cspad_sum = FCpt(EpicsSignal, '{self._cspad_sum}')
+    streak_fraction = FCpt(EpicsSignal, '{self._streak_fraction}')
+    stats_mean = FCpt(EpicsSignal, '{self._stats_mean}')
+    stats_std = FCpt(EpicsSignal, '{self._stats_std}')
+    stats_min = FCpt(EpicsSignal, '{self._stats_min}')
+    stats_max = FCpt(EpicsSignal, '{self._stats_max}')
+    psd_frequency = FCpt(EpicsSignal, '{self._psd_frequency}')
+    psd_amplitude = FCpt(EpicsSignal, '{self._psd_amplitude}')
+    psd_rate = FCpt(EpicsSignal, '{self._psd_rate}')
+    psd_events = FCpt(EpicsSignal, '{self._psd_events}')
+    psd_resolution = FCpt(EpicsSignal, '{self._psd_resolution}')
+    psd_freq_min = FCpt(EpicsSignal, '{self._psd_freq_min}')
+    psd_amp_wf = FCpt(EpicsSignal, '{self._psd_amp_wf}')
+    psd_freq_wf = FCpt(EpicsSignal, '{self._psd_freq_wf}')
+    psd_amp_array = FCpt(EpicsSignal, '{self._psd_amp_array}')
+
+    def __init__(self, prefix, name, **kwargs):
+        
+        self._cspad_sum = f'{prefix}:TOTAL_ADU'
+        self._streak_fraction = f'{prefix}:STREAK_FRACTION'
+        self._stats_mean = f'{prefix}:STATS_MEAN'
+        self._stats_std = f'{prefix}:STATS_STD'
+        self._stats_min = f'{prefix}:STATS_MIN'
+        self._stats_max = f'{prefix}:STATS_MAX'
+        self._psd_frequency = f'{prefix}:PSD_FREQUENCY'
+        self._psd_amplitude = f'{prefix}:PSD_AMPLITUDE'
+        self._psd_rate = f'{prefix}:PSD_RATE'
+        self._psd_events = f'{prefix}:PSD_EVENTS'
+        self._psd_resolution = f'{prefix}:PSD_RESOLUTION'
+        self._psd_freq_min = f'{prefix}:PSD_FREQ_MIN'
+        self._psd_freq_wf = f'{prefix}:PSD_FREQ_WF'
+        self._psd_amp_wf = f'{prefix}:PSD_AMP_WF'
+        self._psd_amp_array = f'{prefix}:PSD_AMP_ARRAY'
+       
+        super().__init__(name=name, **kwargs)
+

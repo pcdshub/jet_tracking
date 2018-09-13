@@ -90,8 +90,8 @@ def output_cspad_sum(ds=None, alias='DscCsPad',
     psd_events_pv = PV(':'.join([pvbase,'PSD_EVENTS']))
     psd_resolution_pv = PV(':'.join([pvbase,'PSD_RESOLUTION']))
     psd_freq_min_pv = PV(':'.join([pvbase,'PSD_FREQ_MIN']))
+    psd_freq_wf_pv = PV(':'.join([pvbase,'PSD_FREQ_WF']))
     psd_amp_wf_pv = PV(':'.join([pvbase,'PSD_AMP_WF']))
-    psd_freq_wf_pv = PV(':'.join([pvbase,'PSD_AMP_FREQ']))
     psd_amp_array_pv = PV(':'.join([pvbase,'PSD_AMP_ARRAY']))
 
     if psd_rate:

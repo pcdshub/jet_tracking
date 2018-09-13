@@ -3,13 +3,14 @@ class JetControl:
     Jet tracking control class using jet_tracking methods
     '''
     def __init__(self, name, 
-            injector, camera, params, 
+            injector, camera, params, diffract, 
             #camera_offaxis=None, 
             **kwargs):
 
         self.injector = injector
         self.camera = camera
         self.params = params
+        self.diffract = diffract
 
     def set_beam(self, beamX, beamY):
         '''
