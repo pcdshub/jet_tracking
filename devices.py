@@ -3,7 +3,7 @@ from ophyd.signal import EpicsSignal
 from ophyd.areadetector.plugins import ROIPlugin, StatsPlugin, ImagePlugin
 
 from pcdsdevices.areadetector.detectors import PCDSDetector
-
+from pcdsdevices.epics_motor import IMS
 
 class Injector(Device):
     '''An Injector which consists of 3 coarse control motors and 3 fine control motors
@@ -30,13 +30,13 @@ class Injector(Device):
            The fine control motor in the Z direction
        '''
 
-    coarseX = FCpt(EpicsSignal, '{self._coarseX}')
-    coarseY = FCpt(EpicsSignal, '{self._coarseY}')
-    coarseZ = FCpt(EpicsSignal, '{self._coarseZ}')
+    coarseX = FCpt(IMS, '{self._coarseX}')
+    coarseY = FCpt(IMS, '{self._coarseY}')
+    coarseZ = FCpt(IMS, '{self._coarseZ}')
                 
-    fineX = FCpt(EpicsSignal, '{self._fineX}')
-    fineY = FCpt(EpicsSignal, '{self._fineY}')
-    fineZ = FCpt(EpicsSignal, '{self._fineZ}')
+    fineX = FCpt(IMS, '{self._fineX}')
+    fineY = FCpt(IMS, '{self._fineY}')
+    fineZ = FCpt(IMS, '{self._fineZ}')
                             
     def __init__(self, name,
                        coarseX, coarseY, coarseZ,
@@ -667,6 +667,10 @@ class Parameters(Device):
     jet_x = FCpt(EpicsSignal, '{self._jet_x}')
     jet_roll = FCpt(EpicsSignal, '{self._jet_roll}')
     state = FCpt(EpicsSignal, '{self._state}')
+    jet_counter = FCpt(EpicsSignal, '{self._jet_counter}')
+    jet_reprate = FCpt(EpicsSignal, '{self._jet_reprate}')
+    nozzle_counter = FCpt(EpicsSignal, '{self._nozzle_counter}')
+    nozzle_reprate = FCpt(EpicsSignal, '{self._nozzle_reprate}')
 
     def __init__(self, prefix, name, **kwargs):
         
@@ -684,6 +688,10 @@ class Parameters(Device):
         self._jet_x = f'{prefix}:JET_X'
         self._jet_roll = f'{prefix}:JET_ROLL'
         self._state = f'{prefix}:STATE'
+        self._jet_counter = f'{prefix}:JET_Counter'
+        self._jet_reprate = f'{prefix}:JET_RepRate'
+        self._nozzle_counter = f'{prefix}:NOZZLE_Counter'
+        self._nozzle_reprate = f'{prefix}:NOZZLE_RepRate'
  
         super().__init__(name=name, **kwargs)
 
@@ -699,6 +707,16 @@ class Diffract(Device):
         x-coordinate of camera position in mm
     '''
 
+    total_counter = FCpt(EpicsSignal, '{self._total_counter}')
+    total_reprate = FCpt(EpicsSignal, '{self._total_reprate}')
+    ring_counter = FCpt(EpicsSignal, '{self._ring_counter}')
+    ring_reprate = FCpt(EpicsSignal, '{self._ring_reprate}')
+    psd_counter = FCpt(EpicsSignal, '{self._psd_counter}')
+    psd_reprate = FCpt(EpicsSignal, '{self._psd_reprate}')
+    stats_counter = FCpt(EpicsSignal, '{self._stats_counter}')
+    stats_reprate = FCpt(EpicsSignal, '{self._stats_reprate}')
+    streak_counter = FCpt(EpicsSignal, '{self._streak_counter}')
+    streak_reprate = FCpt(EpicsSignal, '{self._streak_reprate}')
     cspad_sum = FCpt(EpicsSignal, '{self._cspad_sum}')
     streak_fraction = FCpt(EpicsSignal, '{self._streak_fraction}')
     stats_mean = FCpt(EpicsSignal, '{self._stats_mean}')
@@ -717,6 +735,16 @@ class Diffract(Device):
 
     def __init__(self, prefix, name, **kwargs):
         
+        self._total_counter = f'{prefix}:TOTAL_Counter'
+        self._total_reprate = f'{prefix}:TOTAL_RepRate'
+        self._ring_counter = f'{prefix}:RING_Counter'
+        self._ring_reprate = f'{prefix}:RING_RepRate'
+        self._psd_counter = f'{prefix}:PSD_Counter'
+        self._psd_reprate = f'{prefix}:PSD_RepRate'
+        self._stats_counter = f'{prefix}:STATS_Counter'
+        self._stats_reprate = f'{prefix}:STATS_RepRate'
+        self._streak_counter = f'{prefix}:STREAK_Counter'
+        self._streak_reprate = f'{prefix}:STREAK_RepRate'
         self._cspad_sum = f'{prefix}:TOTAL_ADU'
         self._streak_fraction = f'{prefix}:STREAK_FRACTION'
         self._stats_mean = f'{prefix}:STATS_MEAN'
