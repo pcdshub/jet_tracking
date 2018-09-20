@@ -1,0 +1,825 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Sample Delivery Classes &mdash; PCDS Jet Tracking  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Jet Tracking Classes" href="devices.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PCDS Jet Tracking
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Control</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="control.html">Jet Control Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shared_memory.html">Jet Tracking Shared Memory Application</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Devices</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="devices.html">Jet Tracking Classes</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Sample Delivery Classes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sample-delivery-system-class">Sample Delivery System Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#selector-class">Selector Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#coolershaker-class">CoolerShaker Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hplc-class">HPLC Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pressurecontroller-class">PressureController Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#flowinegrator-class">FlowInegrator Class</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PCDS Jet Tracking</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Sample Delivery Classes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/sample_delivery.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="sample-delivery-classes">
+<span id="sample-delivery"></span><h1>Sample Delivery Classes<a class="headerlink" href="#sample-delivery-classes" title="Permalink to this headline">¶</a></h1>
+<p>Base classes used in sample deliver.</p>
+<div class="section" id="sample-delivery-system-class">
+<h2>Sample Delivery System Class<a class="headerlink" href="#sample-delivery-system-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="devices.SDS">
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">SDS</code><span class="sig-paren">(</span><em>devices</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.SDS" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample delivery system</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>devices</strong> (<em>dict</em>) – <p>A dictionary of dictionaries containing the devices to be made and their PV names
+Key: str</p>
+<blockquote>
+<div>Type of device to be made. Valid keys are ‘selector’, ‘cooler_shaker’, ‘hplc’,
+‘pressure_controller’, and ‘flow_integrator’</div></blockquote>
+<dl class="docutils">
+<dt>Value: str dict</dt>
+<dd>Dictionary of PVs of the device</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="devices.SDS.SDS_devices">
+<code class="descname">SDS_devices</code><a class="headerlink" href="#devices.SDS.SDS_devices" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>list</em> – List containing all the devices that are in the sample delivery system</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="selector-class">
+<h2>Selector Class<a class="headerlink" href="#selector-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="devices.Selector">
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">Selector</code><span class="sig-paren">(</span><em>name</em>, <em>remote_control</em>, <em>status</em>, <em>flow</em>, <em>flowstate</em>, <em>flowtype</em>, <em>FM_rb</em>, <em>FM_reset</em>, <em>FM</em>, <em>names_button</em>, <em>couple_button</em>, <em>names1</em>, <em>names2</em>, <em>shaker1</em>, <em>shaker2</em>, <em>shaker3</em>, <em>shaker4</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.Selector" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Selector for the sample delivery system</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pvs</strong> (<em>str dict</em>) – A dictionary containing the name of the device and
+the PVs of all the selector components</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="devices.Selector.remote_control">
+<code class="descname">remote_control</code><a class="headerlink" href="#devices.Selector.remote_control" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Remote control enabled</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.status">
+<code class="descname">status</code><a class="headerlink" href="#devices.Selector.status" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Connection status for selector</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.flow">
+<code class="descname">flow</code><a class="headerlink" href="#devices.Selector.flow" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.flowstate">
+<code class="descname">flowstate</code><a class="headerlink" href="#devices.Selector.flowstate" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – State of the flow</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.flowtype">
+<code class="descname">flowtype</code><a class="headerlink" href="#devices.Selector.flowtype" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Type of the flow</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.FM_rb">
+<code class="descname">FM_rb</code><a class="headerlink" href="#devices.Selector.FM_rb" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.FM_reset">
+<code class="descname">FM_reset</code><a class="headerlink" href="#devices.Selector.FM_reset" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.FM">
+<code class="descname">FM</code><a class="headerlink" href="#devices.Selector.FM" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.names_button">
+<code class="descname">names_button</code><a class="headerlink" href="#devices.Selector.names_button" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.couple_button">
+<code class="descname">couple_button</code><a class="headerlink" href="#devices.Selector.couple_button" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.names1">
+<code class="descname">names1</code><a class="headerlink" href="#devices.Selector.names1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.names2">
+<code class="descname">names2</code><a class="headerlink" href="#devices.Selector.names2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.shaker1">
+<code class="descname">shaker1</code><a class="headerlink" href="#devices.Selector.shaker1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Shaker 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.shaker2">
+<code class="descname">shaker2</code><a class="headerlink" href="#devices.Selector.shaker2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Shaker 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.shaker3">
+<code class="descname">shaker3</code><a class="headerlink" href="#devices.Selector.shaker3" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Shaker 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.Selector.shaker4">
+<code class="descname">shaker4</code><a class="headerlink" href="#devices.Selector.shaker4" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Shaker 4</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="coolershaker-class">
+<h2>CoolerShaker Class<a class="headerlink" href="#coolershaker-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="devices.CoolerShaker">
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">CoolerShaker</code><span class="sig-paren">(</span><em>name</em>, <em>temperature1</em>, <em>SP1</em>, <em>set_SP1</em>, <em>current1</em>, <em>temperature2</em>, <em>SP2</em>, <em>set_SP2</em>, <em>current2</em>, <em>reboot</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.CoolerShaker" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Cooler/Shaker for the sample delivery system</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pvs</strong> (<em>str dict</em>) – A dictionary containing the PVs of all the cooler/shaker components</li>
+<li><strong>name</strong> (<em>str</em>) – The device name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="devices.CoolerShaker.temperature1">
+<code class="descname">temperature1</code><a class="headerlink" href="#devices.CoolerShaker.temperature1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Temperature of 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.CoolerShaker.SP1">
+<code class="descname">SP1</code><a class="headerlink" href="#devices.CoolerShaker.SP1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Set point of 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.CoolerShaker.set_SP1">
+<code class="descname">set_SP1</code><a class="headerlink" href="#devices.CoolerShaker.set_SP1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Set the set point for 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.CoolerShaker.current1">
+<code class="descname">current1</code><a class="headerlink" href="#devices.CoolerShaker.current1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Current for 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.CoolerShaker.temperature2">
+<code class="descname">temperature2</code><a class="headerlink" href="#devices.CoolerShaker.temperature2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Temperature of 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.CoolerShaker.SP2">
+<code class="descname">SP2</code><a class="headerlink" href="#devices.CoolerShaker.SP2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Set point of 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.CoolerShaker.set_SP2">
+<code class="descname">set_SP2</code><a class="headerlink" href="#devices.CoolerShaker.set_SP2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Set the set point of 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.CoolerShaker.current2">
+<code class="descname">current2</code><a class="headerlink" href="#devices.CoolerShaker.current2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Current of 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.CoolerShaker.reboot">
+<code class="descname">reboot</code><a class="headerlink" href="#devices.CoolerShaker.reboot" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Reboot the cooler/shaker</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="hplc-class">
+<h2>HPLC Class<a class="headerlink" href="#hplc-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="devices.HPLC">
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">HPLC</code><span class="sig-paren">(</span><em>name</em>, <em>status</em>, <em>run</em>, <em>flowrate</em>, <em>set_flowrate</em>, <em>flowrate_SP</em>, <em>pressure</em>, <em>pressure_units</em>, <em>set_max_pressure</em>, <em>max_pressure</em>, <em>clear_error</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.HPLC" title="Permalink to this definition">¶</a></dt>
+<dd><p>An HPLC for the sample delivery system</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pvs</strong> (<em>str dict</em>) – A dictionary containing the PVs of all the HPLC components</li>
+<li><strong>name</strong> (<em>str</em>) – The device name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="devices.HPLC.status">
+<code class="descname">status</code><a class="headerlink" href="#devices.HPLC.status" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Status of the HPLC</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.HPLC.run">
+<code class="descname">run</code><a class="headerlink" href="#devices.HPLC.run" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Run the HPLC</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.HPLC.flowrate">
+<code class="descname">flowrate</code><a class="headerlink" href="#devices.HPLC.flowrate" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow rate of the HPLC</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.HPLC.set_flowrate">
+<code class="descname">set_flowrate</code><a class="headerlink" href="#devices.HPLC.set_flowrate" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Set the flow rate of the HPLC</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.HPLC.flowrate_SP">
+<code class="descname">flowrate_SP</code><a class="headerlink" href="#devices.HPLC.flowrate_SP" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Set point for the flow rate</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.HPLC.pressure">
+<code class="descname">pressure</code><a class="headerlink" href="#devices.HPLC.pressure" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Pressure in the HPLC</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.HPLC.pressure_units">
+<code class="descname">pressure_units</code><a class="headerlink" href="#devices.HPLC.pressure_units" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Units for the pressure</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.HPLC.set_max_pressure">
+<code class="descname">set_max_pressure</code><a class="headerlink" href="#devices.HPLC.set_max_pressure" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Set the maximum pressure</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.HPLC.max_pressure">
+<code class="descname">max_pressure</code><a class="headerlink" href="#devices.HPLC.max_pressure" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Maximum pressure</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.HPLC.clear_error">
+<code class="descname">clear_error</code><a class="headerlink" href="#devices.HPLC.clear_error" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Clear errors</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="pressurecontroller-class">
+<h2>PressureController Class<a class="headerlink" href="#pressurecontroller-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="devices.PressureController">
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">PressureController</code><span class="sig-paren">(</span><em>name</em>, <em>status</em>, <em>pressure1</em>, <em>enabled1</em>, <em>limit1</em>, <em>SP1</em>, <em>pressure2</em>, <em>enabled2</em>, <em>limit2</em>, <em>SP2</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.PressureController" title="Permalink to this definition">¶</a></dt>
+<dd><p>An Pressure Controller for the sample delivery system</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pvs</strong> (<em>str dict</em>) – A dictionary containing the PVs of all the pressure controller components</li>
+<li><strong>name</strong> (<em>str</em>) – The device name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="devices.PressureController.status">
+<code class="descname">status</code><a class="headerlink" href="#devices.PressureController.status" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Connection status of pressure controller</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.PressureController.pressure1">
+<code class="descname">pressure1</code><a class="headerlink" href="#devices.PressureController.pressure1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Pressure of 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.PressureController.enabled1">
+<code class="descname">enabled1</code><a class="headerlink" href="#devices.PressureController.enabled1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Is 1 enabled</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.PressureController.limit1">
+<code class="descname">limit1</code><a class="headerlink" href="#devices.PressureController.limit1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – High pressure limit of 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.PressureController.SP1">
+<code class="descname">SP1</code><a class="headerlink" href="#devices.PressureController.SP1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Pressure set point of 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.PressureController.pressure2">
+<code class="descname">pressure2</code><a class="headerlink" href="#devices.PressureController.pressure2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Pressure of 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.PressureController.enabled2">
+<code class="descname">enabled2</code><a class="headerlink" href="#devices.PressureController.enabled2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Is 2 enabled</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.PressureController.limit2">
+<code class="descname">limit2</code><a class="headerlink" href="#devices.PressureController.limit2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – High pressure limit of 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.PressureController.SP2">
+<code class="descname">SP2</code><a class="headerlink" href="#devices.PressureController.SP2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Pressure set point of 2</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="flowinegrator-class">
+<h2>FlowInegrator Class<a class="headerlink" href="#flowinegrator-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="devices.FlowIntegrator">
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">FlowIntegrator</code><span class="sig-paren">(</span><em>name</em>, <em>integrator_source</em>, <em>flow_source</em>, <em>names</em>, <em>start1</em>, <em>used1</em>, <em>time1</em>, <em>start2</em>, <em>used2</em>, <em>time2</em>, <em>start3</em>, <em>used3</em>, <em>time3</em>, <em>start4</em>, <em>used4</em>, <em>time4</em>, <em>start5</em>, <em>used5</em>, <em>time5</em>, <em>start6</em>, <em>used6</em>, <em>time6</em>, <em>start7</em>, <em>used7</em>, <em>time7</em>, <em>start8</em>, <em>used8</em>, <em>time8</em>, <em>start9</em>, <em>used9</em>, <em>time9</em>, <em>start10</em>, <em>used10</em>, <em>time10</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.FlowIntegrator" title="Permalink to this definition">¶</a></dt>
+<dd><p>An FlowIntegrator for the sample delivery system</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>pvs</strong> (<em>str dict</em>) – A dictionary containing the PVs of all the flow integrator components</li>
+<li><strong>name</strong> (<em>str</em>) – The device name</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.integrator_source">
+<code class="descname">integrator_source</code><a class="headerlink" href="#devices.FlowIntegrator.integrator_source" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.flow_source">
+<code class="descname">flow_source</code><a class="headerlink" href="#devices.FlowIntegrator.flow_source" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em></p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.names">
+<code class="descname">names</code><a class="headerlink" href="#devices.FlowIntegrator.names" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Names of</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.start1">
+<code class="descname">start1</code><a class="headerlink" href="#devices.FlowIntegrator.start1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Starting volume of 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.used1">
+<code class="descname">used1</code><a class="headerlink" href="#devices.FlowIntegrator.used1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow of 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.time1">
+<code class="descname">time1</code><a class="headerlink" href="#devices.FlowIntegrator.time1" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Estimated depletion time of 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.start2">
+<code class="descname">start2</code><a class="headerlink" href="#devices.FlowIntegrator.start2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Starting volume of 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.used2">
+<code class="descname">used2</code><a class="headerlink" href="#devices.FlowIntegrator.used2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow of 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.time2">
+<code class="descname">time2</code><a class="headerlink" href="#devices.FlowIntegrator.time2" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Estimated depletion time of 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.start3">
+<code class="descname">start3</code><a class="headerlink" href="#devices.FlowIntegrator.start3" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Starting volume of 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.used3">
+<code class="descname">used3</code><a class="headerlink" href="#devices.FlowIntegrator.used3" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow of 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.time3">
+<code class="descname">time3</code><a class="headerlink" href="#devices.FlowIntegrator.time3" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Estimated depletion time of 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.start4">
+<code class="descname">start4</code><a class="headerlink" href="#devices.FlowIntegrator.start4" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Starting volume of 4</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.used4">
+<code class="descname">used4</code><a class="headerlink" href="#devices.FlowIntegrator.used4" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow of 4</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.time4">
+<code class="descname">time4</code><a class="headerlink" href="#devices.FlowIntegrator.time4" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Estimated depletion time of 4</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.start5">
+<code class="descname">start5</code><a class="headerlink" href="#devices.FlowIntegrator.start5" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Starting volume of 5</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.used5">
+<code class="descname">used5</code><a class="headerlink" href="#devices.FlowIntegrator.used5" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow of 5</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.time5">
+<code class="descname">time5</code><a class="headerlink" href="#devices.FlowIntegrator.time5" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Estimated depletion time of 5</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.start6">
+<code class="descname">start6</code><a class="headerlink" href="#devices.FlowIntegrator.start6" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Starting volume of 6</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.used6">
+<code class="descname">used6</code><a class="headerlink" href="#devices.FlowIntegrator.used6" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow of 6</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.time6">
+<code class="descname">time6</code><a class="headerlink" href="#devices.FlowIntegrator.time6" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Estimated depletion time of 6</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.start7">
+<code class="descname">start7</code><a class="headerlink" href="#devices.FlowIntegrator.start7" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Starting volume of 7</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.used7">
+<code class="descname">used7</code><a class="headerlink" href="#devices.FlowIntegrator.used7" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow of 7</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.time7">
+<code class="descname">time7</code><a class="headerlink" href="#devices.FlowIntegrator.time7" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Estimated depletion time of 7</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.start8">
+<code class="descname">start8</code><a class="headerlink" href="#devices.FlowIntegrator.start8" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Starting volume of 8</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.used8">
+<code class="descname">used8</code><a class="headerlink" href="#devices.FlowIntegrator.used8" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow of 8</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.time8">
+<code class="descname">time8</code><a class="headerlink" href="#devices.FlowIntegrator.time8" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Estimated depletion time of 8</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.start9">
+<code class="descname">start9</code><a class="headerlink" href="#devices.FlowIntegrator.start9" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Starting volume of 9</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.used9">
+<code class="descname">used9</code><a class="headerlink" href="#devices.FlowIntegrator.used9" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow of 9</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.time9">
+<code class="descname">time9</code><a class="headerlink" href="#devices.FlowIntegrator.time9" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Estimated depletion time of 9</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.start10">
+<code class="descname">start10</code><a class="headerlink" href="#devices.FlowIntegrator.start10" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Starting volume of 10</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.used10">
+<code class="descname">used10</code><a class="headerlink" href="#devices.FlowIntegrator.used10" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Flow of 10</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="devices.FlowIntegrator.time10">
+<code class="descname">time10</code><a class="headerlink" href="#devices.FlowIntegrator.time10" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>EpicsSignal</em> – Estimated depletion time of 10</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="devices.html" class="btn btn-neutral" title="Jet Tracking Classes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, SLAC National Accelerator Laboratory.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'',
+            LANGUAGE:'None',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
