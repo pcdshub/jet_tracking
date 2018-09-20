@@ -1,16 +1,31 @@
-.. include:: ../../README.rst
+LCLS Jet Tracking Documentation
+===============================
+
+Table of Contents
+-----------------
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Devices
-   :hidden:
-   
-   devices.rst
-
-.. toctree::
-   :maxdepth: 1
+   :maxdepth: 2 
    :caption: Control
-   :hidden:
 
    control.rst
+   shared_memory.rst
+   pvNotepad.rst
+
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Devices
+   
+   devices.rst
+   sample_delivery.rst
+
+
+Indices and tables
+==================
+
+* :ref:`genindex`
+* :ref:`modindex`
+* :ref:`search`
+
 

@@ -40,6 +40,48 @@ def jet_detect(img):
     return rho, theta
 
 
+def get_jet_z(rho, theta, roi_y, roi_z, params):
+    '''
+    Calculates the jet position at beam height in the main coordinate system
+    in offaxis camera (z and pitch replace x and roll given camera orientation)
+    
+    Parameters
+    ----------
+    rho : float
+        Distance from (0,0) to the line in pixels
+    theta : float
+        Angle of the shortest vector from (0,0) to the line in radians
+    y_roi : int
+        Y-coordinate of the origin of the ROI on the camera image in pixels
+    z_roi : int
+        Z-coordinate of the origin of the ROI on the camera image in pixels
+    params : Parameters
+        EPICS PVs used for recording jet tracking data
+
+    Returns
+    -------
+    zj : float
+        Jet position at the beam height in millimeters
+    '''
+    import numpy as np
+    
+    pxsize = params.pxsize.get()
+    cam_y = params.cam_y.get()
+    cam_z = params.cam_z.get()
+    beam_y = params.beam_y.get()
+    beam_z = params.beam_z.get()
+    cam_pitch = params.cam_pitch.get()
+    
+    yb_roi = (1.0/pxsize) * ((cam_y-beam_y)*np.cos(-cam_pitch)+(cam_z-beam_z)*np.sin(-cam_pitch)) - roi_y
+    # print('yb_roi: {}'.format(yb_roi))
+    zj_roi = (rho - yb_roi * np.sin(theta))/np.cos(theta)
+    # print('zj_roi: {}'.format(zj_roi))
+    z0_roi = (1.0/pxsize) * (cam_z*np.cos(cam_pitch)-cam_y*np.sin(-cam_pitch)) - roi_z
+    zj = pxsize * (z0_roi-zj_roi)
+    
+    return xj
+
+
 def get_jet_x(rho, theta, roi_x, roi_y, params):
     '''Calculates the jet position at beam height in the main coordinate system
     
@@ -78,6 +120,29 @@ def get_jet_x(rho, theta, roi_x, roi_y, params):
     xj = pxsize * (x0_roi-xj_roi)
     
     return xj
+
+
+def get_jet_pitch(theta, params):
+    '''Calculates jet angle in the main coordinate system (in radians, from -pi/2 to pi/2)
+    
+    Parameters
+    ----------
+    theta : float
+        Angle of the shortest vector from (0,0) to the line in radians
+    params : Parameters
+        EPICS PVs used for recording jet tracking data       
+ 
+    Returns
+    -------
+    jet_pitch : float
+        Jet angle in radians
+    '''
+    import numpy as np
+    
+    cam_pitch = params.cam_pitch.get()
+    
+    jet_pitch = (theta - np.pi/2 - cam_pitch) % np.pi - np.pi/2
+    return jet_pitch
    
     
 def get_jet_roll(theta, params):
@@ -134,6 +199,37 @@ def get_jet_width(im, rho, theta):
     return w
 
 
+def get_offaxi_coords(cam_beam_y, cam_beam_z, params):
+    '''Finds cam_y and cam_z using the pixel coordinates of the origin
+    
+    Parameters
+    ----------
+    cam_beam_y : float
+        y coordinate for the beam (= main coordinate origin) on the camera in pixels
+    cam_beam_z : float
+        z coordinate for the beam (= main coordinate origin) on the camera in pixels
+    params : Parameters
+        EPICS PVs used for recording jet tracking data
+
+    Returns
+    -------
+    cam_y : float
+        Y-coordinate of the origin of the camera in the main coordinate system in millimeters
+    cam_z : float
+        Z-coordinate of the origin of the camera in the main coordinate system in millimeters
+        
+    '''
+    import numpy as np
+    
+    cam_pitch = params.cam_pitch.get()
+    pxsize = params.pxsize.get()
+    
+    cam_y = pxsize * (cam_beam_z*np.sin(cam_pitch) + cam_beam_y*np.cos(cam_pitch))
+    cam_z = pxsize * (cam_beam_z*np.cos(cam_pitch) - cam_beam_y*np.sin(cam_pitch))
+    
+    return cam_y, cam_z
+
+
 def get_cam_coords(cam_beam_x, cam_beam_y, params):
     '''Finds cam_x and cam_y using the pixel coordinates of the origin
     
@@ -163,6 +259,40 @@ def get_cam_coords(cam_beam_x, cam_beam_y, params):
     cam_y = pxsize * (cam_beam_y*np.cos(cam_roll) - cam_beam_x*np.sin(cam_roll))
     
     return cam_x, cam_y
+
+
+def get_cam_pitch(imgs):
+    '''Finds the camera angle
+    
+    Parameters
+    ----------
+    imgs : list(ndarray)
+        List of images where nozzle has been moved in x-direction
+    
+    Returns
+    -------
+    cam_pitch : float
+        Offaxis camera pitch angle in radians
+    '''
+    import numpy as np
+    from skimage.feature import register_translation
+    
+    ytot = 0
+    ztot = 0
+    for i in range(len(positions)-1):
+        im1 = imgs[i]
+        im2 = imgs[i+1]
+        shift, error, diffphase = register_translation(im1, im2, 100)
+        dy = shift[0]
+        dz = shift[1]
+        if dy < 0:
+            dy *= -1
+            dz *= -1
+        ytot += dy
+        ztot += dz
+        
+    cam_pitch = np.arctan(ytot/xtot)
+    return cam_pitch
 
 
 def get_cam_roll(imgs):
@@ -195,9 +325,50 @@ def get_cam_roll(imgs):
         ytot += dy
         xtot += dx
         
-    
     cam_roll = -np.arctan(ytot/xtot)
     return cam_roll
+
+
+def get_cam_pitch_pxsize(imgs, positions):
+    '''Finds offaxis camera pitch and pixel size
+    
+    Parameters
+    ----------
+    imgs : list(ndarray)
+        List of images where nozzle has been moved in x-direction
+    positions : list(float)
+        List of motor positions in millimeters
+    
+    Returns
+    -------
+    cam_pitch : float
+        Camera angle in radians
+    pxsize : float
+        Pixel size in millimeters
+    '''
+    import numpy as np
+    from skimage.feature import register_translation
+    
+    ytot = 0
+    ztot = 0
+    changetot = 0
+    for i in range(len(positions)-1):
+        im1 = imgs[i]
+        im2 = imgs[i+1]
+        shift, error, diffphase = register_translation(im1, im2, 100)
+        dy = shift[0]
+        dz = shift[1]
+        if dy < 0:
+            dy *= -1
+            dz *= -1
+        ytot += dy
+        ztot += dz
+        
+        changetot += abs(positions[i+1]-positions[i])
+    
+    cam_pitch = np.arctan(ytot/ztot)
+    pxsize = changetot/np.sqrt(ytot**2+ztot**2)
+    return cam_pitch, pxsize
 
 
 def get_cam_roll_pxsize(imgs, positions):

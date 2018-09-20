@@ -218,7 +218,7 @@ def output_cspad_sum(ds=None, alias='DscCsPad',
 def output_cspad_streak(ds=None, alias='DscCsPad', 
         pvbase='CXI:SC1:DIFFRACT', nevents=10, **kwargs):
     """
-    Example to output cspad sum 
+    Output cspad jet streak information 
     """
     from epics import PV
     
@@ -361,7 +361,7 @@ def streak_angle_raw(self):
 
 if __name__ == "__main__":
     args = initArgs()
-    print 'Initializing args', args
+    print('Initializing args: {}'.format(args))
     sys.exit(output_cspad_sum(alias=args.alias,pvbase=args.pvbase,
                               exp=args.exp,run=args.run,
                               calc_period=args.calc_period,

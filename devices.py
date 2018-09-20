@@ -538,7 +538,7 @@ class SDS:
         
        Parameters
        ----------
-       devices: dict
+       devices : dict
            A dictionary of dictionaries containing the devices to be made and their PV names
            Key: str
                Type of device to be made. Valid keys are 'selector', 'cooler_shaker', 'hplc',
@@ -550,7 +550,7 @@ class SDS:
        ----------
        SDS_devices : list
            List containing all the devices that are in the sample delivery system
-    '''
+       '''
     
     SDS_devices = []
     
@@ -571,9 +571,55 @@ class SDS:
                 print(f'{device} is not a valid device')
 
 
+class Offaxis(PCDSDetector):
+    '''Area detector for Offaxis camera in CXI
+
+    Parameters
+    ----------
+    port_names : str dict
+        A dictionary containing the access port names for the plugins
+    prefix : str
+        Prefix for the PV name of the camera
+    name : str
+        Name of the camera
+ 
+    Attributes
+    ----------
+    ROI : ROIPlugin
+        ROI on original rate image
+    ROI_stats : StatsPlugin
+        Stats on ROI of original rate image
+    '''
+
+    ROI = FCpt(ROIPlugin, '{self._ROI_port}')
+    ROI_stats = FCpt(StatsPlugin, '{self._ROI_stats_port}')
+    ROI_image = FCpt(ImagePlugin, '{self._ROI_image_port}') 
+    
+    def __init__(self, ROI_port, 
+                       ROI_stats_port,
+                       ROI_image_port, 
+                       prefix, *args, **kwargs):
+
+
+        self._ROI_port = f'{prefix}:{ROI_port}:'
+        self._ROI_stats_port = f'{prefix}:{ROI_stats_port}:'
+        self._ROI_image_port = f'{prefix}:{ROI_image_port}:' 
+
+        super().__init__(prefix, *args, **kwargs)
+        
+        self.ROI_stats.nd_array_port.put(ROI_port)
+        self.ROI_image.nd_array_port.put(ROI_port) 
+
+        
+        self.ROI.enable.put('Enabled')
+        self.ROI_stats.enable.put('Enabled')
+        self.ROI_image.enable.put('Enabled') 
+
+
+
 class Questar(PCDSDetector):
     '''
-    Area detector for SC1 Questar in CXI
+    Area detector for Inline Questar Camera in CXI
     
     Parameters
     ----------
@@ -696,6 +742,121 @@ class Parameters(Device):
         super().__init__(name=name, **kwargs)
 
 
+class OffaxisParams(Device):
+    '''
+    Contains EPICS PVs used with Offaxis camera for jet tracking
+    
+    Attributes
+    ----------
+    cam_z : EpicsSignal
+        z-coordinate of camera position in mm
+    cam_y : EpicsSignal
+        y-coordinate of camera position in mm
+    pxsize : EpicsSignal
+        size of pixel in mm
+    cam_pitch : EpicsSignal
+        rotation of camera about x axis in radians
+    beam_z : EpicsSignal
+        z-coordinate of x-ray beam in mm (usually 0)
+    beam_y : EpicsSignal
+        y-coordinate of x-ray beam in mm (usually 0)
+    beam_z_px : EpicsSignal
+        z-coordinate of x-ray beam in camera image in pixels
+    beam_y_px : EpicsSignal
+        y-coordinate of x-ray beam in camera image in pixels
+    nozzle_z : EpicsSignal
+        z-coordinate of nozzle in mm
+    nozzle_y : EpicsSignal
+        y-coordinate of nozzle in mm
+    nozzle_zwidth : EpicsSignal
+        width of nozzle in mm
+    jet_z : EpicsSignal
+        distance from sample jet to x-ray beam in mm
+    jet_pitch : EpicsSignal
+        rotation of sample jet about z axis in radians
+    state : EpicsSignal
+        dictionary of string
+    '''
+
+    cam_z = FCpt(EpicsSignal, '{self._cam_z}')
+    cam_y = FCpt(EpicsSignal, '{self._cam_y}')
+    pxsize = FCpt(EpicsSignal, '{self._pxsize}')
+    cam_pitch = FCpt(EpicsSignal, '{self._cam_pitch}')
+    beam_z = FCpt(EpicsSignal, '{self._beam_z}')
+    beam_y = FCpt(EpicsSignal, '{self._beam_y}')
+    beam_z_px = FCpt(EpicsSignal, '{self._beam_z_px}')
+    beam_y_px = FCpt(EpicsSignal, '{self._beam_y_px}')
+    nozzle_z = FCpt(EpicsSignal, '{self._nozzle_z}')
+    nozzle_y = FCpt(EpicsSignal, '{self._nozzle_y}')
+    nozzle_zwidth = FCpt(EpicsSignal, '{self._nozzle_zwidth}')
+    jet_z = FCpt(EpicsSignal, '{self._jet_z}')
+    jet_pitch = FCpt(EpicsSignal, '{self._jet_pitch}')
+    state = FCpt(EpicsSignal, '{self._state}')
+    jet_counter = FCpt(EpicsSignal, '{self._jet_counter}')
+    jet_reprate = FCpt(EpicsSignal, '{self._jet_reprate}')
+    nozzle_counter = FCpt(EpicsSignal, '{self._nozzle_counter}')
+    nozzle_reprate = FCpt(EpicsSignal, '{self._nozzle_reprate}')
+
+    def __init__(self, prefix, name, **kwargs):
+        
+        self._cam_z = f'{prefix}:CAM_Z'
+        self._cam_y = f'{prefix}:CAM_Y'
+        self._pxsize = f'{prefix}:PXSIZE'
+        self._cam_pitch = f'{prefix}:CAM_PITCH'
+        self._beam_z = f'{prefix}:BEAM_Z'
+        self._beam_y = f'{prefix}:BEAM_Y'
+        self._beam_z_px = f'{prefix}:BEAM_Z_PX'
+        self._beam_y_px = f'{prefix}:BEAM_Y_PX'
+        self._nozzle_z = f'{prefix}:NOZZLE_Z'
+        self._nozzle_y = f'{prefix}:NOZZLE_Y'
+        self._nozzle_zwidth = f'{prefix}:NOZZLE_ZWIDTH'
+        self._jet_z = f'{prefix}:JET_Z'
+        self._jet_pitch = f'{prefix}:JET_PITCH'
+        self._state = f'{prefix}:STATE'
+        self._jet_counter = f'{prefix}:JET_Counter'
+        self._jet_reprate = f'{prefix}:JET_RepRate'
+        self._nozzle_counter = f'{prefix}:NOZZLE_Counter'
+        self._nozzle_reprate = f'{prefix}:NOZZLE_RepRate'
+ 
+        super().__init__(name=name, **kwargs)
+
+
+class Control(Device):
+    '''
+    Contains EPICS PVs used for jet tracking control
+    '''
+
+    re_state = FCpt(EpicsSignal, '{self._re_state}')
+    beam_state = FCpt(EpicsSignal, '{self._beam_state}')
+    injector_state = FCpt(EpicsSignal, '{self._injector_state}')
+    beam_trans = FCpt(EpicsSignal, '{self._beam_trans}')
+    beam_pulse_energy = FCpt(EpicsSignal, '{self._beam_pulse_energy}')
+    beam_e_thresh = FCpt(EpicsSignal, '{self._beam_e_thresh}')
+    xstep_size = FCpt(EpicsSignal, '{self._xstep_size}')
+    xscan_min = FCpt(EpicsSignal, '{self._xscan_min}')
+    xscan_max = FCpt(EpicsSignal, '{self._xscan_max}')
+    bounce_width = FCpt(EpicsSignal, '{self._bounce_width}')
+    xmin = FCpt(EpicsSignal, '{self._xmin}')
+    xmax = FCpt(EpicsSignal, '{self._xmax}')
+
+    def __init__(self, prefix, name, **kwargs):
+        
+        self._re_state = f'{prefix}:RE:STATE'
+        self._beam_state = f'{prefix}:BEAM:STATE'
+        self._injector_state = f'{prefix}:INJECTOR:STATE'
+        self._beam_trans = f'{prefix}:BEAM:TRANS'
+        self._beam_pulse_energy = f'{prefix}:BEAM:PULSE_ENERGY'
+        self._beam_e_thresh = f'{prefix}:BEAM:E_THRESH'
+        self._xstep_size = f'{prefix}:INJECTOR:XSTEP_SIZE'
+        self._xscan_min = f'{prefix}:INJECTOR:XSCAN_MIN'
+        self._xscan_max = f'{prefix}:INJECTOR:XSCAN_MAX'
+        self._bounce_width = f'{prefix}:INJECTOR:BOUNCE_WIDTH'
+        self._xmin = f'{prefix}:INJECTOR:XMIN'
+        self._xmax = f'{prefix}:INJECTOR:XMAX'
+ 
+        super().__init__(name=name, **kwargs)
+
+
 class Diffract(Device):
     '''
     Contains EPICS PVs used for shared memory X-ray Diffraction detector
@@ -703,8 +864,117 @@ class Diffract(Device):
     
     Attributes
     ----------
-    cam_x : EpicsSignal
-        x-coordinate of camera position in mm
+    model_adu : EpicsSignal
+        Total detector model ADU 
+    model_adu_err : EpicsSignal
+        Total detector model ADU error estimate 
+    model_intensity : EpicsSignal
+        Diffraction model intensity waveform 
+    model_intensity_err : EpicsSignal
+        Diffraction model intensity waveform 
+    model_xaxis : EpicsSignal
+        Diffraction model xaxis waveform 
+    psd_amplitude : EpicsSignal
+        Diffraction periodogram Frequency analysis amplitude
+    psd_amp_array : EpicsSignal
+        Diffraction periodogram Frequency analysis amplitude array
+    psd_amp_wf : EpicsSignal
+        Diffraction periodogram Frequency analysis waveform array
+    psd_counter : EpicsSignal
+        Diffraction periodogram event counter 
+    psd_events : EpicsSignal
+        Diffraction periodogram 
+    psd_frequency : EpicsSignal
+        Diffraction periodogram fundamental frequency
+    psd_freq_min : EpicsSignal
+        Minimum frequency for periodogram calcs 
+    psd_freq_wf : EpicsSignal
+        Diffraction periodogram frequency waveform
+    psd_rate : EpicsSignal
+        Event frequency for periodogram 
+    psd_resolution : EpicsSignal
+        Resultion to smooth over for periodogra 
+    psd_reprate : EpicsSignal
+        Diffraction periodogram event counter 
+    ring_adu : EpicsSignal
+        Ring ADU 
+    ring_adu_err : EpicsSignal
+        Ring ADU error estimate 
+    ring_counter : EpicsSignal
+        Diffraction ring intensity event counte 
+    ring_intensity : EpicsSignal
+        Intensity of diffraction ring 
+    ring_intensity_err : EpicsSignal
+        Error in intensity of diffraction ring 
+    ring_radius : EpicsSignal
+        Radius of diffraction ring 
+    ring_radius_err : EpicsSignal
+        Error in Radius of diffraction ring 
+    ring_reprate : EpicsSignal
+        Diffraction ring intensity event counte 
+    ring_width : EpicsSignal
+        Width of diffraction ring 
+    ring_width_err : EpicsSignal
+        Width error estimate of diffraction rin 
+    state : EpicsSignal
+        State of diffraction analysis     
+    stats_counter : EpicsSignal
+        Diffraction stats event counter 
+    stats_max : EpicsSignal
+        Max Diffraction Statistic 
+    stats_mean : EpicsSignal
+        Mean Diffraction Statistic 
+    stats_min : EpicsSignal
+        Min Diffraction Statistic 
+    stats_reprate : EpicsSignal
+        Diffraction stats event counter 
+    stats_std : EpicsSignal
+        Std Diffraction Statistic 
+    streak_calc_rate : EpicsSignal
+        Rate of streak calculation
+    streak_counter : EpicsSignal
+        Diffraction streak event counter 
+    streak_fraction : EpicsSignal
+        Fraction of events with diffraction streak
+    streak_intensity : EpicsSignal
+        Intensity of diffraction streak 
+    streak_intensity_err : EpicsSignal
+        Error in Intensity of diffraction streak 
+    streak_phi : EpicsSignal
+        Angle of diffraction streak 
+    streak_phi_err : EpicsSignal
+        Error in Angle of diffraction streak 
+    streak_reprate : EpicsSignal
+        Diffraction streak event counter 
+    streak_width : EpicsSignal
+        Width of diffraction streak 
+    streak_width_err : EpicsSignal
+        Error in Width of diffraction streak 
+    streak_x : EpicsSignal
+        Event X origin of diffraction streak 
+    streak_x_err : EpicsSignal
+        Error in Event X origin of diffraction streak 
+    streak_y : EpicsSignal
+        Event Y origin of diffraction streak 
+    streak_y_err : EpicsSignal
+        Error in Event Y origin of diffraction streak 
+    total_adu : EpicsSignal
+        Total detector ADU 
+    total_adu_err : EpicsSignal
+        Total detector ADU error estimate 
+    total_counter : EpicsSignal
+        Total counter     
+    total_reprate : EpicsSignal
+        Diffraction total intensity calc rate 
+    x0 : EpicsSignal
+        Nominal X origin of diffraction 
+    x0_err : EpicsSignal
+        Error in Nominal X origin of diffraction 
+    y0 : EpicsSignal
+        Nominal Y origin of diffraction 
+    y0_err : EpicsSignal
+        Error in Nominal Y origin of diffraction 
+
     '''
 
     total_counter = FCpt(EpicsSignal, '{self._total_counter}')
@@ -732,6 +1002,7 @@ class Diffract(Device):
     psd_amp_wf = FCpt(EpicsSignal, '{self._psd_amp_wf}')
     psd_freq_wf = FCpt(EpicsSignal, '{self._psd_freq_wf}')
     psd_amp_array = FCpt(EpicsSignal, '{self._psd_amp_array}')
+    state = FCpt(EpicsSignal, '{self._state}')
 
     def __init__(self, prefix, name, **kwargs):
         
@@ -760,6 +1031,7 @@ class Diffract(Device):
         self._psd_freq_wf = f'{prefix}:PSD_FREQ_WF'
         self._psd_amp_wf = f'{prefix}:PSD_AMP_WF'
         self._psd_amp_array = f'{prefix}:PSD_AMP_ARRAY'
+        self._state = f'{prefix}:STATE'
        
         super().__init__(name=name, **kwargs)
 

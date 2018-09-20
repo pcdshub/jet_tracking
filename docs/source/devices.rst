@@ -1,8 +1,42 @@
-Base Classes
-############
-Injector, Questar and Params classes used in jet tracking.  
+.. _devices:
 
-Other classes used for sample delivery
+.. currentmodule:: jet_control
 
-.. autoclass:: jet_tracking.devices
+Jet Tracking Classes
+####################
+Base classes used in jet tracking and control.  
+
+JetControl Class
+----------------
+
+.. autoclass:: jet_control.JetControl
+
+.. autosummary::
+    :toctree: generated/
+    
+    JetControl.set_beam
+    JetControl.calibrate
+    JetControl.jet_calculate
+    JetControl.jet_move
+
+
+Injector Class
+--------------
+
+.. autoclass:: devices.Injector
+
+Questar Class
+-------------
+
+.. autoclass:: devices.Questar
+
+Parameters Class
+----------------
+
+.. autoclass:: devices.Parameters
+
+Diffract Class
+--------------
+
+.. autoclass:: devices.Diffract
 
