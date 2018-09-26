@@ -200,6 +200,7 @@ def output_cspad_sum(ds=None, alias='DscCsPad',
                
                 if calc_streak:
                     streak_fraction = streaks/psd_events
+                    streak_fraction_pv.put(streak_fraction)
 
                 sums = [] 
                 aPxx = []
@@ -230,8 +231,9 @@ def output_cspad_streak(ds=None, alias='DscCsPad',
     if not ds:
         ds = DataSource(**kwargs)
     
-    beam_x_pv.put(2094.9301668334006) # run 104
-    beam_y_pv.put(-1796.5697333657126)
+# Now set in epics -- update as needed from epics.    
+#    beam_x_pv.put(2094.9301668334006) # run 104
+#    beam_y_pv.put(-1796.5697333657126)
     
     detector = ds._detectors[alias]
     detector.next() 
