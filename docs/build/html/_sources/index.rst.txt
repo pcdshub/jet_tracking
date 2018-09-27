@@ -20,7 +20,12 @@ Table of Contents
    devices.rst
    sample_delivery.rst
 
-
+.. toctree::
+   :maxdepth: 2
+   :caption: Presentations and Posters
+   
+   presentations.rst
+ 
 Indices and tables
 ==================
 
