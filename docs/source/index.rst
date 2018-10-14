@@ -6,6 +6,13 @@ Table of Contents
 
 .. toctree::
    :maxdepth: 2 
+   :caption: Setup
+
+   installation.rst
+
+
+.. toctree::
+   :maxdepth: 2 
    :caption: Control
 
    control.rst

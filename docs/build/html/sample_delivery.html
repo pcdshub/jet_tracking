@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Sample Delivery Classes &mdash; PCDS Jet Tracking  documentation</title>
+  <title>Sample Delivery &mdash; PCDS Jet Tracking  documentation</title>
   
 
   
@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Presentations and Posters" href="presentations.html" />
     <link rel="prev" title="Jet Tracking Classes" href="devices.html" /> 
 
   
@@ -86,7 +87,11 @@
 <p class="caption"><span class="caption-text">Devices</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="devices.html">Jet Tracking Classes</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Sample Delivery Classes</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Sample Delivery</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#epics-ioc">Epics IOC</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#api">API</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#sample-delivery-system-class">Sample Delivery System Class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#selector-class">Selector Class</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#coolershaker-class">CoolerShaker Class</a></li>
@@ -95,6 +100,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#flowinegrator-class">FlowInegrator Class</a></li>
 </ul>
 </li>
+</ul>
+<p class="caption"><span class="caption-text">Presentations and Posters</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="presentations.html">Presentations and Posters</a></li>
 </ul>
 
             
@@ -140,7 +149,7 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Sample Delivery Classes</li>
+      <li>Sample Delivery</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -159,14 +168,31 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="sample-delivery-classes">
-<span id="sample-delivery"></span><h1>Sample Delivery Classes<a class="headerlink" href="#sample-delivery-classes" title="Permalink to this headline">¶</a></h1>
-<p>Base classes used in sample deliver.</p>
+  <div class="section" id="sample-delivery">
+<span id="id1"></span><h1>Sample Delivery<a class="headerlink" href="#sample-delivery" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="epics-ioc">
+<h2>Epics IOC<a class="headerlink" href="#epics-ioc" title="Permalink to this headline">¶</a></h2>
+<p>Confluence Sample Delivery System (SDS) Documenation</p>
+<p><a class="reference external" href="https://confluence.slac.stanford.edu/display/PCDS/Sample+Delivery+System+Documentation">https://confluence.slac.stanford.edu/display/PCDS/Sample+Delivery+System+Documentation</a></p>
+<p><a class="reference external" href="https://github.com/pcdshub/sample-delivery-system">https://github.com/pcdshub/sample-delivery-system</a></p>
+<dl class="docutils">
+<dt>Autotest Documentation:</dt>
+<dd><ul class="first last simple">
+<li>Pawan Gaire 2018 Summer project with Margaret Ghaly and Alex Wallace</li>
+</ul>
+</dd>
+</dl>
+<p><a class="reference external" href="https://confluence.slac.stanford.edu/display/PCDS/sample+delivery+system+automated+test">https://confluence.slac.stanford.edu/display/PCDS/sample+delivery+system+automated+test</a></p>
+<p><a class="reference external" href="https://github.com/pcdshub/SDS_test">https://github.com/pcdshub/SDS_test</a></p>
+</div>
+</div>
+<div class="section" id="api">
+<h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="sample-delivery-system-class">
 <h2>Sample Delivery System Class<a class="headerlink" href="#sample-delivery-system-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="devices.SDS">
-<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">SDS</code><span class="sig-paren">(</span><em>devices</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.SDS" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">SDS</code><span class="sig-paren">(</span><em>devices</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/devices.html#SDS"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#devices.SDS" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sample delivery system</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -198,7 +224,7 @@ Key: str</p>
 <h2>Selector Class<a class="headerlink" href="#selector-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="devices.Selector">
-<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">Selector</code><span class="sig-paren">(</span><em>name</em>, <em>remote_control</em>, <em>status</em>, <em>flow</em>, <em>flowstate</em>, <em>flowtype</em>, <em>FM_rb</em>, <em>FM_reset</em>, <em>FM</em>, <em>names_button</em>, <em>couple_button</em>, <em>names1</em>, <em>names2</em>, <em>shaker1</em>, <em>shaker2</em>, <em>shaker3</em>, <em>shaker4</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.Selector" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">Selector</code><span class="sig-paren">(</span><em>name</em>, <em>remote_control</em>, <em>status</em>, <em>flow</em>, <em>flowstate</em>, <em>flowtype</em>, <em>FM_rb</em>, <em>FM_reset</em>, <em>FM</em>, <em>names_button</em>, <em>couple_button</em>, <em>names1</em>, <em>names2</em>, <em>shaker1</em>, <em>shaker2</em>, <em>shaker3</em>, <em>shaker4</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/devices.html#Selector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#devices.Selector" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Selector for the sample delivery system</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -312,7 +338,7 @@ the PVs of all the selector components</td>
 <h2>CoolerShaker Class<a class="headerlink" href="#coolershaker-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="devices.CoolerShaker">
-<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">CoolerShaker</code><span class="sig-paren">(</span><em>name</em>, <em>temperature1</em>, <em>SP1</em>, <em>set_SP1</em>, <em>current1</em>, <em>temperature2</em>, <em>SP2</em>, <em>set_SP2</em>, <em>current2</em>, <em>reboot</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.CoolerShaker" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">CoolerShaker</code><span class="sig-paren">(</span><em>name</em>, <em>temperature1</em>, <em>SP1</em>, <em>set_SP1</em>, <em>current1</em>, <em>temperature2</em>, <em>SP2</em>, <em>set_SP2</em>, <em>current2</em>, <em>reboot</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/devices.html#CoolerShaker"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#devices.CoolerShaker" title="Permalink to this definition">¶</a></dt>
 <dd><p>A Cooler/Shaker for the sample delivery system</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -387,7 +413,7 @@ the PVs of all the selector components</td>
 <h2>HPLC Class<a class="headerlink" href="#hplc-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="devices.HPLC">
-<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">HPLC</code><span class="sig-paren">(</span><em>name</em>, <em>status</em>, <em>run</em>, <em>flowrate</em>, <em>set_flowrate</em>, <em>flowrate_SP</em>, <em>pressure</em>, <em>pressure_units</em>, <em>set_max_pressure</em>, <em>max_pressure</em>, <em>clear_error</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.HPLC" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">HPLC</code><span class="sig-paren">(</span><em>name</em>, <em>status</em>, <em>run</em>, <em>flowrate</em>, <em>set_flowrate</em>, <em>flowrate_SP</em>, <em>pressure</em>, <em>pressure_units</em>, <em>set_max_pressure</em>, <em>max_pressure</em>, <em>clear_error</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/devices.html#HPLC"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#devices.HPLC" title="Permalink to this definition">¶</a></dt>
 <dd><p>An HPLC for the sample delivery system</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -468,7 +494,7 @@ the PVs of all the selector components</td>
 <h2>PressureController Class<a class="headerlink" href="#pressurecontroller-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="devices.PressureController">
-<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">PressureController</code><span class="sig-paren">(</span><em>name</em>, <em>status</em>, <em>pressure1</em>, <em>enabled1</em>, <em>limit1</em>, <em>SP1</em>, <em>pressure2</em>, <em>enabled2</em>, <em>limit2</em>, <em>SP2</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.PressureController" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">PressureController</code><span class="sig-paren">(</span><em>name</em>, <em>status</em>, <em>pressure1</em>, <em>enabled1</em>, <em>limit1</em>, <em>SP1</em>, <em>pressure2</em>, <em>enabled2</em>, <em>limit2</em>, <em>SP2</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/devices.html#PressureController"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#devices.PressureController" title="Permalink to this definition">¶</a></dt>
 <dd><p>An Pressure Controller for the sample delivery system</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -543,7 +569,7 @@ the PVs of all the selector components</td>
 <h2>FlowInegrator Class<a class="headerlink" href="#flowinegrator-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="devices.FlowIntegrator">
-<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">FlowIntegrator</code><span class="sig-paren">(</span><em>name</em>, <em>integrator_source</em>, <em>flow_source</em>, <em>names</em>, <em>start1</em>, <em>used1</em>, <em>time1</em>, <em>start2</em>, <em>used2</em>, <em>time2</em>, <em>start3</em>, <em>used3</em>, <em>time3</em>, <em>start4</em>, <em>used4</em>, <em>time4</em>, <em>start5</em>, <em>used5</em>, <em>time5</em>, <em>start6</em>, <em>used6</em>, <em>time6</em>, <em>start7</em>, <em>used7</em>, <em>time7</em>, <em>start8</em>, <em>used8</em>, <em>time8</em>, <em>start9</em>, <em>used9</em>, <em>time9</em>, <em>start10</em>, <em>used10</em>, <em>time10</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#devices.FlowIntegrator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">devices.</code><code class="descname">FlowIntegrator</code><span class="sig-paren">(</span><em>name</em>, <em>integrator_source</em>, <em>flow_source</em>, <em>names</em>, <em>start1</em>, <em>used1</em>, <em>time1</em>, <em>start2</em>, <em>used2</em>, <em>time2</em>, <em>start3</em>, <em>used3</em>, <em>time3</em>, <em>start4</em>, <em>used4</em>, <em>time4</em>, <em>start5</em>, <em>used5</em>, <em>time5</em>, <em>start6</em>, <em>used6</em>, <em>time6</em>, <em>start7</em>, <em>used7</em>, <em>time7</em>, <em>start8</em>, <em>used8</em>, <em>time8</em>, <em>start9</em>, <em>used9</em>, <em>time9</em>, <em>start10</em>, <em>used10</em>, <em>time10</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/devices.html#FlowIntegrator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#devices.FlowIntegrator" title="Permalink to this definition">¶</a></dt>
 <dd><p>An FlowIntegrator for the sample delivery system</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -768,6 +794,8 @@ the PVs of all the selector components</td>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
+        <a href="presentations.html" class="btn btn-neutral float-right" title="Presentations and Posters" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
       
         <a href="devices.html" class="btn btn-neutral" title="Jet Tracking Classes" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
@@ -811,6 +839,7 @@ the PVs of all the selector components</td>
       <script type="text/javascript" src="_static/jquery.js"></script>
       <script type="text/javascript" src="_static/underscore.js"></script>
       <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
 
   
 

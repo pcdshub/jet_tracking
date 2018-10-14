@@ -21,6 +21,8 @@ import os
 import sys
 import sphinx_rtd_theme
 import datetime
+import matplotlib
+
 
 module_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../')
 sys.path.insert(0,module_path)
@@ -41,13 +43,25 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'IPython.sphinxext.ipython_directive',
               'IPython.sphinxext.ipython_console_highlighting',
-              'sphinx.ext.autosectionlabel'
-             ]
+              'matplotlib.sphinxext.mathmpl',
+              'matplotlib.sphinxext.only_directives',
+              'matplotlib.sphinxext.plot_directive',
+#              'sphinx.ext.autosectionlabel'
+              'sphinx.ext.viewcode',
+              'sphinx.ext.coverage',
+              'sphinx.ext.doctest',
+              'sphinx.ext.viewcode',
+              'sphinx.ext.githubpages',
+              'sphinx.ext.mathjax',
+                     ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 autosummary_generate = True
+
+numpydoc_class_members_toctree = True
+numpydoc_show_class_members = False
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -111,6 +125,8 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# If true, links to the reST sources are added to the pages.
+html_show_sourcelink = True
 
 # -- Options for HTMLHelp output ------------------------------------------
 
