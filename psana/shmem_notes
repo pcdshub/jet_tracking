@@ -16,7 +16,7 @@ psana2epics.sh example will output the sum of the CSPAD intensity to a PV.
 
 e.g., for start of Run 17 we are using SC2
 
-[koglin@daq-cxi-mon01 ~ 09:34:39] /reg/g/pcds/pyps/apps/hutch-python/cxi/shmem/psana2epics.sh --alias='DsaCsPad' --pvbase='CXI:SC2:DIFFRACT'
+[koglin@daq-cxi-mon01 ~ 09:34:39] /reg/g/pcds/pyps/apps/hutch-python/cxi/cxi/jet_tracking/psana/psana2epics.sh --alias='DsaCsPad' --pvbase='CXI:SC2:DIFFRACT'
 Initializing args Namespace(alias='DsaCsPad', calc_period=False, calc_streak=False, exp='cxilr6716', instrument='cxi', nevents=10, plot=False, pvbase='CXI:SC2:DIFFRACT', run=None)
 Initializing epics PVs
 Events = 240.0
@@ -79,4 +79,8 @@ CA Event Rate (Hz): current 39.4983 mean 40.248 std dev 0.749664
 CA Event Rate (Hz): current 38.4994 mean 39.6651 std dev 1.02671
 ...
 
+
+For mfx on daq-mfx-mon02:
+
+daq-mfx-mon02> /reg/g/pcds/pyps/apps/hutch-python/mfx/mfx/jet_tracking/psana/psana2epics.sh --alias='Rayonix' --pvbase='MFX:DET:DIFFRACT' --exp='mfxlt3017'
 
