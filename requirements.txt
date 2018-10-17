@@ -2,7 +2,7 @@
 -e git+https://github.com/pcdshub/pcdsdevices.git@v1.0.0#egg=pcdsdevices
 -e git+https://github.com/pcdshub/hutch-python.git@v1.0.0#egg=hutch_python
 numpy
-ophyd==1.1.0
+ophyd>=1.2.0
 scikit-image
 scipy
 pandas
