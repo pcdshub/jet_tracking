@@ -1,0 +1,9 @@
+# List required packages in this file, one per line.
+numpy
+ophyd
+pcdsdevices
+hutch_python
+skimage
+scipy
+pandas
+opencv
