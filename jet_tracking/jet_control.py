@@ -168,7 +168,7 @@ def calibrate(injector, camera, params, offaxis=False):
     return
 
 
-def jet_calculate(camera, params, offaixs=False):
+def jet_calculate(camera, params, offaxis=False):
     '''
     Track the sample jet and calculate the distance to the x-ray beam
     NEED TO CHECK offaxis calculation sign
