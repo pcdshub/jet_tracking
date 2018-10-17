@@ -81,8 +81,7 @@ def get_jet_z(rho, theta, roi_y, roi_z, params):
     # print('zj_roi: {}'.format(zj_roi))
     z0_roi = (1.0/pxsize) * (cam_z*np.cos(cam_pitch)-cam_y*np.sin(-cam_pitch)) - roi_z
     zj = pxsize * (z0_roi-zj_roi)
-
-    return xj
+    return zj
 
 
 def get_jet_x(rho, theta, roi_x, roi_y, params):
