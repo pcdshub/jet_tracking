@@ -3,7 +3,13 @@
 -e git+https://github.com/pcdshub/hutch-python.git@v1.0.0#egg=hutch_python
 numpy
 ophyd>=1.2.0
+bluesky>=1.2.0
 scikit-image
 scipy
 pandas
 opencv-python
+
+# Dependencies-of-dependencies that need updating:
+pyyaml
+cf_units >=2.0.1
+pyepics
