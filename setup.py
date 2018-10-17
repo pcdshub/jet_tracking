@@ -7,10 +7,10 @@ import versioneer
 # NOTE: This file must remain Python 2 compatible for the foreseeable future,
 # to ensure that we error out properly for people with outdated setuptools
 # and/or pip.
-if sys.version_info < (3, 5):
+if sys.version_info < (3, 6):
     error = """
 jet_tracking does not support Python {0}.{2}.
-Python 3.5 and above is required. Check your Python version like so:
+Python 3.6 and above is required. Check your Python version like so:
 
 python3 --version
 
