@@ -15,6 +15,7 @@ Methods used for jet tracking:
 [7. Update state as needed]
 '''
 
+import numpy as np
 from . import cam_utils
 from .move_motor import movex
 from time import sleep
@@ -83,8 +84,6 @@ def get_burst_avg(n, image_plugin):
     burst_avg : ndarray
         average image
     '''
-    import numpy as np
-
     imageX, imageY = image_plugin.image.shape
     burst_imgs = np.empty((n, imageX, imageY))
     for x in range(n):
