@@ -7,7 +7,10 @@ cache:
     - $HOME/.ccache  # https://github.com/travis-ci/travis-ci/issues/5853
 
 install:
-  # Install this package and the packages listed in requirements.txt.
+  # Install the packages in requirements.txt first, to pick up the direct
+  # github links.
+  - pip install -r requirements.txt
+  # Install the jet_tracking module
   - pip install .
   # Install extra requirements for running tests and building docs.
   - pip install -r requirements-dev.txt
