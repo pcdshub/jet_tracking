@@ -1,5 +1,6 @@
 from hutch_python.utils import safe_load
-from cxi.devices import Injector, Questar, Parameters
+from .devices import Injector, Questar, Parameters
+
 """
 Load liquid and Questar camera devices for jet tracking processing
 """

@@ -1,16 +1,37 @@
+'''
+Methods used for jet tracking:
+    get_burst_avg(n, image_plugin)
+    set_beam(beamX, beamY, params)
+    calibrate(injector, camera, params)
+    jet_calculate(camera, params)
+    jet_move(injector, camera, params)
+
+1. Set camera ROI to show only jet
+2. Use set_beam() to set beam position
+3. Use calibrate() to calibrate camera
+4. Use jet_calculate() to track jet position
+5. Use jet_move() to move jet to beam
+6. Use set_beam() to update beam position as needed
+[7. Update state as needed]
+'''
+
+from . import cam_utils
+from .move_motor import movex
+from time import sleep
+
+
 class JetControl:
     '''
     Jet tracking control class using jet_tracking methods
     '''
-    def __init__(self, name, 
-            injector, camera, params, diffract, 
-            #camera_offaxis=None, 
+    def __init__(self, name,
+            injector, camera, params,
+            #camera_offaxis=None,
             **kwargs):
 
         self.injector = injector
         self.camera = camera
         self.params = params
-        self.diffract = diffract
 
     def set_beam(self, beamX, beamY):
         '''
@@ -37,8 +58,8 @@ class JetControl:
         Track the sample jet and calculate the distance to the x-ray beam
         '''
         jet_calculate(self.camera, self.params)
-       
-    
+
+
     def jet_move(self):
         '''
         Move the sample jet to the x-ray beam
@@ -92,10 +113,9 @@ def set_beam(beamX_px, beamY_px, params):
     return
 
 
-def calibrate(injector, camera, params, offaxis=False):
+def calibrate(injector, camera, params):
     '''
-    Calibrate the camera 
-    NEED TO CHECK offaxis calculation sign
+    Calibrate the camera
 
     Parameters
     ----------
@@ -105,69 +125,44 @@ def calibrate(injector, camera, params, offaxis=False):
         camera looking at sample jet and x-rays
     params : Parameters
         EPICS PVs used for recording jet tracking data
-    offaxis : bool
-        Camera is off-axis in y-z plane
     '''
-    from time import sleep
-    from cxi import cam_utils
 
     # find jet in camera ROI
     ROI_image = get_burst_avg(20, camera.ROI_image)
     rho, theta = cam_utils.jet_detect(ROI_image)
 
-    if offaxis:
-        injector_axis = injector.coarseX
-    else:
-        injector_axis = injector.coarseZ
-
     # collect images and motor positions to calculate pxsize and cam_roll
     imgs = []
     positions = []
-    start_pos = injector_axis.get()
+    start_pos = injector.coarseX.get()
     for i in range(2):
         image = get_burst_avg(20, camera.image)
         imgs.append(image)
-        positions.append(injector_axis.get())
-        injector_axis.put(injector_axis.get() - 0.1)
+        positions.append(injector.coarseX.get())
+        injector.coarseX.put(injector.coarseX.get() - 0.1)
         sleep(3)
-    injector_axis.put(start_pos)
+    injector.coarseX.put(start_pos)
     sleep(3)
 
-    if offaxis:
-        cam_pitch, pxsize = cam_utils.get_cam_roll_pxsize(imgs, positions)
-        params.pxsize.put(pxsize)
-        params.cam_pitch.put(cam_pitch)
-        
-        beamY_px = params.beam_y_px.get()
-        beamZ_px = params.beam_z_px.get()
-        camY, camZ = cam_utils.get_offaxis_coords(beamY_px, beamZ_px, params)
-        params.cam_y.put(camY)
-        params.cam_z.put(camZ)
-        
-        jet_pitch = cam_utils.get_jet_pitch(theta, params)
-        params.jet_pitch.put(jet_pitch)
-    
-    else:
-        cam_roll, pxsize = cam_utils.get_cam_roll_pxsize(imgs, positions)
-        params.pxsize.put(pxsize)
-        params.cam_roll.put(cam_roll)
-        
-        beamX_px = params.beam_x_px.get()
-        beamY_px = params.beam_y_px.get()
-        camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px, params)
-        params.cam_x.put(camX)
-        params.cam_y.put(camY)
-        
-        jet_roll = cam_utils.get_jet_roll(theta, params)
-        params.jet_roll.put(jet_roll)
+    cam_roll, pxsize = cam_utils.get_cam_roll_pxsize(imgs, positions)
+    params.pxsize.put(pxsize)
+    params.cam_roll.put(cam_roll)
+
+    beamX_px = params.beam_x_px.get()
+    beamY_px = params.beam_y_px.get()
+    camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px, params)
+    params.cam_x.put(camX)
+    params.cam_y.put(camY)
+
+    jet_roll = cam_utils.get_jet_roll(theta, params)
+    params.jet_roll.put(jet_roll)
 
     return
 
 
-def jet_calculate(camera, params, offaixs=False):
+def jet_calculate(camera, params):
     '''
     Track the sample jet and calculate the distance to the x-ray beam
-    NEED TO CHECK offaxis calculation sign
 
     Parameters
     ----------
@@ -175,11 +170,7 @@ def jet_calculate(camera, params, offaixs=False):
         camera looking at the sample jet and x-ray beam
     params : Parameters
         EPICS PVs used for recording jet tracking data
-    offaxis : bool
-        Camera is off-axis in y-z plane
     '''
-    from cxi import cam_utils
-    
     # track jet position
     print('Running...')
     while True:
@@ -188,36 +179,19 @@ def jet_calculate(camera, params, offaixs=False):
             ROI_image = get_burst_avg(20, camera.ROI_image)
             rho, theta = cam_utils.jet_detect(ROI_image)
 
-            if offaxis:
-                # check x-ray beam position
-                beamY_px = params.beam_y_px.get()
-                beamZ_px = params.beam_z_px.get()
-                camY, camZ = cam_utils.get_offaxis_coords(beamY_px, beamZ_px, params)
-                params.cam_y.put(camY)
-                params.cam_z.put(camZ)
+            # check x-ray beam position
+            beamX_px = params.beam_x_px.get()
+            beamY_px = params.beam_y_px.get()
+            camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px, params)
+            params.cam_x.put(camX)
+            params.cam_y.put(camY)
 
-                # find distance from jet to x-rays
-                ROIz = camera.ROI.min_xyz.min_x.get()
-                ROIy = camera.ROI.min_xyz.min_y.get()
-                jetZ = cam_utils.get_jet_z(rho, theta,
-                                           ROIy, ROIz, params)
-                params.jet_z.put(jetZ)
-
-            else:
-                # check x-ray beam position
-                beamX_px = params.beam_x_px.get()
-                beamY_px = params.beam_y_px.get()
-                camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px, params)
-                params.cam_x.put(camX)
-                params.cam_y.put(camY)
-
-                # find distance from jet to x-rays
-                ROIx = camera.ROI.min_xyz.min_x.get()
-                ROIy = camera.ROI.min_xyz.min_y.get()
-                jetX = cam_utils.get_jet_x(rho, theta,
-                                           ROIx, ROIy, params)
-                params.jet_x.put(jetX)
-        
+            # find distance from jet to x-rays
+            ROIx = camera.ROI.min_xyz.min_x.get()
+            ROIy = camera.ROI.min_xyz.min_y.get()
+            jetX = cam_utils.get_jet_x(rho, theta,
+                                       ROIx, ROIy, params)
+            params.jet_x.put(jetX)
         except KeyboardInterrupt:
             print('Stopped.')
             return
@@ -236,8 +210,6 @@ def jet_move(injector, camera, params):
     params : Parameters
         EPICS PVs used for recording jet tracking data
     '''
-    from time import sleep
-    from cxi.move_motor import movex
 
     while True:
         try:
@@ -256,7 +228,7 @@ def jet_move(injector, camera, params):
             #     [use [y] for jet tracking]
             # else if params.state == [some other state]:
             #     [revert to manual injector controls]
-            # etc...            
+            # etc...
 
             # if jet is clear in image:
             #     if jetX != beamX:
@@ -271,5 +243,10 @@ def jet_move(injector, camera, params):
             sleep(5)
         except KeyboardInterrupt:
             return
+
+
+'''
+TODO set initial ROI
+'''
 
 

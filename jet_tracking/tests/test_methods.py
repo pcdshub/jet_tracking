@@ -1,9 +1,9 @@
 '''
 Methods used for testing cam_util methods
 '''
-from cxi import devices
-from cxi import cam_utils
-from cxi import move_motor
+from .. import devices
+from .. import cam_utils
+from .. import move_motor
 
 from time import sleep
 
@@ -92,7 +92,7 @@ def test_get_jet_x():
                                   prefix='CXI:SC1:INLINE',
                                   name='SC1_questar')
     rho, theta = cam_utils.jet_detect(SC1_questar.image.image)
-    
+
     camroll_pxsize, imgs = test_get_camroll_pxsize()
     cam_y, cam_x = test_get_cam_coords()
 
@@ -112,7 +112,7 @@ def test_get_jet_x():
 def test_get_jet_roll():
     camroll_pxsize, imgs = test_get_camroll_pxsize()
     params = {'cam_roll': camroll_pxsize[0]}
-  
+
     port_names = {'ROI_port': 'ROI1',
                   'ROI_stats_port': 'Stats1',
                   'ROI_image_port': 'IMAGE1'}
@@ -120,7 +120,7 @@ def test_get_jet_roll():
                                   prefix='CXI:SC1:INLINE',
                                   name='SC1_questar')
     rho, theta = cam_utils.jet_detect(SC1_questar.image.image)
-    
+
     return cam_utils.get_jet_roll(theta, params)
 
 

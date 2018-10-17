@@ -3,7 +3,7 @@ record_dict = {
     'asyn': {
         'desc': 'asyn Record',
         'reference': 'http://aps.anl.gov/epics/modules/soft/asyn/R3-1/asynRecord.html',
-        'usage':  'See referrence.', 
+        'usage':  'See referrence.',
         'fields': {
             'value':                  ('VAL', 'value'),
             'name':                   ('NAME', 'PV Name'),
@@ -48,7 +48,7 @@ record_dict = {
     'fanout': {
         'desc': 'fanout Record',
         'reference': 'https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Fanout',
-        'usage':  'See referrence.', 
+        'usage':  'See referrence.',
         'fields': {
             'value':                  ('VAL', 'value'),
             'name':                   ('NAME', 'PV Name'),
@@ -71,7 +71,7 @@ record_dict = {
     'dfanout': {
         'desc': 'dfanout Record',
         'reference': 'https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Fanout',
-        'usage':  'See referrence.', 
+        'usage':  'See referrence.',
         'fields': {
             'value':                  ('VAL', 'value'),
             'name':                   ('NAME', 'PV Name'),
@@ -80,7 +80,7 @@ record_dict = {
             'record_type':            ('RTYP', 'Record Type'),
             'FLNK':                   ('FLNK', ''),
 #            'high_opr':               ('HOPR', 'high opr'),
-#            'low_opr':                ('LOPR', 'low opr'), 
+#            'low_opr':                ('LOPR', 'low opr'),
 #            'LNK1':                   ('LNK1', 'Forward Link 1'),
 #            'LNK2':                   ('LNK2', 'Forward Link 2'),
 #            'LNK3':                   ('LNK3', 'Forward Link 3'),
@@ -105,7 +105,7 @@ record_dict = {
     'lkup': {
         'desc': 'Lookup Record',
         'reference': '',
-        'usage':  'None', 
+        'usage':  'None',
         'fields': {
             'value':                  ('VAL', 'value'),
             'name':                   ('NAME', 'PV Name'),
@@ -123,7 +123,7 @@ record_dict = {
         'desc': 'waveform Record',
         'reference': 'https://wiki-ext.aps.anl.gov/epics/index.php/RRM_3-14_Waveform',
         'usage':  'These fields are configurable by the user to specify how and from \
-                   where the record reads its data', 
+                   where the record reads its data',
         'fields': {
             'value':                  ('VAL', 'value'),
             'name':                   ('NAME', 'PV Name'),
@@ -133,7 +133,7 @@ record_dict = {
             'device_type':            ('DTYP', 'Device type'),
             'record_type':            ('RTYP', 'Record Type'),
             'high_opr':               ('HOPR', 'high opr'),
-            'low_opr':                ('LOPR', 'low opr'), 
+            'low_opr':                ('LOPR', 'low opr'),
             'nelements':              ('NELM', 'Number of elements'),
             'field_type':             ('FTVL', 'Field type of value'),
             'rearm':                  ('RARM', 'Rearm'),
@@ -141,19 +141,19 @@ record_dict = {
         'init':  ['NAME', 'DESC', 'VAL', 'EGU', 'PREC', 'RTYP', 'DTYP'],
         'config': ['DESC', 'DTYP', 'EGU']
         },
- 
+
     'calc': {
         'desc': 'Calculation',
         'reference': 'http://www.aps.anl.gov/epics/EpicsDocumentation/AppDevManuals/RecordRef/Recordref-13.html',
         'usage':  'The calculation or Calc record is used to perform algebraic,  \
                    relational, and logical operations on values retrieved from other records. \
                    The result of its operations can then be accessed by another record  \
-                   so that it can be used.', 
+                   so that it can be used.',
         'fields': {
             'value':                  ('VAL', 'value'),
             'units':                  ('EGU',  'Engineering Units '),
             'high_opr':               ('HOPR', 'high opr'),
-            'low_opr':                ('LOPR', 'low opr'), 
+            'low_opr':                ('LOPR', 'low opr'),
             'precision':              ('PREC', 'Display Precision '),
             'name':                   ('NAME', 'PV Name'),
             'description':            ('DESC', 'Description'),
@@ -204,7 +204,7 @@ record_dict = {
             'value':                  ('VAL', 'value'),
             'units':                  ('EGU',  'Engineering Units '),
             'high_opr':               ('HOPR', 'high opr'),
-            'low_opr':                ('LOPR', 'low opr'), 
+            'low_opr':                ('LOPR', 'low opr'),
             'precision':              ('PREC', 'Display Precision '),
             'name':                   ('NAME', 'PV Name'),
             'description':            ('DESC', 'Description'),
@@ -255,7 +255,7 @@ record_dict = {
         'fields': {
             'value':                  ('VAL', 'value'),
             'high_opr':               ('HOPR', 'high opr'),
-            'low_opr':                ('LOPR', 'low opr'), 
+            'low_opr':                ('LOPR', 'low opr'),
             'name':                   ('NAME', 'PV Name'),
             'description':            ('DESC', 'Description'),
             'device_type':            ('DTYP', 'Device type'),
@@ -308,7 +308,7 @@ record_dict = {
         'fields': {
             'value':                  ('VAL', 'value'),
 #            'high_opr':               ('HOPR', 'high opr'),
-#            'low_opr':                ('LOPR', 'low opr'), 
+#            'low_opr':                ('LOPR', 'low opr'),
             'name':                   ('NAME', 'PV Name'),
             'description':            ('DESC', 'Description'),
             'device_type':            ('DTYP', 'Device type'),
@@ -432,7 +432,7 @@ record_dict = {
         'fields': {
             'value':                  ('VAL', 'value'),
 #            'high_opr':               ('HOPR', 'high opr'),
-#            'low_opr':                ('LOPR', 'low opr'), 
+#            'low_opr':                ('LOPR', 'low opr'),
             'name':                   ('NAME', 'PV Name'),
             'description':            ('DESC', 'Description'),
             'device_type':            ('DTYP', 'Device type'),
@@ -457,7 +457,7 @@ record_dict = {
             'value':                  ('VAL', 'value'),
             'units':                  ('EGU',  'Engineering Units '),
             'high_opr':               ('HOPR', 'high opr'),
-            'low_opr':                ('LOPR', 'low opr'), 
+            'low_opr':                ('LOPR', 'low opr'),
             'precision':              ('PREC', 'Display Precision '),
             'name':                   ('NAME', 'PV Name'),
             'description':            ('DESC', 'Description'),
@@ -481,7 +481,7 @@ record_dict = {
             'value':                  ('VAL', 'value'),
             'units':                  ('EGU',  'Engineering Units '),
             'high_opr':               ('HOPR', 'high opr'),
-            'low_opr':                ('LOPR', 'low opr'), 
+            'low_opr':                ('LOPR', 'low opr'),
             'precision':              ('PREC', 'Display Precision '),
             'name':                   ('NAME', 'PV Name'),
             'description':            ('DESC', 'Description'),
@@ -515,7 +515,7 @@ record_dict = {
             'value':                  ('VAL', 'value'),
             'units':                  ('EGU',  'Engineering Units '),
             'high_opr':               ('HOPR', 'high opr'),
-            'low_opr':                ('LOPR', 'low opr'), 
+            'low_opr':                ('LOPR', 'low opr'),
             'precision':              ('PREC', 'Display Precision '),
             'name':                   ('NAME', 'PV Name'),
             'description':            ('DESC', 'Description'),
@@ -583,7 +583,7 @@ record_dict = {
             'value':                  ('VAL', 'value'),
             'units':                  ('EGU',  'Engineering Units '),
             'high_opr':               ('HOPR', 'high opr'),
-            'low_opr':                ('LOPR', 'low opr'), 
+            'low_opr':                ('LOPR', 'low opr'),
             'precision':              ('PREC', 'Display Precision '),
             'name':                   ('NAME', 'PV Name'),
             'description':            ('DESC', 'Description'),
@@ -705,7 +705,7 @@ record_dict = {
             },
         'init':  ['NAME', 'DESC', 'RTYP', 'XENG', 'BANG', 'KRST', 'S110', 'S100', \
                   'EMIN', 'EMAX', 'XVUM', 'ISOUT'],
-        'config': ['DESC', 'XENG', 'BANG', 'KRST', 'S110', 'S100', 
+        'config': ['DESC', 'XENG', 'BANG', 'KRST', 'S110', 'S100',
                    'EMIN', 'EMAX', 'XVUM', 'ISOUT']
         },
     'default': {
