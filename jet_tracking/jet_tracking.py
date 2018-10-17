@@ -15,13 +15,18 @@ Methods used for jet tracking:
 [7. Update state as needed]
 '''
 
+from . import cam_utils
+from .move_motor import movex
+from time import sleep
+
+
 class JetControl:
     '''
     Jet tracking control class using jet_tracking methods
     '''
-    def __init__(self, name, 
-            injector, camera, params, 
-            #camera_offaxis=None, 
+    def __init__(self, name,
+            injector, camera, params,
+            #camera_offaxis=None,
             **kwargs):
 
         self.injector = injector
@@ -53,8 +58,8 @@ class JetControl:
         Track the sample jet and calculate the distance to the x-ray beam
         '''
         jet_calculate(self.camera, self.params)
-       
-    
+
+
     def jet_move(self):
         '''
         Move the sample jet to the x-ray beam
@@ -110,7 +115,7 @@ def set_beam(beamX_px, beamY_px, params):
 
 def calibrate(injector, camera, params):
     '''
-    Calibrate the camera 
+    Calibrate the camera
 
     Parameters
     ----------
@@ -121,8 +126,6 @@ def calibrate(injector, camera, params):
     params : Parameters
         EPICS PVs used for recording jet tracking data
     '''
-    from time import sleep
-    from cxi import cam_utils
 
     # find jet in camera ROI
     ROI_image = get_burst_avg(20, camera.ROI_image)
@@ -144,13 +147,13 @@ def calibrate(injector, camera, params):
     cam_roll, pxsize = cam_utils.get_cam_roll_pxsize(imgs, positions)
     params.pxsize.put(pxsize)
     params.cam_roll.put(cam_roll)
-    
+
     beamX_px = params.beam_x_px.get()
     beamY_px = params.beam_y_px.get()
     camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px, params)
     params.cam_x.put(camX)
     params.cam_y.put(camY)
-    
+
     jet_roll = cam_utils.get_jet_roll(theta, params)
     params.jet_roll.put(jet_roll)
 
@@ -168,8 +171,6 @@ def jet_calculate(camera, params):
     params : Parameters
         EPICS PVs used for recording jet tracking data
     '''
-    from cxi import cam_utils
-    
     # track jet position
     print('Running...')
     while True:
@@ -209,8 +210,6 @@ def jet_move(injector, camera, params):
     params : Parameters
         EPICS PVs used for recording jet tracking data
     '''
-    from time import sleep
-    from cxi.move_motor import movex
 
     while True:
         try:
@@ -229,7 +228,7 @@ def jet_move(injector, camera, params):
             #     [use [y] for jet tracking]
             # else if params.state == [some other state]:
             #     [revert to manual injector controls]
-            # etc...            
+            # etc...
 
             # if jet is clear in image:
             #     if jetX != beamX:

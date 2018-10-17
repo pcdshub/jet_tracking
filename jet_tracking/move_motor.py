@@ -1,6 +1,6 @@
 def movex(motor, dist):
     """Moves motor a certain distance in the x-direction
-    
+
     Parameters
     ----------
     motor : EpicsSignal
@@ -13,7 +13,7 @@ def movex(motor, dist):
 
 def pi_moving_test_script(motor, cam, params, im0 = None, min_shift = 1):
     """Moves the motor back to original position when shift is large enough
-    
+
     Parameters
     ----------
     motor : EpicsSignal
@@ -26,13 +26,13 @@ def pi_moving_test_script(motor, cam, params, im0 = None, min_shift = 1):
         Camera image at the beginning
     min_shift : float
         Minimum shift in mm to trigger motor movement
-    
+
     """
-    from cxi.cam_utils import get_nozzle_shift
+    from .cam_utils import get_nozzle_shift
 
     pxsize = params['pxsize']
     cam_roll = params['cam_roll']
-    
+
     if not im0:
         im0 = cam.image.image
     while True:
