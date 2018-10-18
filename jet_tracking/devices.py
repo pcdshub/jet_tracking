@@ -930,35 +930,18 @@ class Control(Device):
     Contains EPICS PVs used for jet tracking control
     '''
 
-    re_state = FCpt(EpicsSignal, '{self._re_state}')
-    beam_state = FCpt(EpicsSignal, '{self._beam_state}')
-    injector_state = FCpt(EpicsSignal, '{self._injector_state}')
-    beam_trans = FCpt(EpicsSignal, '{self._beam_trans}')
-    beam_pulse_energy = FCpt(EpicsSignal, '{self._beam_pulse_energy}')
-    beam_e_thresh = FCpt(EpicsSignal, '{self._beam_e_thresh}')
-    xstep_size = FCpt(EpicsSignal, '{self._xstep_size}')
-    xscan_min = FCpt(EpicsSignal, '{self._xscan_min}')
-    xscan_max = FCpt(EpicsSignal, '{self._xscan_max}')
-    bounce_width = FCpt(EpicsSignal, '{self._bounce_width}')
-    xmin = FCpt(EpicsSignal, '{self._xmin}')
-    xmax = FCpt(EpicsSignal, '{self._xmax}')
-
-    def __init__(self, prefix, name, **kwargs):
-
-        self._re_state = f'{prefix}:RE:STATE'
-        self._beam_state = f'{prefix}:BEAM:STATE'
-        self._injector_state = f'{prefix}:INJECTOR:STATE'
-        self._beam_trans = f'{prefix}:BEAM:TRANS'
-        self._beam_pulse_energy = f'{prefix}:BEAM:PULSE_ENERGY'
-        self._beam_e_thresh = f'{prefix}:BEAM:E_THRESH'
-        self._xstep_size = f'{prefix}:INJECTOR:XSTEP_SIZE'
-        self._xscan_min = f'{prefix}:INJECTOR:XSCAN_MIN'
-        self._xscan_max = f'{prefix}:INJECTOR:XSCAN_MAX'
-        self._bounce_width = f'{prefix}:INJECTOR:BOUNCE_WIDTH'
-        self._xmin = f'{prefix}:INJECTOR:XMIN'
-        self._xmax = f'{prefix}:INJECTOR:XMAX'
-
-        super().__init__(name=name, **kwargs)
+    re_state = Cpt(EpicsSignal, ':RE:STATE')
+    beam_state = Cpt(EpicsSignal, ':BEAM:STATE')
+    injector_state = Cpt(EpicsSignal, ':INJECTOR:STATE')
+    beam_trans = Cpt(EpicsSignal, ':BEAM:TRANS')
+    beam_pulse_energy = Cpt(EpicsSignal, ':BEAM:PULSE_ENERGY')
+    beam_e_thresh = Cpt(EpicsSignal, ':BEAM:E_THRESH')
+    xstep_size = Cpt(EpicsSignal, ':INJECTOR:XSTEP_SIZE')
+    xscan_min = Cpt(EpicsSignal, ':INJECTOR:XSCAN_MIN')
+    xscan_max = Cpt(EpicsSignal, ':INJECTOR:XSCAN_MAX')
+    bounce_width = Cpt(EpicsSignal, ':INJECTOR:BOUNCE_WIDTH')
+    xmin = Cpt(EpicsSignal, ':INJECTOR:XMIN')
+    xmax = Cpt(EpicsSignal, ':INJECTOR:XMAX')
 
     @property
     def _descriptions(self):
