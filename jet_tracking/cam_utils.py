@@ -265,7 +265,7 @@ def get_cam_pitch(imgs):
     '''
     ytot = 0
     ztot = 0
-    for i in range(len(positions)-1):
+    for i in range(len(imgs)-1):
         im1 = imgs[i]
         im2 = imgs[i+1]
         shift, error, diffphase = register_translation(im1, im2, 100)
@@ -277,7 +277,7 @@ def get_cam_pitch(imgs):
         ytot += dy
         ztot += dz
 
-    cam_pitch = np.arctan(ytot/xtot)
+    cam_pitch = np.arctan(ytot/ztot)
     return cam_pitch
 
 
@@ -296,7 +296,7 @@ def get_cam_roll(imgs):
     '''
     ytot = 0
     xtot = 0
-    for i in range(len(positions)-1):
+    for i in range(len(imgs)-1):
         im1 = imgs[i]
         im2 = imgs[i+1]
         shift, error, diffphase = register_translation(im1, im2, 100)
