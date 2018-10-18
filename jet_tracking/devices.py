@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ophyd.device import Device, FormattedComponent as FCpt
+from ophyd.device import Device, FormattedComponent as FCpt, Component as Cpt
 from ophyd.signal import EpicsSignal
 from ophyd.areadetector.plugins import ROIPlugin, StatsPlugin, ImagePlugin
 
@@ -1064,179 +1064,59 @@ class Diffract(Device):
     '''
     Contains EPICS PVs used for shared memory X-ray Diffraction detector
     used in jet trakcing.
-
-    Attributes
-    ----------
-    model_adu : EpicsSignal
-        Total detector model ADU
-    model_adu_err : EpicsSignal
-        Total detector model ADU error estimate
-    model_intensity : EpicsSignal
-        Diffraction model intensity waveform
-    model_intensity_err : EpicsSignal
-        Diffraction model intensity waveform
-    model_xaxis : EpicsSignal
-        Diffraction model xaxis waveform
-    psd_amplitude : EpicsSignal
-        Diffraction periodogram Frequency analysis amplitude
-    psd_amp_array : EpicsSignal
-        Diffraction periodogram Frequency analysis amplitude array
-    psd_amp_wf : EpicsSignal
-        Diffraction periodogram Frequency analysis waveform array
-    psd_counter : EpicsSignal
-        Diffraction periodogram event counter
-    psd_events : EpicsSignal
-        Diffraction periodogram
-    psd_frequency : EpicsSignal
-        Diffraction periodogram fundamental frequency
-    psd_freq_min : EpicsSignal
-        Minimum frequency for periodogram calcs
-    psd_freq_wf : EpicsSignal
-        Diffraction periodogram frequency waveform
-    psd_rate : EpicsSignal
-        Event frequency for periodogram
-    psd_resolution : EpicsSignal
-        Resultion to smooth over for periodogra
-    psd_reprate : EpicsSignal
-        Diffraction periodogram event counter
-    ring_adu : EpicsSignal
-        Ring ADU
-    ring_adu_err : EpicsSignal
-        Ring ADU error estimate
-    ring_counter : EpicsSignal
-        Diffraction ring intensity event counte
-    ring_intensity : EpicsSignal
-        Intensity of diffraction ring
-    ring_intensity_err : EpicsSignal
-        Error in intensity of diffraction ring
-    ring_radius : EpicsSignal
-        Radius of diffraction ring
-    ring_radius_err : EpicsSignal
-        Error in Radius of diffraction ring
-    ring_reprate : EpicsSignal
-        Diffraction ring intensity event counte
-    ring_width : EpicsSignal
-        Width of diffraction ring
-    ring_width_err : EpicsSignal
-        Width error estimate of diffraction rin
-    state : EpicsSignal
-        State of diffraction analysis
-    stats_counter : EpicsSignal
-        Diffraction stats event counter
-    stats_max : EpicsSignal
-        Max Diffraction Statistic
-    stats_mean : EpicsSignal
-        Mean Diffraction Statistic
-    stats_min : EpicsSignal
-        Min Diffraction Statistic
-    stats_reprate : EpicsSignal
-        Diffraction stats event counter
-    stats_std : EpicsSignal
-        Std Diffraction Statistic
-    streak_calc_rate : EpicsSignal
-        Rate of streak calculation
-    streak_counter : EpicsSignal
-        Diffraction streak event counter
-    streak_fraction : EpicsSignal
-        Fraction of events with diffraction streak
-    streak_intensity : EpicsSignal
-        Intensity of diffraction streak
-    streak_intensity_err : EpicsSignal
-        Error in Intensity of diffraction streak
-    streak_phi : EpicsSignal
-        Angle of diffraction streak
-    streak_phi_err : EpicsSignal
-        Error in Angle of diffraction streak
-    streak_reprate : EpicsSignal
-        Diffraction streak event counter
-    streak_width : EpicsSignal
-        Width of diffraction streak
-    streak_width_err : EpicsSignal
-        Error in Width of diffraction streak
-    streak_x : EpicsSignal
-        Event X origin of diffraction streak
-    streak_x_err : EpicsSignal
-        Error in Event X origin of diffraction streak
-    streak_y : EpicsSignal
-        Event Y origin of diffraction streak
-    streak_y_err : EpicsSignal
-        Error in Event Y origin of diffraction streak
-    total_adu : EpicsSignal
-        Total detector ADU
-    total_adu_err : EpicsSignal
-        Total detector ADU error estimate
-    total_counter : EpicsSignal
-        Total counter
-    total_reprate : EpicsSignal
-        Diffraction total intensity calc rate
-    x0 : EpicsSignal
-        Nominal X origin of diffraction
-    x0_err : EpicsSignal
-        Error in Nominal X origin of diffraction
-    y0 : EpicsSignal
-        Nominal Y origin of diffraction
-    y0_err : EpicsSignal
-        Error in Nominal Y origin of diffraction
-
     '''
-
-    total_counter = FCpt(EpicsSignal, '{self._total_counter}')
-    total_reprate = FCpt(EpicsSignal, '{self._total_reprate}')
-    ring_counter = FCpt(EpicsSignal, '{self._ring_counter}')
-    ring_reprate = FCpt(EpicsSignal, '{self._ring_reprate}')
-    psd_counter = FCpt(EpicsSignal, '{self._psd_counter}')
-    psd_reprate = FCpt(EpicsSignal, '{self._psd_reprate}')
-    stats_counter = FCpt(EpicsSignal, '{self._stats_counter}')
-    stats_reprate = FCpt(EpicsSignal, '{self._stats_reprate}')
-    streak_counter = FCpt(EpicsSignal, '{self._streak_counter}')
-    streak_reprate = FCpt(EpicsSignal, '{self._streak_reprate}')
-    cspad_sum = FCpt(EpicsSignal, '{self._cspad_sum}')
-    streak_fraction = FCpt(EpicsSignal, '{self._streak_fraction}')
-    stats_mean = FCpt(EpicsSignal, '{self._stats_mean}')
-    stats_std = FCpt(EpicsSignal, '{self._stats_std}')
-    stats_min = FCpt(EpicsSignal, '{self._stats_min}')
-    stats_max = FCpt(EpicsSignal, '{self._stats_max}')
-    psd_frequency = FCpt(EpicsSignal, '{self._psd_frequency}')
-    psd_amplitude = FCpt(EpicsSignal, '{self._psd_amplitude}')
-    psd_rate = FCpt(EpicsSignal, '{self._psd_rate}')
-    psd_events = FCpt(EpicsSignal, '{self._psd_events}')
-    psd_resolution = FCpt(EpicsSignal, '{self._psd_resolution}')
-    psd_freq_min = FCpt(EpicsSignal, '{self._psd_freq_min}')
-    psd_amp_wf = FCpt(EpicsSignal, '{self._psd_amp_wf}')
-    psd_freq_wf = FCpt(EpicsSignal, '{self._psd_freq_wf}')
-    psd_amp_array = FCpt(EpicsSignal, '{self._psd_amp_array}')
-    state = FCpt(EpicsSignal, '{self._state}')
-
-    def __init__(self, prefix, name, **kwargs):
-
-        self._total_counter = f'{prefix}:TOTAL_Counter'
-        self._total_reprate = f'{prefix}:TOTAL_RepRate'
-        self._ring_counter = f'{prefix}:RING_Counter'
-        self._ring_reprate = f'{prefix}:RING_RepRate'
-        self._psd_counter = f'{prefix}:PSD_Counter'
-        self._psd_reprate = f'{prefix}:PSD_RepRate'
-        self._stats_counter = f'{prefix}:STATS_Counter'
-        self._stats_reprate = f'{prefix}:STATS_RepRate'
-        self._streak_counter = f'{prefix}:STREAK_Counter'
-        self._streak_reprate = f'{prefix}:STREAK_RepRate'
-        self._cspad_sum = f'{prefix}:TOTAL_ADU'
-        self._streak_fraction = f'{prefix}:STREAK_FRACTION'
-        self._stats_mean = f'{prefix}:STATS_MEAN'
-        self._stats_std = f'{prefix}:STATS_STD'
-        self._stats_min = f'{prefix}:STATS_MIN'
-        self._stats_max = f'{prefix}:STATS_MAX'
-        self._psd_frequency = f'{prefix}:PSD_FREQUENCY'
-        self._psd_amplitude = f'{prefix}:PSD_AMPLITUDE'
-        self._psd_rate = f'{prefix}:PSD_RATE'
-        self._psd_events = f'{prefix}:PSD_EVENTS'
-        self._psd_resolution = f'{prefix}:PSD_RESOLUTION'
-        self._psd_freq_min = f'{prefix}:PSD_FREQ_MIN'
-        self._psd_freq_wf = f'{prefix}:PSD_FREQ_WF'
-        self._psd_amp_wf = f'{prefix}:PSD_AMP_WF'
-        self._psd_amp_array = f'{prefix}:PSD_AMP_ARRAY'
-        self._state = f'{prefix}:STATE'
-
-        super().__init__(name=name, **kwargs)
+    total_counter = Cpt(EpicsSignal, ':TOTAL_Counter',
+                        doc='Total counter')
+    total_reprate = Cpt(EpicsSignal, ':TOTAL_RepRate',
+                        doc='Diffraction total intensity calc rate')
+    ring_counter = Cpt(EpicsSignal, ':RING_Counter',
+                       doc='Diffraction ring intensity event counter')
+    ring_reprate = Cpt(EpicsSignal, ':RING_RepRate',
+                       doc='Diffraction ring intensity event counter')
+    psd_counter = Cpt(EpicsSignal, ':PSD_Counter',
+                      doc='Diffraction periodogram event counter')
+    psd_reprate = Cpt(EpicsSignal, ':PSD_RepRate',
+                      doc='Diffraction periodogram event counter')
+    stats_counter = Cpt(EpicsSignal, ':STATS_Counter',
+                        doc='Diffraction stats event counter')
+    stats_reprate = Cpt(EpicsSignal, ':STATS_RepRate',
+                        doc='Diffraction stats event counter')
+    streak_counter = Cpt(EpicsSignal, ':STREAK_Counter',
+                         doc='Diffraction streak event counter')
+    streak_reprate = Cpt(EpicsSignal, ':STREAK_RepRate',
+                         doc='Diffraction streak event counter')
+    cspad_sum = Cpt(EpicsSignal, ':TOTAL_ADU',
+                    doc='Total detector ADU')
+    streak_fraction = Cpt(EpicsSignal, ':STREAK_FRACTION',
+                          doc='Fraction of events with diffraction streak')
+    stats_mean = Cpt(EpicsSignal, ':STATS_MEAN',
+                     doc='Mean Diffraction Statistic')
+    stats_std = Cpt(EpicsSignal, ':STATS_STD',
+                    doc='Std Diffraction Statistic')
+    stats_min = Cpt(EpicsSignal, ':STATS_MIN',
+                    doc='Min Diffraction Statistic')
+    stats_max = Cpt(EpicsSignal, ':STATS_MAX',
+                    doc='Max Diffraction Statistic')
+    psd_frequency = Cpt(EpicsSignal, ':PSD_FREQUENCY',
+                        doc='Diffraction periodogram fundamental frequency')
+    psd_amplitude = Cpt(EpicsSignal, ':PSD_AMPLITUDE',
+                        doc='Diffraction periodogram Frequency analysis amplitude')
+    psd_rate = Cpt(EpicsSignal, ':PSD_RATE',
+                   doc='Event frequency for periodogram')
+    psd_events = Cpt(EpicsSignal, ':PSD_EVENTS',
+                     doc='Diffraction periodogram')
+    psd_resolution = Cpt(EpicsSignal, ':PSD_RESOLUTION',
+                         doc='Resultion to smooth over for periodogra')
+    psd_freq_min = Cpt(EpicsSignal, ':PSD_FREQ_MIN',
+                       doc='Minimum frequency for periodogram calcs')
+    psd_amp_wf = Cpt(EpicsSignal, ':PSD_AMP_WF',
+                     doc='Diffraction periodogram Frequency analysis waveform array')
+    psd_freq_wf = Cpt(EpicsSignal, ':PSD_FREQ_WF',
+                      doc='Diffraction periodogram frequency waveform')
+    psd_amp_array = Cpt(EpicsSignal, ':PSD_AMP_ARRAY',
+                        doc='Diffraction periodogram Frequency analysis amplitude array')
+    state = Cpt(EpicsSignal, ':STATE',
+                doc='State of diffraction analysis')
 
     @property
     def _descriptions(self):
