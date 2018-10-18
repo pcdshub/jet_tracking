@@ -745,30 +745,25 @@ class Offaxis(PCDSDetector):
         Stats on ROI of original rate image
     '''
 
-    ROI = FCpt(ROIPlugin, '{self._ROI_port}')
-    ROI_stats = FCpt(StatsPlugin, '{self._ROI_stats_port}')
-    ROI_image = FCpt(ImagePlugin, '{self._ROI_image_port}')
+    ROI = FCpt(ROIPlugin, '{self.prefix}:{self._ROI_port}')
+    ROI_stats = FCpt(StatsPlugin, '{self.prefix}:{self._ROI_stats_port}')
+    ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}')
 
     def __init__(self, ROI_port,
                        ROI_stats_port,
                        ROI_image_port,
                        prefix, *args, **kwargs):
-
-
-        self._ROI_port = f'{prefix}:{ROI_port}:'
-        self._ROI_stats_port = f'{prefix}:{ROI_stats_port}:'
-        self._ROI_image_port = f'{prefix}:{ROI_image_port}:'
+        self._ROI_port = ROI_port
+        self._ROI_stats_port = ROI_stats_port
+        self._ROI_image_port = ROI_image_port
 
         super().__init__(prefix, *args, **kwargs)
 
         self.ROI_stats.nd_array_port.put(ROI_port)
         self.ROI_image.nd_array_port.put(ROI_port)
-
-
         self.ROI.enable.put('Enabled')
         self.ROI_stats.enable.put('Enabled')
         self.ROI_image.enable.put('Enabled')
-
 
 
 class Questar(PCDSDetector):
@@ -810,8 +805,6 @@ class Questar(PCDSDetector):
 
         self.ROI_stats.nd_array_port.put(ROI_port)
         self.ROI_image.nd_array_port.put(ROI_port)
-
-
         self.ROI.enable.put('Enabled')
         self.ROI_stats.enable.put('Enabled')
         self.ROI_image.enable.put('Enabled')
