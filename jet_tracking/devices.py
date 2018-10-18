@@ -820,80 +820,43 @@ class Questar(PCDSDetector):
 class Parameters(Device):
     '''
     Contains EPICS PVs used for jet tracking
-
-    Attributes
-    ----------
-    cam_x : EpicsSignal
-        x-coordinate of camera position in mm
-    cam_y : EpicsSignal
-        y-coordinate of camera position in mm
-    pxsize : EpicsSignal
-        size of pixel in mm
-    cam_roll : EpicsSignal
-        rotation of camera about z axis in radians
-    beam_x : EpicsSignal
-        x-coordinate of x-ray beam in mm (usually 0)
-    beam_y : EpicsSignal
-        y-coordinate of x-ray beam in mm (usually 0)
-    beam_x_px : EpicsSignal
-        x-coordinate of x-ray beam in camera image in pixels
-    beam_y_px : EpicsSignal
-        y-coordinate of x-ray beam in camera image in pixels
-    nozzle_x : EpicsSignal
-        x-coordinate of nozzle in mm
-    nozzle_y : EpicsSignal
-        y-coordinate of nozzle in mm
-    nozzle_xwidth : EpicsSignal
-        width of nozzle in mm
-    jet_x : EpicsSignal
-        distance from sample jet to x-ray beam in mm
-    jet_roll : EpicsSignal
-        rotation of sample jet about z axis in radians
-    state : EpicsSignal
-        dictionary of strings
     '''
-
-    cam_x = FCpt(EpicsSignal, '{self._cam_x}')
-    cam_y = FCpt(EpicsSignal, '{self._cam_y}')
-    pxsize = FCpt(EpicsSignal, '{self._pxsize}')
-    cam_roll = FCpt(EpicsSignal, '{self._cam_roll}')
-    beam_x = FCpt(EpicsSignal, '{self._beam_x}')
-    beam_y = FCpt(EpicsSignal, '{self._beam_y}')
-    beam_x_px = FCpt(EpicsSignal, '{self._beam_x_px}')
-    beam_y_px = FCpt(EpicsSignal, '{self._beam_y_px}')
-    nozzle_x = FCpt(EpicsSignal, '{self._nozzle_x}')
-    nozzle_y = FCpt(EpicsSignal, '{self._nozzle_y}')
-    nozzle_xwidth = FCpt(EpicsSignal, '{self._nozzle_xwidth}')
-    jet_x = FCpt(EpicsSignal, '{self._jet_x}')
-    jet_roll = FCpt(EpicsSignal, '{self._jet_roll}')
-    state = FCpt(EpicsSignal, '{self._state}')
-    jet_counter = FCpt(EpicsSignal, '{self._jet_counter}')
-    jet_reprate = FCpt(EpicsSignal, '{self._jet_reprate}')
-    nozzle_counter = FCpt(EpicsSignal, '{self._nozzle_counter}')
-    nozzle_reprate = FCpt(EpicsSignal, '{self._nozzle_reprate}')
-
-    def __init__(self, prefix, name, **kwargs):
-
-        self._cam_x = f'{prefix}:CAM_X'
-        self._cam_y = f'{prefix}:CAM_Y'
-        self._pxsize = f'{prefix}:PXSIZE'
-        self._cam_roll = f'{prefix}:CAM_ROLL'
-        self._beam_x = f'{prefix}:BEAM_X'
-        self._beam_y = f'{prefix}:BEAM_Y'
-        self._beam_x_px = f'{prefix}:BEAM_X_PX'
-        self._beam_y_px = f'{prefix}:BEAM_Y_PX'
-        self._nozzle_x = f'{prefix}:NOZZLE_X'
-        self._nozzle_y = f'{prefix}:NOZZLE_Y'
-        self._nozzle_xwidth = f'{prefix}:NOZZLE_XWIDTH'
-        self._jet_x = f'{prefix}:JET_X'
-        self._jet_roll = f'{prefix}:JET_ROLL'
-        self._state = f'{prefix}:STATE'
-        self._jet_counter = f'{prefix}:JET_Counter'
-        self._jet_reprate = f'{prefix}:JET_RepRate'
-        self._nozzle_counter = f'{prefix}:NOZZLE_Counter'
-        self._nozzle_reprate = f'{prefix}:NOZZLE_RepRate'
-
-        super().__init__(name=name, **kwargs)
+    cam_x = Cpt(EpicsSignal, ':CAM_X',
+                 doc='x-coordinate of camera position in mm')
+    cam_y = Cpt(EpicsSignal, ':CAM_Y',
+                 doc='y-coordinate of camera position in mm')
+    pxsize = Cpt(EpicsSignal, ':PXSIZE',
+                 doc='size of pixel in mm')
+    cam_roll = Cpt(EpicsSignal, ':CAM_ROLL',
+                 doc='rotation of camera about z axis in radians')
+    beam_x = Cpt(EpicsSignal, ':BEAM_X',
+                 doc='x-coordinate of x-ray beam in mm (usually 0)')
+    beam_y = Cpt(EpicsSignal, ':BEAM_Y',
+                 doc='y-coordinate of x-ray beam in mm (usually 0)')
+    beam_x_px = Cpt(EpicsSignal, ':BEAM_X_PX',
+                 doc='x-coordinate of x-ray beam in camera image in pixels')
+    beam_y_px = Cpt(EpicsSignal, ':BEAM_Y_PX',
+                 doc='y-coordinate of x-ray beam in camera image in pixels')
+    nozzle_x = Cpt(EpicsSignal, ':NOZZLE_X',
+                 doc='x-coordinate of nozzle in mm')
+    nozzle_y = Cpt(EpicsSignal, ':NOZZLE_Y',
+                 doc='y-coordinate of nozzle in mm')
+    nozzle_xwidth = Cpt(EpicsSignal, ':NOZZLE_XWIDTH',
+                 doc='width of nozzle in mm')
+    jet_x = Cpt(EpicsSignal, ':JET_X',
+                 doc='distance from sample jet to x-ray beam in mm')
+    jet_roll = Cpt(EpicsSignal, ':JET_ROLL',
+                 doc='rotation of sample jet about z axis in radians')
+    state = Cpt(EpicsSignal, ':STATE',
+                 doc='dictionary of strings')
+    jet_counter = Cpt(EpicsSignal, ':JET_Counter',
+                 doc='Jet counter')
+    jet_reprate = Cpt(EpicsSignal, ':JET_RepRate',
+                 doc='Jet repetition rate')
+    nozzle_counter = Cpt(EpicsSignal, ':NOZZLE_Counter',
+                 doc='Nozzle counter')
+    nozzle_reprate = Cpt(EpicsSignal, ':NOZZLE_RepRate',
+                 doc='Nozzle repetition rate')
 
     @property
     def _descriptions(self):
@@ -918,7 +881,6 @@ class Parameters(Device):
                     }
 
         return pd.DataFrame(atable).T[attrs]
-
 
 
 class OffaxisParams(Device):
@@ -1141,5 +1103,3 @@ class Diffract(Device):
                     }
 
         return pd.DataFrame(atable).T[attrs]
-
-
