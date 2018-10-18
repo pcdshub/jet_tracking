@@ -10,6 +10,13 @@ get_cam_roll(imgs)
 get_cam_roll_pxsize(imgs, positions)
 '''
 
+import numpy as np
+import cv2
+
+from scipy.signal import peak_widths
+from skimage.feature import register_translation
+
+
 def jet_detect(img):
     '''Finds the jet from the online camera roi using HoughLines
 
@@ -25,15 +32,13 @@ def jet_detect(img):
     theta : float
         Angle of the shortest vector from (0,0) to the line in radians
     '''
-    import numpy as np
-    import cv2
     c = 0
     while True:
         try:
             binary = (img/(img.mean()+2*img.std()*0.90**c)).astype(np.uint8)
             lines = cv2.HoughLines(binary,1,np.pi/720,30)
             rho, theta = lines[0][0]
-        except:
+        except Exception:
             c+=1
             continue
         break
@@ -63,8 +68,6 @@ def get_jet_z(rho, theta, roi_y, roi_z, params):
     zj : float
         Jet position at the beam height in millimeters
     '''
-    import numpy as np
-
     pxsize = params.pxsize.get()
     cam_y = params.cam_y.get()
     cam_z = params.cam_z.get()
@@ -78,8 +81,7 @@ def get_jet_z(rho, theta, roi_y, roi_z, params):
     # print('zj_roi: {}'.format(zj_roi))
     z0_roi = (1.0/pxsize) * (cam_z*np.cos(cam_pitch)-cam_y*np.sin(-cam_pitch)) - roi_z
     zj = pxsize * (z0_roi-zj_roi)
-
-    return xj
+    return zj
 
 
 def get_jet_x(rho, theta, roi_x, roi_y, params):
@@ -103,8 +105,6 @@ def get_jet_x(rho, theta, roi_x, roi_y, params):
     xj : float
         Jet position at the beam height in millimeters
     '''
-    import numpy as np
-
     pxsize = params.pxsize.get()
     cam_x = params.cam_x.get()
     cam_y = params.cam_y.get()
@@ -118,7 +118,6 @@ def get_jet_x(rho, theta, roi_x, roi_y, params):
     # print('xj_roi: {}'.format(xj_roi))
     x0_roi = (1.0/pxsize) * (cam_x*np.cos(cam_roll)-cam_y*np.sin(cam_roll)) - roi_x
     xj = pxsize * (x0_roi-xj_roi)
-
     return xj
 
 
@@ -137,7 +136,6 @@ def get_jet_pitch(theta, params):
     jet_pitch : float
         Jet angle in radians
     '''
-    import numpy as np
 
     cam_pitch = params.cam_pitch.get()
 
@@ -160,8 +158,6 @@ def get_jet_roll(theta, params):
     jet_roll : float
         Jet angle in radians
     '''
-    import numpy as np
-
     cam_roll = params.cam_roll.get()
 
     jet_roll = (theta - np.pi/2 - cam_roll) % np.pi - np.pi/2
@@ -185,9 +181,6 @@ def get_jet_width(im, rho, theta):
     w : float
         Jet width in pixels
     '''
-    import numpy as np
-    from scipy.signal import peak_widths
-
     rows, column_indices = np.ogrid[:im.shape[0], :im.shape[1]]
     r = np.asarray([int((rho + y*np.sin(theta))/np.cos(theta)) for y in range(im.shape[0])])
     r = r%im.shape[1]
@@ -219,8 +212,6 @@ def get_offaxi_coords(cam_beam_y, cam_beam_z, params):
         Z-coordinate of the origin of the camera in the main coordinate system in millimeters
 
     '''
-    import numpy as np
-
     cam_pitch = params.cam_pitch.get()
     pxsize = params.pxsize.get()
 
@@ -250,8 +241,6 @@ def get_cam_coords(cam_beam_x, cam_beam_y, params):
         Y-coordinate of the origin of the camera in the main coordinate system in millimeters
 
     '''
-    import numpy as np
-
     cam_roll = params.cam_roll.get()
     pxsize = params.pxsize.get()
 
@@ -274,12 +263,9 @@ def get_cam_pitch(imgs):
     cam_pitch : float
         Offaxis camera pitch angle in radians
     '''
-    import numpy as np
-    from skimage.feature import register_translation
-
     ytot = 0
     ztot = 0
-    for i in range(len(positions)-1):
+    for i in range(len(imgs)-1):
         im1 = imgs[i]
         im2 = imgs[i+1]
         shift, error, diffphase = register_translation(im1, im2, 100)
@@ -291,7 +277,7 @@ def get_cam_pitch(imgs):
         ytot += dy
         ztot += dz
 
-    cam_pitch = np.arctan(ytot/xtot)
+    cam_pitch = np.arctan(ytot/ztot)
     return cam_pitch
 
 
@@ -308,12 +294,9 @@ def get_cam_roll(imgs):
     cam_roll : float
         Camera angle in radians
     '''
-    import numpy as np
-    from skimage.feature import register_translation
-
     ytot = 0
     xtot = 0
-    for i in range(len(positions)-1):
+    for i in range(len(imgs)-1):
         im1 = imgs[i]
         im2 = imgs[i+1]
         shift, error, diffphase = register_translation(im1, im2, 100)
@@ -346,9 +329,6 @@ def get_cam_pitch_pxsize(imgs, positions):
     pxsize : float
         Pixel size in millimeters
     '''
-    import numpy as np
-    from skimage.feature import register_translation
-
     ytot = 0
     ztot = 0
     changetot = 0
@@ -388,9 +368,6 @@ def get_cam_roll_pxsize(imgs, positions):
     pxsize : float
         Pixel size in millimeters
     '''
-    import numpy as np
-    from skimage.feature import register_translation
-
     ytot = 0
     xtot = 0
     changetot = 0
@@ -432,9 +409,6 @@ def get_nozzle_shift(im1, im2, params):
     dx : float
         Distance in x
     '''
-    from skimage.feature import register_translation
-    import numpy as np
-
     pxsize = params.pxsize.get()
     cam_roll = params.cam_roll.get()
 

@@ -1,4 +1,6 @@
+import numpy as np
 from time import sleep
+
 from . import cam_utils
 from .move_motor import movex
 
@@ -67,7 +69,6 @@ def get_burst_avg(n, image_plugin):
     burst_avg : ndarray
         average image
     '''
-    import numpy as np
 
     imageX, imageY = image_plugin.image.shape
     burst_imgs = np.empty((n, imageX, imageY))
@@ -113,7 +114,6 @@ def calibrate(injector, camera, params, offaxis=False):
     offaxis : bool
         Camera is off-axis in y-z plane
     '''
-    from time import sleep
 
     # find jet in camera ROI
     ROI_image = get_burst_avg(20, camera.ROI_image)
@@ -168,7 +168,7 @@ def calibrate(injector, camera, params, offaxis=False):
     return
 
 
-def jet_calculate(camera, params, offaixs=False):
+def jet_calculate(camera, params, offaxis=False):
     '''
     Track the sample jet and calculate the distance to the x-ray beam
     NEED TO CHECK offaxis calculation sign

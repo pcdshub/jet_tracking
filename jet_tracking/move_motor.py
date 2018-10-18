@@ -1,3 +1,6 @@
+from .cam_utils import get_nozzle_shift
+
+
 def movex(motor, dist):
     """Moves motor a certain distance in the x-direction
 
@@ -10,6 +13,7 @@ def movex(motor, dist):
     """
     pos = motor.get()
     motor.put(pos + dist)
+
 
 def pi_moving_test_script(motor, cam, params, im0 = None, min_shift = 1):
     """Moves the motor back to original position when shift is large enough
@@ -28,10 +32,6 @@ def pi_moving_test_script(motor, cam, params, im0 = None, min_shift = 1):
         Minimum shift in mm to trigger motor movement
 
     """
-    from .cam_utils import get_nozzle_shift
-
-    pxsize = params['pxsize']
-    cam_roll = params['cam_roll']
 
     if not im0:
         im0 = cam.image.image
