@@ -8,7 +8,40 @@ from pcdsdevices.areadetector.detectors import PCDSDetector
 from pcdsdevices.epics_motor import IMS
 
 
-class Injector(Device):
+
+class _TableMixin:
+    _table_attrs = ('value', 'units', 'desc')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._descriptions = None
+
+    def _update_descriptions(self):
+        adesc = {}
+        for name, signal in self._signals.items():
+            adesc[name] = EpicsSignal(signal._read_pv.pvname + '.DESC').get()
+        self._descriptions = adesc
+
+    @property
+    def table(self):
+        """
+        Return table of Device settings
+        """
+        if self._descriptions is None:
+            self._update_descriptions()
+
+        atable = {}
+        for name, signal in sorted(self._signals.items()):
+            atable[name] = {
+                    'value': signal._read_pv.value,
+                    'units': signal._read_pv.units,
+                    'desc': self._descriptions.get(name),
+                    }
+
+        return pd.DataFrame(atable).T[self._table_attrs]
+
+
+class Injector(Device, _TableMixin):
     '''An Injector which consists of 3 coarse control motors and 3 fine control motors
 
        Parameters
@@ -31,8 +64,9 @@ class Injector(Device):
            The fine control motor in the Y direction
        fineZ : EpicsSignal
            The fine control motor in the Z direction
-       '''
+    '''
 
+    _table_attrs = ('value', 'velocity', 'units', 'desc')
     coarseX = FCpt(IMS, '{self._coarseX}')
     coarseY = FCpt(IMS, '{self._coarseY}')
     coarseZ = FCpt(IMS, '{self._coarseZ}')
@@ -56,35 +90,30 @@ class Injector(Device):
         super().__init__(name=name, **kwargs)
 
     @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal.prefix+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'velocity', 'units', 'desc']):
+    def table(self):
         """
         Return table of injector settings.
         """
-        adict={'value': 'user_readback', 'units': 'motor_egu'}
-        adesc = self._descriptions
+        if self._descriptions is None:
+            self._update_descriptions()
+
+        adict = {'value': 'user_readback',
+                 'units': 'motor_egu'}
         atable = {}
         for name, signal in self._signals.items():
-            sget = signal.get()
-            atable[name] = {'desc': adesc.get(name)}
-            for attr in attrs:
+            value = signal.get()
+            atable[name] = {'desc': self._descriptions.get(name)}
+            for attr in self._table_attrs:
                 field = adict.get(attr, attr)
                 try:
-                    atable[name][attr] = getattr(sget, field)
+                    atable[name][attr] = getattr(value, field)
                 except Exception:
                     pass
 
-        return pd.DataFrame(atable).T[attrs]
+        return pd.DataFrame(atable).T[self._table_attrs]
 
 
-class Selector(Device):
+class Selector(Device, _TableMixin):
     '''A Selector for the sample delivery system
 
        Parameters
@@ -180,32 +209,8 @@ class Selector(Device):
 
         super().__init__(name=name, **kwargs)
 
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
 
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
-
-
-class CoolerShaker(Device):
+class CoolerShaker(Device, _TableMixin):
     '''A Cooler/Shaker for the sample delivery system
 
        Parameters
@@ -268,33 +273,9 @@ class CoolerShaker(Device):
 
         super().__init__(name=name, **kwargs)
 
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
 
 
-
-class HPLC(Device):
+class HPLC(Device, _TableMixin):
     '''An HPLC for the sample delivery system
 
        Parameters
@@ -364,33 +345,9 @@ class HPLC(Device):
 
         super().__init__(name=name, **kwargs)
 
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
 
 
-
-class PressureController(Device):
+class PressureController(Device, _TableMixin):
     '''An Pressure Controller for the sample delivery system
 
        Parameters
@@ -453,32 +410,8 @@ class PressureController(Device):
 
         super().__init__(name=name, **kwargs)
 
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
 
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
-
-
-class FlowIntegrator(Device):
+class FlowIntegrator(Device, _TableMixin):
     '''An FlowIntegrator for the sample delivery system
 
        Parameters
@@ -661,31 +594,6 @@ class FlowIntegrator(Device):
 
         super().__init__(name=name, **kwargs)
 
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
-
-
 
 class SDS:
     '''Sample delivery system
@@ -795,8 +703,6 @@ class Questar(PCDSDetector):
                        ROI_stats_port,
                        ROI_image_port,
                        prefix, *args, **kwargs):
-
-
         self._ROI_port = ROI_port
         self._ROI_stats_port = ROI_stats_port
         self._ROI_image_port = ROI_image_port
@@ -810,7 +716,7 @@ class Questar(PCDSDetector):
         self.ROI_image.enable.put('Enabled')
 
 
-class Parameters(Device):
+class Parameters(Device, _TableMixin):
     '''
     Contains EPICS PVs used for jet tracking
     '''
@@ -850,30 +756,6 @@ class Parameters(Device):
                  doc='Nozzle counter')
     nozzle_reprate = Cpt(EpicsSignal, ':NOZZLE_RepRate',
                  doc='Nozzle repetition rate')
-
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
 
 
 class OffaxisParams(Device):
@@ -918,7 +800,7 @@ class OffaxisParams(Device):
                  doc='Nozzle repetition rate')
 
 
-class Control(Device):
+class Control(Device, _TableMixin):
     '''
     Contains EPICS PVs used for jet tracking control
     '''
@@ -936,36 +818,12 @@ class Control(Device):
     xmin = Cpt(EpicsSignal, ':INJECTOR:XMIN')
     xmax = Cpt(EpicsSignal, ':INJECTOR:XMAX')
 
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
 
 
-
-class Diffract(Device):
+class Diffract(Device, _TableMixin):
     '''
     Contains EPICS PVs used for shared memory X-ray Diffraction detector
-    used in jet trakcing.
+    used in jet tracking.
     '''
     total_counter = Cpt(EpicsSignal, ':TOTAL_Counter',
                         doc='Total counter')
@@ -1019,27 +877,3 @@ class Diffract(Device):
                         doc='Diffraction periodogram Frequency analysis amplitude array')
     state = Cpt(EpicsSignal, ':STATE',
                 doc='State of diffraction analysis')
-
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
