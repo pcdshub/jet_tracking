@@ -1,24 +1,54 @@
 language: python
-python:
-  - 3.6
-cache:
-  directories:
-    - $HOME/.cache/pip
-    - $HOME/.ccache  # https://github.com/travis-ci/travis-ci/issues/5853
+sudo: false
+
+env:
+  global:
+    - OFFICIAL_REPO="pcdshub/jet_tracking"
+
+matrix:
+  include:
+    - python: 3.6
+      env:
+         - PCDS_CHANNEL=pcds-tag
+    - python: 3.6
+      env:
+         - PCDS_CHANNEL=pcds-dev
+         - BUILD_DOCS=1
 
 install:
-  # Install the packages in requirements.txt first, to pick up the direct
-  # github links.
-  - pip install -r requirements.txt
-  # Install the jet_tracking module
-  - pip install .
-  # Install extra requirements for running tests and building docs.
-  - pip install -r requirements-dev.txt
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda install conda-build anaconda-client
+  - conda update -q conda conda-build
+  - conda config --add channels pcds-tag
+  - conda config --add channels $PCDS_CHANNEL
+  - conda config --append channels conda-forge
+  - conda info -a
+  # Test conda build
+  - conda build -q conda-recipe --python $TRAVIS_PYTHON_VERSION --output-folder bld-dir
+  - conda config --add channels "file://`pwd`/bld-dir"
+  # Create test environment
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION jet_tracking --file requirements-dev.txt
+  - source activate test-environment
 
 script:
-  - coverage run -m pytest  # Run the tests and check for test coverage.
-  - coverage report -m  # Generate test coverage report.
-  - codecov  # Upload the report to codecov.
-  # Flake8 will only be a warning for now:
-  - flake8 --max-line-length=115 || /bin/true
+  - coverage run -m pytest jet_tracking/tests
   - make -C docs html  # Build the documentation.
+  - coverage report -m
+  # Flake8 will only be a warning for now:
+  - flake8 --max-line-length=115 jet_tracking || /bin/true
+  # Build docs
+  - set -e
+  - |
+    if [[ $BUILD_DOCS ]]; then
+      pushd docs
+      make html
+      popd
+      doctr deploy . --built-docs docs/build/html --deploy-branch-name gh-pages
+    fi
+
+after_success:
+  - codecov
