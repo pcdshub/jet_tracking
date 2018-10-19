@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ophyd.device import Device, FormattedComponent as FCpt
+from ophyd.device import Device, FormattedComponent as FCpt, Component as Cpt
 from ophyd.signal import EpicsSignal
 from ophyd.areadetector.plugins import ROIPlugin, StatsPlugin, ImagePlugin
 
@@ -8,7 +8,40 @@ from pcdsdevices.areadetector.detectors import PCDSDetector
 from pcdsdevices.epics_motor import IMS
 
 
-class Injector(Device):
+
+class _TableMixin:
+    _table_attrs = ('value', 'units', 'desc')
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._descriptions = None
+
+    def _update_descriptions(self):
+        adesc = {}
+        for name, signal in self._signals.items():
+            adesc[name] = EpicsSignal(signal._read_pv.pvname + '.DESC').get()
+        self._descriptions = adesc
+
+    @property
+    def table(self):
+        """
+        Return table of Device settings
+        """
+        if self._descriptions is None:
+            self._update_descriptions()
+
+        atable = {}
+        for name, signal in sorted(self._signals.items()):
+            atable[name] = {
+                    'value': signal._read_pv.value,
+                    'units': signal._read_pv.units,
+                    'desc': self._descriptions.get(name),
+                    }
+
+        return pd.DataFrame(atable).T[self._table_attrs]
+
+
+class Injector(Device, _TableMixin):
     '''An Injector which consists of 3 coarse control motors and 3 fine control motors
 
        Parameters
@@ -31,8 +64,9 @@ class Injector(Device):
            The fine control motor in the Y direction
        fineZ : EpicsSignal
            The fine control motor in the Z direction
-       '''
+    '''
 
+    _table_attrs = ('value', 'velocity', 'units', 'desc')
     coarseX = FCpt(IMS, '{self._coarseX}')
     coarseY = FCpt(IMS, '{self._coarseY}')
     coarseZ = FCpt(IMS, '{self._coarseZ}')
@@ -56,35 +90,30 @@ class Injector(Device):
         super().__init__(name=name, **kwargs)
 
     @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal.prefix+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'velocity', 'units', 'desc']):
+    def table(self):
         """
         Return table of injector settings.
         """
-        adict={'value': 'user_readback', 'units': 'motor_egu'}
-        adesc = self._descriptions
+        if self._descriptions is None:
+            self._update_descriptions()
+
+        adict = {'value': 'user_readback',
+                 'units': 'motor_egu'}
         atable = {}
         for name, signal in self._signals.items():
-            sget = signal.get()
-            atable[name] = {'desc': adesc.get(name)}
-            for attr in attrs:
+            value = signal.get()
+            atable[name] = {'desc': self._descriptions.get(name)}
+            for attr in self._table_attrs:
                 field = adict.get(attr, attr)
                 try:
-                    atable[name][attr] = getattr(sget, field)
+                    atable[name][attr] = getattr(value, field)
                 except Exception:
                     pass
 
-        return pd.DataFrame(atable).T[attrs]
+        return pd.DataFrame(atable).T[self._table_attrs]
 
 
-class Selector(Device):
+class Selector(Device, _TableMixin):
     '''A Selector for the sample delivery system
 
        Parameters
@@ -180,32 +209,8 @@ class Selector(Device):
 
         super().__init__(name=name, **kwargs)
 
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
 
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
-
-
-class CoolerShaker(Device):
+class CoolerShaker(Device, _TableMixin):
     '''A Cooler/Shaker for the sample delivery system
 
        Parameters
@@ -268,33 +273,9 @@ class CoolerShaker(Device):
 
         super().__init__(name=name, **kwargs)
 
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
 
 
-
-class HPLC(Device):
+class HPLC(Device, _TableMixin):
     '''An HPLC for the sample delivery system
 
        Parameters
@@ -364,33 +345,9 @@ class HPLC(Device):
 
         super().__init__(name=name, **kwargs)
 
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
 
 
-
-class PressureController(Device):
+class PressureController(Device, _TableMixin):
     '''An Pressure Controller for the sample delivery system
 
        Parameters
@@ -453,32 +410,8 @@ class PressureController(Device):
 
         super().__init__(name=name, **kwargs)
 
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
 
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
-
-
-class FlowIntegrator(Device):
+class FlowIntegrator(Device, _TableMixin):
     '''An FlowIntegrator for the sample delivery system
 
        Parameters
@@ -661,31 +594,6 @@ class FlowIntegrator(Device):
 
         super().__init__(name=name, **kwargs)
 
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
-
-
 
 class SDS:
     '''Sample delivery system
@@ -745,30 +653,25 @@ class Offaxis(PCDSDetector):
         Stats on ROI of original rate image
     '''
 
-    ROI = FCpt(ROIPlugin, '{self._ROI_port}')
-    ROI_stats = FCpt(StatsPlugin, '{self._ROI_stats_port}')
-    ROI_image = FCpt(ImagePlugin, '{self._ROI_image_port}')
+    ROI = FCpt(ROIPlugin, '{self.prefix}:{self._ROI_port}')
+    ROI_stats = FCpt(StatsPlugin, '{self.prefix}:{self._ROI_stats_port}')
+    ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}')
 
     def __init__(self, ROI_port,
                        ROI_stats_port,
                        ROI_image_port,
                        prefix, *args, **kwargs):
-
-
-        self._ROI_port = f'{prefix}:{ROI_port}:'
-        self._ROI_stats_port = f'{prefix}:{ROI_stats_port}:'
-        self._ROI_image_port = f'{prefix}:{ROI_image_port}:'
+        self._ROI_port = ROI_port
+        self._ROI_stats_port = ROI_stats_port
+        self._ROI_image_port = ROI_image_port
 
         super().__init__(prefix, *args, **kwargs)
 
         self.ROI_stats.nd_array_port.put(ROI_port)
         self.ROI_image.nd_array_port.put(ROI_port)
-
-
         self.ROI.enable.put('Enabled')
         self.ROI_stats.enable.put('Enabled')
         self.ROI_image.enable.put('Enabled')
-
 
 
 class Questar(PCDSDetector):
@@ -792,474 +695,185 @@ class Questar(PCDSDetector):
         Stats on ROI of original rate image
     '''
 
-    ROI = FCpt(ROIPlugin, '{self._ROI_port}')
-    ROI_stats = FCpt(StatsPlugin, '{self._ROI_stats_port}')
-    ROI_image = FCpt(ImagePlugin, '{self._ROI_image_port}')
+    ROI = FCpt(ROIPlugin, '{self.prefix}:{self._ROI_port}')
+    ROI_stats = FCpt(StatsPlugin, '{self.prefix}:{self._ROI_stats_port}')
+    ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}')
 
     def __init__(self, ROI_port,
                        ROI_stats_port,
                        ROI_image_port,
                        prefix, *args, **kwargs):
-
-
-        self._ROI_port = f'{prefix}:{ROI_port}:'
-        self._ROI_stats_port = f'{prefix}:{ROI_stats_port}:'
-        self._ROI_image_port = f'{prefix}:{ROI_image_port}:'
+        self._ROI_port = ROI_port
+        self._ROI_stats_port = ROI_stats_port
+        self._ROI_image_port = ROI_image_port
 
         super().__init__(prefix, *args, **kwargs)
 
         self.ROI_stats.nd_array_port.put(ROI_port)
         self.ROI_image.nd_array_port.put(ROI_port)
-
-
         self.ROI.enable.put('Enabled')
         self.ROI_stats.enable.put('Enabled')
         self.ROI_image.enable.put('Enabled')
 
 
-class Parameters(Device):
+class Parameters(Device, _TableMixin):
     '''
     Contains EPICS PVs used for jet tracking
-
-    Attributes
-    ----------
-    cam_x : EpicsSignal
-        x-coordinate of camera position in mm
-    cam_y : EpicsSignal
-        y-coordinate of camera position in mm
-    pxsize : EpicsSignal
-        size of pixel in mm
-    cam_roll : EpicsSignal
-        rotation of camera about z axis in radians
-    beam_x : EpicsSignal
-        x-coordinate of x-ray beam in mm (usually 0)
-    beam_y : EpicsSignal
-        y-coordinate of x-ray beam in mm (usually 0)
-    beam_x_px : EpicsSignal
-        x-coordinate of x-ray beam in camera image in pixels
-    beam_y_px : EpicsSignal
-        y-coordinate of x-ray beam in camera image in pixels
-    nozzle_x : EpicsSignal
-        x-coordinate of nozzle in mm
-    nozzle_y : EpicsSignal
-        y-coordinate of nozzle in mm
-    nozzle_xwidth : EpicsSignal
-        width of nozzle in mm
-    jet_x : EpicsSignal
-        distance from sample jet to x-ray beam in mm
-    jet_roll : EpicsSignal
-        rotation of sample jet about z axis in radians
-    state : EpicsSignal
-        dictionary of strings
     '''
-
-    cam_x = FCpt(EpicsSignal, '{self._cam_x}')
-    cam_y = FCpt(EpicsSignal, '{self._cam_y}')
-    pxsize = FCpt(EpicsSignal, '{self._pxsize}')
-    cam_roll = FCpt(EpicsSignal, '{self._cam_roll}')
-    beam_x = FCpt(EpicsSignal, '{self._beam_x}')
-    beam_y = FCpt(EpicsSignal, '{self._beam_y}')
-    beam_x_px = FCpt(EpicsSignal, '{self._beam_x_px}')
-    beam_y_px = FCpt(EpicsSignal, '{self._beam_y_px}')
-    nozzle_x = FCpt(EpicsSignal, '{self._nozzle_x}')
-    nozzle_y = FCpt(EpicsSignal, '{self._nozzle_y}')
-    nozzle_xwidth = FCpt(EpicsSignal, '{self._nozzle_xwidth}')
-    jet_x = FCpt(EpicsSignal, '{self._jet_x}')
-    jet_roll = FCpt(EpicsSignal, '{self._jet_roll}')
-    state = FCpt(EpicsSignal, '{self._state}')
-    jet_counter = FCpt(EpicsSignal, '{self._jet_counter}')
-    jet_reprate = FCpt(EpicsSignal, '{self._jet_reprate}')
-    nozzle_counter = FCpt(EpicsSignal, '{self._nozzle_counter}')
-    nozzle_reprate = FCpt(EpicsSignal, '{self._nozzle_reprate}')
-
-    def __init__(self, prefix, name, **kwargs):
-
-        self._cam_x = f'{prefix}:CAM_X'
-        self._cam_y = f'{prefix}:CAM_Y'
-        self._pxsize = f'{prefix}:PXSIZE'
-        self._cam_roll = f'{prefix}:CAM_ROLL'
-        self._beam_x = f'{prefix}:BEAM_X'
-        self._beam_y = f'{prefix}:BEAM_Y'
-        self._beam_x_px = f'{prefix}:BEAM_X_PX'
-        self._beam_y_px = f'{prefix}:BEAM_Y_PX'
-        self._nozzle_x = f'{prefix}:NOZZLE_X'
-        self._nozzle_y = f'{prefix}:NOZZLE_Y'
-        self._nozzle_xwidth = f'{prefix}:NOZZLE_XWIDTH'
-        self._jet_x = f'{prefix}:JET_X'
-        self._jet_roll = f'{prefix}:JET_ROLL'
-        self._state = f'{prefix}:STATE'
-        self._jet_counter = f'{prefix}:JET_Counter'
-        self._jet_reprate = f'{prefix}:JET_RepRate'
-        self._nozzle_counter = f'{prefix}:NOZZLE_Counter'
-        self._nozzle_reprate = f'{prefix}:NOZZLE_RepRate'
-
-        super().__init__(name=name, **kwargs)
-
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
-
+    cam_x = Cpt(EpicsSignal, ':CAM_X',
+                 doc='x-coordinate of camera position in mm')
+    cam_y = Cpt(EpicsSignal, ':CAM_Y',
+                 doc='y-coordinate of camera position in mm')
+    pxsize = Cpt(EpicsSignal, ':PXSIZE',
+                 doc='size of pixel in mm')
+    cam_roll = Cpt(EpicsSignal, ':CAM_ROLL',
+                 doc='rotation of camera about z axis in radians')
+    beam_x = Cpt(EpicsSignal, ':BEAM_X',
+                 doc='x-coordinate of x-ray beam in mm (usually 0)')
+    beam_y = Cpt(EpicsSignal, ':BEAM_Y',
+                 doc='y-coordinate of x-ray beam in mm (usually 0)')
+    beam_x_px = Cpt(EpicsSignal, ':BEAM_X_PX',
+                 doc='x-coordinate of x-ray beam in camera image in pixels')
+    beam_y_px = Cpt(EpicsSignal, ':BEAM_Y_PX',
+                 doc='y-coordinate of x-ray beam in camera image in pixels')
+    nozzle_x = Cpt(EpicsSignal, ':NOZZLE_X',
+                 doc='x-coordinate of nozzle in mm')
+    nozzle_y = Cpt(EpicsSignal, ':NOZZLE_Y',
+                 doc='y-coordinate of nozzle in mm')
+    nozzle_xwidth = Cpt(EpicsSignal, ':NOZZLE_XWIDTH',
+                 doc='width of nozzle in mm')
+    jet_x = Cpt(EpicsSignal, ':JET_X',
+                 doc='distance from sample jet to x-ray beam in mm')
+    jet_roll = Cpt(EpicsSignal, ':JET_ROLL',
+                 doc='rotation of sample jet about z axis in radians')
+    state = Cpt(EpicsSignal, ':STATE',
+                 doc='dictionary of strings')
+    jet_counter = Cpt(EpicsSignal, ':JET_Counter',
+                 doc='Jet counter')
+    jet_reprate = Cpt(EpicsSignal, ':JET_RepRate',
+                 doc='Jet repetition rate')
+    nozzle_counter = Cpt(EpicsSignal, ':NOZZLE_Counter',
+                 doc='Nozzle counter')
+    nozzle_reprate = Cpt(EpicsSignal, ':NOZZLE_RepRate',
+                 doc='Nozzle repetition rate')
 
 
 class OffaxisParams(Device):
     '''
     Contains EPICS PVs used with Offaxis camera for jet tracking
-
-    Attributes
-    ----------
-    cam_z : EpicsSignal
-        z-coordinate of camera position in mm
-    cam_y : EpicsSignal
-        y-coordinate of camera position in mm
-    pxsize : EpicsSignal
-        size of pixel in mm
-    cam_pitch : EpicsSignal
-        rotation of camera about x axis in radians
-    beam_z : EpicsSignal
-        z-coordinate of x-ray beam in mm (usually 0)
-    beam_y : EpicsSignal
-        y-coordinate of x-ray beam in mm (usually 0)
-    beam_z_px : EpicsSignal
-        z-coordinate of x-ray beam in camera image in pixels
-    beam_y_px : EpicsSignal
-        y-coordinate of x-ray beam in camera image in pixels
-    nozzle_z : EpicsSignal
-        z-coordinate of nozzle in mm
-    nozzle_y : EpicsSignal
-        y-coordinate of nozzle in mm
-    nozzle_zwidth : EpicsSignal
-        width of nozzle in mm
-    jet_z : EpicsSignal
-        distance from sample jet to x-ray beam in mm
-    jet_pitch : EpicsSignal
-        rotation of sample jet about z axis in radians
-    state : EpicsSignal
-        dictionary of string
     '''
+    cam_z = Cpt(EpicsSignal, ':CAM_Z',
+                 doc='z-coordinate of camera position in mm')
+    cam_y = Cpt(EpicsSignal, ':CAM_Y',
+                 doc='y-coordinate of camera position in mm')
+    pxsize = Cpt(EpicsSignal, ':PXSIZE',
+                 doc='size of pixel in mm')
+    cam_pitch = Cpt(EpicsSignal, ':CAM_PITCH',
+                 doc='rotation of camera about x axis in radians')
+    beam_z = Cpt(EpicsSignal, ':BEAM_Z',
+                 doc='z-coordinate of x-ray beam in mm (usually 0)')
+    beam_y = Cpt(EpicsSignal, ':BEAM_Y',
+                 doc='y-coordinate of x-ray beam in mm (usually 0)')
+    beam_z_px = Cpt(EpicsSignal, ':BEAM_Z_PX',
+                 doc='z-coordinate of x-ray beam in camera image in pixels')
+    beam_y_px = Cpt(EpicsSignal, ':BEAM_Y_PX',
+                 doc='y-coordinate of x-ray beam in camera image in pixels')
+    nozzle_z = Cpt(EpicsSignal, ':NOZZLE_Z',
+                 doc='z-coordinate of nozzle in mm')
+    nozzle_y = Cpt(EpicsSignal, ':NOZZLE_Y',
+                 doc='y-coordinate of nozzle in mm')
+    nozzle_zwidth = Cpt(EpicsSignal, ':NOZZLE_ZWIDTH',
+                 doc='width of nozzle in mm')
+    jet_z = Cpt(EpicsSignal, ':JET_Z',
+                 doc='distance from sample jet to x-ray beam in mm')
+    jet_pitch = Cpt(EpicsSignal, ':JET_PITCH',
+                 doc='rotation of sample jet about z axis in radians')
+    state = Cpt(EpicsSignal, ':STATE',
+                 doc='dictionary of strings')
+    jet_counter = Cpt(EpicsSignal, ':JET_Counter',
+                 doc='Jet counter')
+    jet_reprate = Cpt(EpicsSignal, ':JET_RepRate',
+                 doc='Jet repetition rate')
+    nozzle_counter = Cpt(EpicsSignal, ':NOZZLE_Counter',
+                 doc='Nozzle counter')
+    nozzle_reprate = Cpt(EpicsSignal, ':NOZZLE_RepRate',
+                 doc='Nozzle repetition rate')
 
-    cam_z = FCpt(EpicsSignal, '{self._cam_z}')
-    cam_y = FCpt(EpicsSignal, '{self._cam_y}')
-    pxsize = FCpt(EpicsSignal, '{self._pxsize}')
-    cam_pitch = FCpt(EpicsSignal, '{self._cam_pitch}')
-    beam_z = FCpt(EpicsSignal, '{self._beam_z}')
-    beam_y = FCpt(EpicsSignal, '{self._beam_y}')
-    beam_z_px = FCpt(EpicsSignal, '{self._beam_z_px}')
-    beam_y_px = FCpt(EpicsSignal, '{self._beam_y_px}')
-    nozzle_z = FCpt(EpicsSignal, '{self._nozzle_z}')
-    nozzle_y = FCpt(EpicsSignal, '{self._nozzle_y}')
-    nozzle_zwidth = FCpt(EpicsSignal, '{self._nozzle_zwidth}')
-    jet_z = FCpt(EpicsSignal, '{self._jet_z}')
-    jet_pitch = FCpt(EpicsSignal, '{self._jet_pitch}')
-    state = FCpt(EpicsSignal, '{self._state}')
-    jet_counter = FCpt(EpicsSignal, '{self._jet_counter}')
-    jet_reprate = FCpt(EpicsSignal, '{self._jet_reprate}')
-    nozzle_counter = FCpt(EpicsSignal, '{self._nozzle_counter}')
-    nozzle_reprate = FCpt(EpicsSignal, '{self._nozzle_reprate}')
 
-    def __init__(self, prefix, name, **kwargs):
-
-        self._cam_z = f'{prefix}:CAM_Z'
-        self._cam_y = f'{prefix}:CAM_Y'
-        self._pxsize = f'{prefix}:PXSIZE'
-        self._cam_pitch = f'{prefix}:CAM_PITCH'
-        self._beam_z = f'{prefix}:BEAM_Z'
-        self._beam_y = f'{prefix}:BEAM_Y'
-        self._beam_z_px = f'{prefix}:BEAM_Z_PX'
-        self._beam_y_px = f'{prefix}:BEAM_Y_PX'
-        self._nozzle_z = f'{prefix}:NOZZLE_Z'
-        self._nozzle_y = f'{prefix}:NOZZLE_Y'
-        self._nozzle_zwidth = f'{prefix}:NOZZLE_ZWIDTH'
-        self._jet_z = f'{prefix}:JET_Z'
-        self._jet_pitch = f'{prefix}:JET_PITCH'
-        self._state = f'{prefix}:STATE'
-        self._jet_counter = f'{prefix}:JET_Counter'
-        self._jet_reprate = f'{prefix}:JET_RepRate'
-        self._nozzle_counter = f'{prefix}:NOZZLE_Counter'
-        self._nozzle_reprate = f'{prefix}:NOZZLE_RepRate'
-
-        super().__init__(name=name, **kwargs)
-
-class Control(Device):
+class Control(Device, _TableMixin):
     '''
     Contains EPICS PVs used for jet tracking control
     '''
 
-    re_state = FCpt(EpicsSignal, '{self._re_state}')
-    beam_state = FCpt(EpicsSignal, '{self._beam_state}')
-    injector_state = FCpt(EpicsSignal, '{self._injector_state}')
-    beam_trans = FCpt(EpicsSignal, '{self._beam_trans}')
-    beam_pulse_energy = FCpt(EpicsSignal, '{self._beam_pulse_energy}')
-    beam_e_thresh = FCpt(EpicsSignal, '{self._beam_e_thresh}')
-    xstep_size = FCpt(EpicsSignal, '{self._xstep_size}')
-    xscan_min = FCpt(EpicsSignal, '{self._xscan_min}')
-    xscan_max = FCpt(EpicsSignal, '{self._xscan_max}')
-    bounce_width = FCpt(EpicsSignal, '{self._bounce_width}')
-    xmin = FCpt(EpicsSignal, '{self._xmin}')
-    xmax = FCpt(EpicsSignal, '{self._xmax}')
-
-    def __init__(self, prefix, name, **kwargs):
-
-        self._re_state = f'{prefix}:RE:STATE'
-        self._beam_state = f'{prefix}:BEAM:STATE'
-        self._injector_state = f'{prefix}:INJECTOR:STATE'
-        self._beam_trans = f'{prefix}:BEAM:TRANS'
-        self._beam_pulse_energy = f'{prefix}:BEAM:PULSE_ENERGY'
-        self._beam_e_thresh = f'{prefix}:BEAM:E_THRESH'
-        self._xstep_size = f'{prefix}:INJECTOR:XSTEP_SIZE'
-        self._xscan_min = f'{prefix}:INJECTOR:XSCAN_MIN'
-        self._xscan_max = f'{prefix}:INJECTOR:XSCAN_MAX'
-        self._bounce_width = f'{prefix}:INJECTOR:BOUNCE_WIDTH'
-        self._xmin = f'{prefix}:INJECTOR:XMIN'
-        self._xmax = f'{prefix}:INJECTOR:XMAX'
-
-        super().__init__(name=name, **kwargs)
-
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
+    re_state = Cpt(EpicsSignal, ':RE:STATE')
+    beam_state = Cpt(EpicsSignal, ':BEAM:STATE')
+    injector_state = Cpt(EpicsSignal, ':INJECTOR:STATE')
+    beam_trans = Cpt(EpicsSignal, ':BEAM:TRANS')
+    beam_pulse_energy = Cpt(EpicsSignal, ':BEAM:PULSE_ENERGY')
+    beam_e_thresh = Cpt(EpicsSignal, ':BEAM:E_THRESH')
+    xstep_size = Cpt(EpicsSignal, ':INJECTOR:XSTEP_SIZE')
+    xscan_min = Cpt(EpicsSignal, ':INJECTOR:XSCAN_MIN')
+    xscan_max = Cpt(EpicsSignal, ':INJECTOR:XSCAN_MAX')
+    bounce_width = Cpt(EpicsSignal, ':INJECTOR:BOUNCE_WIDTH')
+    xmin = Cpt(EpicsSignal, ':INJECTOR:XMIN')
+    xmax = Cpt(EpicsSignal, ':INJECTOR:XMAX')
 
 
 
-class Diffract(Device):
+class Diffract(Device, _TableMixin):
     '''
     Contains EPICS PVs used for shared memory X-ray Diffraction detector
-    used in jet trakcing.
-
-    Attributes
-    ----------
-    model_adu : EpicsSignal
-        Total detector model ADU
-    model_adu_err : EpicsSignal
-        Total detector model ADU error estimate
-    model_intensity : EpicsSignal
-        Diffraction model intensity waveform
-    model_intensity_err : EpicsSignal
-        Diffraction model intensity waveform
-    model_xaxis : EpicsSignal
-        Diffraction model xaxis waveform
-    psd_amplitude : EpicsSignal
-        Diffraction periodogram Frequency analysis amplitude
-    psd_amp_array : EpicsSignal
-        Diffraction periodogram Frequency analysis amplitude array
-    psd_amp_wf : EpicsSignal
-        Diffraction periodogram Frequency analysis waveform array
-    psd_counter : EpicsSignal
-        Diffraction periodogram event counter
-    psd_events : EpicsSignal
-        Diffraction periodogram
-    psd_frequency : EpicsSignal
-        Diffraction periodogram fundamental frequency
-    psd_freq_min : EpicsSignal
-        Minimum frequency for periodogram calcs
-    psd_freq_wf : EpicsSignal
-        Diffraction periodogram frequency waveform
-    psd_rate : EpicsSignal
-        Event frequency for periodogram
-    psd_resolution : EpicsSignal
-        Resultion to smooth over for periodogra
-    psd_reprate : EpicsSignal
-        Diffraction periodogram event counter
-    ring_adu : EpicsSignal
-        Ring ADU
-    ring_adu_err : EpicsSignal
-        Ring ADU error estimate
-    ring_counter : EpicsSignal
-        Diffraction ring intensity event counte
-    ring_intensity : EpicsSignal
-        Intensity of diffraction ring
-    ring_intensity_err : EpicsSignal
-        Error in intensity of diffraction ring
-    ring_radius : EpicsSignal
-        Radius of diffraction ring
-    ring_radius_err : EpicsSignal
-        Error in Radius of diffraction ring
-    ring_reprate : EpicsSignal
-        Diffraction ring intensity event counte
-    ring_width : EpicsSignal
-        Width of diffraction ring
-    ring_width_err : EpicsSignal
-        Width error estimate of diffraction rin
-    state : EpicsSignal
-        State of diffraction analysis
-    stats_counter : EpicsSignal
-        Diffraction stats event counter
-    stats_max : EpicsSignal
-        Max Diffraction Statistic
-    stats_mean : EpicsSignal
-        Mean Diffraction Statistic
-    stats_min : EpicsSignal
-        Min Diffraction Statistic
-    stats_reprate : EpicsSignal
-        Diffraction stats event counter
-    stats_std : EpicsSignal
-        Std Diffraction Statistic
-    streak_calc_rate : EpicsSignal
-        Rate of streak calculation
-    streak_counter : EpicsSignal
-        Diffraction streak event counter
-    streak_fraction : EpicsSignal
-        Fraction of events with diffraction streak
-    streak_intensity : EpicsSignal
-        Intensity of diffraction streak
-    streak_intensity_err : EpicsSignal
-        Error in Intensity of diffraction streak
-    streak_phi : EpicsSignal
-        Angle of diffraction streak
-    streak_phi_err : EpicsSignal
-        Error in Angle of diffraction streak
-    streak_reprate : EpicsSignal
-        Diffraction streak event counter
-    streak_width : EpicsSignal
-        Width of diffraction streak
-    streak_width_err : EpicsSignal
-        Error in Width of diffraction streak
-    streak_x : EpicsSignal
-        Event X origin of diffraction streak
-    streak_x_err : EpicsSignal
-        Error in Event X origin of diffraction streak
-    streak_y : EpicsSignal
-        Event Y origin of diffraction streak
-    streak_y_err : EpicsSignal
-        Error in Event Y origin of diffraction streak
-    total_adu : EpicsSignal
-        Total detector ADU
-    total_adu_err : EpicsSignal
-        Total detector ADU error estimate
-    total_counter : EpicsSignal
-        Total counter
-    total_reprate : EpicsSignal
-        Diffraction total intensity calc rate
-    x0 : EpicsSignal
-        Nominal X origin of diffraction
-    x0_err : EpicsSignal
-        Error in Nominal X origin of diffraction
-    y0 : EpicsSignal
-        Nominal Y origin of diffraction
-    y0_err : EpicsSignal
-        Error in Nominal Y origin of diffraction
-
+    used in jet tracking.
     '''
-
-    total_counter = FCpt(EpicsSignal, '{self._total_counter}')
-    total_reprate = FCpt(EpicsSignal, '{self._total_reprate}')
-    ring_counter = FCpt(EpicsSignal, '{self._ring_counter}')
-    ring_reprate = FCpt(EpicsSignal, '{self._ring_reprate}')
-    psd_counter = FCpt(EpicsSignal, '{self._psd_counter}')
-    psd_reprate = FCpt(EpicsSignal, '{self._psd_reprate}')
-    stats_counter = FCpt(EpicsSignal, '{self._stats_counter}')
-    stats_reprate = FCpt(EpicsSignal, '{self._stats_reprate}')
-    streak_counter = FCpt(EpicsSignal, '{self._streak_counter}')
-    streak_reprate = FCpt(EpicsSignal, '{self._streak_reprate}')
-    cspad_sum = FCpt(EpicsSignal, '{self._cspad_sum}')
-    streak_fraction = FCpt(EpicsSignal, '{self._streak_fraction}')
-    stats_mean = FCpt(EpicsSignal, '{self._stats_mean}')
-    stats_std = FCpt(EpicsSignal, '{self._stats_std}')
-    stats_min = FCpt(EpicsSignal, '{self._stats_min}')
-    stats_max = FCpt(EpicsSignal, '{self._stats_max}')
-    psd_frequency = FCpt(EpicsSignal, '{self._psd_frequency}')
-    psd_amplitude = FCpt(EpicsSignal, '{self._psd_amplitude}')
-    psd_rate = FCpt(EpicsSignal, '{self._psd_rate}')
-    psd_events = FCpt(EpicsSignal, '{self._psd_events}')
-    psd_resolution = FCpt(EpicsSignal, '{self._psd_resolution}')
-    psd_freq_min = FCpt(EpicsSignal, '{self._psd_freq_min}')
-    psd_amp_wf = FCpt(EpicsSignal, '{self._psd_amp_wf}')
-    psd_freq_wf = FCpt(EpicsSignal, '{self._psd_freq_wf}')
-    psd_amp_array = FCpt(EpicsSignal, '{self._psd_amp_array}')
-    state = FCpt(EpicsSignal, '{self._state}')
-
-    def __init__(self, prefix, name, **kwargs):
-
-        self._total_counter = f'{prefix}:TOTAL_Counter'
-        self._total_reprate = f'{prefix}:TOTAL_RepRate'
-        self._ring_counter = f'{prefix}:RING_Counter'
-        self._ring_reprate = f'{prefix}:RING_RepRate'
-        self._psd_counter = f'{prefix}:PSD_Counter'
-        self._psd_reprate = f'{prefix}:PSD_RepRate'
-        self._stats_counter = f'{prefix}:STATS_Counter'
-        self._stats_reprate = f'{prefix}:STATS_RepRate'
-        self._streak_counter = f'{prefix}:STREAK_Counter'
-        self._streak_reprate = f'{prefix}:STREAK_RepRate'
-        self._cspad_sum = f'{prefix}:TOTAL_ADU'
-        self._streak_fraction = f'{prefix}:STREAK_FRACTION'
-        self._stats_mean = f'{prefix}:STATS_MEAN'
-        self._stats_std = f'{prefix}:STATS_STD'
-        self._stats_min = f'{prefix}:STATS_MIN'
-        self._stats_max = f'{prefix}:STATS_MAX'
-        self._psd_frequency = f'{prefix}:PSD_FREQUENCY'
-        self._psd_amplitude = f'{prefix}:PSD_AMPLITUDE'
-        self._psd_rate = f'{prefix}:PSD_RATE'
-        self._psd_events = f'{prefix}:PSD_EVENTS'
-        self._psd_resolution = f'{prefix}:PSD_RESOLUTION'
-        self._psd_freq_min = f'{prefix}:PSD_FREQ_MIN'
-        self._psd_freq_wf = f'{prefix}:PSD_FREQ_WF'
-        self._psd_amp_wf = f'{prefix}:PSD_AMP_WF'
-        self._psd_amp_array = f'{prefix}:PSD_AMP_ARRAY'
-        self._state = f'{prefix}:STATE'
-
-        super().__init__(name=name, **kwargs)
-
-    @property
-    def _descriptions(self):
-        adesc = {}
-        for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname+'.DESC').get()
-
-        return adesc
-
-    @property
-    def table(self, attrs=['value', 'units', 'desc']):
-        """
-        Return table of injector settings.
-        """
-        adesc = self._descriptions
-        atable = {}
-        for name, signal in sorted(self._signals.items()):
-            atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
-                    'desc': adesc.get(name),
-                    }
-
-        return pd.DataFrame(atable).T[attrs]
-
-
+    total_counter = Cpt(EpicsSignal, ':TOTAL_Counter',
+                        doc='Total counter')
+    total_reprate = Cpt(EpicsSignal, ':TOTAL_RepRate',
+                        doc='Diffraction total intensity calc rate')
+    ring_counter = Cpt(EpicsSignal, ':RING_Counter',
+                       doc='Diffraction ring intensity event counter')
+    ring_reprate = Cpt(EpicsSignal, ':RING_RepRate',
+                       doc='Diffraction ring intensity event counter')
+    psd_counter = Cpt(EpicsSignal, ':PSD_Counter',
+                      doc='Diffraction periodogram event counter')
+    psd_reprate = Cpt(EpicsSignal, ':PSD_RepRate',
+                      doc='Diffraction periodogram event counter')
+    stats_counter = Cpt(EpicsSignal, ':STATS_Counter',
+                        doc='Diffraction stats event counter')
+    stats_reprate = Cpt(EpicsSignal, ':STATS_RepRate',
+                        doc='Diffraction stats event counter')
+    streak_counter = Cpt(EpicsSignal, ':STREAK_Counter',
+                         doc='Diffraction streak event counter')
+    streak_reprate = Cpt(EpicsSignal, ':STREAK_RepRate',
+                         doc='Diffraction streak event counter')
+    cspad_sum = Cpt(EpicsSignal, ':TOTAL_ADU',
+                    doc='Total detector ADU')
+    streak_fraction = Cpt(EpicsSignal, ':STREAK_FRACTION',
+                          doc='Fraction of events with diffraction streak')
+    stats_mean = Cpt(EpicsSignal, ':STATS_MEAN',
+                     doc='Mean Diffraction Statistic')
+    stats_std = Cpt(EpicsSignal, ':STATS_STD',
+                    doc='Std Diffraction Statistic')
+    stats_min = Cpt(EpicsSignal, ':STATS_MIN',
+                    doc='Min Diffraction Statistic')
+    stats_max = Cpt(EpicsSignal, ':STATS_MAX',
+                    doc='Max Diffraction Statistic')
+    psd_frequency = Cpt(EpicsSignal, ':PSD_FREQUENCY',
+                        doc='Diffraction periodogram fundamental frequency')
+    psd_amplitude = Cpt(EpicsSignal, ':PSD_AMPLITUDE',
+                        doc='Diffraction periodogram Frequency analysis amplitude')
+    psd_rate = Cpt(EpicsSignal, ':PSD_RATE',
+                   doc='Event frequency for periodogram')
+    psd_events = Cpt(EpicsSignal, ':PSD_EVENTS',
+                     doc='Diffraction periodogram')
+    psd_resolution = Cpt(EpicsSignal, ':PSD_RESOLUTION',
+                         doc='Resultion to smooth over for periodogra')
+    psd_freq_min = Cpt(EpicsSignal, ':PSD_FREQ_MIN',
+                       doc='Minimum frequency for periodogram calcs')
+    psd_amp_wf = Cpt(EpicsSignal, ':PSD_AMP_WF',
+                     doc='Diffraction periodogram Frequency analysis waveform array')
+    psd_freq_wf = Cpt(EpicsSignal, ':PSD_FREQ_WF',
+                      doc='Diffraction periodogram frequency waveform')
+    psd_amp_array = Cpt(EpicsSignal, ':PSD_AMP_ARRAY',
+                        doc='Diffraction periodogram Frequency analysis amplitude array')
+    state = Cpt(EpicsSignal, ':STATE',
+                doc='State of diffraction analysis')
