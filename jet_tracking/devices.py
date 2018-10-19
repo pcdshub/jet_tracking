@@ -319,7 +319,7 @@ class HPLC(Device, _TableMixin):
 
     pressure = FCpt(EpicsSignal, '{self._pressure}')
     pressure_units = FCpt(EpicsSignal, '{self._pressure_units}')
-    set_max_pressure = FCpt(EpicsSignal, '{self._set_max_pressure')
+    set_max_pressure = FCpt(EpicsSignal, '{self._set_max_pressure}')
     max_pressure = FCpt(EpicsSignal, '{self._max_pressure}')
 
     clear_error = FCpt(EpicsSignal, '{self._clear_error}')
