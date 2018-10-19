@@ -596,41 +596,44 @@ class FlowIntegrator(Device, _TableMixin):
 
 
 class SDS:
-    '''Sample delivery system
+    '''
+    Sample delivery system
 
-       Parameters
-       ----------
-       devices : dict
-           A dictionary of dictionaries containing the devices to be made and their PV names
-           Key: str
-               Type of device to be made. Valid keys are 'selector', 'cooler_shaker', 'hplc',
-               'pressure_controller', and 'flow_integrator'
-           Value: str dict
-               Dictionary of PVs of the device
+    Parameters
+    ----------
+    devices : dict
+        A dictionary of dictionaries containing the devices to be made and their PV names
+        Key: str
+            Type of device to be made. Valid keys are 'selector', 'cooler_shaker', 'hplc',
+            'pressure_controller', and 'flow_integrator'
+        Value: str dict
+            Dictionary of PVs of the device
 
-       Attributes
-       ----------
-       SDS_devices : list
-           List containing all the devices that are in the sample delivery system
-       '''
+    Attributes
+    ----------
+    SDS_devices : list
+        List containing all the devices that are in the sample delivery system
+   '''
 
-    SDS_devices = []
+    device_types = {
+        'selector': Selector,
+        'cooler_shaker': CoolerShaker,
+        'hplc': HPLC,
+        'pressure_controller': PressureController,
+        'flow_integrator': FlowIntegrator,
+    }
 
     def __init__(self, devices):
+        self.SDS_devices = [
+            self.device_types[dev](**kwargs)
+            for dev, kwargs in devices.items()
+            if dev in self.device_types
+        ]
 
-        for device in devices:
-            if device == 'selector':
-                self.SDS_devices.append(Selector(**devices[device]))
-            elif device == 'cooler_shaker':
-                self.SDS_devices.append(CoolerShaker(**devices[device]))
-            elif device == 'hplc':
-                self.SDS_devices.append(HPLC(**devices[device]))
-            elif device == 'pressure_controller':
-                self.SDS_devices.append(PressureController(**devices[device]))
-            elif device == 'flow_integrator':
-                self.SDS_devices.append(FlowIntegrator(**devices[device]))
-            else:
-                print(f'{device} is not a valid device')
+        invalid_devices = [dev for dev in devices
+                           if dev not in self.device_types]
+        for device in invalid_devices:
+            print(f'WARNING: {device} is not a valid device type')
 
 
 class Offaxis(PCDSDetector):
