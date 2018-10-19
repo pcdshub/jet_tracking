@@ -657,9 +657,9 @@ class Offaxis(PCDSDetector):
         Stats on ROI of original rate image
     '''
 
-    ROI = FCpt(ROIPlugin, '{self.prefix}:{self._ROI_port}')
-    ROI_stats = FCpt(StatsPlugin, '{self.prefix}:{self._ROI_stats_port}')
-    ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}')
+    ROI = FCpt(ROIPlugin, '{self.prefix}:{self._ROI_port}:')
+    ROI_stats = FCpt(StatsPlugin, '{self.prefix}:{self._ROI_stats_port}:')
+    ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}:')
 
     def __init__(self, ROI_port,
                        ROI_stats_port,
@@ -699,9 +699,9 @@ class Questar(PCDSDetector):
         Stats on ROI of original rate image
     '''
 
-    ROI = FCpt(ROIPlugin, '{self.prefix}:{self._ROI_port}')
-    ROI_stats = FCpt(StatsPlugin, '{self.prefix}:{self._ROI_stats_port}')
-    ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}')
+    ROI = FCpt(ROIPlugin, '{self.prefix}:{self._ROI_port}:')
+    ROI_stats = FCpt(StatsPlugin, '{self.prefix}:{self._ROI_stats_port}:')
+    ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}:')
 
     def __init__(self, ROI_port,
                        ROI_stats_port,
