@@ -1,4 +1,5 @@
 import pandas as pd
+import epics
 
 from ophyd.device import Device, FormattedComponent as FCpt, Component as Cpt
 from ophyd.signal import EpicsSignal
@@ -19,7 +20,7 @@ class _TableMixin:
     def _update_descriptions(self):
         adesc = {}
         for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname + '.DESC').get()
+            adesc[name] = epics.caget(signal.pvname + '.DESC')
         self._descriptions = adesc
 
     @property
@@ -33,8 +34,8 @@ class _TableMixin:
         atable = {}
         for name, signal in sorted(self._signals.items()):
             atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
+                    'value': signal.read()[signal.name]['value'],
+                    'units': signal.describe()[signal.name].get('units', ''),
                     'desc': self._descriptions.get(name),
                     }
 
