@@ -22,10 +22,12 @@ import sys
 import sphinx_rtd_theme
 import datetime
 import matplotlib
+matplotlib.use('Agg')
 
 
 module_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),'../../')
 sys.path.insert(0,module_path)
+
 
 
 # -- General configuration ------------------------------------------------
@@ -44,7 +46,6 @@ extensions = ['sphinx.ext.autodoc',
               'IPython.sphinxext.ipython_directive',
               'IPython.sphinxext.ipython_console_highlighting',
               'matplotlib.sphinxext.mathmpl',
-              'matplotlib.sphinxext.only_directives',
               'matplotlib.sphinxext.plot_directive',
 #              'sphinx.ext.autosectionlabel'
               'sphinx.ext.viewcode',
@@ -54,6 +55,14 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.githubpages',
               'sphinx.ext.mathjax',
                      ]
+
+try:
+    import matplotlib.sphinxext.only_directives
+except ImportError:
+    ...
+else:
+    extensions.append('matplotlib.sphinxext.only_directives')
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
