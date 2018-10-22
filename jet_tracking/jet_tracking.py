@@ -147,11 +147,12 @@ def calibrate(injector, camera, params):
 
     beamX_px = params.beam_x_px.get()
     beamY_px = params.beam_y_px.get()
-    camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px, params)
+    camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px,
+                                          cam_roll=cam_roll, pxsize=pxsize)
     params.cam_x.put(camX)
     params.cam_y.put(camY)
 
-    jet_roll = cam_utils.get_jet_roll(theta, params)
+    jet_roll = cam_utils.get_jet_roll(theta, cam_roll)
     params.jet_roll.put(jet_roll)
 
     return
@@ -179,7 +180,10 @@ def jet_calculate(camera, params):
             # check x-ray beam position
             beamX_px = params.beam_x_px.get()
             beamY_px = params.beam_y_px.get()
-            camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px, params)
+            camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px,
+                                                  cam_roll=params.cam_roll.get(),
+                                                  pxsize=params.pxsize.get())
+
             params.cam_x.put(camX)
             params.cam_y.put(camY)
 
@@ -187,7 +191,12 @@ def jet_calculate(camera, params):
             ROIx = camera.ROI.min_xyz.min_x.get()
             ROIy = camera.ROI.min_xyz.min_y.get()
             jetX = cam_utils.get_jet_x(rho, theta,
-                                       ROIx, ROIy, params)
+                                       ROIx, ROIy, pxsize=params.pxsize.get(),
+                                       cam_x=camX,
+                                       cam_y=camY,
+                                       beam_y=params.beam_y.get(),
+                                       beam_x=params.beam_x.get(),
+                                       cam_roll=params.cam_roll.get())
             params.jet_x.put(jetX)
         except KeyboardInterrupt:
             print('Stopped.')

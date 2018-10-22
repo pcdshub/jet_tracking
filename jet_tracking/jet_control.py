@@ -141,11 +141,13 @@ def calibrate(injector, camera, params, offaxis=False):
 
         beamY_px = params.beam_y_px.get()
         beamZ_px = params.beam_z_px.get()
-        camY, camZ = cam_utils.get_offaxis_coords(beamY_px, beamZ_px, params)
+        camY, camZ = cam_utils.get_offaxis_coords(beamY_px, beamZ_px,
+                                                  cam_pitch=cam_pitch,
+                                                  pxsize=pxsize)
         params.cam_y.put(camY)
         params.cam_z.put(camZ)
 
-        jet_pitch = cam_utils.get_jet_pitch(theta, params)
+        jet_pitch = cam_utils.get_jet_pitch(theta, cam_pitch=cam_pitch)
         params.jet_pitch.put(jet_pitch)
 
     else:
@@ -155,11 +157,12 @@ def calibrate(injector, camera, params, offaxis=False):
 
         beamX_px = params.beam_x_px.get()
         beamY_px = params.beam_y_px.get()
-        camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px, params)
+        camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px, cam_roll=cam_roll,
+                                              pxsize=pxsize)
         params.cam_x.put(camX)
         params.cam_y.put(camY)
 
-        jet_roll = cam_utils.get_jet_roll(theta, params)
+        jet_roll = cam_utils.get_jet_roll(theta, cam_roll)
         params.jet_roll.put(jet_roll)
 
     return
@@ -193,15 +196,23 @@ def jet_calculate(camera, params, offaxis=False):
                 beamY_px = params.beam_y_px.get()
                 beamZ_px = params.beam_z_px.get()
                 camY, camZ = cam_utils.get_offaxis_coords(
-                    beamY_px, beamZ_px, params)
+                    beamY_px, beamZ_px,
+                    cam_pitch=params.cam_pitch.get(),
+                    pxsize=params.pxsize.get())
+
                 params.cam_y.put(camY)
                 params.cam_z.put(camZ)
 
                 # find distance from jet to x-rays
                 ROIz = camera.ROI.min_xyz.min_x.get()
                 ROIy = camera.ROI.min_xyz.min_y.get()
-                jetZ = cam_utils.get_jet_z(rho, theta,
-                                           ROIy, ROIz, params)
+                jetZ = cam_utils.get_jet_z(rho, theta, y_roi=ROIy, z_roi=ROIz,
+                                           pxsize=params.pxsize.get(),
+                                           cam_y=camY,
+                                           cam_z=camZ,
+                                           beam_y=params.beam_y.get(),
+                                           beam_z=params.beam_z.get(),
+                                           cam_pitch=params.cam_pitch.get())
                 params.jet_z.put(jetZ)
 
             else:
@@ -209,15 +220,24 @@ def jet_calculate(camera, params, offaxis=False):
                 beamX_px = params.beam_x_px.get()
                 beamY_px = params.beam_y_px.get()
                 camX, camY = cam_utils.get_cam_coords(
-                    beamX_px, beamY_px, params)
+                    beamX_px, beamY_px,
+                    cam_roll=params.cam_roll.get(),
+                    pxsize=params.pxsize.get())
+
                 params.cam_x.put(camX)
                 params.cam_y.put(camY)
 
                 # find distance from jet to x-rays
                 ROIx = camera.ROI.min_xyz.min_x.get()
                 ROIy = camera.ROI.min_xyz.min_y.get()
-                jetX = cam_utils.get_jet_x(rho, theta,
-                                           ROIx, ROIy, params)
+                jetX = cam_utils.get_jet_x(
+                    rho, theta, ROIx, ROIy,
+                    pxsize=params.pxsize.get(),
+                    cam_x=camX,
+                    cam_y=camY,
+                    beam_x=params.beam_x.get(),
+                    beam_y=params.beam_y.get(),
+                    cam_roll=params.cam_roll.get())
                 params.jet_x.put(jetX)
 
         except KeyboardInterrupt:

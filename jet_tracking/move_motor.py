@@ -38,7 +38,9 @@ def pi_moving_test_script(motor, cam, params, im0=None, min_shift=1):
     while True:
         try:
             im = cam.image.image
-            shift = get_nozzle_shift(im0, im, params)
+            shift = get_nozzle_shift(im0, im,
+                                     pxsize=params.pxsize.get(),
+                                     cam_roll=params.cam_roll.get())
             if shift[1] > min_shift:
                 movex(motor, -shift[1])
                 print('moving')
