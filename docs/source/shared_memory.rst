@@ -1,6 +1,6 @@
 .. _shared_memory:
 
-.. currentmodule:: psana2epics
+.. currentmodule:: jet_tracking.psana
 
 Jet Tracking Shared Memory Application
 ######################################
@@ -62,9 +62,4 @@ API
     :nosignatures:
     :toctree: generated/
 
-    psana2epics.output_cspad_sum
-
-
-
-
-
+    output_cspad_sum

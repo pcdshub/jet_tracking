@@ -1,4 +1,5 @@
 import pandas as pd
+import epics
 
 from ophyd.device import Device, FormattedComponent as FCpt, Component as Cpt
 from ophyd.signal import EpicsSignal
@@ -19,7 +20,7 @@ class _TableMixin:
     def _update_descriptions(self):
         adesc = {}
         for name, signal in self._signals.items():
-            adesc[name] = EpicsSignal(signal._read_pv.pvname + '.DESC').get()
+            adesc[name] = epics.caget(signal.pvname + '.DESC')
         self._descriptions = adesc
 
     @property
@@ -33,8 +34,8 @@ class _TableMixin:
         atable = {}
         for name, signal in sorted(self._signals.items()):
             atable[name] = {
-                    'value': signal._read_pv.value,
-                    'units': signal._read_pv.units,
+                    'value': signal.read()[signal.name]['value'],
+                    'units': signal.describe()[signal.name].get('units', ''),
                     'desc': self._descriptions.get(name),
                     }
 
@@ -318,7 +319,7 @@ class HPLC(Device, _TableMixin):
 
     pressure = FCpt(EpicsSignal, '{self._pressure}')
     pressure_units = FCpt(EpicsSignal, '{self._pressure_units}')
-    set_max_pressure = FCpt(EpicsSignal, '{self._set_max_pressure')
+    set_max_pressure = FCpt(EpicsSignal, '{self._set_max_pressure}')
     max_pressure = FCpt(EpicsSignal, '{self._max_pressure}')
 
     clear_error = FCpt(EpicsSignal, '{self._clear_error}')
@@ -596,41 +597,45 @@ class FlowIntegrator(Device, _TableMixin):
 
 
 class SDS:
-    '''Sample delivery system
+    '''
+    Sample delivery system
 
-       Parameters
-       ----------
-       devices : dict
-           A dictionary of dictionaries containing the devices to be made and their PV names
-           Key: str
-               Type of device to be made. Valid keys are 'selector', 'cooler_shaker', 'hplc',
-               'pressure_controller', and 'flow_integrator'
-           Value: str dict
-               Dictionary of PVs of the device
+    Parameters
+    ----------
+    devices : dict
+        A dictionary of dictionaries containing the devices to be made and
+        their PV names. The dictionary key is a string, one of the following:
+        {'selector', 'cooler_shaker', 'hplc', 'pressure_controller',
+        'flow_integrator'}
+        The values of the dictionary, are also dictionaries. These are passed
+        to the new device, allowing parameters such as PV names to be
+        specified.
 
-       Attributes
-       ----------
-       SDS_devices : list
-           List containing all the devices that are in the sample delivery system
-       '''
+    Attributes
+    ----------
+    SDS_devices : list
+        List containing all the devices that are in the sample delivery system
+   '''
 
-    SDS_devices = []
+    device_types = {
+        'selector': Selector,
+        'cooler_shaker': CoolerShaker,
+        'hplc': HPLC,
+        'pressure_controller': PressureController,
+        'flow_integrator': FlowIntegrator,
+    }
 
     def __init__(self, devices):
+        self.SDS_devices = [
+            self.device_types[dev](**kwargs)
+            for dev, kwargs in devices.items()
+            if dev in self.device_types
+        ]
 
-        for device in devices:
-            if device == 'selector':
-                self.SDS_devices.append(Selector(**devices[device]))
-            elif device == 'cooler_shaker':
-                self.SDS_devices.append(CoolerShaker(**devices[device]))
-            elif device == 'hplc':
-                self.SDS_devices.append(HPLC(**devices[device]))
-            elif device == 'pressure_controller':
-                self.SDS_devices.append(PressureController(**devices[device]))
-            elif device == 'flow_integrator':
-                self.SDS_devices.append(FlowIntegrator(**devices[device]))
-            else:
-                print(f'{device} is not a valid device')
+        invalid_devices = [dev for dev in devices
+                           if dev not in self.device_types]
+        for device in invalid_devices:
+            print(f'WARNING: {device} is not a valid device type')
 
 
 class Offaxis(PCDSDetector):
@@ -653,9 +658,9 @@ class Offaxis(PCDSDetector):
         Stats on ROI of original rate image
     '''
 
-    ROI = FCpt(ROIPlugin, '{self.prefix}:{self._ROI_port}')
-    ROI_stats = FCpt(StatsPlugin, '{self.prefix}:{self._ROI_stats_port}')
-    ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}')
+    ROI = FCpt(ROIPlugin, '{self.prefix}:{self._ROI_port}:')
+    ROI_stats = FCpt(StatsPlugin, '{self.prefix}:{self._ROI_stats_port}:')
+    ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}:')
 
     def __init__(self, ROI_port,
                        ROI_stats_port,
@@ -695,9 +700,9 @@ class Questar(PCDSDetector):
         Stats on ROI of original rate image
     '''
 
-    ROI = FCpt(ROIPlugin, '{self.prefix}:{self._ROI_port}')
-    ROI_stats = FCpt(StatsPlugin, '{self.prefix}:{self._ROI_stats_port}')
-    ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}')
+    ROI = FCpt(ROIPlugin, '{self.prefix}:{self._ROI_port}:')
+    ROI_stats = FCpt(StatsPlugin, '{self.prefix}:{self._ROI_stats_port}:')
+    ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}:')
 
     def __init__(self, ROI_port,
                        ROI_stats_port,

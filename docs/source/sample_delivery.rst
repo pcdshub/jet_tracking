@@ -27,37 +27,37 @@ API
 Sample Delivery System Class
 ----------------------------
 
-.. autoclass:: devices.SDS
+.. autoclass:: jet_tracking.devices.SDS
 
 
 Selector Class
 --------------
 
-.. autoclass:: devices.Selector
+.. autoclass:: jet_tracking.devices.Selector
 
 
 CoolerShaker Class
 ------------------
 
-.. autoclass:: devices.CoolerShaker
+.. autoclass:: jet_tracking.devices.CoolerShaker
 
 
 HPLC Class
 ----------
 
-.. autoclass:: devices.HPLC
+.. autoclass:: jet_tracking.devices.HPLC
 
 
 PressureController Class
 ------------------------
 
-.. autoclass:: devices.PressureController
+.. autoclass:: jet_tracking.devices.PressureController
 
 
 FlowInegrator Class
 -------------------
 
-.. autoclass:: devices.FlowIntegrator
+.. autoclass:: jet_tracking.devices.FlowIntegrator
 
 
 

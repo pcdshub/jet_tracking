@@ -4,6 +4,8 @@ sudo: false
 env:
   global:
     - OFFICIAL_REPO="pcdshub/jet_tracking"
+    # Doctr deploy key for pcdshub/jet_tracking
+    - secure: "vUuAt00AjoyYdCEfrqDiYEBN/0j5Rg0YF4er9fwbtgzlb/q9eHjyEI1XZm+WrTZE1k6U3RHM4SLct7FWMYVMrJ5nDehZF2iaFbDMjSBbANe3+zj7iaBZsLRDh9tivALv1pqavtVivZ98ypiX/GGwvGgtruOeFAsYdCAabPpsRHzsMZzWYr5vkm+ylUtncsJBRuqaHEczf3NMIL7TdO5B3Qwsws1ohgMQfedby2DI4cgZ8jLcJ5ZVnfS0gshy1RNpWc+lY0xb6/dIHW2V6Ca+YAl6VcN8uiF6RD4XgaDvzoZTfwWI5BcvgBULS1w1/aUzSWAWYARVEwA0v/QJ/ftFmx602a9yvFWje67TEPuCYR0uDU/osDYywnkEZNVZuv5CGO8KncBi12zBUGRW+aPpr+59cUOpQhkoRfJAFXRBwsCrKrXSYubNv1K64S+C6SkuPOIdGJdurh7naMPK4S3yUQmJ4I/samGq5MCy560YcKqj7KtDiRwgqXa5ho6meoaFKBCsfFpcF8flcygsSTCIa0WaKm4s79HcbiqJEO/CwZvWAjpz2DDuxApebM2uRWBa5S0AyY9vCQMAojyP67wd6z/RoZenDMl3Vrc197+RRbbujvpI/XkTS1SOV/9K2/+lX+Tj0Xv5XImiBTIdq8LPo2QgyMna7H7HmJ1uDeqXlGM="
 
 matrix:
   include:

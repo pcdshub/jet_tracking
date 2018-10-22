@@ -362,4 +362,3 @@ if __name__ == "__main__":
                               calc_period=args.calc_period,
                               calc_streak=args.calc_streak,
                               nevents=args.nevents, plot=args.plot))
-

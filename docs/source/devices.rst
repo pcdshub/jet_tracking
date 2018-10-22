@@ -1,6 +1,6 @@
 .. _devices:
 
-.. currentmodule:: jet_control
+.. currentmodule:: jet_tracking.jet_control
 
 Jet Tracking Classes
 ####################
@@ -9,7 +9,7 @@ Base classes used in jet tracking and control.
 JetControl Class
 ----------------
 
-.. autoclass:: jet_control.JetControl
+.. autoclass:: JetControl
 
 .. autosummary::
     :toctree: generated/
@@ -23,20 +23,19 @@ JetControl Class
 Injector Class
 --------------
 
-.. autoclass:: devices.Injector
+.. autoclass:: jet_tracking.devices.Injector
 
 Questar Class
 -------------
 
-.. autoclass:: devices.Questar
+.. autoclass:: jet_tracking.devices.Questar
 
 Parameters Class
 ----------------
 
-.. autoclass:: devices.Parameters
+.. autoclass:: jet_tracking.devices.Parameters
 
 Diffract Class
 --------------
 
-.. autoclass:: devices.Diffract
-
+.. autoclass:: jet_tracking.devices.Diffract
