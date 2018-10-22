@@ -36,13 +36,13 @@ def jet_detect(img):
     while True:
         try:
             binary = (img / (img.mean() + 2 * img.std() * 0.90 ** c)).astype(np.uint8)
-            lines = cv2.HoughLines(binary, 1, np.pi / 720, 30)
+            lines = cv2.HoughLines(binary, 1, np.radians(0.25), 30)
             rho, theta = lines[0][0]
         except Exception:
             c += 1
             continue
-        break
-    return rho, theta
+        else:
+            return rho, theta
 
 
 def get_jet_z(rho, theta, roi_y, roi_z, params):

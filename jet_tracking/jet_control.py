@@ -93,7 +93,6 @@ def set_beam(beamX_px, beamY_px, params):
     '''
     params.beam_x_px.put(beamX_px)
     params.beam_y_px.put(beamY_px)
-    return
 
 
 def calibrate(injector, camera, params, offaxis=False):
