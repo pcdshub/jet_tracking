@@ -603,12 +603,13 @@ class SDS:
     Parameters
     ----------
     devices : dict
-        A dictionary of dictionaries containing the devices to be made and their PV names
-        Key: str
-            Type of device to be made. Valid keys are 'selector', 'cooler_shaker', 'hplc',
-            'pressure_controller', and 'flow_integrator'
-        Value: str dict
-            Dictionary of PVs of the device
+        A dictionary of dictionaries containing the devices to be made and
+        their PV names. The dictionary key is a string, one of the following:
+        {'selector', 'cooler_shaker', 'hplc', 'pressure_controller',
+        'flow_integrator'}
+        The values of the dictionary, are also dictionaries. These are passed
+        to the new device, allowing parameters such as PV names to be
+        specified.
 
     Attributes
     ----------
