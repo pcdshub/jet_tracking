@@ -9,10 +9,11 @@ class JetControl:
     '''
     Jet tracking control class using jet_tracking methods
     '''
+
     def __init__(self, name,
-            injector, camera, params, diffract,
-            #camera_offaxis=None,
-            **kwargs):
+                 injector, camera, params, diffract,
+                 # camera_offaxis=None,
+                 **kwargs):
 
         self.injector = injector
         self.camera = camera
@@ -38,13 +39,11 @@ class JetControl:
         '''
         calibrate(self.injector, self.camera, self.params)
 
-
     def jet_calculate(self):
         '''
         Track the sample jet and calculate the distance to the x-ray beam
         '''
         jet_calculate(self.camera, self.params)
-
 
     def jet_move(self):
         '''
@@ -74,10 +73,9 @@ def get_burst_avg(n, image_plugin):
     burst_imgs = np.empty((n, imageX, imageY))
     for x in range(n):
         burst_imgs[x] = image_plugin.image
-    burst_avg =  burst_imgs.mean(axis=0)
+    burst_avg = burst_imgs.mean(axis=0)
 
     return burst_avg
-
 
 
 def set_beam(beamX_px, beamY_px, params):
@@ -195,7 +193,8 @@ def jet_calculate(camera, params, offaxis=False):
                 # check x-ray beam position
                 beamY_px = params.beam_y_px.get()
                 beamZ_px = params.beam_z_px.get()
-                camY, camZ = cam_utils.get_offaxis_coords(beamY_px, beamZ_px, params)
+                camY, camZ = cam_utils.get_offaxis_coords(
+                    beamY_px, beamZ_px, params)
                 params.cam_y.put(camY)
                 params.cam_z.put(camZ)
 
@@ -210,7 +209,8 @@ def jet_calculate(camera, params, offaxis=False):
                 # check x-ray beam position
                 beamX_px = params.beam_x_px.get()
                 beamY_px = params.beam_y_px.get()
-                camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px, params)
+                camX, camY = cam_utils.get_cam_coords(
+                    beamX_px, beamY_px, params)
                 params.cam_x.put(camX)
                 params.cam_y.put(camY)
 
@@ -243,14 +243,15 @@ def jet_move(injector, camera, params):
     while True:
         try:
             ROIx = camera.ROI.min_xyz.min_x.get()
-            ROIy = camera.ROI.min_xyz.min_y.get()
+            # ROIy = camera.ROI.min_xyz.min_y.get()
 
             if abs(params.jet_x.get()) > 0.01:
                 # move jet to x-rays using injector motor
                 print(f'Moving {params.jet_x.get()} mm')
                 movex(injector.coarseX, -params.jet_x.get())
                 # move the ROI to keep looking at the jet
-                camera.ROI.min_xyz.min_x.put(ROIx + (params.jet_x.get()/params.pxsize.get()))
+                camera.ROI.min_xyz.min_x.put(
+                    ROIx + (params.jet_x.get() / params.pxsize.get()))
             # if params.state == [some state]
             #     [use [x] for jet tracking]
             # else if params.state == [some other state]:

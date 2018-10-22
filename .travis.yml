@@ -40,8 +40,7 @@ script:
   - coverage run -m pytest jet_tracking/tests
   - make -C docs html  # Build the documentation.
   - coverage report -m
-  # Flake8 will only be a warning for now:
-  - flake8 --max-line-length=115 jet_tracking || /bin/true
+  - flake8 jet_tracking/
   # Build docs
   - set -e
   - |

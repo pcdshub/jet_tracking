@@ -9,7 +9,6 @@ from pcdsdevices.areadetector.detectors import PCDSDetector
 from pcdsdevices.epics_motor import IMS
 
 
-
 class _TableMixin:
     _table_attrs = ('value', 'units', 'desc')
 
@@ -34,10 +33,10 @@ class _TableMixin:
         atable = {}
         for name, signal in sorted(self._signals.items()):
             atable[name] = {
-                    'value': signal.read()[signal.name]['value'],
-                    'units': signal.describe()[signal.name].get('units', ''),
-                    'desc': self._descriptions.get(name),
-                    }
+                'value': signal.read()[signal.name]['value'],
+                'units': signal.describe()[signal.name].get('units', ''),
+                'desc': self._descriptions.get(name),
+            }
 
         return pd.DataFrame(atable).T[self._table_attrs]
 
@@ -77,8 +76,8 @@ class Injector(Device, _TableMixin):
     fineZ = FCpt(IMS, '{self._fineZ}')
 
     def __init__(self, name,
-                       coarseX, coarseY, coarseZ,
-                       fineX, fineY, fineZ, **kwargs):
+                 coarseX, coarseY, coarseZ,
+                 fineX, fineY, fineZ, **kwargs):
 
         self._coarseX = coarseX
         self._coarseY = coarseY
@@ -159,7 +158,8 @@ class Selector(Device, _TableMixin):
            Shaker 4
        '''
 
-    remote_control = FCpt(EpicsSignal, '{self._remote_control}') # also appears on pressure controller screen?
+    # also appears on pressure controller screen?
+    remote_control = FCpt(EpicsSignal, '{self._remote_control}')
     status = FCpt(EpicsSignal, '{self._status}')
 
     flow = FCpt(EpicsSignal, '{self._flow}')
@@ -181,11 +181,11 @@ class Selector(Device, _TableMixin):
     shaker4 = FCpt(EpicsSignal, '{self._shaker4}')
 
     def __init__(self, name,
-                       remote_control, status,
-                       flow, flowstate, flowtype,
-                       FM_rb, FM_reset, FM,
-                       names_button, couple_button, names1, names2,
-                       shaker1, shaker2, shaker3, shaker4, **kwargs):
+                 remote_control, status,
+                 flow, flowstate, flowtype,
+                 FM_rb, FM_reset, FM,
+                 names_button, couple_button, names1, names2,
+                 shaker1, shaker2, shaker3, shaker4, **kwargs):
 
         self._status = status
         self._remote_control = remote_control
@@ -256,9 +256,9 @@ class CoolerShaker(Device, _TableMixin):
     reboot = FCpt(EpicsSignal, '{self._reboot}')
 
     def __init__(self, name,
-                       temperature1, SP1, set_SP1, current1,
-                       temperature2, SP2, set_SP2, current2,
-                       reboot, **kwargs):
+                 temperature1, SP1, set_SP1, current1,
+                 temperature2, SP2, set_SP2, current2,
+                 reboot, **kwargs):
 
         self._temperature1 = temperature1
         self._SP1 = SP1
@@ -273,7 +273,6 @@ class CoolerShaker(Device, _TableMixin):
         self._reboot = reboot
 
         super().__init__(name=name, **kwargs)
-
 
 
 class HPLC(Device, _TableMixin):
@@ -325,10 +324,10 @@ class HPLC(Device, _TableMixin):
     clear_error = FCpt(EpicsSignal, '{self._clear_error}')
 
     def __init__(self, name,
-                       status, run,
-                       flowrate, set_flowrate, flowrate_SP,
-                       pressure, pressure_units, set_max_pressure, max_pressure,
-                       clear_error, **kwargs):
+                 status, run,
+                 flowrate, set_flowrate, flowrate_SP,
+                 pressure, pressure_units, set_max_pressure, max_pressure,
+                 clear_error, **kwargs):
 
         self._status = status
         self._run = run
@@ -345,7 +344,6 @@ class HPLC(Device, _TableMixin):
         self._clear_error = clear_error
 
         super().__init__(name=name, **kwargs)
-
 
 
 class PressureController(Device, _TableMixin):
@@ -393,9 +391,9 @@ class PressureController(Device, _TableMixin):
     SP2 = FCpt(EpicsSignal, '{self._SP2}')
 
     def __init__(self, name,
-                       status,
-                       pressure1, enabled1, limit1, SP1,
-                       pressure2, enabled2, limit2, SP2, **kwargs):
+                 status,
+                 pressure1, enabled1, limit1, SP1,
+                 pressure2, enabled2, limit2, SP2, **kwargs):
 
         self._status = status
 
@@ -537,17 +535,17 @@ class FlowIntegrator(Device, _TableMixin):
     time10 = FCpt(EpicsSignal, '{self._time10}')
 
     def __init__(self, name,
-                       integrator_source, flow_source, names,
-                       start1, used1, time1,
-                       start2, used2, time2,
-                       start3, used3, time3,
-                       start4, used4, time4,
-                       start5, used5, time5,
-                       start6, used6, time6,
-                       start7, used7, time7,
-                       start8, used8, time8,
-                       start9, used9, time9,
-                       start10, used10, time10, **kwargs):
+                 integrator_source, flow_source, names,
+                 start1, used1, time1,
+                 start2, used2, time2,
+                 start3, used3, time3,
+                 start4, used4, time4,
+                 start5, used5, time5,
+                 start6, used6, time6,
+                 start7, used7, time7,
+                 start8, used8, time8,
+                 start9, used9, time9,
+                 start10, used10, time10, **kwargs):
 
         self._integrator_source = integrator_source
         self._flow_source = flow_source
@@ -663,9 +661,9 @@ class Offaxis(PCDSDetector):
     ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}:')
 
     def __init__(self, ROI_port,
-                       ROI_stats_port,
-                       ROI_image_port,
-                       prefix, *args, **kwargs):
+                 ROI_stats_port,
+                 ROI_image_port,
+                 prefix, *args, **kwargs):
         self._ROI_port = ROI_port
         self._ROI_stats_port = ROI_stats_port
         self._ROI_image_port = ROI_image_port
@@ -705,9 +703,9 @@ class Questar(PCDSDetector):
     ROI_image = FCpt(ImagePlugin, '{self.prefix}:{self._ROI_image_port}:')
 
     def __init__(self, ROI_port,
-                       ROI_stats_port,
-                       ROI_image_port,
-                       prefix, *args, **kwargs):
+                 ROI_stats_port,
+                 ROI_image_port,
+                 prefix, *args, **kwargs):
         self._ROI_port = ROI_port
         self._ROI_stats_port = ROI_stats_port
         self._ROI_image_port = ROI_image_port
@@ -726,41 +724,41 @@ class Parameters(Device, _TableMixin):
     Contains EPICS PVs used for jet tracking
     '''
     cam_x = Cpt(EpicsSignal, ':CAM_X',
-                 doc='x-coordinate of camera position in mm')
+                doc='x-coordinate of camera position in mm')
     cam_y = Cpt(EpicsSignal, ':CAM_Y',
-                 doc='y-coordinate of camera position in mm')
+                doc='y-coordinate of camera position in mm')
     pxsize = Cpt(EpicsSignal, ':PXSIZE',
                  doc='size of pixel in mm')
     cam_roll = Cpt(EpicsSignal, ':CAM_ROLL',
-                 doc='rotation of camera about z axis in radians')
+                   doc='rotation of camera about z axis in radians')
     beam_x = Cpt(EpicsSignal, ':BEAM_X',
                  doc='x-coordinate of x-ray beam in mm (usually 0)')
     beam_y = Cpt(EpicsSignal, ':BEAM_Y',
                  doc='y-coordinate of x-ray beam in mm (usually 0)')
     beam_x_px = Cpt(EpicsSignal, ':BEAM_X_PX',
-                 doc='x-coordinate of x-ray beam in camera image in pixels')
+                    doc='x-coordinate of x-ray beam in camera image in pixels')
     beam_y_px = Cpt(EpicsSignal, ':BEAM_Y_PX',
-                 doc='y-coordinate of x-ray beam in camera image in pixels')
+                    doc='y-coordinate of x-ray beam in camera image in pixels')
     nozzle_x = Cpt(EpicsSignal, ':NOZZLE_X',
-                 doc='x-coordinate of nozzle in mm')
+                   doc='x-coordinate of nozzle in mm')
     nozzle_y = Cpt(EpicsSignal, ':NOZZLE_Y',
-                 doc='y-coordinate of nozzle in mm')
+                   doc='y-coordinate of nozzle in mm')
     nozzle_xwidth = Cpt(EpicsSignal, ':NOZZLE_XWIDTH',
-                 doc='width of nozzle in mm')
+                        doc='width of nozzle in mm')
     jet_x = Cpt(EpicsSignal, ':JET_X',
-                 doc='distance from sample jet to x-ray beam in mm')
+                doc='distance from sample jet to x-ray beam in mm')
     jet_roll = Cpt(EpicsSignal, ':JET_ROLL',
-                 doc='rotation of sample jet about z axis in radians')
+                   doc='rotation of sample jet about z axis in radians')
     state = Cpt(EpicsSignal, ':STATE',
-                 doc='dictionary of strings')
+                doc='dictionary of strings')
     jet_counter = Cpt(EpicsSignal, ':JET_Counter',
-                 doc='Jet counter')
+                      doc='Jet counter')
     jet_reprate = Cpt(EpicsSignal, ':JET_RepRate',
-                 doc='Jet repetition rate')
+                      doc='Jet repetition rate')
     nozzle_counter = Cpt(EpicsSignal, ':NOZZLE_Counter',
-                 doc='Nozzle counter')
+                         doc='Nozzle counter')
     nozzle_reprate = Cpt(EpicsSignal, ':NOZZLE_RepRate',
-                 doc='Nozzle repetition rate')
+                         doc='Nozzle repetition rate')
 
 
 class OffaxisParams(Device):
@@ -768,41 +766,41 @@ class OffaxisParams(Device):
     Contains EPICS PVs used with Offaxis camera for jet tracking
     '''
     cam_z = Cpt(EpicsSignal, ':CAM_Z',
-                 doc='z-coordinate of camera position in mm')
+                doc='z-coordinate of camera position in mm')
     cam_y = Cpt(EpicsSignal, ':CAM_Y',
-                 doc='y-coordinate of camera position in mm')
+                doc='y-coordinate of camera position in mm')
     pxsize = Cpt(EpicsSignal, ':PXSIZE',
                  doc='size of pixel in mm')
     cam_pitch = Cpt(EpicsSignal, ':CAM_PITCH',
-                 doc='rotation of camera about x axis in radians')
+                    doc='rotation of camera about x axis in radians')
     beam_z = Cpt(EpicsSignal, ':BEAM_Z',
                  doc='z-coordinate of x-ray beam in mm (usually 0)')
     beam_y = Cpt(EpicsSignal, ':BEAM_Y',
                  doc='y-coordinate of x-ray beam in mm (usually 0)')
     beam_z_px = Cpt(EpicsSignal, ':BEAM_Z_PX',
-                 doc='z-coordinate of x-ray beam in camera image in pixels')
+                    doc='z-coordinate of x-ray beam in camera image in pixels')
     beam_y_px = Cpt(EpicsSignal, ':BEAM_Y_PX',
-                 doc='y-coordinate of x-ray beam in camera image in pixels')
+                    doc='y-coordinate of x-ray beam in camera image in pixels')
     nozzle_z = Cpt(EpicsSignal, ':NOZZLE_Z',
-                 doc='z-coordinate of nozzle in mm')
+                   doc='z-coordinate of nozzle in mm')
     nozzle_y = Cpt(EpicsSignal, ':NOZZLE_Y',
-                 doc='y-coordinate of nozzle in mm')
+                   doc='y-coordinate of nozzle in mm')
     nozzle_zwidth = Cpt(EpicsSignal, ':NOZZLE_ZWIDTH',
-                 doc='width of nozzle in mm')
+                        doc='width of nozzle in mm')
     jet_z = Cpt(EpicsSignal, ':JET_Z',
-                 doc='distance from sample jet to x-ray beam in mm')
+                doc='distance from sample jet to x-ray beam in mm')
     jet_pitch = Cpt(EpicsSignal, ':JET_PITCH',
-                 doc='rotation of sample jet about z axis in radians')
+                    doc='rotation of sample jet about z axis in radians')
     state = Cpt(EpicsSignal, ':STATE',
-                 doc='dictionary of strings')
+                doc='dictionary of strings')
     jet_counter = Cpt(EpicsSignal, ':JET_Counter',
-                 doc='Jet counter')
+                      doc='Jet counter')
     jet_reprate = Cpt(EpicsSignal, ':JET_RepRate',
-                 doc='Jet repetition rate')
+                      doc='Jet repetition rate')
     nozzle_counter = Cpt(EpicsSignal, ':NOZZLE_Counter',
-                 doc='Nozzle counter')
+                         doc='Nozzle counter')
     nozzle_reprate = Cpt(EpicsSignal, ':NOZZLE_RepRate',
-                 doc='Nozzle repetition rate')
+                         doc='Nozzle repetition rate')
 
 
 class Control(Device, _TableMixin):
@@ -822,7 +820,6 @@ class Control(Device, _TableMixin):
     bounce_width = Cpt(EpicsSignal, ':INJECTOR:BOUNCE_WIDTH')
     xmin = Cpt(EpicsSignal, ':INJECTOR:XMIN')
     xmax = Cpt(EpicsSignal, ':INJECTOR:XMAX')
-
 
 
 class Diffract(Device, _TableMixin):

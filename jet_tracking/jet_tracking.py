@@ -25,10 +25,11 @@ class JetControl:
     '''
     Jet tracking control class using jet_tracking methods
     '''
+
     def __init__(self, name,
-            injector, camera, params,
-            #camera_offaxis=None,
-            **kwargs):
+                 injector, camera, params,
+                 # camera_offaxis=None,
+                 **kwargs):
 
         self.injector = injector
         self.camera = camera
@@ -53,13 +54,11 @@ class JetControl:
         '''
         calibrate(self.injector, self.camera, self.params)
 
-
     def jet_calculate(self):
         '''
         Track the sample jet and calculate the distance to the x-ray beam
         '''
         jet_calculate(self.camera, self.params)
-
 
     def jet_move(self):
         '''
@@ -88,10 +87,9 @@ def get_burst_avg(n, image_plugin):
     burst_imgs = np.empty((n, imageX, imageY))
     for x in range(n):
         burst_imgs[x] = image_plugin.image
-    burst_avg =  burst_imgs.mean(axis=0)
+    burst_avg = burst_imgs.mean(axis=0)
 
     return burst_avg
-
 
 
 def set_beam(beamX_px, beamY_px, params):
@@ -213,14 +211,15 @@ def jet_move(injector, camera, params):
     while True:
         try:
             ROIx = camera.ROI.min_xyz.min_x.get()
-            ROIy = camera.ROI.min_xyz.min_y.get()
+            # ROIy = camera.ROI.min_xyz.min_y.get()
 
             if abs(params.jet_x.get()) > 0.01:
                 # move jet to x-rays using injector motor
                 print(f'Moving {params.jet_x.get()} mm')
                 movex(injector.coarseX, -params.jet_x.get())
                 # move the ROI to keep looking at the jet
-                camera.ROI.min_xyz.min_x.put(ROIx + (params.jet_x.get()/params.pxsize.get()))
+                camera.ROI.min_xyz.min_x.put(
+                    ROIx + (params.jet_x.get() / params.pxsize.get()))
             # if params.state == [some state]
             #     [use [x] for jet tracking]
             # else if params.state == [some other state]:
@@ -247,5 +246,3 @@ def jet_move(injector, camera, params):
 '''
 TODO set initial ROI
 '''
-
-

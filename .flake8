@@ -1,3 +1,4 @@
 [flake8]
-exclude = .git,__pycache__,build,dist,versioneer.py,jet_tracking/_version.py,docs/source/conf.py
-ignore = E303, E127, E501, E226, E302, E126, E123, E225, E261, W391, E241, E122, E131, E121, E231, E228, E251, E128
+exclude = .git,__pycache__,build,dist,versioneer.py,jet_tracking/_version.py,docs/source/conf.py,jet_tracking/signal_config.py
+ignore = 
+max-line-length = 100

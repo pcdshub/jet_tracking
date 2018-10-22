@@ -7,6 +7,7 @@ from .. import move_motor
 
 from time import sleep
 
+
 def test_get_camroll_pxsize():
     port_names = {'ROI_port': 'ROI1',
                   'ROI_stats_port': 'Stats1',
@@ -49,13 +50,6 @@ def test_get_camroll_pxsize():
 
 
 def test_get_nozzle_shift():
-    port_names = {'ROI_port': 'ROI1',
-                  'ROI_stats_port': 'Stats1',
-                  'ROI_image_port': 'IMAGE1'}
-    SC1_questar = devices.Questar(**port_names,
-                                  prefix='CXI:SC1:INLINE',
-                                  name='SC1_questar')
-
     camroll_pxsize, imgs = test_get_camroll_pxsize()
     params = {'cam_roll': camroll_pxsize[0], 'pxsize': camroll_pxsize[1]}
     im1 = imgs[0]
@@ -77,9 +71,9 @@ def test_jet_detect():
 
 def test_get_cam_coords():
     camroll_pxsize, imgs = test_get_camroll_pxsize()
-    params = {'cam_roll': camroll_pxsize[0], 'pxsize': camroll_pxsize[1]}
     '''
     NEED BEAM_X, BEAM_Y
+    params = {'cam_roll': camroll_pxsize[0], 'pxsize': camroll_pxsize[1]}
     return cam_utils.get_cam_coords(beam_y, beam_x, params)'''
     return 0
 
@@ -96,16 +90,17 @@ def test_get_jet_x():
     camroll_pxsize, imgs = test_get_camroll_pxsize()
     cam_y, cam_x = test_get_cam_coords()
 
+    '''
     params = {'cam_roll': camroll_pxsize[0],
               'pxsize': camroll_pxsize[1],
               'cam_x': cam_x,
               'cam_y': cam_y}
-    '''
     NEED BEAM_X, BEAM_Y
     return cam_utils.get_jet_x(rho, theta,
                                SC1_questar.ROI,
                                SC1_questar.ROI,
-                               params) '''
+                               params)
+    '''
     return 0
 
 
