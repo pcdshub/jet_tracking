@@ -35,11 +35,11 @@ def jet_detect(img):
     c = 0
     while True:
         try:
-            binary = (img/(img.mean()+2*img.std()*0.90**c)).astype(np.uint8)
-            lines = cv2.HoughLines(binary,1,np.pi/720,30)
+            binary = (img / (img.mean() + 2 * img.std() * 0.90 ** c)).astype(np.uint8)
+            lines = cv2.HoughLines(binary, 1, np.pi / 720, 30)
             rho, theta = lines[0][0]
         except Exception:
-            c+=1
+            c += 1
             continue
         break
     return rho, theta
@@ -75,12 +75,14 @@ def get_jet_z(rho, theta, roi_y, roi_z, params):
     beam_z = params.beam_z.get()
     cam_pitch = params.cam_pitch.get()
 
-    yb_roi = (1.0/pxsize) * ((cam_y-beam_y)*np.cos(-cam_pitch)+(cam_z-beam_z)*np.sin(-cam_pitch)) - roi_y
+    yb_roi = (1.0 / pxsize) * ((cam_y - beam_y) * np.cos(-cam_pitch) +
+                               (cam_z - beam_z) * np.sin(-cam_pitch)) - roi_y
     # print('yb_roi: {}'.format(yb_roi))
-    zj_roi = (rho - yb_roi * np.sin(theta))/np.cos(theta)
+    zj_roi = (rho - yb_roi * np.sin(theta)) / np.cos(theta)
     # print('zj_roi: {}'.format(zj_roi))
-    z0_roi = (1.0/pxsize) * (cam_z*np.cos(cam_pitch)-cam_y*np.sin(-cam_pitch)) - roi_z
-    zj = pxsize * (z0_roi-zj_roi)
+    z0_roi = (1.0 / pxsize) * (cam_z * np.cos(cam_pitch) -
+                               cam_y * np.sin(-cam_pitch)) - roi_z
+    zj = pxsize * (z0_roi - zj_roi)
     return zj
 
 
@@ -112,12 +114,14 @@ def get_jet_x(rho, theta, roi_x, roi_y, params):
     beam_x = params.beam_x.get()
     cam_roll = params.cam_roll.get()
 
-    yb_roi = (1.0/pxsize) * ((cam_y-beam_y)*np.cos(cam_roll)+(cam_x-beam_x)*np.sin(cam_roll)) - roi_y
+    yb_roi = (1.0 / pxsize) * ((cam_y - beam_y) * np.cos(cam_roll) +
+                               (cam_x - beam_x) * np.sin(cam_roll)) - roi_y
     # print('yb_roi: {}'.format(yb_roi))
-    xj_roi = (rho - yb_roi * np.sin(theta))/np.cos(theta)
+    xj_roi = (rho - yb_roi * np.sin(theta)) / np.cos(theta)
     # print('xj_roi: {}'.format(xj_roi))
-    x0_roi = (1.0/pxsize) * (cam_x*np.cos(cam_roll)-cam_y*np.sin(cam_roll)) - roi_x
-    xj = pxsize * (x0_roi-xj_roi)
+    x0_roi = (1.0 / pxsize) * (cam_x * np.cos(cam_roll) -
+                               cam_y * np.sin(cam_roll)) - roi_x
+    xj = pxsize * (x0_roi - xj_roi)
     return xj
 
 
@@ -139,7 +143,7 @@ def get_jet_pitch(theta, params):
 
     cam_pitch = params.cam_pitch.get()
 
-    jet_pitch = (theta - np.pi/2 - cam_pitch) % np.pi - np.pi/2
+    jet_pitch = (theta - np.pi / 2 - cam_pitch) % np.pi - np.pi / 2
     return jet_pitch
 
 
@@ -160,7 +164,7 @@ def get_jet_roll(theta, params):
     '''
     cam_roll = params.cam_roll.get()
 
-    jet_roll = (theta - np.pi/2 - cam_roll) % np.pi - np.pi/2
+    jet_roll = (theta - np.pi / 2 - cam_roll) % np.pi - np.pi / 2
     return jet_roll
 
 
@@ -182,9 +186,10 @@ def get_jet_width(im, rho, theta):
         Jet width in pixels
     '''
     rows, column_indices = np.ogrid[:im.shape[0], :im.shape[1]]
-    r = np.asarray([int((rho + y*np.sin(theta))/np.cos(theta)) for y in range(im.shape[0])])
-    r = r%im.shape[1]
-    column_indices = column_indices - r[:,np.newaxis]
+    r = np.asarray([int((rho + y * np.sin(theta)) / np.cos(theta))
+                    for y in range(im.shape[0])])
+    r = r % im.shape[1]
+    column_indices = column_indices - r[:, np.newaxis]
 
     s = im[rows, column_indices].sum(axis=0)
 
@@ -215,8 +220,10 @@ def get_offaxi_coords(cam_beam_y, cam_beam_z, params):
     cam_pitch = params.cam_pitch.get()
     pxsize = params.pxsize.get()
 
-    cam_y = pxsize * (cam_beam_z*np.sin(cam_pitch) + cam_beam_y*np.cos(cam_pitch))
-    cam_z = pxsize * (cam_beam_z*np.cos(cam_pitch) - cam_beam_y*np.sin(cam_pitch))
+    cam_y = pxsize * (cam_beam_z * np.sin(cam_pitch) +
+                      cam_beam_y * np.cos(cam_pitch))
+    cam_z = pxsize * (cam_beam_z * np.cos(cam_pitch) -
+                      cam_beam_y * np.sin(cam_pitch))
 
     return cam_y, cam_z
 
@@ -244,8 +251,10 @@ def get_cam_coords(cam_beam_x, cam_beam_y, params):
     cam_roll = params.cam_roll.get()
     pxsize = params.pxsize.get()
 
-    cam_x = pxsize * (cam_beam_y*np.sin(cam_roll) + cam_beam_x*np.cos(cam_roll))
-    cam_y = pxsize * (cam_beam_y*np.cos(cam_roll) - cam_beam_x*np.sin(cam_roll))
+    cam_x = pxsize * (cam_beam_y * np.sin(cam_roll) +
+                      cam_beam_x * np.cos(cam_roll))
+    cam_y = pxsize * (cam_beam_y * np.cos(cam_roll) -
+                      cam_beam_x * np.sin(cam_roll))
 
     return cam_x, cam_y
 
@@ -265,9 +274,9 @@ def get_cam_pitch(imgs):
     '''
     ytot = 0
     ztot = 0
-    for i in range(len(imgs)-1):
+    for i in range(len(imgs) - 1):
         im1 = imgs[i]
-        im2 = imgs[i+1]
+        im2 = imgs[i + 1]
         shift, error, diffphase = register_translation(im1, im2, 100)
         dy = shift[0]
         dz = shift[1]
@@ -277,7 +286,7 @@ def get_cam_pitch(imgs):
         ytot += dy
         ztot += dz
 
-    cam_pitch = np.arctan(ytot/ztot)
+    cam_pitch = np.arctan(ytot / ztot)
     return cam_pitch
 
 
@@ -296,9 +305,9 @@ def get_cam_roll(imgs):
     '''
     ytot = 0
     xtot = 0
-    for i in range(len(imgs)-1):
+    for i in range(len(imgs) - 1):
         im1 = imgs[i]
-        im2 = imgs[i+1]
+        im2 = imgs[i + 1]
         shift, error, diffphase = register_translation(im1, im2, 100)
         dy = shift[0]
         dx = shift[1]
@@ -308,7 +317,7 @@ def get_cam_roll(imgs):
         ytot += dy
         xtot += dx
 
-    cam_roll = -np.arctan(ytot/xtot)
+    cam_roll = -np.arctan(ytot / xtot)
     return cam_roll
 
 
@@ -332,9 +341,9 @@ def get_cam_pitch_pxsize(imgs, positions):
     ytot = 0
     ztot = 0
     changetot = 0
-    for i in range(len(positions)-1):
+    for i in range(len(positions) - 1):
         im1 = imgs[i]
-        im2 = imgs[i+1]
+        im2 = imgs[i + 1]
         shift, error, diffphase = register_translation(im1, im2, 100)
         dy = shift[0]
         dz = shift[1]
@@ -344,10 +353,10 @@ def get_cam_pitch_pxsize(imgs, positions):
         ytot += dy
         ztot += dz
 
-        changetot += abs(positions[i+1]-positions[i])
+        changetot += abs(positions[i + 1] - positions[i])
 
-    cam_pitch = np.arctan(ytot/ztot)
-    pxsize = changetot/np.sqrt(ytot**2+ztot**2)
+    cam_pitch = np.arctan(ytot / ztot)
+    pxsize = changetot / np.sqrt(ytot**2 + ztot**2)
     return cam_pitch, pxsize
 
 
@@ -371,9 +380,9 @@ def get_cam_roll_pxsize(imgs, positions):
     ytot = 0
     xtot = 0
     changetot = 0
-    for i in range(len(positions)-1):
+    for i in range(len(positions) - 1):
         im1 = imgs[i]
-        im2 = imgs[i+1]
+        im2 = imgs[i + 1]
         shift, error, diffphase = register_translation(im1, im2, 100)
         dy = shift[0]
         dx = shift[1]
@@ -383,10 +392,10 @@ def get_cam_roll_pxsize(imgs, positions):
         ytot += dy
         xtot += dx
 
-        changetot += abs(positions[i+1]-positions[i])
+        changetot += abs(positions[i + 1] - positions[i])
 
-    cam_roll = -np.arctan(ytot/xtot)
-    pxsize = changetot/np.sqrt(ytot**2+xtot**2)
+    cam_roll = -np.arctan(ytot / xtot)
+    pxsize = changetot / np.sqrt(ytot**2 + xtot**2)
     return cam_roll, pxsize
 
 
@@ -416,8 +425,6 @@ def get_nozzle_shift(im1, im2, params):
     sy = shift[0]
     sx = shift[1]
 
-    dx = (sx*np.cos(cam_roll) - sy*np.sin(cam_roll)) * pxsize
-    dy = (sy*np.cos(cam_roll) + sx*np.sin(cam_roll)) * pxsize
+    dx = (sx * np.cos(cam_roll) - sy * np.sin(cam_roll)) * pxsize
+    dy = (sy * np.cos(cam_roll) + sx * np.sin(cam_roll)) * pxsize
     return dy, dx
-
-

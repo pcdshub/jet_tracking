@@ -15,7 +15,7 @@ def movex(motor, dist):
     motor.put(pos + dist)
 
 
-def pi_moving_test_script(motor, cam, params, im0 = None, min_shift = 1):
+def pi_moving_test_script(motor, cam, params, im0=None, min_shift=1):
     """Moves the motor back to original position when shift is large enough
 
     Parameters
