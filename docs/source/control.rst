@@ -3,7 +3,7 @@
 Jet Control Overview
 ####################
 
-.. currentmodule:: jet_control
+.. currentmodule:: jet_tracking.jet_control
 
 To start ipython for cxi hutch-python3.
 
@@ -38,5 +38,3 @@ Attributes
     JetControl.calibrate
     JetControl.jet_calculate
     JetControl.jet_move
-
-
