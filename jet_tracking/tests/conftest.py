@@ -1,7 +1,6 @@
+import numpy as np
 import pytest
 import types
-import ophyd
-from pcdsdevices.areadetector.detectors import PCDSDetector
 from ..devices import (Injector, Selector, CoolerShaker, HPLC,
                        PressureController, FlowIntegrator, Offaxis, Questar,
                        Parameters, OffaxisParams, Control, Diffract,
@@ -46,7 +45,7 @@ def devices(monkeypatch):
 
 @pytest.fixture(scope='function')
 def injector(devices):
-    return devices.Injector(
+    injector = devices.Injector(
         name='fake_PI1_injector',
         coarseX='fake_CXI:PI1:MMS:01',
         coarseY='fake_CXI:PI1:MMS:02',
@@ -56,6 +55,13 @@ def injector(devices):
         fineZ='fake_CXI:USR:MMS:03'
     )
 
+    for attr in ('coarseX', 'coarseY', 'coarseZ',
+                 'fineX', 'fineY', 'fineZ'):
+        motor = getattr(injector, attr)
+        motor.user_readback.sim_put(0.0)
+        motor.user_setpoint.sim_put(0.0)
+        _patch_user_setpoint(motor)
+    return injector
 
 def _patch_array_data(plugin_inst):
     def get_array_data(*args, count=None, **kwargs):
@@ -65,6 +71,15 @@ def _patch_array_data(plugin_inst):
     array_data = plugin_inst.array_data
     orig_get = array_data.get
     array_data.get = get_array_data
+
+
+def _patch_user_setpoint(motor):
+    def putter(pos, *args, **kwargs):
+        motor.user_setpoint.sim_put(pos, *args, **kwargs)
+        motor.user_readback.sim_put(pos)
+        motor._done_moving(success=True)
+
+    motor.user_setpoint.sim_set_putter(putter)
 
 
 @pytest.fixture(scope='function')
@@ -77,16 +92,33 @@ def questar(devices):
         ROI_image_port='IMAGE1',
     )
 
+    _patch_array_data(questar.image)
     _patch_array_data(questar.ROI_image)
     return questar
 
 
 @pytest.fixture(scope='function')
-def parameters(devices):
-    return devices.Parameters(
+def offaxis_parameters(devices):
+    params = devices.OffaxisParams(
         prefix='fake_CXI:SC1:INLINE',
         name='fake_SC1_params'
     )
+    params.beam_y_px.put(1.0)
+    params.beam_z_px.put(1.0)
+    params.cam_pitch.put(1.0)
+    return params
+
+
+@pytest.fixture(scope='function')
+def parameters(devices):
+    params = devices.Parameters(
+        prefix='fake_CXI:SC1:INLINE',
+        name='fake_SC1_params'
+    )
+    params.beam_x_px.put(1.0)
+    params.beam_y_px.put(1.0)
+    params.cam_roll.put(1.0)
+    return params
 
 
 @pytest.fixture(scope='function')
@@ -103,3 +135,12 @@ def jet_control(injector, questar, parameters, diffract):
                       camera=questar,
                       params=parameters,
                       diffract=diffract)
+
+
+def set_random_image(plugin, dimx=100, dimy=100):
+    'Set up a random image of dimensions (dimx, dimy) on the given image plugin'
+    plugin.array_data.put(np.random.random((dimx, dimy)))
+    plugin.array_size.width.sim_put(dimx)
+    plugin.array_size.height.sim_put(dimy)
+    plugin.array_size.depth.sim_put(0)
+    plugin.ndimensions.sim_put(2)
