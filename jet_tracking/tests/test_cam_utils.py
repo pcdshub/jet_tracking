@@ -53,3 +53,21 @@ def test_smoke_get_cam_pitch(onaxis_image):
 def test_smoke_get_cam_roll(onaxis_image):
     cam_utils.get_cam_roll([onaxis_image,
                             np.random.random(onaxis_image.shape)])
+
+
+def test_smoke_get_cam_pitch_pxsize(onaxis_image):
+    cam_utils.get_cam_pitch_pxsize([onaxis_image,
+                                    np.random.random(onaxis_image.shape)],
+                                   positions=[0, 1])
+
+
+def test_smoke_get_cam_roll_pxsize(onaxis_image):
+    cam_utils.get_cam_roll_pxsize([onaxis_image,
+                                   np.random.random(onaxis_image.shape)],
+                                  positions=[0, 1])
+
+
+def test_smoke_get_nozzle_shift(onaxis_image):
+    cam_utils.get_nozzle_shift(
+        onaxis_image, np.random.random(onaxis_image.shape),
+        cam_roll=1, pxsize=0.001)
