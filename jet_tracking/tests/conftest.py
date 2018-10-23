@@ -63,6 +63,7 @@ def injector(devices):
         _patch_user_setpoint(motor)
     return injector
 
+
 def _patch_array_data(plugin_inst):
     def get_array_data(*args, count=None, **kwargs):
         # eat the count argument, unsupported by fakeepicssignal.get()
