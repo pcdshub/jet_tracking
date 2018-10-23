@@ -37,7 +37,7 @@ install:
   - source activate test-environment
 
 script:
-  - coverage run -m pytest jet_tracking/tests
+  - coverage run -m pytest -vv jet_tracking/tests
   - make -C docs html  # Build the documentation.
   - coverage report -m
   - flake8 jet_tracking/
