@@ -189,7 +189,7 @@ def _jet_calculate_step_offaxis(camera, params):
     # find distance from jet to x-rays
     ROIz = camera.ROI.min_xyz.min_x.get()
     ROIy = camera.ROI.min_xyz.min_y.get()
-    jetZ = cam_utils.get_jet_z(rho, theta, y_roi=ROIy, z_roi=ROIz,
+    jetZ = cam_utils.get_jet_z(rho, theta, roi_y=ROIy, roi_z=ROIz,
                                pxsize=params.pxsize.get(),
                                cam_y=camY,
                                cam_z=camZ,
