@@ -94,7 +94,8 @@ def set_beam(beamX_px, beamY_px, params):
     params.beam_y_px.put(beamY_px)
 
 
-def calibrate(injector, camera, params, offaxis=False):
+def calibrate(injector, camera, params, *, offaxis=False,
+              delay=0.1):
     '''
     Calibrate the camera
     NEED TO CHECK offaxis calculation sign
@@ -107,7 +108,9 @@ def calibrate(injector, camera, params, offaxis=False):
         camera looking at sample jet and x-rays
     params : Parameters
         EPICS PVs used for recording jet tracking data
-    offaxis : bool
+    delay : float, optional
+        Additional settle time after moving the motor
+    offaxis : bool, optional
         Camera is off-axis in y-z plane
     '''
 
@@ -123,15 +126,17 @@ def calibrate(injector, camera, params, offaxis=False):
     # collect images and motor positions to calculate pxsize and cam_roll
     imgs = []
     positions = []
-    start_pos = injector_axis.get()
+    start_pos = injector_axis.user_readback.get()
     for i in range(2):
         image = get_burst_avg(20, camera.image)
         imgs.append(image)
-        positions.append(injector_axis.get())
-        injector_axis.put(injector_axis.get() - 0.1)
-        sleep(3)
-    injector_axis.put(start_pos)
-    sleep(3)
+        positions.append(injector_axis.user_readback.get())
+        next_position = injector_axis.user_setpoint.get() - 0.1
+        injector_axis.set(next_position, wait=True)
+        sleep(delay)
+
+    injector_axis.set(start_pos, wait=True)
+    sleep(delay)
 
     if offaxis:
         cam_pitch, pxsize = cam_utils.get_cam_pitch_pxsize(imgs, positions)
@@ -156,15 +161,13 @@ def calibrate(injector, camera, params, offaxis=False):
 
         beamX_px = params.beam_x_px.get()
         beamY_px = params.beam_y_px.get()
-        camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px, cam_roll=cam_roll,
-                                              pxsize=pxsize)
+        camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px,
+                                              cam_roll=cam_roll, pxsize=pxsize)
         params.cam_x.put(camX)
         params.cam_y.put(camY)
 
-        jet_roll = cam_utils.get_jet_roll(theta, cam_roll)
+        jet_roll = cam_utils.get_jet_roll(theta, cam_roll=cam_roll)
         params.jet_roll.put(jet_roll)
-
-    return
 
 
 def jet_calculate(camera, params, offaxis=False):
