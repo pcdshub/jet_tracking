@@ -68,7 +68,6 @@ def get_burst_avg(n, image_plugin):
     burst_avg : ndarray
         average image
     '''
-
     imageX, imageY = image_plugin.image.shape
     burst_imgs = np.empty((n, imageX, imageY))
     for x in range(n):
