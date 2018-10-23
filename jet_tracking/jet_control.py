@@ -134,7 +134,7 @@ def calibrate(injector, camera, params, offaxis=False):
     sleep(3)
 
     if offaxis:
-        cam_pitch, pxsize = cam_utils.get_cam_roll_pxsize(imgs, positions)
+        cam_pitch, pxsize = cam_utils.get_cam_pitch_pxsize(imgs, positions)
         params.pxsize.put(pxsize)
         params.cam_pitch.put(cam_pitch)
 
