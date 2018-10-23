@@ -1,0 +1,283 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Jet Tracking Shared Memory Application &mdash; PCDS Jet Tracking  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="jet_tracking.psana.output_cspad_sum" href="generated/jet_tracking.psana.output_cspad_sum.html" />
+    <link rel="prev" title="jet_tracking.jet_control.JetControl.jet_move" href="generated/jet_tracking.jet_control.JetControl.jet_move.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PCDS Jet Tracking
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Setup</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Control</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="control.html">Jet Control Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Jet Tracking Shared Memory Application</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sc1-experiments">SC1 Experiments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sc2-experiments">SC2 Experiments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#sc3-experiments">SC3 Experiments</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#api">API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/jet_tracking.psana.output_cspad_sum.html">jet_tracking.psana.output_cspad_sum</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pvNotepad.html">Epics pvNotepad configuration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Devices</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="devices.html">Jet Tracking Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sample_delivery.html">Sample Delivery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sample_delivery.html#api">API</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Presentations and Posters</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="presentations.html">Presentations and Posters</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PCDS Jet Tracking</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Jet Tracking Shared Memory Application</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/shared_memory.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="jet-tracking-shared-memory-application">
+<span id="shared-memory"></span><h1>Jet Tracking Shared Memory Application<a class="headerlink" href="#jet-tracking-shared-memory-application" title="Permalink to this headline">¶</a></h1>
+<p>Information from detectors controled by the LCLS Daq is output to epics PVs through
+a psana shared memory application.</p>
+<div class="section" id="sc1-experiments">
+<h2>SC1 Experiments<a class="headerlink" href="#sc1-experiments" title="Permalink to this headline">¶</a></h2>
+<p>In the standard CXI configuration for the 1 um SC1 chamber,
+the following will start a psana shared memomory application for the DSC CsPad detector
+and output information to epics PVs with the base CXI:SC1:DIFFRACT</p>
+<p>Normally this application will be run for the primary cxi experiment on daq-cxi-mon01</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/reg/g/pcds/pyps/apps/hutch-python/cxi/cxi/jet_tracking/psana2epics.sh --alias<span class="o">=</span><span class="s1">&#39;DscCsPad&#39;</span> --pvbase<span class="o">=</span><span class="s1">&#39;CXI:SC1:DIFFRACT&#39;</span>
+</pre></div>
+</div>
+<p>To check the processing event rate with the daq running, use the caEventRate on
+any cxi control room machine</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>caEventRate CXI:SC1:DIFFRACT:TOTAL_ADU.VAL
+</pre></div>
+</div>
+</div>
+<div class="section" id="sc2-experiments">
+<h2>SC2 Experiments<a class="headerlink" href="#sc2-experiments" title="Permalink to this headline">¶</a></h2>
+<p>For the 100 nm SC2 chamber, the primary daq and daq-cxi-mon01 will generally be used,
+and the shared memory application can be started as follows</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/reg/g/pcds/pyps/apps/hutch-python/cxi/cxi/jet_tracking/psana2epics.sh --alias<span class="o">=</span><span class="s1">&#39;DsaCsPad&#39;</span> --pvbase<span class="o">=</span><span class="s1">&#39;CXI:SC2:DIFFRACT&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="sc3-experiments">
+<h2>SC3 Experiments<a class="headerlink" href="#sc3-experiments" title="Permalink to this headline">¶</a></h2>
+<p>For experiments in the SC3 Serial Sample Chamber (a.k.a., SSC chamber), the secondary daq will generally be used,
+and the shared memory application will run on daq-cxi-mon06</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/reg/g/pcds/pyps/apps/hutch-python/cxi/cxi/jet_tracking/psana2epics.sh --alias<span class="o">=</span><span class="s1">&#39;DsdCsPad&#39;</span> --pvbase<span class="o">=</span><span class="s1">&#39;CXI:SC3:DIFFRACT&#39;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="api">
+<h2>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h2>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="generated/jet_tracking.psana.output_cspad_sum.html#jet_tracking.psana.output_cspad_sum" title="jet_tracking.psana.output_cspad_sum"><code class="xref py py-obj docutils literal notranslate"><span class="pre">output_cspad_sum</span></code></a></td>
+<td>Outputs cspad sum and certain statistics as PVs</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="generated/jet_tracking.psana.output_cspad_sum.html" class="btn btn-neutral float-right" title="jet_tracking.psana.output_cspad_sum" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="generated/jet_tracking.jet_control.JetControl.jet_move.html" class="btn btn-neutral" title="jet_tracking.jet_control.JetControl.jet_move" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, SLAC National Accelerator Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

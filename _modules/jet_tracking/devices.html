@@ -1,0 +1,1093 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jet_tracking.devices &mdash; PCDS Jet Tracking  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> PCDS Jet Tracking
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Setup</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../installation.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Control</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../control.html">Jet Control Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../shared_memory.html">Jet Tracking Shared Memory Application</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../pvNotepad.html">Epics pvNotepad configuration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Devices</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../devices.html">Jet Tracking Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sample_delivery.html">Sample Delivery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../sample_delivery.html#api">API</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Presentations and Posters</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../presentations.html">Presentations and Posters</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">PCDS Jet Tracking</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>jet_tracking.devices</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for jet_tracking.devices</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">epics</span>
+
+<span class="kn">from</span> <span class="nn">ophyd.device</span> <span class="k">import</span> <span class="n">Device</span><span class="p">,</span> <span class="n">FormattedComponent</span> <span class="k">as</span> <span class="n">FCpt</span><span class="p">,</span> <span class="n">Component</span> <span class="k">as</span> <span class="n">Cpt</span>
+<span class="kn">from</span> <span class="nn">ophyd.signal</span> <span class="k">import</span> <span class="n">EpicsSignal</span>
+<span class="kn">from</span> <span class="nn">ophyd.areadetector.plugins</span> <span class="k">import</span> <span class="n">ROIPlugin</span><span class="p">,</span> <span class="n">StatsPlugin</span><span class="p">,</span> <span class="n">ImagePlugin</span>
+
+<span class="kn">from</span> <span class="nn">pcdsdevices.areadetector.detectors</span> <span class="k">import</span> <span class="n">PCDSDetector</span>
+<span class="kn">from</span> <span class="nn">pcdsdevices.epics_motor</span> <span class="k">import</span> <span class="n">IMS</span>
+
+
+<span class="k">class</span> <span class="nc">_TableMixin</span><span class="p">:</span>
+    <span class="n">_table_attrs</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;units&#39;</span><span class="p">,</span> <span class="s1">&#39;desc&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_descriptions</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">_update_descriptions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">adesc</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">signal</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signals</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">adesc</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">epics</span><span class="o">.</span><span class="n">caget</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">pvname</span> <span class="o">+</span> <span class="s1">&#39;.DESC&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_descriptions</span> <span class="o">=</span> <span class="n">adesc</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return table of Device settings</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_descriptions</span><span class="p">()</span>
+
+        <span class="n">atable</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">signal</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_signals</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="n">atable</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">signal</span><span class="o">.</span><span class="n">read</span><span class="p">()[</span><span class="n">signal</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;units&#39;</span><span class="p">:</span> <span class="n">signal</span><span class="o">.</span><span class="n">describe</span><span class="p">()[</span><span class="n">signal</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;units&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;desc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">),</span>
+            <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">atable</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_attrs</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="Injector"><a class="viewcode-back" href="../../devices.html#jet_tracking.devices.Injector">[docs]</a><span class="k">class</span> <span class="nc">Injector</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An Injector which consists of 3 coarse control motors and 3 fine control motors</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       pvs : str dict</span>
+<span class="sd">           A dictionary containing the name of the device and</span>
+<span class="sd">           the PVs of all the injector components</span>
+
+<span class="sd">       Attributes</span>
+<span class="sd">       ----------</span>
+<span class="sd">       coarseX : EpicsSignal</span>
+<span class="sd">           The coarse control motor in the X direction</span>
+<span class="sd">       coarseY : EpicsSignal</span>
+<span class="sd">           The coarse control motor in the Y direction</span>
+<span class="sd">       coarseZ : EpicsSignal</span>
+<span class="sd">           The coarse control motor in the Z direction</span>
+<span class="sd">       fineX : EpicsSignal</span>
+<span class="sd">           The fine control motor in the X direction</span>
+<span class="sd">       fineY : EpicsSignal</span>
+<span class="sd">           The fine control motor in the Y direction</span>
+<span class="sd">       fineZ : EpicsSignal</span>
+<span class="sd">           The fine control motor in the Z direction</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">_table_attrs</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;velocity&#39;</span><span class="p">,</span> <span class="s1">&#39;units&#39;</span><span class="p">,</span> <span class="s1">&#39;desc&#39;</span><span class="p">)</span>
+    <span class="n">coarseX</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">IMS</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._coarseX}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">coarseY</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">IMS</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._coarseY}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">coarseZ</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">IMS</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._coarseZ}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">fineX</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">IMS</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._fineX}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">fineY</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">IMS</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._fineY}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">fineZ</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">IMS</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._fineZ}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                 <span class="n">coarseX</span><span class="p">,</span> <span class="n">coarseY</span><span class="p">,</span> <span class="n">coarseZ</span><span class="p">,</span>
+                 <span class="n">fineX</span><span class="p">,</span> <span class="n">fineY</span><span class="p">,</span> <span class="n">fineZ</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coarseX</span> <span class="o">=</span> <span class="n">coarseX</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coarseY</span> <span class="o">=</span> <span class="n">coarseY</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_coarseZ</span> <span class="o">=</span> <span class="n">coarseZ</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fineX</span> <span class="o">=</span> <span class="n">fineX</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fineY</span> <span class="o">=</span> <span class="n">fineY</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_fineZ</span> <span class="o">=</span> <span class="n">fineZ</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return table of injector settings.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_update_descriptions</span><span class="p">()</span>
+
+        <span class="n">adict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;user_readback&#39;</span><span class="p">,</span>
+                 <span class="s1">&#39;units&#39;</span><span class="p">:</span> <span class="s1">&#39;motor_egu&#39;</span><span class="p">}</span>
+        <span class="n">atable</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">signal</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signals</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+            <span class="n">atable</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;desc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)}</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_table_attrs</span><span class="p">:</span>
+                <span class="n">field</span> <span class="o">=</span> <span class="n">adict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">atable</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="k">pass</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">atable</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_attrs</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="Selector"><a class="viewcode-back" href="../../sample_delivery.html#jet_tracking.devices.Selector">[docs]</a><span class="k">class</span> <span class="nc">Selector</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;A Selector for the sample delivery system</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       pvs : str dict</span>
+<span class="sd">           A dictionary containing the name of the device and</span>
+<span class="sd">           the PVs of all the selector components</span>
+
+<span class="sd">       Attributes</span>
+<span class="sd">       ----------</span>
+<span class="sd">       remote_control : EpicsSignal</span>
+<span class="sd">           Remote control enabled</span>
+<span class="sd">       status : EpicsSignal</span>
+<span class="sd">           Connection status for selector</span>
+<span class="sd">       flow : EpicsSignal</span>
+<span class="sd">           Flow</span>
+<span class="sd">       flowstate : EpicsSignal</span>
+<span class="sd">           State of the flow</span>
+<span class="sd">       flowtype : EpicsSignal</span>
+<span class="sd">           Type of the flow</span>
+<span class="sd">       FM_rb : EpicsSignal</span>
+
+<span class="sd">       FM_reset : EpicsSignal</span>
+
+<span class="sd">       FM : EpicsSignal</span>
+
+<span class="sd">       names_button : EpicsSignal</span>
+
+<span class="sd">       couple_button : EpicsSignal</span>
+
+<span class="sd">       names1 : EpicsSignal</span>
+
+<span class="sd">       names2 : EpicsSignal</span>
+
+<span class="sd">       shaker1 : EpicsSignal</span>
+<span class="sd">           Shaker 1</span>
+<span class="sd">       shaker2 : EpicsSignal</span>
+<span class="sd">           Shaker 2</span>
+<span class="sd">       shaker3 : EpicsSignal</span>
+<span class="sd">           Shaker 3</span>
+<span class="sd">       shaker4 : EpicsSignal</span>
+<span class="sd">           Shaker 4</span>
+<span class="sd">       &#39;&#39;&#39;</span>
+
+    <span class="c1"># also appears on pressure controller screen?</span>
+    <span class="n">remote_control</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._remote_control}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">status</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._status}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">flow</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._flow}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">flowstate</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._flowstate}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">flowtype</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._flowtype}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">FM_rb</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._FM_rb}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">FM_reset</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._FM_reset}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">FM</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._FM}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">names_button</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._names_button}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">couple_button</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._couple_button}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">names1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._names1}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">names2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._names2}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">shaker1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._shaker1}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">shaker2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._shaker2}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">shaker3</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._shaker3}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">shaker4</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._shaker4}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                 <span class="n">remote_control</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span>
+                 <span class="n">flow</span><span class="p">,</span> <span class="n">flowstate</span><span class="p">,</span> <span class="n">flowtype</span><span class="p">,</span>
+                 <span class="n">FM_rb</span><span class="p">,</span> <span class="n">FM_reset</span><span class="p">,</span> <span class="n">FM</span><span class="p">,</span>
+                 <span class="n">names_button</span><span class="p">,</span> <span class="n">couple_button</span><span class="p">,</span> <span class="n">names1</span><span class="p">,</span> <span class="n">names2</span><span class="p">,</span>
+                 <span class="n">shaker1</span><span class="p">,</span> <span class="n">shaker2</span><span class="p">,</span> <span class="n">shaker3</span><span class="p">,</span> <span class="n">shaker4</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_remote_control</span> <span class="o">=</span> <span class="n">remote_control</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flow</span> <span class="o">=</span> <span class="n">flow</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flowstate</span> <span class="o">=</span> <span class="n">flowstate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flowtype</span> <span class="o">=</span> <span class="n">flowtype</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_FM_rb</span> <span class="o">=</span> <span class="n">FM_rb</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_FM_reset</span> <span class="o">=</span> <span class="n">FM_reset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_FM</span> <span class="o">=</span> <span class="n">FM</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_names_button</span> <span class="o">=</span> <span class="n">names_button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_couple_button</span> <span class="o">=</span> <span class="n">couple_button</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_names1</span> <span class="o">=</span> <span class="n">names1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_names2</span> <span class="o">=</span> <span class="n">names2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shaker1</span> <span class="o">=</span> <span class="n">shaker1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shaker2</span> <span class="o">=</span> <span class="n">shaker2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shaker3</span> <span class="o">=</span> <span class="n">shaker3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_shaker4</span> <span class="o">=</span> <span class="n">shaker4</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="CoolerShaker"><a class="viewcode-back" href="../../sample_delivery.html#jet_tracking.devices.CoolerShaker">[docs]</a><span class="k">class</span> <span class="nc">CoolerShaker</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;A Cooler/Shaker for the sample delivery system</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       pvs : str dict</span>
+<span class="sd">           A dictionary containing the PVs of all the cooler/shaker components</span>
+<span class="sd">       name : str</span>
+<span class="sd">           The device name</span>
+
+<span class="sd">       Attributes</span>
+<span class="sd">       ----------</span>
+<span class="sd">       temperature1 : EpicsSignal</span>
+<span class="sd">           Temperature of 1</span>
+<span class="sd">       SP1 : EpicsSignal</span>
+<span class="sd">           Set point of 1</span>
+<span class="sd">       set_SP1 : EpicsSignal</span>
+<span class="sd">           Set the set point for 1</span>
+<span class="sd">       current1 : EpicsSignal</span>
+<span class="sd">           Current for 1</span>
+<span class="sd">       temperature2 : EpicsSignal</span>
+<span class="sd">           Temperature of 2</span>
+<span class="sd">       SP2 : EpicsSignal</span>
+<span class="sd">           Set point of 2</span>
+<span class="sd">       set_SP2 : EpicsSignal</span>
+<span class="sd">           Set the set point of 2</span>
+<span class="sd">       current2 : EpicsSignal</span>
+<span class="sd">           Current of 2</span>
+<span class="sd">       reboot : EpicsSignal</span>
+<span class="sd">           Reboot the cooler/shaker</span>
+<span class="sd">       &#39;&#39;&#39;</span>
+
+    <span class="n">temperature1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._temperature1}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">SP1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._SP1}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">set_SP1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._set_SP1}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">current1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._current1}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">temperature2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._temperature2}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">SP2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._SP2}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">set_SP2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._set_SP2}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">current2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._current2}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">reboot</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._reboot}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                 <span class="n">temperature1</span><span class="p">,</span> <span class="n">SP1</span><span class="p">,</span> <span class="n">set_SP1</span><span class="p">,</span> <span class="n">current1</span><span class="p">,</span>
+                 <span class="n">temperature2</span><span class="p">,</span> <span class="n">SP2</span><span class="p">,</span> <span class="n">set_SP2</span><span class="p">,</span> <span class="n">current2</span><span class="p">,</span>
+                 <span class="n">reboot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_temperature1</span> <span class="o">=</span> <span class="n">temperature1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SP1</span> <span class="o">=</span> <span class="n">SP1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_SP1</span> <span class="o">=</span> <span class="n">set_SP1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current1</span> <span class="o">=</span> <span class="n">current1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_temperature2</span> <span class="o">=</span> <span class="n">temperature2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SP2</span> <span class="o">=</span> <span class="n">SP2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_SP2</span> <span class="o">=</span> <span class="n">set_SP2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_current2</span> <span class="o">=</span> <span class="n">current2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_reboot</span> <span class="o">=</span> <span class="n">reboot</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HPLC"><a class="viewcode-back" href="../../sample_delivery.html#jet_tracking.devices.HPLC">[docs]</a><span class="k">class</span> <span class="nc">HPLC</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An HPLC for the sample delivery system</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       pvs : str dict</span>
+<span class="sd">           A dictionary containing the PVs of all the HPLC components</span>
+<span class="sd">       name : str</span>
+<span class="sd">           The device name</span>
+
+<span class="sd">       Attributes</span>
+<span class="sd">       ----------</span>
+<span class="sd">       status : EpicsSignal</span>
+<span class="sd">           Status of the HPLC</span>
+<span class="sd">       run : EpicsSignal</span>
+<span class="sd">           Run the HPLC</span>
+<span class="sd">       flowrate : EpicsSignal</span>
+<span class="sd">           Flow rate of the HPLC</span>
+<span class="sd">       set_flowrate : EpicsSignal</span>
+<span class="sd">           Set the flow rate of the HPLC</span>
+<span class="sd">       flowrate_SP : EpicsSignal</span>
+<span class="sd">           Set point for the flow rate</span>
+<span class="sd">       pressure : EpicsSignal</span>
+<span class="sd">           Pressure in the HPLC</span>
+<span class="sd">       pressure_units : EpicsSignal</span>
+<span class="sd">           Units for the pressure</span>
+<span class="sd">       set_max_pressure : EpicsSignal</span>
+<span class="sd">           Set the maximum pressure</span>
+<span class="sd">       max_pressure : EpicsSignal</span>
+<span class="sd">           Maximum pressure</span>
+<span class="sd">       clear_error : EpicsSignal</span>
+<span class="sd">           Clear errors</span>
+<span class="sd">       &#39;&#39;&#39;</span>
+
+    <span class="n">status</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._status}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">run</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._run}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">flowrate</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._flowrate}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">set_flowrate</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._set_flowrate}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">flowrate_SP</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._flowrate_SP}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">pressure</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._pressure}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">pressure_units</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._pressure_units}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">set_max_pressure</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._set_max_pressure}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">max_pressure</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._max_pressure}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">clear_error</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._clear_error}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                 <span class="n">status</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span>
+                 <span class="n">flowrate</span><span class="p">,</span> <span class="n">set_flowrate</span><span class="p">,</span> <span class="n">flowrate_SP</span><span class="p">,</span>
+                 <span class="n">pressure</span><span class="p">,</span> <span class="n">pressure_units</span><span class="p">,</span> <span class="n">set_max_pressure</span><span class="p">,</span> <span class="n">max_pressure</span><span class="p">,</span>
+                 <span class="n">clear_error</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="n">status</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run</span> <span class="o">=</span> <span class="n">run</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flowrate</span> <span class="o">=</span> <span class="n">flowrate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_flowrate</span> <span class="o">=</span> <span class="n">set_flowrate</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flowrate_SP</span> <span class="o">=</span> <span class="n">flowrate_SP</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pressure</span> <span class="o">=</span> <span class="n">pressure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pressure_units</span> <span class="o">=</span> <span class="n">pressure_units</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_max_pressure</span> <span class="o">=</span> <span class="n">set_max_pressure</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_max_pressure</span> <span class="o">=</span> <span class="n">max_pressure</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clear_error</span> <span class="o">=</span> <span class="n">clear_error</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="PressureController"><a class="viewcode-back" href="../../sample_delivery.html#jet_tracking.devices.PressureController">[docs]</a><span class="k">class</span> <span class="nc">PressureController</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An Pressure Controller for the sample delivery system</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       pvs : str dict</span>
+<span class="sd">           A dictionary containing the PVs of all the pressure controller components</span>
+<span class="sd">       name : str</span>
+<span class="sd">           The device name</span>
+
+<span class="sd">       Attributes</span>
+<span class="sd">       ----------</span>
+<span class="sd">       status : EpicsSignal</span>
+<span class="sd">           Connection status of pressure controller</span>
+<span class="sd">       pressure1 : EpicsSignal</span>
+<span class="sd">           Pressure of 1</span>
+<span class="sd">       enabled1 : EpicsSignal</span>
+<span class="sd">           Is 1 enabled</span>
+<span class="sd">       limit1 : EpicsSignal</span>
+<span class="sd">           High pressure limit of 1</span>
+<span class="sd">       SP1 : EpicsSignal</span>
+<span class="sd">           Pressure set point of 1</span>
+<span class="sd">       pressure2 : EpicsSignal</span>
+<span class="sd">           Pressure of 2</span>
+<span class="sd">       enabled2 : EpicsSignal</span>
+<span class="sd">           Is 2 enabled</span>
+<span class="sd">       limit2 : EpicsSignal</span>
+<span class="sd">           High pressure limit of 2</span>
+<span class="sd">       SP2 : EpicsSignal</span>
+<span class="sd">           Pressure set point of 2</span>
+<span class="sd">       &#39;&#39;&#39;</span>
+
+    <span class="n">status</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._status}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">pressure1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._pressure1}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">enabled1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._enabled1}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">limit1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._limit1}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">SP1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._SP1}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">pressure2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._pressure2}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">enabled2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._enabled2}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">limit2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._limit2}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">SP2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._SP2}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                 <span class="n">status</span><span class="p">,</span>
+                 <span class="n">pressure1</span><span class="p">,</span> <span class="n">enabled1</span><span class="p">,</span> <span class="n">limit1</span><span class="p">,</span> <span class="n">SP1</span><span class="p">,</span>
+                 <span class="n">pressure2</span><span class="p">,</span> <span class="n">enabled2</span><span class="p">,</span> <span class="n">limit2</span><span class="p">,</span> <span class="n">SP2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_status</span> <span class="o">=</span> <span class="n">status</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pressure1</span> <span class="o">=</span> <span class="n">pressure1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enabled1</span> <span class="o">=</span> <span class="n">enabled1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_limit1</span> <span class="o">=</span> <span class="n">limit1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SP1</span> <span class="o">=</span> <span class="n">SP1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_pressure2</span> <span class="o">=</span> <span class="n">pressure2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_enabled2</span> <span class="o">=</span> <span class="n">enabled2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_limit2</span> <span class="o">=</span> <span class="n">limit2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_SP2</span> <span class="o">=</span> <span class="n">SP2</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FlowIntegrator"><a class="viewcode-back" href="../../sample_delivery.html#jet_tracking.devices.FlowIntegrator">[docs]</a><span class="k">class</span> <span class="nc">FlowIntegrator</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;An FlowIntegrator for the sample delivery system</span>
+
+<span class="sd">       Parameters</span>
+<span class="sd">       ----------</span>
+<span class="sd">       pvs : str dict</span>
+<span class="sd">           A dictionary containing the PVs of all the flow integrator components</span>
+<span class="sd">       name : str</span>
+<span class="sd">           The device name</span>
+
+<span class="sd">       Attributes</span>
+<span class="sd">       ----------</span>
+<span class="sd">       integrator_source: EpicsSignal</span>
+
+<span class="sd">       flow_source : EpicsSignal</span>
+
+<span class="sd">       names : EpicsSignal</span>
+<span class="sd">           Names of</span>
+<span class="sd">       start1 : EpicsSignal</span>
+<span class="sd">           Starting volume of 1</span>
+<span class="sd">       used1 : EpicsSignal</span>
+<span class="sd">           Flow of 1</span>
+<span class="sd">       time1 : EpicsSignal</span>
+<span class="sd">           Estimated depletion time of 1</span>
+<span class="sd">       start2 : EpicsSignal</span>
+<span class="sd">           Starting volume of 2</span>
+<span class="sd">       used2 : EpicsSignal</span>
+<span class="sd">           Flow of 2</span>
+<span class="sd">       time2 : EpicsSignal</span>
+<span class="sd">           Estimated depletion time of 2</span>
+<span class="sd">       start3 : EpicsSignal</span>
+<span class="sd">           Starting volume of 3</span>
+<span class="sd">       used3 : EpicsSignal</span>
+<span class="sd">           Flow of 3</span>
+<span class="sd">       time3 : EpicsSignal</span>
+<span class="sd">           Estimated depletion time of 3</span>
+<span class="sd">       start4 : EpicsSignal</span>
+<span class="sd">           Starting volume of 4</span>
+<span class="sd">       used4 : EpicsSignal</span>
+<span class="sd">           Flow of 4</span>
+<span class="sd">       time4 : EpicsSignal</span>
+<span class="sd">           Estimated depletion time of 4</span>
+<span class="sd">       start5 : EpicsSignal</span>
+<span class="sd">           Starting volume of 5</span>
+<span class="sd">       used5 : EpicsSignal</span>
+<span class="sd">           Flow of 5</span>
+<span class="sd">       time5 : EpicsSignal</span>
+<span class="sd">           Estimated depletion time of 5</span>
+<span class="sd">       start6 : EpicsSignal</span>
+<span class="sd">           Starting volume of 6</span>
+<span class="sd">       used6 : EpicsSignal</span>
+<span class="sd">           Flow of 6</span>
+<span class="sd">       time6 : EpicsSignal</span>
+<span class="sd">           Estimated depletion time of 6</span>
+<span class="sd">       start7 : EpicsSignal</span>
+<span class="sd">           Starting volume of 7</span>
+<span class="sd">       used7 : EpicsSignal</span>
+<span class="sd">           Flow of 7</span>
+<span class="sd">       time7 : EpicsSignal</span>
+<span class="sd">           Estimated depletion time of 7</span>
+<span class="sd">       start8 : EpicsSignal</span>
+<span class="sd">           Starting volume of 8</span>
+<span class="sd">       used8 : EpicsSignal</span>
+<span class="sd">           Flow of 8</span>
+<span class="sd">       time8 : EpicsSignal</span>
+<span class="sd">           Estimated depletion time of 8</span>
+<span class="sd">       start9 : EpicsSignal</span>
+<span class="sd">           Starting volume of 9</span>
+<span class="sd">       used9 : EpicsSignal</span>
+<span class="sd">           Flow of 9</span>
+<span class="sd">       time9 : EpicsSignal</span>
+<span class="sd">           Estimated depletion time of 9</span>
+<span class="sd">       start10 : EpicsSignal</span>
+<span class="sd">           Starting volume of 10</span>
+<span class="sd">       used10 : EpicsSignal</span>
+<span class="sd">           Flow of 10</span>
+<span class="sd">       time10 : EpicsSignal</span>
+<span class="sd">           Estimated depletion time of 10</span>
+<span class="sd">       &#39;&#39;&#39;</span>
+
+    <span class="n">integrator_source</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._integrator_source}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">flow_source</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._flow_source}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._names}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">start1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._start1}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">used1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._used1}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">time1</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._time1}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">start2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._start2}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">used2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._used2}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">time2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._time2}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">start3</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._start3}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">used3</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._used3}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">time3</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._time3}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">start4</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._start4}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">used4</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._used4}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">time4</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._time4}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">start5</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._start5}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">used5</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._used5}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">time5</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._time5}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">start6</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._start6}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">used6</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._used6}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">time6</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._time6}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">start7</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._start7}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">used7</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._used7}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">time7</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._time7}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">start8</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._start8}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">used8</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._used8}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">time8</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._time8}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">start9</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._start9}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">used9</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._used9}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">time9</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._time9}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">start10</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._start10}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">used10</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._used10}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">time10</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._time10}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+                 <span class="n">integrator_source</span><span class="p">,</span> <span class="n">flow_source</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span>
+                 <span class="n">start1</span><span class="p">,</span> <span class="n">used1</span><span class="p">,</span> <span class="n">time1</span><span class="p">,</span>
+                 <span class="n">start2</span><span class="p">,</span> <span class="n">used2</span><span class="p">,</span> <span class="n">time2</span><span class="p">,</span>
+                 <span class="n">start3</span><span class="p">,</span> <span class="n">used3</span><span class="p">,</span> <span class="n">time3</span><span class="p">,</span>
+                 <span class="n">start4</span><span class="p">,</span> <span class="n">used4</span><span class="p">,</span> <span class="n">time4</span><span class="p">,</span>
+                 <span class="n">start5</span><span class="p">,</span> <span class="n">used5</span><span class="p">,</span> <span class="n">time5</span><span class="p">,</span>
+                 <span class="n">start6</span><span class="p">,</span> <span class="n">used6</span><span class="p">,</span> <span class="n">time6</span><span class="p">,</span>
+                 <span class="n">start7</span><span class="p">,</span> <span class="n">used7</span><span class="p">,</span> <span class="n">time7</span><span class="p">,</span>
+                 <span class="n">start8</span><span class="p">,</span> <span class="n">used8</span><span class="p">,</span> <span class="n">time8</span><span class="p">,</span>
+                 <span class="n">start9</span><span class="p">,</span> <span class="n">used9</span><span class="p">,</span> <span class="n">time9</span><span class="p">,</span>
+                 <span class="n">start10</span><span class="p">,</span> <span class="n">used10</span><span class="p">,</span> <span class="n">time10</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_integrator_source</span> <span class="o">=</span> <span class="n">integrator_source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_flow_source</span> <span class="o">=</span> <span class="n">flow_source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_names</span> <span class="o">=</span> <span class="n">names</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start1</span> <span class="o">=</span> <span class="n">start1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_used1</span> <span class="o">=</span> <span class="n">used1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time1</span> <span class="o">=</span> <span class="n">time1</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start2</span> <span class="o">=</span> <span class="n">start2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_used2</span> <span class="o">=</span> <span class="n">used2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time2</span> <span class="o">=</span> <span class="n">time2</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start3</span> <span class="o">=</span> <span class="n">start3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_used3</span> <span class="o">=</span> <span class="n">used3</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time3</span> <span class="o">=</span> <span class="n">time3</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start4</span> <span class="o">=</span> <span class="n">start4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_used4</span> <span class="o">=</span> <span class="n">used4</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time4</span> <span class="o">=</span> <span class="n">time4</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start5</span> <span class="o">=</span> <span class="n">start5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_used5</span> <span class="o">=</span> <span class="n">used5</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time5</span> <span class="o">=</span> <span class="n">time5</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start6</span> <span class="o">=</span> <span class="n">start6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_used6</span> <span class="o">=</span> <span class="n">used6</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time6</span> <span class="o">=</span> <span class="n">time6</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start7</span> <span class="o">=</span> <span class="n">start7</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_used7</span> <span class="o">=</span> <span class="n">used7</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time7</span> <span class="o">=</span> <span class="n">time7</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start8</span> <span class="o">=</span> <span class="n">start8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_used8</span> <span class="o">=</span> <span class="n">used8</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time8</span> <span class="o">=</span> <span class="n">time8</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start9</span> <span class="o">=</span> <span class="n">start9</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_used9</span> <span class="o">=</span> <span class="n">used9</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time9</span> <span class="o">=</span> <span class="n">time9</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_start10</span> <span class="o">=</span> <span class="n">start10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_used10</span> <span class="o">=</span> <span class="n">used10</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_time10</span> <span class="o">=</span> <span class="n">time10</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SDS"><a class="viewcode-back" href="../../sample_delivery.html#jet_tracking.devices.SDS">[docs]</a><span class="k">class</span> <span class="nc">SDS</span><span class="p">:</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Sample delivery system</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    devices : dict</span>
+<span class="sd">        A dictionary of dictionaries containing the devices to be made and</span>
+<span class="sd">        their PV names. The dictionary key is a string, one of the following:</span>
+<span class="sd">        {&#39;selector&#39;, &#39;cooler_shaker&#39;, &#39;hplc&#39;, &#39;pressure_controller&#39;,</span>
+<span class="sd">        &#39;flow_integrator&#39;}</span>
+<span class="sd">        The values of the dictionary, are also dictionaries. These are passed</span>
+<span class="sd">        to the new device, allowing parameters such as PV names to be</span>
+<span class="sd">        specified.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    SDS_devices : list</span>
+<span class="sd">        List containing all the devices that are in the sample delivery system</span>
+<span class="sd">   &#39;&#39;&#39;</span>
+
+    <span class="n">device_types</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;selector&#39;</span><span class="p">:</span> <span class="n">Selector</span><span class="p">,</span>
+        <span class="s1">&#39;cooler_shaker&#39;</span><span class="p">:</span> <span class="n">CoolerShaker</span><span class="p">,</span>
+        <span class="s1">&#39;hplc&#39;</span><span class="p">:</span> <span class="n">HPLC</span><span class="p">,</span>
+        <span class="s1">&#39;pressure_controller&#39;</span><span class="p">:</span> <span class="n">PressureController</span><span class="p">,</span>
+        <span class="s1">&#39;flow_integrator&#39;</span><span class="p">:</span> <span class="n">FlowIntegrator</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">devices</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">SDS_devices</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">device_types</span><span class="p">[</span><span class="n">dev</span><span class="p">](</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">dev</span><span class="p">,</span> <span class="n">kwargs</span> <span class="ow">in</span> <span class="n">devices</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">dev</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">device_types</span>
+        <span class="p">]</span>
+
+        <span class="n">invalid_devices</span> <span class="o">=</span> <span class="p">[</span><span class="n">dev</span> <span class="k">for</span> <span class="n">dev</span> <span class="ow">in</span> <span class="n">devices</span>
+                           <span class="k">if</span> <span class="n">dev</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">device_types</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">device</span> <span class="ow">in</span> <span class="n">invalid_devices</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;WARNING: </span><span class="si">{device}</span><span class="s1"> is not a valid device type&#39;</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">Offaxis</span><span class="p">(</span><span class="n">PCDSDetector</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Area detector for Offaxis camera in CXI</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    port_names : str dict</span>
+<span class="sd">        A dictionary containing the access port names for the plugins</span>
+<span class="sd">    prefix : str</span>
+<span class="sd">        Prefix for the PV name of the camera</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Name of the camera</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ROI : ROIPlugin</span>
+<span class="sd">        ROI on original rate image</span>
+<span class="sd">    ROI_stats : StatsPlugin</span>
+<span class="sd">        Stats on ROI of original rate image</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">ROI</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">ROIPlugin</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self.prefix}</span><span class="s1">:</span><span class="si">{self._ROI_port}</span><span class="s1">:&#39;</span><span class="p">)</span>
+    <span class="n">ROI_stats</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">StatsPlugin</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self.prefix}</span><span class="s1">:</span><span class="si">{self._ROI_stats_port}</span><span class="s1">:&#39;</span><span class="p">)</span>
+    <span class="n">ROI_image</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">ImagePlugin</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self.prefix}</span><span class="s1">:</span><span class="si">{self._ROI_image_port}</span><span class="s1">:&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ROI_port</span><span class="p">,</span>
+                 <span class="n">ROI_stats_port</span><span class="p">,</span>
+                 <span class="n">ROI_image_port</span><span class="p">,</span>
+                 <span class="n">prefix</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ROI_port</span> <span class="o">=</span> <span class="n">ROI_port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ROI_stats_port</span> <span class="o">=</span> <span class="n">ROI_stats_port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ROI_image_port</span> <span class="o">=</span> <span class="n">ROI_image_port</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROI_stats</span><span class="o">.</span><span class="n">nd_array_port</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">ROI_port</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROI_image</span><span class="o">.</span><span class="n">nd_array_port</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">ROI_port</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">enable</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s1">&#39;Enabled&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROI_stats</span><span class="o">.</span><span class="n">enable</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s1">&#39;Enabled&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROI_image</span><span class="o">.</span><span class="n">enable</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s1">&#39;Enabled&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Questar"><a class="viewcode-back" href="../../devices.html#jet_tracking.devices.Questar">[docs]</a><span class="k">class</span> <span class="nc">Questar</span><span class="p">(</span><span class="n">PCDSDetector</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Area detector for Inline Questar Camera in CXI</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    port_names : str dict</span>
+<span class="sd">        A dictionary containing the access port names for the plugins</span>
+<span class="sd">    prefix : str</span>
+<span class="sd">        Prefix for the PV name of the camera</span>
+<span class="sd">    name : str</span>
+<span class="sd">        Name of the camera</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ROI : ROIPlugin</span>
+<span class="sd">        ROI on original rate image</span>
+<span class="sd">    ROI_stats : StatsPlugin</span>
+<span class="sd">        Stats on ROI of original rate image</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">ROI</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">ROIPlugin</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self.prefix}</span><span class="s1">:</span><span class="si">{self._ROI_port}</span><span class="s1">:&#39;</span><span class="p">)</span>
+    <span class="n">ROI_stats</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">StatsPlugin</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self.prefix}</span><span class="s1">:</span><span class="si">{self._ROI_stats_port}</span><span class="s1">:&#39;</span><span class="p">)</span>
+    <span class="n">ROI_image</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">ImagePlugin</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self.prefix}</span><span class="s1">:</span><span class="si">{self._ROI_image_port}</span><span class="s1">:&#39;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ROI_port</span><span class="p">,</span>
+                 <span class="n">ROI_stats_port</span><span class="p">,</span>
+                 <span class="n">ROI_image_port</span><span class="p">,</span>
+                 <span class="n">prefix</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ROI_port</span> <span class="o">=</span> <span class="n">ROI_port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ROI_stats_port</span> <span class="o">=</span> <span class="n">ROI_stats_port</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ROI_image_port</span> <span class="o">=</span> <span class="n">ROI_image_port</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROI_stats</span><span class="o">.</span><span class="n">nd_array_port</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">ROI_port</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROI_image</span><span class="o">.</span><span class="n">nd_array_port</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">ROI_port</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">enable</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s1">&#39;Enabled&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROI_stats</span><span class="o">.</span><span class="n">enable</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s1">&#39;Enabled&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ROI_image</span><span class="o">.</span><span class="n">enable</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s1">&#39;Enabled&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Parameters"><a class="viewcode-back" href="../../devices.html#jet_tracking.devices.Parameters">[docs]</a><span class="k">class</span> <span class="nc">Parameters</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Contains EPICS PVs used for jet tracking</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">cam_x</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:CAM_X&#39;</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;x-coordinate of camera position in mm&#39;</span><span class="p">)</span>
+    <span class="n">cam_y</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:CAM_Y&#39;</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;y-coordinate of camera position in mm&#39;</span><span class="p">)</span>
+    <span class="n">pxsize</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PXSIZE&#39;</span><span class="p">,</span>
+                 <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;size of pixel in mm&#39;</span><span class="p">)</span>
+    <span class="n">cam_roll</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:CAM_ROLL&#39;</span><span class="p">,</span>
+                   <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;rotation of camera about z axis in radians&#39;</span><span class="p">)</span>
+    <span class="n">beam_x</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM_X&#39;</span><span class="p">,</span>
+                 <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;x-coordinate of x-ray beam in mm (usually 0)&#39;</span><span class="p">)</span>
+    <span class="n">beam_y</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM_Y&#39;</span><span class="p">,</span>
+                 <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;y-coordinate of x-ray beam in mm (usually 0)&#39;</span><span class="p">)</span>
+    <span class="n">beam_x_px</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM_X_PX&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;x-coordinate of x-ray beam in camera image in pixels&#39;</span><span class="p">)</span>
+    <span class="n">beam_y_px</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM_Y_PX&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;y-coordinate of x-ray beam in camera image in pixels&#39;</span><span class="p">)</span>
+    <span class="n">nozzle_x</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_X&#39;</span><span class="p">,</span>
+                   <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;x-coordinate of nozzle in mm&#39;</span><span class="p">)</span>
+    <span class="n">nozzle_y</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_Y&#39;</span><span class="p">,</span>
+                   <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;y-coordinate of nozzle in mm&#39;</span><span class="p">)</span>
+    <span class="n">nozzle_xwidth</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_XWIDTH&#39;</span><span class="p">,</span>
+                        <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;width of nozzle in mm&#39;</span><span class="p">)</span>
+    <span class="n">jet_x</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:JET_X&#39;</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;distance from sample jet to x-ray beam in mm&#39;</span><span class="p">)</span>
+    <span class="n">jet_roll</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:JET_ROLL&#39;</span><span class="p">,</span>
+                   <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;rotation of sample jet about z axis in radians&#39;</span><span class="p">)</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STATE&#39;</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;dictionary of strings&#39;</span><span class="p">)</span>
+    <span class="n">jet_counter</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:JET_Counter&#39;</span><span class="p">,</span>
+                      <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Jet counter&#39;</span><span class="p">)</span>
+    <span class="n">jet_reprate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:JET_RepRate&#39;</span><span class="p">,</span>
+                      <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Jet repetition rate&#39;</span><span class="p">)</span>
+    <span class="n">nozzle_counter</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_Counter&#39;</span><span class="p">,</span>
+                         <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Nozzle counter&#39;</span><span class="p">)</span>
+    <span class="n">nozzle_reprate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_RepRate&#39;</span><span class="p">,</span>
+                         <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Nozzle repetition rate&#39;</span><span class="p">)</span></div>
+
+
+<span class="k">class</span> <span class="nc">OffaxisParams</span><span class="p">(</span><span class="n">Device</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Contains EPICS PVs used with Offaxis camera for jet tracking</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">cam_z</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:CAM_Z&#39;</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;z-coordinate of camera position in mm&#39;</span><span class="p">)</span>
+    <span class="n">cam_y</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:CAM_Y&#39;</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;y-coordinate of camera position in mm&#39;</span><span class="p">)</span>
+    <span class="n">pxsize</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PXSIZE&#39;</span><span class="p">,</span>
+                 <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;size of pixel in mm&#39;</span><span class="p">)</span>
+    <span class="n">cam_pitch</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:CAM_PITCH&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;rotation of camera about x axis in radians&#39;</span><span class="p">)</span>
+    <span class="n">beam_z</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM_Z&#39;</span><span class="p">,</span>
+                 <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;z-coordinate of x-ray beam in mm (usually 0)&#39;</span><span class="p">)</span>
+    <span class="n">beam_y</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM_Y&#39;</span><span class="p">,</span>
+                 <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;y-coordinate of x-ray beam in mm (usually 0)&#39;</span><span class="p">)</span>
+    <span class="n">beam_z_px</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM_Z_PX&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;z-coordinate of x-ray beam in camera image in pixels&#39;</span><span class="p">)</span>
+    <span class="n">beam_y_px</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM_Y_PX&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;y-coordinate of x-ray beam in camera image in pixels&#39;</span><span class="p">)</span>
+    <span class="n">nozzle_z</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_Z&#39;</span><span class="p">,</span>
+                   <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;z-coordinate of nozzle in mm&#39;</span><span class="p">)</span>
+    <span class="n">nozzle_y</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_Y&#39;</span><span class="p">,</span>
+                   <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;y-coordinate of nozzle in mm&#39;</span><span class="p">)</span>
+    <span class="n">nozzle_zwidth</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_ZWIDTH&#39;</span><span class="p">,</span>
+                        <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;width of nozzle in mm&#39;</span><span class="p">)</span>
+    <span class="n">jet_z</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:JET_Z&#39;</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;distance from sample jet to x-ray beam in mm&#39;</span><span class="p">)</span>
+    <span class="n">jet_pitch</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:JET_PITCH&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;rotation of sample jet about z axis in radians&#39;</span><span class="p">)</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STATE&#39;</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;dictionary of strings&#39;</span><span class="p">)</span>
+    <span class="n">jet_counter</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:JET_Counter&#39;</span><span class="p">,</span>
+                      <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Jet counter&#39;</span><span class="p">)</span>
+    <span class="n">jet_reprate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:JET_RepRate&#39;</span><span class="p">,</span>
+                      <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Jet repetition rate&#39;</span><span class="p">)</span>
+    <span class="n">nozzle_counter</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_Counter&#39;</span><span class="p">,</span>
+                         <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Nozzle counter&#39;</span><span class="p">)</span>
+    <span class="n">nozzle_reprate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_RepRate&#39;</span><span class="p">,</span>
+                         <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Nozzle repetition rate&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Control</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Contains EPICS PVs used for jet tracking control</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">re_state</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:RE:STATE&#39;</span><span class="p">)</span>
+    <span class="n">beam_state</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM:STATE&#39;</span><span class="p">)</span>
+    <span class="n">injector_state</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:INJECTOR:STATE&#39;</span><span class="p">)</span>
+    <span class="n">beam_trans</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM:TRANS&#39;</span><span class="p">)</span>
+    <span class="n">beam_pulse_energy</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM:PULSE_ENERGY&#39;</span><span class="p">)</span>
+    <span class="n">beam_e_thresh</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BEAM:E_THRESH&#39;</span><span class="p">)</span>
+    <span class="n">xstep_size</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:INJECTOR:XSTEP_SIZE&#39;</span><span class="p">)</span>
+    <span class="n">xscan_min</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:INJECTOR:XSCAN_MIN&#39;</span><span class="p">)</span>
+    <span class="n">xscan_max</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:INJECTOR:XSCAN_MAX&#39;</span><span class="p">)</span>
+    <span class="n">bounce_width</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:INJECTOR:BOUNCE_WIDTH&#39;</span><span class="p">)</span>
+    <span class="n">xmin</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:INJECTOR:XMIN&#39;</span><span class="p">)</span>
+    <span class="n">xmax</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:INJECTOR:XMAX&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Diffract"><a class="viewcode-back" href="../../devices.html#jet_tracking.devices.Diffract">[docs]</a><span class="k">class</span> <span class="nc">Diffract</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Contains EPICS PVs used for shared memory X-ray Diffraction detector</span>
+<span class="sd">    used in jet tracking.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">total_counter</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:TOTAL_Counter&#39;</span><span class="p">,</span>
+                        <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Total counter&#39;</span><span class="p">)</span>
+    <span class="n">total_reprate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:TOTAL_RepRate&#39;</span><span class="p">,</span>
+                        <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction total intensity calc rate&#39;</span><span class="p">)</span>
+    <span class="n">ring_counter</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:RING_Counter&#39;</span><span class="p">,</span>
+                       <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction ring intensity event counter&#39;</span><span class="p">)</span>
+    <span class="n">ring_reprate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:RING_RepRate&#39;</span><span class="p">,</span>
+                       <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction ring intensity event counter&#39;</span><span class="p">)</span>
+    <span class="n">psd_counter</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PSD_Counter&#39;</span><span class="p">,</span>
+                      <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction periodogram event counter&#39;</span><span class="p">)</span>
+    <span class="n">psd_reprate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PSD_RepRate&#39;</span><span class="p">,</span>
+                      <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction periodogram event counter&#39;</span><span class="p">)</span>
+    <span class="n">stats_counter</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STATS_Counter&#39;</span><span class="p">,</span>
+                        <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction stats event counter&#39;</span><span class="p">)</span>
+    <span class="n">stats_reprate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STATS_RepRate&#39;</span><span class="p">,</span>
+                        <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction stats event counter&#39;</span><span class="p">)</span>
+    <span class="n">streak_counter</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STREAK_Counter&#39;</span><span class="p">,</span>
+                         <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction streak event counter&#39;</span><span class="p">)</span>
+    <span class="n">streak_reprate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STREAK_RepRate&#39;</span><span class="p">,</span>
+                         <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction streak event counter&#39;</span><span class="p">)</span>
+    <span class="n">cspad_sum</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:TOTAL_ADU&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Total detector ADU&#39;</span><span class="p">)</span>
+    <span class="n">streak_fraction</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STREAK_FRACTION&#39;</span><span class="p">,</span>
+                          <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Fraction of events with diffraction streak&#39;</span><span class="p">)</span>
+    <span class="n">stats_mean</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STATS_MEAN&#39;</span><span class="p">,</span>
+                     <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Mean Diffraction Statistic&#39;</span><span class="p">)</span>
+    <span class="n">stats_std</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STATS_STD&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Std Diffraction Statistic&#39;</span><span class="p">)</span>
+    <span class="n">stats_min</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STATS_MIN&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Min Diffraction Statistic&#39;</span><span class="p">)</span>
+    <span class="n">stats_max</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STATS_MAX&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Max Diffraction Statistic&#39;</span><span class="p">)</span>
+    <span class="n">psd_frequency</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PSD_FREQUENCY&#39;</span><span class="p">,</span>
+                        <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction periodogram fundamental frequency&#39;</span><span class="p">)</span>
+    <span class="n">psd_amplitude</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PSD_AMPLITUDE&#39;</span><span class="p">,</span>
+                        <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction periodogram Frequency analysis amplitude&#39;</span><span class="p">)</span>
+    <span class="n">psd_rate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PSD_RATE&#39;</span><span class="p">,</span>
+                   <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Event frequency for periodogram&#39;</span><span class="p">)</span>
+    <span class="n">psd_events</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PSD_EVENTS&#39;</span><span class="p">,</span>
+                     <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction periodogram&#39;</span><span class="p">)</span>
+    <span class="n">psd_resolution</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PSD_RESOLUTION&#39;</span><span class="p">,</span>
+                         <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Resultion to smooth over for periodogra&#39;</span><span class="p">)</span>
+    <span class="n">psd_freq_min</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PSD_FREQ_MIN&#39;</span><span class="p">,</span>
+                       <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Minimum frequency for periodogram calcs&#39;</span><span class="p">)</span>
+    <span class="n">psd_amp_wf</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PSD_AMP_WF&#39;</span><span class="p">,</span>
+                     <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction periodogram Frequency analysis waveform array&#39;</span><span class="p">)</span>
+    <span class="n">psd_freq_wf</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PSD_FREQ_WF&#39;</span><span class="p">,</span>
+                      <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction periodogram frequency waveform&#39;</span><span class="p">)</span>
+    <span class="n">psd_amp_array</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PSD_AMP_ARRAY&#39;</span><span class="p">,</span>
+                        <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction periodogram Frequency analysis amplitude array&#39;</span><span class="p">)</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STATE&#39;</span><span class="p">,</span>
+                <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;State of diffraction analysis&#39;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, SLAC National Accelerator Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

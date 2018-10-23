@@ -1,0 +1,441 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Jet Tracking Classes &mdash; PCDS Jet Tracking  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Sample Delivery" href="sample_delivery.html" />
+    <link rel="prev" title="Epics pvNotepad configuration" href="pvNotepad.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> PCDS Jet Tracking
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Setup</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Control</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="control.html">Jet Control Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="shared_memory.html">Jet Tracking Shared Memory Application</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pvNotepad.html">Epics pvNotepad configuration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Devices</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Jet Tracking Classes</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#jetcontrol-class">JetControl Class</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="generated/jet_tracking.jet_control.JetControl.set_beam.html">jet_tracking.jet_control.JetControl.set_beam</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/jet_tracking.jet_control.JetControl.calibrate.html">jet_tracking.jet_control.JetControl.calibrate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/jet_tracking.jet_control.JetControl.jet_calculate.html">jet_tracking.jet_control.JetControl.jet_calculate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="generated/jet_tracking.jet_control.JetControl.jet_move.html">jet_tracking.jet_control.JetControl.jet_move</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#injector-class">Injector Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#questar-class">Questar Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#parameters-class">Parameters Class</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#diffract-class">Diffract Class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="sample_delivery.html">Sample Delivery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="sample_delivery.html#api">API</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Presentations and Posters</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="presentations.html">Presentations and Posters</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">PCDS Jet Tracking</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Jet Tracking Classes</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/devices.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="jet-tracking-classes">
+<span id="devices"></span><h1>Jet Tracking Classes<a class="headerlink" href="#jet-tracking-classes" title="Permalink to this headline">¶</a></h1>
+<p>Base classes used in jet tracking and control.</p>
+<div class="section" id="jetcontrol-class">
+<h2>JetControl Class<a class="headerlink" href="#jetcontrol-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jet_tracking.jet_control.JetControl">
+<em class="property">class </em><code class="descclassname">jet_tracking.jet_control.</code><code class="descname">JetControl</code><span class="sig-paren">(</span><em>name</em>, <em>injector</em>, <em>camera</em>, <em>params</em>, <em>diffract</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jet_tracking/jet_control.html#JetControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.jet_control.JetControl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Jet tracking control class using jet_tracking methods</p>
+</dd></dl>
+
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="generated/jet_tracking.jet_control.JetControl.set_beam.html#jet_tracking.jet_control.JetControl.set_beam" title="jet_tracking.jet_control.JetControl.set_beam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JetControl.set_beam</span></code></a>(beamX,&nbsp;beamY)</td>
+<td>Set the coordinates for the x-ray beam</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/jet_tracking.jet_control.JetControl.calibrate.html#jet_tracking.jet_control.JetControl.calibrate" title="jet_tracking.jet_control.JetControl.calibrate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JetControl.calibrate</span></code></a>()</td>
+<td>Calibrate the onaxis camera</td>
+</tr>
+<tr class="row-odd"><td><a class="reference internal" href="generated/jet_tracking.jet_control.JetControl.jet_calculate.html#jet_tracking.jet_control.JetControl.jet_calculate" title="jet_tracking.jet_control.JetControl.jet_calculate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JetControl.jet_calculate</span></code></a>()</td>
+<td>Track the sample jet and calculate the distance to the x-ray beam</td>
+</tr>
+<tr class="row-even"><td><a class="reference internal" href="generated/jet_tracking.jet_control.JetControl.jet_move.html#jet_tracking.jet_control.JetControl.jet_move" title="jet_tracking.jet_control.JetControl.jet_move"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JetControl.jet_move</span></code></a>()</td>
+<td>Move the sample jet to the x-ray beam</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="injector-class">
+<h2>Injector Class<a class="headerlink" href="#injector-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jet_tracking.devices.Injector">
+<em class="property">class </em><code class="descclassname">jet_tracking.devices.</code><code class="descname">Injector</code><span class="sig-paren">(</span><em>name</em>, <em>coarseX</em>, <em>coarseY</em>, <em>coarseZ</em>, <em>fineX</em>, <em>fineY</em>, <em>fineZ</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jet_tracking/devices.html#Injector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.devices.Injector" title="Permalink to this definition">¶</a></dt>
+<dd><p>An Injector which consists of 3 coarse control motors and 3 fine control motors</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>pvs</strong> (<em>str dict</em>) – A dictionary containing the name of the device and
+the PVs of all the injector components</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="jet_tracking.devices.Injector.coarseX">
+<code class="descname">coarseX</code><a class="headerlink" href="#jet_tracking.devices.Injector.coarseX" title="Permalink to this definition">¶</a></dt>
+<dd><p>The coarse control motor in the X direction</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">EpicsSignal</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jet_tracking.devices.Injector.coarseY">
+<code class="descname">coarseY</code><a class="headerlink" href="#jet_tracking.devices.Injector.coarseY" title="Permalink to this definition">¶</a></dt>
+<dd><p>The coarse control motor in the Y direction</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">EpicsSignal</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jet_tracking.devices.Injector.coarseZ">
+<code class="descname">coarseZ</code><a class="headerlink" href="#jet_tracking.devices.Injector.coarseZ" title="Permalink to this definition">¶</a></dt>
+<dd><p>The coarse control motor in the Z direction</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">EpicsSignal</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jet_tracking.devices.Injector.fineX">
+<code class="descname">fineX</code><a class="headerlink" href="#jet_tracking.devices.Injector.fineX" title="Permalink to this definition">¶</a></dt>
+<dd><p>The fine control motor in the X direction</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">EpicsSignal</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jet_tracking.devices.Injector.fineY">
+<code class="descname">fineY</code><a class="headerlink" href="#jet_tracking.devices.Injector.fineY" title="Permalink to this definition">¶</a></dt>
+<dd><p>The fine control motor in the Y direction</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">EpicsSignal</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jet_tracking.devices.Injector.fineZ">
+<code class="descname">fineZ</code><a class="headerlink" href="#jet_tracking.devices.Injector.fineZ" title="Permalink to this definition">¶</a></dt>
+<dd><p>The fine control motor in the Z direction</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">EpicsSignal</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="questar-class">
+<h2>Questar Class<a class="headerlink" href="#questar-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jet_tracking.devices.Questar">
+<em class="property">class </em><code class="descclassname">jet_tracking.devices.</code><code class="descname">Questar</code><span class="sig-paren">(</span><em>ROI_port</em>, <em>ROI_stats_port</em>, <em>ROI_image_port</em>, <em>prefix</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jet_tracking/devices.html#Questar"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.devices.Questar" title="Permalink to this definition">¶</a></dt>
+<dd><p>Area detector for Inline Questar Camera in CXI</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>port_names</strong> (<em>str dict</em>) – A dictionary containing the access port names for the plugins</li>
+<li><strong>prefix</strong> (<em>str</em>) – Prefix for the PV name of the camera</li>
+<li><strong>name</strong> (<em>str</em>) – Name of the camera</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="jet_tracking.devices.Questar.ROI">
+<code class="descname">ROI</code><a class="headerlink" href="#jet_tracking.devices.Questar.ROI" title="Permalink to this definition">¶</a></dt>
+<dd><p>ROI on original rate image</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">ROIPlugin</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="jet_tracking.devices.Questar.ROI_stats">
+<code class="descname">ROI_stats</code><a class="headerlink" href="#jet_tracking.devices.Questar.ROI_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stats on ROI of original rate image</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Type:</th><td class="field-body">StatsPlugin</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="parameters-class">
+<h2>Parameters Class<a class="headerlink" href="#parameters-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jet_tracking.devices.Parameters">
+<em class="property">class </em><code class="descclassname">jet_tracking.devices.</code><code class="descname">Parameters</code><span class="sig-paren">(</span><em>prefix=''</em>, <em>*</em>, <em>name</em>, <em>kind=None</em>, <em>read_attrs=None</em>, <em>configuration_attrs=None</em>, <em>parent=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jet_tracking/devices.html#Parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.devices.Parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains EPICS PVs used for jet tracking</p>
+</dd></dl>
+
+</div>
+<div class="section" id="diffract-class">
+<h2>Diffract Class<a class="headerlink" href="#diffract-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="jet_tracking.devices.Diffract">
+<em class="property">class </em><code class="descclassname">jet_tracking.devices.</code><code class="descname">Diffract</code><span class="sig-paren">(</span><em>prefix=''</em>, <em>*</em>, <em>name</em>, <em>kind=None</em>, <em>read_attrs=None</em>, <em>configuration_attrs=None</em>, <em>parent=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/jet_tracking/devices.html#Diffract"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.devices.Diffract" title="Permalink to this definition">¶</a></dt>
+<dd><p>Contains EPICS PVs used for shared memory X-ray Diffraction detector
+used in jet tracking.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="sample_delivery.html" class="btn btn-neutral float-right" title="Sample Delivery" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="pvNotepad.html" class="btn btn-neutral" title="Epics pvNotepad configuration" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, SLAC National Accelerator Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

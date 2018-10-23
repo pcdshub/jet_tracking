@@ -1,0 +1,594 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>jet_tracking.psana.psana2epics &mdash; PCDS Jet Tracking  documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> PCDS Jet Tracking
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Setup</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Control</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../control.html">Jet Control Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../shared_memory.html">Jet Tracking Shared Memory Application</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../pvNotepad.html">Epics pvNotepad configuration</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Devices</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../devices.html">Jet Tracking Classes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sample_delivery.html">Sample Delivery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../sample_delivery.html#api">API</a></li>
+</ul>
+<p class="caption"><span class="caption-text">Presentations and Posters</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../presentations.html">Presentations and Posters</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">PCDS Jet Tracking</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>jet_tracking.psana.psana2epics</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for jet_tracking.psana.psana2epics</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">epics</span> <span class="k">import</span> <span class="n">PV</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="k">import</span> <span class="n">periodogram</span><span class="p">,</span> <span class="n">peak_widths</span>
+
+
+<span class="n">time0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">initArgs</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Initialize argparse arguments.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--calc_streak&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Calculate streak&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--calc_period&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Calculate periodogram&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--plot&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Plot normalized spectrum&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--nevents&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Number of events to average&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--exp&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;cxilr6716&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Experiment&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--run&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Run&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--instrument&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;cxi&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Instrument&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--pvbase&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;CXI:SC1:DIFFRACT&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;pvbase&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--alias&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;DscCsPad&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s1">&#39;detector alias&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">DataSource</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper for loading PyDataSource DataSource</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">PyDataSource</span>
+    <span class="k">if</span> <span class="n">exp</span> <span class="ow">and</span> <span class="n">run</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading DataSource for </span><span class="si">{:}</span><span class="s1"> run </span><span class="si">{:}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">run</span><span class="p">))</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">PyDataSource</span><span class="o">.</span><span class="n">DataSource</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">run</span><span class="p">))</span>
+    <span class="k">elif</span> <span class="n">exp</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading DataSource for shared memory with expiment </span><span class="si">{:}</span><span class="s1">&#39;</span>
+              <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">exp</span><span class="p">))</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">PyDataSource</span><span class="o">.</span><span class="n">DataSource</span><span class="p">(</span><span class="n">exp</span><span class="o">=</span><span class="n">exp</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Loading DataSource for shared memory&#39;</span><span class="p">)</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">PyDataSource</span><span class="o">.</span><span class="n">DataSource</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="n">ds</span><span class="o">.</span><span class="n">configData</span><span class="o">.</span><span class="n">show_info</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Load time: </span><span class="si">{:}</span><span class="s1"> sec&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time0</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">ds</span>
+
+
+<div class="viewcode-block" id="output_cspad_sum"><a class="viewcode-back" href="../../../generated/jet_tracking.psana.output_cspad_sum.html#jet_tracking.psana.output_cspad_sum">[docs]</a><span class="k">def</span> <span class="nf">output_cspad_sum</span><span class="p">(</span><span class="n">ds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;DscCsPad&#39;</span><span class="p">,</span>
+                     <span class="n">pvbase</span><span class="o">=</span><span class="s1">&#39;CXI:SC1:DIFFRACT&#39;</span><span class="p">,</span> <span class="n">calc_period</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">calc_streak</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                     <span class="n">psd_events</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">psd_rate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">psd_resolution</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Outputs cspad sum and certain statistics as PVs</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ds : DataSource, optional</span>
+<span class="sd">        DataSource object, if not specified, loads it using kwargs</span>
+<span class="sd">    alias : str, optional</span>
+<span class="sd">        Name for CsPad data</span>
+<span class="sd">    pvbase : str, optional</span>
+<span class="sd">        Base for PV names</span>
+<span class="sd">    calc_period : bool, optional</span>
+<span class="sd">        Determines the execution of frequency analysis</span>
+<span class="sd">    psd_events : int, optional</span>
+<span class="sd">        Number of events for frequency analysis, default is 240</span>
+<span class="sd">    psd_rate : int or float, optional</span>
+<span class="sd">        Event rate [Hz], default is 120</span>
+<span class="sd">    psd_resolution : int, optional</span>
+<span class="sd">        Resolution setting will perform rolling mean [Hz]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Configure epics PVs</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing epics PVs&#39;</span><span class="p">)</span>
+    <span class="n">cspad_sum_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;TOTAL_ADU&#39;</span><span class="p">]))</span>
+    <span class="n">streak_fraction_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;STREAK_FRACTION&#39;</span><span class="p">]))</span>
+    <span class="n">stats_mean_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;STATS_MEAN&#39;</span><span class="p">]))</span>
+    <span class="n">stats_std_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;STATS_STD&#39;</span><span class="p">]))</span>
+    <span class="n">stats_min_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;STATS_MIN&#39;</span><span class="p">]))</span>
+    <span class="n">stats_max_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;STATS_MAX&#39;</span><span class="p">]))</span>
+    <span class="n">psd_frequency_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;PSD_FREQUENCY&#39;</span><span class="p">]))</span>
+    <span class="n">psd_amplitude_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;PSD_AMPLITUDE&#39;</span><span class="p">]))</span>
+    <span class="n">psd_rate_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;PSD_RATE&#39;</span><span class="p">]))</span>
+    <span class="n">psd_events_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;PSD_EVENTS&#39;</span><span class="p">]))</span>
+    <span class="n">psd_resolution_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;PSD_RESOLUTION&#39;</span><span class="p">]))</span>
+    <span class="n">psd_freq_min_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;PSD_FREQ_MIN&#39;</span><span class="p">]))</span>
+    <span class="n">psd_freq_wf_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;PSD_FREQ_WF&#39;</span><span class="p">]))</span>
+    <span class="n">psd_amp_wf_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;PSD_AMP_WF&#39;</span><span class="p">]))</span>
+    <span class="c1"># psd_amp_array_pv = PV(&#39;:&#39;.join([pvbase,&#39;PSD_AMP_ARRAY&#39;]))</span>
+
+    <span class="k">if</span> <span class="n">psd_rate</span><span class="p">:</span>
+        <span class="n">psd_rate_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psd_rate</span><span class="p">)</span>
+
+    <span class="n">psd_rate</span> <span class="o">=</span> <span class="n">psd_rate_pv</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">psd_rate</span> <span class="o">&gt;</span> <span class="mi">360</span> <span class="ow">or</span> <span class="n">psd_rate</span> <span class="o">&lt;</span> <span class="mi">10</span><span class="p">:</span>
+        <span class="n">psd_rate</span> <span class="o">=</span> <span class="mf">120.</span>
+        <span class="n">psd_rate_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psd_rate</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">psd_events</span><span class="p">:</span>
+        <span class="n">psd_events_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psd_events</span><span class="p">)</span>
+
+    <span class="n">psd_events</span> <span class="o">=</span> <span class="n">psd_events_pv</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">psd_events</span> <span class="o">&gt;</span> <span class="mi">1200</span> <span class="ow">or</span> <span class="n">psd_events</span> <span class="o">&lt;</span> <span class="mi">60</span><span class="p">:</span>
+        <span class="n">psd_events</span> <span class="o">=</span> <span class="n">psd_rate</span> <span class="o">*</span> <span class="mf">2.</span>
+        <span class="n">psd_events_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psd_events</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">psd_resolution</span><span class="p">:</span>
+        <span class="n">psd_resolution_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psd_resolution</span><span class="p">)</span>
+
+    <span class="n">psd_resolution</span> <span class="o">=</span> <span class="n">psd_resolution_pv</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">psd_resolution</span> <span class="o">&gt;</span> <span class="mi">5</span> <span class="ow">or</span> <span class="n">psd_resolution</span> <span class="o">&lt;</span> <span class="mf">0.1</span><span class="p">:</span>
+        <span class="n">psd_resolution</span> <span class="o">=</span> <span class="n">psd_rate</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">psd_events</span><span class="p">)</span>
+        <span class="n">psd_resolution_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psd_resolution</span><span class="p">)</span>
+
+    <span class="n">nroll</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">psd_resolution</span> <span class="o">*</span> <span class="n">psd_events</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">psd_rate</span><span class="p">))</span>
+
+    <span class="n">psd_freq_min</span> <span class="o">=</span> <span class="n">psd_freq_min_pv</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">psd_freq_min</span> <span class="o">&gt;</span> <span class="mi">40</span> <span class="ow">or</span> <span class="n">psd_freq_min</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">psd_freq_min</span> <span class="o">=</span> <span class="mf">5.</span>
+        <span class="n">psd_freq_min_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psd_freq_min</span><span class="p">)</span>
+
+    <span class="n">if0</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">psd_freq_min</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">psd_rate</span><span class="p">)</span> <span class="o">*</span> <span class="n">psd_events</span><span class="p">)</span>
+
+    <span class="n">psd_freq_wf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">psd_events</span> <span class="o">/</span> <span class="mf">2.</span> <span class="o">+</span> <span class="mf">1.</span><span class="p">)</span> <span class="o">*</span> \
+        <span class="nb">float</span><span class="p">(</span><span class="n">psd_rate</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">psd_events</span><span class="p">)</span>
+    <span class="n">psd_freq_wf_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psd_freq_wf</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Events = </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">psd_events</span><span class="p">))</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;... done&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ds</span><span class="p">:</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;... done&#39;</span><span class="p">)</span>
+
+    <span class="n">detector</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">_detectors</span><span class="p">[</span><span class="n">alias</span><span class="p">]</span>
+
+    <span class="n">detector</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+    <span class="n">detector</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="n">asic</span><span class="p">)</span>
+    <span class="n">detector</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="n">streak_present</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">no_streak</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">iloop</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">icheck</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">streaks</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">time0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">time_last</span> <span class="o">=</span> <span class="n">time0</span>
+        <span class="n">sums</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># aPxx = []</span>
+        <span class="c1"># atime = []</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">cspad_sum</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">corr</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+            <span class="n">sums</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cspad_sum</span><span class="p">)</span>
+            <span class="n">cspad_sum_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cspad_sum</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">calc_streak</span><span class="p">:</span>
+                <span class="n">streak</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">streak_present</span>
+                <span class="n">streaks</span> <span class="o">+=</span> <span class="n">streak</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">streak</span><span class="p">:</span>
+                    <span class="n">no_streak</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">iloop</span><span class="p">)</span>
+
+            <span class="n">iloop</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">icheck</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">iloop</span> <span class="o">%</span> <span class="n">psd_events</span><span class="p">:</span>
+                <span class="n">sums</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">sums</span><span class="p">)</span>
+                <span class="n">det_avg</span> <span class="o">=</span> <span class="n">sums</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                <span class="n">det_std</span> <span class="o">=</span> <span class="n">sums</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+                <span class="n">det_max</span> <span class="o">=</span> <span class="n">sums</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="n">det_min</span> <span class="o">=</span> <span class="n">sums</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                <span class="n">stats_mean_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">det_avg</span><span class="p">)</span>
+                <span class="n">stats_max_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">det_max</span><span class="p">)</span>
+                <span class="n">stats_min_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">det_min</span><span class="p">)</span>
+                <span class="n">stats_std_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">det_std</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">calc_period</span><span class="p">:</span>
+                    <span class="c1"># f should be same as psd_freq_wf</span>
+                    <span class="n">f</span><span class="p">,</span> <span class="n">Pxx</span> <span class="o">=</span> <span class="n">periodogram</span><span class="p">(</span><span class="n">sums</span><span class="p">,</span> <span class="n">psd_rate</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">nroll</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">Pxx</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">Pxx</span><span class="p">)</span><span class="o">.</span><span class="n">rolling</span><span class="p">(</span>
+                            <span class="n">nroll</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">nroll</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span>
+                        <span class="n">f</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">nroll</span><span class="p">:]</span>
+                    <span class="n">psd_frequency</span> <span class="o">=</span> <span class="n">f</span><span class="p">[</span><span class="n">Pxx</span><span class="p">[</span><span class="n">if0</span><span class="p">:]</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span> <span class="o">+</span> <span class="n">if0</span><span class="p">]</span>
+                    <span class="n">psd_amplitude</span> <span class="o">=</span> <span class="n">Pxx</span><span class="p">[</span><span class="n">if0</span><span class="p">:]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">psd_rate</span> <span class="o">/</span> <span class="n">psd_events</span>
+                    <span class="n">psd_frequency_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psd_frequency</span><span class="p">)</span>
+                    <span class="n">psd_amplitude_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">psd_amplitude</span><span class="p">)</span>
+                    <span class="n">psd_amp_wf_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">Pxx</span><span class="p">)</span>
+                    <span class="n">time_next</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                    <span class="n">evtrate</span> <span class="o">=</span> <span class="n">icheck</span> <span class="o">/</span> <span class="p">(</span><span class="n">time_next</span> <span class="o">-</span> <span class="n">time_last</span><span class="p">)</span>
+                    <span class="n">icheck</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">time_last</span> <span class="o">=</span> <span class="n">time_next</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:8.1f}</span><span class="s1"> Hz - </span><span class="si">{:8.1f}</span><span class="s1"> </span><span class="si">{:12}</span><span class="s1"> </span><span class="si">{:12}</span><span class="s1"> </span><span class="si">{:12}</span><span class="s1">&#39;</span>
+                          <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">evtrate</span><span class="p">,</span> <span class="n">psd_frequency</span><span class="p">,</span> <span class="n">psd_amplitude</span><span class="p">,</span>
+                                    <span class="n">det_avg</span><span class="p">,</span> <span class="n">det_std</span><span class="p">))</span>
+<span class="c1">#</span>
+<span class="c1">#                   Need to makd sure right shape before outputting array</span>
+<span class="c1">#                   aPxx.append(Pxx)</span>
+<span class="c1">#                   psd_amp_array_pv.put(np.asarray(aPxx))</span>
+
+                <span class="k">if</span> <span class="n">calc_streak</span><span class="p">:</span>
+                    <span class="n">streak_fraction</span> <span class="o">=</span> <span class="n">streaks</span> <span class="o">/</span> <span class="n">psd_events</span>
+                    <span class="n">streak_fraction_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">streak_fraction</span><span class="p">)</span>
+
+                <span class="n">sums</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="c1"># aPxx = []</span>
+                <span class="c1"># atime = []</span>
+                <span class="n">streaks</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">no_streak</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="c1"># Change to evt.next() in future and count damage</span>
+            <span class="n">detector</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">output_cspad_streak</span><span class="p">(</span><span class="n">ds</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;DscCsPad&#39;</span><span class="p">,</span>
+                        <span class="n">pvbase</span><span class="o">=</span><span class="s1">&#39;CXI:SC1:DIFFRACT&#39;</span><span class="p">,</span> <span class="n">nevents</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Output cspad jet streak information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">beam_x_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;X0&#39;</span><span class="p">]))</span>
+    <span class="n">beam_y_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;Y0&#39;</span><span class="p">]))</span>
+    <span class="n">streak_angle_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;STREAK_PHI&#39;</span><span class="p">]))</span>
+    <span class="n">streak_intensity_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;STREAK_INTENSITY&#39;</span><span class="p">]))</span>
+    <span class="n">streak_width_pv</span> <span class="o">=</span> <span class="n">PV</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">pvbase</span><span class="p">,</span> <span class="s1">&#39;STREAK_WIDTH&#39;</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ds</span><span class="p">:</span>
+        <span class="n">ds</span> <span class="o">=</span> <span class="n">DataSource</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<span class="c1"># Now set in epics -- update as needed from epics.</span>
+<span class="c1">#    beam_x_pv.put(2094.9301668334006) # run 104</span>
+<span class="c1">#    beam_y_pv.put(-1796.5697333657126)</span>
+
+    <span class="n">detector</span> <span class="o">=</span> <span class="n">ds</span><span class="o">.</span><span class="n">_detectors</span><span class="p">[</span><span class="n">alias</span><span class="p">]</span>
+    <span class="n">detector</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+
+    <span class="n">detector</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="n">asic</span><span class="p">)</span>
+    <span class="n">cy</span><span class="p">,</span> <span class="n">cx</span> <span class="o">=</span> <span class="n">get_center</span><span class="p">(</span><span class="n">detector</span><span class="p">,</span> <span class="n">beam_x_pv</span><span class="p">,</span> <span class="n">beam_y_pv</span><span class="p">)</span>
+    <span class="n">j_map_1</span><span class="p">,</span> <span class="n">j_map_2</span> <span class="o">=</span> <span class="n">find_proj_mapping</span><span class="p">(</span><span class="n">cy</span><span class="p">,</span> <span class="n">cx</span><span class="p">)</span>
+    <span class="n">detector</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">parameter</span><span class="p">(</span><span class="n">proj_map_1</span><span class="o">=</span><span class="n">j_map_1</span><span class="p">,</span> <span class="n">proj_map_2</span><span class="o">=</span><span class="n">j_map_2</span><span class="p">)</span>
+    <span class="n">detector</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="n">streak_angle_raw</span><span class="p">)</span>
+    <span class="n">detector</span><span class="o">.</span><span class="n">add</span><span class="o">.</span><span class="n">property</span><span class="p">(</span><span class="n">streak_present</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">iloop</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">time0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">streak_angle</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">streak_angle_raw</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">streak_intensity</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">streak_angle_raw</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">streak_width</span> <span class="o">=</span> <span class="n">detector</span><span class="o">.</span><span class="n">streak_angle_raw</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">streak_angle_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">streak_angle</span><span class="p">)</span>
+            <span class="n">streak_intensity_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">streak_intensity</span><span class="p">)</span>
+            <span class="n">streak_width_pv</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">streak_width</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">iloop</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">nevents</span> <span class="ow">and</span> <span class="n">detector</span><span class="o">.</span><span class="n">streak_present</span><span class="p">:</span>
+                <span class="n">evt_rate</span> <span class="o">=</span> <span class="n">iloop</span> <span class="o">/</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time0</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:15}</span><span class="s1"> </span><span class="si">{:6.1f}</span><span class="s1"> Hz </span><span class="si">{:5.1f}</span><span class="s1"> </span><span class="si">{:5.1f}</span><span class="s1"> </span><span class="si">{:5.3f}</span><span class="s1"> </span><span class="si">{}</span><span class="s1">&#39;</span>
+                      <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">iloop</span><span class="p">,</span> <span class="n">evt_rate</span><span class="p">,</span> <span class="n">streak_angle</span><span class="p">,</span>
+                                <span class="n">streak_intensity</span><span class="p">,</span> <span class="n">streak_width</span><span class="p">,</span>
+                                <span class="nb">int</span><span class="p">(</span><span class="n">detector</span><span class="o">.</span><span class="n">streak_present</span><span class="p">)))</span>
+            <span class="n">iloop</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">detector</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="k">return</span>
+
+
+<span class="k">def</span> <span class="nf">streak_present</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">im1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">asic</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">im2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">asic</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">streak_present_im</span><span class="p">(</span><span class="n">im1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">streak_present_im</span><span class="p">(</span><span class="n">im2</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">streak_present_im</span><span class="p">(</span><span class="n">im</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;im is 2D np-array&#39;&#39;&#39;</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">im</span><span class="p">[</span><span class="o">-</span><span class="mi">10</span><span class="p">:]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">-=</span> <span class="n">s</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">s</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">10</span> <span class="o">-</span> <span class="n">s</span><span class="o">.</span><span class="n">argmax</span><span class="p">())[</span><span class="mi">20</span><span class="p">:]</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">5</span>
+
+
+<span class="k">def</span> <span class="nf">get_center</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x0_pv</span><span class="p">,</span> <span class="n">y0_pv</span><span class="p">):</span>
+    <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">y0_pv</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="n">x0_pv</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+    <span class="n">cy</span><span class="p">,</span> <span class="n">cx</span> <span class="o">=</span> <span class="n">get_center_coords</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">center</span><span class="p">)</span>
+    <span class="n">cy</span> <span class="o">-=</span> <span class="mi">185</span>
+    <span class="k">return</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cx</span>
+
+
+<span class="k">def</span> <span class="nf">to_pad_coord</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;Point: (y,x)&#39;&#39;&#39;</span>
+
+    <span class="n">pad</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="mi">25</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">origin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">det</span><span class="o">.</span><span class="n">calibData</span><span class="o">.</span><span class="n">coords_x</span><span class="p">[</span><span class="n">pad</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">det</span><span class="o">.</span><span class="n">calibData</span><span class="o">.</span><span class="n">coords_y</span><span class="p">[</span><span class="n">pad</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+    <span class="n">unit_y</span> <span class="o">=</span> <span class="p">((</span><span class="n">det</span><span class="o">.</span><span class="n">calibData</span><span class="o">.</span><span class="n">coords_x</span><span class="p">[</span><span class="n">pad</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">det</span><span class="o">.</span><span class="n">calibData</span><span class="o">.</span><span class="n">coords_x</span><span class="p">[</span><span class="n">pad</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+              <span class="p">(</span><span class="n">det</span><span class="o">.</span><span class="n">calibData</span><span class="o">.</span><span class="n">coords_y</span><span class="p">[</span><span class="n">pad</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">det</span><span class="o">.</span><span class="n">calibData</span><span class="o">.</span><span class="n">coords_y</span><span class="p">[</span><span class="n">pad</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+    <span class="n">unit_x</span> <span class="o">=</span> <span class="p">((</span><span class="n">det</span><span class="o">.</span><span class="n">calibData</span><span class="o">.</span><span class="n">coords_x</span><span class="p">[</span><span class="n">pad</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">det</span><span class="o">.</span><span class="n">calibData</span><span class="o">.</span><span class="n">coords_x</span><span class="p">[</span><span class="n">pad</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]),</span>
+              <span class="p">(</span><span class="n">det</span><span class="o">.</span><span class="n">calibData</span><span class="o">.</span><span class="n">coords_y</span><span class="p">[</span><span class="n">pad</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">det</span><span class="o">.</span><span class="n">calibData</span><span class="o">.</span><span class="n">coords_y</span><span class="p">[</span><span class="n">pad</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">([[</span><span class="n">unit_y</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">unit_x</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="n">unit_y</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">unit_x</span><span class="p">[</span><span class="mi">1</span><span class="p">]]])</span>
+    <span class="n">pos</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">matrix</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">point</span><span class="p">)</span> <span class="o">-</span> <span class="n">origin</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pos</span>
+
+
+<span class="k">def</span> <span class="nf">get_center_coords</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">center</span><span class="p">):</span>
+    <span class="n">cy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">cx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">to_pad_coord</span><span class="p">(</span><span class="n">det</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
+        <span class="n">cy</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">cx</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pos</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">cy</span><span class="p">,</span> <span class="n">cx</span>
+
+
+<span class="k">def</span> <span class="nf">find_proj_mapping</span><span class="p">(</span><span class="n">cy</span><span class="p">,</span> <span class="n">cx</span><span class="p">):</span>
+    <span class="n">sq</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">j_index_1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">j_index_2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">):</span>
+        <span class="n">ang</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">ang</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">i</span> <span class="o">+</span> <span class="n">cy</span><span class="p">[</span><span class="n">sq</span><span class="p">])</span> <span class="o">+</span> <span class="n">cx</span><span class="p">[</span><span class="n">sq</span><span class="p">])</span> <span class="o">%</span> <span class="mi">100</span>
+            <span class="n">j_index_1</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+            <span class="n">j</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">ang</span><span class="p">)</span> <span class="o">*</span>
+                    <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">i</span> <span class="o">+</span> <span class="n">cy</span><span class="p">[(</span><span class="n">sq</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">%</span> <span class="mi">4</span><span class="p">])</span> <span class="o">+</span> <span class="n">cx</span><span class="p">[(</span><span class="n">sq</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">%</span> <span class="mi">4</span><span class="p">])</span> <span class="o">%</span> <span class="mi">100</span>
+            <span class="n">j_index_2</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+    <span class="k">return</span> <span class="n">j_index_1</span><span class="p">,</span> <span class="n">j_index_2</span>
+
+
+<span class="k">def</span> <span class="nf">asic</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="s1">&#39;corr&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Select inner asics</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">)[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">17</span><span class="p">,</span> <span class="mi">25</span><span class="p">],</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">194</span><span class="p">]</span>
+
+
+<span class="k">def</span> <span class="nf">streak_angle_raw</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Jet streak calculation</span>
+<span class="sd">    Returns: jet angle, jet intensity (as standard deviations from the mean),</span>
+<span class="sd">    jet width</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sq</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="n">asic</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">asic</span>
+    <span class="n">im1</span> <span class="o">=</span> <span class="n">asic</span><span class="p">[</span><span class="n">sq</span><span class="p">][</span><span class="o">-</span><span class="mi">100</span><span class="p">:,</span> <span class="p">:</span><span class="mi">100</span><span class="p">]</span>
+    <span class="n">im2</span> <span class="o">=</span> <span class="n">asic</span><span class="p">[(</span><span class="n">sq</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">%</span> <span class="mi">4</span><span class="p">][</span><span class="o">-</span><span class="mi">100</span><span class="p">:,</span> <span class="p">:</span><span class="mi">100</span><span class="p">]</span>
+    <span class="n">proj1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">))</span>
+    <span class="n">proj2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">100</span><span class="p">,</span> <span class="mi">80</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">-</span><span class="mi">40</span><span class="p">,</span> <span class="mi">40</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">im1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">proj1</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="n">im1</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj_map_1</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">40</span><span class="p">]]</span>
+            <span class="n">proj2</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">40</span><span class="p">]</span> <span class="o">=</span> <span class="n">im2</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj_map_2</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">a</span> <span class="o">+</span> <span class="mi">40</span><span class="p">]]</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">proj1</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="n">proj2</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">s</span> <span class="o">-=</span> <span class="n">s</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">s</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">10</span> <span class="o">-</span> <span class="n">s</span><span class="o">.</span><span class="n">argmax</span><span class="p">())[</span><span class="mi">20</span><span class="p">:]</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+    <span class="n">peak</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">peakwidth</span> <span class="o">=</span> <span class="n">peak_widths</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="p">[</span><span class="n">peak</span><span class="p">])[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">peakwidth</span> <span class="o">=</span> <span class="mi">5</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="p">(</span><span class="n">peak</span> <span class="o">-</span> <span class="mi">40</span><span class="p">)</span> <span class="o">/</span> <span class="mf">360.0</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">peakwidth</span><span class="p">)</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">initArgs</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Initializing args: </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">output_cspad_sum</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">alias</span><span class="p">,</span> <span class="n">pvbase</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">pvbase</span><span class="p">,</span>
+                              <span class="n">exp</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">exp</span><span class="p">,</span> <span class="n">run</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">run</span><span class="p">,</span>
+                              <span class="n">calc_period</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">calc_period</span><span class="p">,</span>
+                              <span class="n">calc_streak</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">calc_streak</span><span class="p">,</span>
+                              <span class="n">nevents</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">nevents</span><span class="p">,</span> <span class="n">plot</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">plot</span><span class="p">))</span>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, SLAC National Accelerator Laboratory
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
