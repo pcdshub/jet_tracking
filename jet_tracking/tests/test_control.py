@@ -44,3 +44,12 @@ def test_smoke_jet_calculate(questar, parameters,
         _jet_calculate_step_offaxis(camera=questar, params=offaxis_parameters)
     else:
         _jet_calculate_step(camera=questar, params=parameters)
+
+
+@pytest.mark.parametrize("jet_x", [0.0, 0.1])
+def test_smoke_jet_move(injector, questar, parameters,
+                        jet_x):
+    from ..jet_control import _jet_move_step
+    questar.ROI.min_xyz.min_x.put(1)
+    parameters.jet_x.sim_put(jet_x)
+    _jet_move_step(injector=injector, camera=questar, params=parameters)
