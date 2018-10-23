@@ -25,7 +25,22 @@ def test_smoke_calibrate(jet_control, injector, questar, parameters,
               if use_offaxis
               else parameters)
 
-    conftest.set_random_image(jet_control.camera.image)
-    conftest.set_random_image(jet_control.camera.ROI_image)
+    conftest.set_random_image(questar.image)
+    conftest.set_random_image(questar.ROI_image)
     calibrate(injector=injector, camera=questar, params=params,
               offaxis=use_offaxis)
+
+
+@pytest.mark.parametrize("use_offaxis", [False, True])
+def test_smoke_jet_calculate(questar, parameters,
+                             offaxis_parameters, use_offaxis):
+    from ..jet_control import _jet_calculate_step_offaxis, _jet_calculate_step
+    conftest.set_random_image(questar.image)
+    conftest.set_random_image(questar.ROI_image)
+    questar.ROI.min_xyz.min_x.sim_put(1)
+    questar.ROI.min_xyz.min_y.sim_put(1)
+    questar.ROI.min_xyz.min_z.sim_put(1)
+    if use_offaxis:
+        _jet_calculate_step_offaxis(camera=questar, params=offaxis_parameters)
+    else:
+        _jet_calculate_step(camera=questar, params=parameters)

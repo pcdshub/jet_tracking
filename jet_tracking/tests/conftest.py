@@ -103,8 +103,13 @@ def offaxis_parameters(devices):
         prefix='fake_CXI:SC1:INLINE',
         name='fake_SC1_params'
     )
-    params.beam_y_px.put(1.0)
-    params.beam_z_px.put(1.0)
+    params.beam_y.put(1.0)
+    params.beam_z.put(1.0)
+    params.beam_y_px.put(1)
+    params.beam_z_px.put(1)
+    params.cam_y.put(1.0)
+    params.cam_z.put(1.0)
+    params.pxsize.put(0.001)
     params.cam_pitch.put(1.0)
     return params
 
@@ -115,8 +120,13 @@ def parameters(devices):
         prefix='fake_CXI:SC1:INLINE',
         name='fake_SC1_params'
     )
-    params.beam_x_px.put(1.0)
-    params.beam_y_px.put(1.0)
+    params.beam_x.put(1.0)
+    params.beam_y.put(1.0)
+    params.beam_x_px.put(1)
+    params.beam_y_px.put(1)
+    params.cam_x.put(1.0)
+    params.cam_y.put(1.0)
+    params.pxsize.put(0.001)
     params.cam_roll.put(1.0)
     return params
 
