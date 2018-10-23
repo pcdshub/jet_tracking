@@ -1,3 +1,4 @@
+import ophyd
 from .cam_utils import get_nozzle_shift
 
 
@@ -11,8 +12,12 @@ def movex(motor, dist):
     dist : float
         The distance in millimeters
     """
-    pos = motor.get()
-    motor.put(pos + dist)
+    if isinstance(motor, ophyd.PositionerBase):
+        pos = motor.user_setpoint.get()
+        motor.set(pos + dist, wait=True)
+    else:
+        pos = motor.get()
+        motor.put(pos + dist)
 
 
 def pi_moving_test_script(motor, cam, params, im0=None, min_shift=1):
