@@ -51,11 +51,11 @@ def test_get_camroll_pxsize():
 
 def test_get_nozzle_shift():
     camroll_pxsize, imgs = test_get_camroll_pxsize()
-    params = {'cam_roll': camroll_pxsize[0], 'pxsize': camroll_pxsize[1]}
     im1 = imgs[0]
     im2 = imgs[4]
-
-    return cam_utils.get_nozzle_shift(im1, im2, params)
+    return cam_utils.get_nozzle_shift(im1, im2,
+                                      cam_roll=camroll_pxsize[0],
+                                      pxsize=camroll_pxsize[1])
 
 
 def test_jet_detect():
@@ -73,8 +73,9 @@ def test_get_cam_coords():
     camroll_pxsize, imgs = test_get_camroll_pxsize()
     '''
     NEED BEAM_X, BEAM_Y
-    params = {'cam_roll': camroll_pxsize[0], 'pxsize': camroll_pxsize[1]}
-    return cam_utils.get_cam_coords(beam_y, beam_x, params)'''
+    return cam_utils.get_cam_coords(beam_y, beam_x, cam_roll=camroll_pxsize[0],
+                                    pxsize=camroll_pxsize[1])
+    '''
     return 0
 
 
@@ -91,23 +92,21 @@ def test_get_jet_x():
     cam_y, cam_x = test_get_cam_coords()
 
     '''
-    params = {'cam_roll': camroll_pxsize[0],
-              'pxsize': camroll_pxsize[1],
-              'cam_x': cam_x,
-              'cam_y': cam_y}
     NEED BEAM_X, BEAM_Y
     return cam_utils.get_jet_x(rho, theta,
                                SC1_questar.ROI,
                                SC1_questar.ROI,
-                               params)
+                               cam_roll=camroll_pxsize[0],
+                               pxsize=camroll_pxsize[1],
+                               cam_x=cam_x,
+                               cam_y=cam_y
+                               )
     '''
     return 0
 
 
 def test_get_jet_roll():
     camroll_pxsize, imgs = test_get_camroll_pxsize()
-    params = {'cam_roll': camroll_pxsize[0]}
-
     port_names = {'ROI_port': 'ROI1',
                   'ROI_stats_port': 'Stats1',
                   'ROI_image_port': 'IMAGE1'}
@@ -116,7 +115,7 @@ def test_get_jet_roll():
                                   name='SC1_questar')
     rho, theta = cam_utils.jet_detect(SC1_questar.image.image)
 
-    return cam_utils.get_jet_roll(theta, params)
+    return cam_utils.get_jet_roll(theta, camroll_pxsize[0])
 
 
 def test_get_jet_width():
