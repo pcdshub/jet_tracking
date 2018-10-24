@@ -58,8 +58,6 @@ devices_without_table = {'Questar', 'Offaxis', 'SDS'}
 
 
 def test_table(device_instances):
-    import inspect
-
     for dev_name in dir(device_instances):
         if dev_name.startswith('_') or dev_name in devices_without_table:
             continue
