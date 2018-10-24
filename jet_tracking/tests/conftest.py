@@ -1,6 +1,7 @@
 import numpy as np
 import pytest
 import types
+import inspect
 from ..devices import (Injector, Selector, CoolerShaker, HPLC,
                        PressureController, FlowIntegrator, Offaxis, Questar,
                        Parameters, OffaxisParams, Control, Diffract,
@@ -45,7 +46,8 @@ def devices(monkeypatch):
 
 @pytest.fixture(scope='function')
 def injector(devices):
-    injector = devices.Injector(
+    injector = _instantiate_fake_device(
+        devices.Injector,
         name='fake_PI1_injector',
         coarseX='fake_CXI:PI1:MMS:01',
         coarseY='fake_CXI:PI1:MMS:02',
@@ -55,11 +57,12 @@ def injector(devices):
         fineZ='fake_CXI:USR:MMS:03'
     )
 
-    for attr in ('coarseX', 'coarseY', 'coarseZ',
-                 'fineX', 'fineY', 'fineZ'):
+    for i, attr in enumerate(['coarseX', 'coarseY', 'coarseZ',
+                              'fineX', 'fineY', 'fineZ']):
         motor = getattr(injector, attr)
-        motor.user_readback.sim_put(0.0)
+        motor.user_readback.sim_put(0.1 * i)
         motor.user_setpoint.sim_put(0.0)
+        motor.motor_spg.sim_put('Go')
         _patch_user_setpoint(motor)
     return injector
 
@@ -85,7 +88,8 @@ def _patch_user_setpoint(motor):
 
 @pytest.fixture(scope='function')
 def questar(devices):
-    questar = devices.Questar(
+    questar = _instantiate_fake_device(
+        devices.Questar,
         prefix='fake_CXI:SC1:INLINE',
         name='fake_SC1_questar',
         ROI_port='ROI1',
@@ -99,8 +103,25 @@ def questar(devices):
 
 
 @pytest.fixture(scope='function')
+def offaxis_camera(devices):
+    offaxis = _instantiate_fake_device(
+        devices.Offaxis,
+        prefix='fake_CXI:SC1:OFFAXIS',
+        name='fake_SC1_offaxis',
+        ROI_port='ROI1',
+        ROI_stats_port='Stats1',
+        ROI_image_port='IMAGE1',
+    )
+
+    _patch_array_data(offaxis.image)
+    _patch_array_data(offaxis.ROI_image)
+    return offaxis
+
+
+@pytest.fixture(scope='function')
 def offaxis_parameters(devices):
-    params = devices.OffaxisParams(
+    params = _instantiate_fake_device(
+        devices.OffaxisParams,
         prefix='fake_CXI:SC1:INLINE',
         name='fake_SC1_params'
     )
@@ -117,7 +138,8 @@ def offaxis_parameters(devices):
 
 @pytest.fixture(scope='function')
 def parameters(devices):
-    params = devices.Parameters(
+    params = _instantiate_fake_device(
+        devices.Parameters,
         prefix='fake_CXI:SC1:INLINE',
         name='fake_SC1_params'
     )
@@ -134,8 +156,9 @@ def parameters(devices):
 
 @pytest.fixture(scope='function')
 def diffract(devices):
-    return devices.Diffract(prefix='fake_CXI:SC1:DIFFRACT',
-                            name='fake_SC1_diffract')
+    return _instantiate_fake_device(devices.Diffract,
+                                    prefix='fake_CXI:SC1:DIFFRACT',
+                                    name='fake_SC1_diffract')
 
 
 @pytest.fixture(scope='function')
@@ -146,6 +169,69 @@ def jet_control(injector, questar, parameters, diffract):
                       camera=questar,
                       params=parameters,
                       diffract=diffract)
+
+
+def _instantiate_fake_device(dev_cls, name=None, prefix='_prefix',
+                             **specified_kw):
+    '''Instantiate a FakeDevice, optionally specifying some initializer kwargs
+
+    If unspecified, all initializer keyword arguments will default to
+    the string f"_{argument_name}_".
+
+    All signals on the device (and its subdevices) are initialized to either 0
+    or ''.
+    '''
+    sig = inspect.signature(dev_cls)
+    ignore_kw = {'kind', 'read_attrs', 'configuration_attrs', 'parent',
+                 'args', 'name', 'prefix'}
+    kwargs = {name: specified_kw.get(name, f'_{param.name}_')
+              for name, param in sig.parameters.items()
+              if param.kind != param.VAR_KEYWORD and
+              name not in ignore_kw
+              }
+    kwargs['name'] = (name if name is not None else dev_cls.__name__)
+    kwargs['prefix'] = prefix
+    dev = dev_cls(**kwargs)
+
+    devs = [dev]
+    while devs:
+        sub_dev = devs.pop(0)
+        devs.extend([getattr(sub_dev, name)
+                     for name in sub_dev._sub_devices])
+        for name, cpt in sub_dev._sig_attrs.items():
+            sig = getattr(sub_dev, name)
+            try:
+                if cpt.kwargs.get('string', False):
+                    sig.sim_put('')
+                else:
+                    sig.sim_put(0)
+            except Exception as ex:
+                ...
+
+    return dev
+
+
+@pytest.fixture(scope='function')
+def device_instances(injector, questar, offaxis_camera, parameters,
+                     offaxis_parameters, diffract, devices):
+    ns = types.SimpleNamespace()
+    ns.Control = _instantiate_fake_device(devices.Control)
+    ns.CoolerShaker = _instantiate_fake_device(devices.CoolerShaker)
+    ns.Diffract = _instantiate_fake_device(devices.Diffract)
+    ns.Diffract = diffract
+    ns.FlowIntegrator = _instantiate_fake_device(devices.FlowIntegrator)
+    ns.HPLC = _instantiate_fake_device(devices.HPLC)
+    ns.Injector = injector
+    ns.Offaxis = offaxis_camera
+    ns.OffaxisParams = offaxis_parameters
+    ns.Parameters = parameters
+    ns.PressureController = _instantiate_fake_device(devices.PressureController)
+    ns.Questar = questar
+    ns.Selector = _instantiate_fake_device(devices.Selector)
+    ns.SDS = SDS({})
+    ns.SDS.SDS_devices.extend([ns.Selector, ns.CoolerShaker, ns.HPLC,
+                               ns.PressureController, ns.FlowIntegrator])
+    return ns
 
 
 def set_random_image(plugin, dimx=100, dimy=100):

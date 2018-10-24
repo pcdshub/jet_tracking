@@ -52,3 +52,18 @@ def test_smoke_jet_move(injector, questar, parameters,
     questar.ROI.min_xyz.min_x.put(1)
     parameters.jet_x.sim_put(jet_x)
     _jet_move_step(injector=injector, camera=questar, params=parameters)
+
+
+devices_without_table = {'Questar', 'Offaxis', 'SDS'}
+
+
+def test_table(device_instances):
+    import inspect
+
+    for dev_name in dir(device_instances):
+        if dev_name.startswith('_') or dev_name in devices_without_table:
+            continue
+        dev = getattr(device_instances, dev_name)
+        print()
+        print(f'-- {dev_name} --')
+        print(dev.table)
