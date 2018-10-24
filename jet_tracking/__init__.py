@@ -7,4 +7,3 @@ from . import jet_control  # noqa
 from . import devices  # noqa
 from . import cam_utils  # noqa
 from . import move_motor  # noqa
-from . import signal_config  # noqa
