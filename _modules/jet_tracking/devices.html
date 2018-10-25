@@ -179,7 +179,9 @@
     <span class="k">def</span> <span class="nf">_update_descriptions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">adesc</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">signal</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signals</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">adesc</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">epics</span><span class="o">.</span><span class="n">caget</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">pvname</span> <span class="o">+</span> <span class="s1">&#39;.DESC&#39;</span><span class="p">)</span>
+            <span class="n">pvname</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="s1">&#39;pvname&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">adesc</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">epics</span><span class="o">.</span><span class="n">caget</span><span class="p">(</span><span class="n">pvname</span> <span class="o">+</span> <span class="s1">&#39;.DESC&#39;</span><span class="p">)</span>
+                           <span class="k">if</span> <span class="n">pvname</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_descriptions</span> <span class="o">=</span> <span class="n">adesc</span>
 
     <span class="nd">@property</span>
@@ -192,13 +194,23 @@
 
         <span class="n">atable</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">signal</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_signals</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">read</span><span class="p">()[</span><span class="n">signal</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">units</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">describe</span><span class="p">()[</span><span class="n">signal</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;units&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+                <span class="n">units</span> <span class="o">=</span> <span class="kc">None</span>
+
             <span class="n">atable</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">signal</span><span class="o">.</span><span class="n">read</span><span class="p">()[</span><span class="n">signal</span><span class="o">.</span><span class="n">name</span><span class="p">][</span><span class="s1">&#39;value&#39;</span><span class="p">],</span>
-                <span class="s1">&#39;units&#39;</span><span class="p">:</span> <span class="n">signal</span><span class="o">.</span><span class="n">describe</span><span class="p">()[</span><span class="n">signal</span><span class="o">.</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;units&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
+                <span class="s1">&#39;units&#39;</span><span class="p">:</span> <span class="n">units</span><span class="p">,</span>
                 <span class="s1">&#39;desc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">),</span>
             <span class="p">}</span>
 
-        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">atable</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_attrs</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">atable</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_table_attrs</span><span class="p">]</span>
 
 
 <div class="viewcode-block" id="Injector"><a class="viewcode-back" href="../../devices.html#jet_tracking.devices.Injector">[docs]</a><span class="k">class</span> <span class="nc">Injector</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
@@ -225,8 +237,6 @@
 <span class="sd">       fineZ : EpicsSignal</span>
 <span class="sd">           The fine control motor in the Z direction</span>
 <span class="sd">    &#39;&#39;&#39;</span>
-
-    <span class="n">_table_attrs</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;velocity&#39;</span><span class="p">,</span> <span class="s1">&#39;units&#39;</span><span class="p">,</span> <span class="s1">&#39;desc&#39;</span><span class="p">)</span>
     <span class="n">coarseX</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">IMS</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._coarseX}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="n">coarseY</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">IMS</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._coarseY}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="n">coarseZ</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">IMS</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._coarseZ}</span><span class="s1">&#39;</span><span class="p">)</span>
@@ -247,30 +257,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_fineY</span> <span class="o">=</span> <span class="n">fineY</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_fineZ</span> <span class="o">=</span> <span class="n">fineZ</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Return table of injector settings.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_update_descriptions</span><span class="p">()</span>
-
-        <span class="n">adict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;user_readback&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;units&#39;</span><span class="p">:</span> <span class="s1">&#39;motor_egu&#39;</span><span class="p">}</span>
-        <span class="n">atable</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">signal</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_signals</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-            <span class="n">atable</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;desc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_descriptions</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)}</span>
-            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_table_attrs</span><span class="p">:</span>
-                <span class="n">field</span> <span class="o">=</span> <span class="n">adict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="n">atable</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">field</span><span class="p">)</span>
-                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                    <span class="k">pass</span>
-
-        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">atable</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_table_attrs</span><span class="p">]</span></div>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Selector"><a class="viewcode-back" href="../../sample_delivery.html#jet_tracking.devices.Selector">[docs]</a><span class="k">class</span> <span class="nc">Selector</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
@@ -921,7 +908,7 @@
                          <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Nozzle repetition rate&#39;</span><span class="p">)</span></div>
 
 
-<span class="k">class</span> <span class="nc">OffaxisParams</span><span class="p">(</span><span class="n">Device</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">OffaxisParams</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Contains EPICS PVs used with Offaxis camera for jet tracking</span>
 <span class="sd">    &#39;&#39;&#39;</span>
