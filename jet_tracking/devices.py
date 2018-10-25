@@ -19,7 +19,9 @@ class _TableMixin:
     def _update_descriptions(self):
         adesc = {}
         for name, signal in self._signals.items():
-            adesc[name] = epics.caget(signal.pvname + '.DESC')
+            pvname = getattr(signal, 'pvname', None)
+            adesc[name] = (epics.caget(pvname + '.DESC')
+                           if pvname else '')
         self._descriptions = adesc
 
     @property
@@ -32,13 +34,23 @@ class _TableMixin:
 
         atable = {}
         for name, signal in sorted(self._signals.items()):
+            try:
+                value = signal.read()[signal.name]['value']
+            except Exception as ex:
+                value = None
+
+            try:
+                units = signal.describe()[signal.name].get('units', '')
+            except Exception as ex:
+                units = None
+
             atable[name] = {
-                'value': signal.read()[signal.name]['value'],
-                'units': signal.describe()[signal.name].get('units', ''),
+                'value': value,
+                'units': units,
                 'desc': self._descriptions.get(name),
             }
 
-        return pd.DataFrame(atable).T[self._table_attrs]
+        return pd.DataFrame(atable).T.loc[:, self._table_attrs]
 
 
 class Injector(Device, _TableMixin):
@@ -65,8 +77,6 @@ class Injector(Device, _TableMixin):
        fineZ : EpicsSignal
            The fine control motor in the Z direction
     '''
-
-    _table_attrs = ('value', 'velocity', 'units', 'desc')
     coarseX = FCpt(IMS, '{self._coarseX}')
     coarseY = FCpt(IMS, '{self._coarseY}')
     coarseZ = FCpt(IMS, '{self._coarseZ}')
@@ -88,29 +98,6 @@ class Injector(Device, _TableMixin):
         self._fineZ = fineZ
 
         super().__init__(name=name, **kwargs)
-
-    @property
-    def table(self):
-        """
-        Return table of injector settings.
-        """
-        if self._descriptions is None:
-            self._update_descriptions()
-
-        adict = {'value': 'user_readback',
-                 'units': 'motor_egu'}
-        atable = {}
-        for name, signal in self._signals.items():
-            value = signal.get()
-            atable[name] = {'desc': self._descriptions.get(name)}
-            for attr in self._table_attrs:
-                field = adict.get(attr, attr)
-                try:
-                    atable[name][attr] = getattr(value, field)
-                except Exception:
-                    pass
-
-        return pd.DataFrame(atable).T[self._table_attrs]
 
 
 class Selector(Device, _TableMixin):
@@ -761,7 +748,7 @@ class Parameters(Device, _TableMixin):
                          doc='Nozzle repetition rate')
 
 
-class OffaxisParams(Device):
+class OffaxisParams(Device, _TableMixin):
     '''
     Contains EPICS PVs used with Offaxis camera for jet tracking
     '''

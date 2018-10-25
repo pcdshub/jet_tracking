@@ -1,0 +1,8 @@
+[run]
+source = jet_tracking
+
+[report]
+omit = 
+    jet_tracking/interactive_tests.py
+    jet_tracking/devices_load.py
+    jet_tracking/_version.py
