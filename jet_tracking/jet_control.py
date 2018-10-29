@@ -52,31 +52,6 @@ class JetControl:
         jet_move(self.injector, self.camera, self.params)
 
 
-def get_burst_avg(n, image_plugin):
-    '''
-    Get the average of n consecutive images from a camera
-
-    Parameters
-    ----------
-    n : int
-        number of consecutive images to be averaged
-    image_plugin : ImagePlugin
-        camera ImagePlugin from which the images will be taken
-
-    Returns
-    -------
-    burst_avg : ndarray
-        average image
-    '''
-    imageX, imageY = image_plugin.image.shape
-    burst_imgs = np.empty((n, imageX, imageY))
-    for x in range(n):
-        burst_imgs[x] = image_plugin.image
-    burst_avg = burst_imgs.mean(axis=0)
-
-    return burst_avg
-
-
 def set_beam(beamX_px, beamY_px, params):
     '''
     Set the coordinates for the x-ray beam
@@ -115,7 +90,7 @@ def calibrate(injector, camera, params, *, offaxis=False,
     '''
 
     # find jet in camera ROI
-    ROI_image = get_burst_avg(20, camera.ROI_image)
+    ROI_image = cam_utils.get_burst_avg(20, camera.ROI_image)
     rho, theta = cam_utils.jet_detect(ROI_image)
 
     if offaxis:
@@ -128,7 +103,7 @@ def calibrate(injector, camera, params, *, offaxis=False,
     positions = []
     start_pos = injector_axis.user_readback.get()
     for i in range(2):
-        image = get_burst_avg(20, camera.image)
+        image = cam_utils.get_burst_avg(20, camera.image)
         imgs.append(image)
         positions.append(injector_axis.user_readback.get())
         next_position = injector_axis.user_setpoint.get() - 0.1
@@ -173,7 +148,7 @@ def calibrate(injector, camera, params, *, offaxis=False,
 def _jet_calculate_step_offaxis(camera, params):
     'A single step of the infinite-loop jet_calculate (off-axis)'
     # detect the jet in the camera ROI
-    ROI_image = get_burst_avg(20, camera.ROI_image)
+    ROI_image = cam_utils.get_burst_avg(20, camera.ROI_image)
     rho, theta = cam_utils.jet_detect(ROI_image)
 
     # check x-ray beam position
@@ -202,7 +177,7 @@ def _jet_calculate_step_offaxis(camera, params):
 def _jet_calculate_step(camera, params):
     'A single step of the infinite-loop jet_calculate (on-axis)'
     # detect the jet in the camera ROI
-    ROI_image = get_burst_avg(20, camera.ROI_image)
+    ROI_image = cam_utils.get_burst_avg(20, camera.ROI_image)
     rho, theta = cam_utils.jet_detect(ROI_image)
 
     # check x-ray beam position

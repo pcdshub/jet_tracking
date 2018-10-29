@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 from .. import cam_utils
+from . import conftest
 
 
 @pytest.fixture()
@@ -71,3 +72,9 @@ def test_smoke_get_nozzle_shift(onaxis_image):
     cam_utils.get_nozzle_shift(
         onaxis_image, np.random.random(onaxis_image.shape),
         cam_roll=1, pxsize=0.001)
+
+
+def test_smoke_get_burst_avg(jet_control):
+    roi_image = jet_control.camera.ROI_image
+    conftest.set_random_image(roi_image)
+    cam_utils.get_burst_avg(2, roi_image)

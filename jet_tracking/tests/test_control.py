@@ -2,13 +2,6 @@ import pytest
 from . import conftest
 
 
-def test_smoke_get_burst_avg(jet_control):
-    from ..jet_control import get_burst_avg
-    roi_image = jet_control.camera.ROI_image
-    conftest.set_random_image(roi_image)
-    get_burst_avg(2, roi_image)
-
-
 def test_smoke_set_beam(jet_control):
     from ..jet_control import set_beam
     set_beam(1, 2, jet_control.params)

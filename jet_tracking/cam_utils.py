@@ -19,18 +19,25 @@ def jet_detect(img):
         Distance from (0,0) to the line in pixels
     theta : float
         Angle of the shortest vector from (0,0) to the line in radians
+
+    Raises
+    ------
+    ValueError
+        Unable to locate jet through hough line transform
     '''
-    c = 0
-    while True:
+    mean = img.mean()
+    std = img.std()
+    for c in range(30):
         try:
-            binary = (img / (img.mean() + 2 * img.std() * 0.90 ** c)).astype(np.uint8)
+            binary = (img / (mean + 2 * std * 0.90 ** c)).astype(np.uint8)
             lines = cv2.HoughLines(binary, 1, np.radians(0.25), 30)
             rho, theta = lines[0][0]
         except Exception:
-            c += 1
             continue
         else:
             return rho, theta
+
+    raise ValueError('Unable to detect jet')
 
 
 def get_jet_z(rho, theta, roi_y, roi_z, *, pxsize, cam_y, cam_z, beam_y,
@@ -391,3 +398,23 @@ def get_nozzle_shift(im1, im2, *, cam_roll, pxsize):
     dx = (sx * np.cos(cam_roll) - sy * np.sin(cam_roll)) * pxsize
     dy = (sy * np.cos(cam_roll) + sx * np.sin(cam_roll)) * pxsize
     return dy, dx
+
+
+def get_burst_avg(n, image_plugin):
+    '''
+    Get the average of n consecutive images from a camera
+
+    Parameters
+    ----------
+    n : int
+        number of consecutive images to be averaged
+    image_plugin : ImagePlugin
+        camera ImagePlugin from which the images will be taken
+
+    Returns
+    -------
+    burst_avg : ndarray
+        average image
+    '''
+    images = [image_plugin.image for _ in range(n)]
+    return np.mean(images, axis=0)
