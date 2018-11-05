@@ -1,4 +1,3 @@
-import numpy as np
 from time import sleep
 
 from . import cam_utils
