@@ -211,7 +211,7 @@ def _instantiate_fake_device(dev_cls, name=None, prefix='_prefix',
                     sig.sim_put('')
                 else:
                     sig.sim_put(0)
-            except Exception as ex:
+            except Exception:
                 ...
 
     return dev

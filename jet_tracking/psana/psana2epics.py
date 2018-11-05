@@ -367,7 +367,7 @@ def streak_angle_raw(self):
     peak = s[1:-1].argmax() + 1
     try:
         peakwidth = peak_widths(s, [peak])[0][0]
-    except Exception as e:
+    except Exception:
         peakwidth = 5
     return (np.pi * (peak - 40) / 360.0, s.max(), peakwidth)
 

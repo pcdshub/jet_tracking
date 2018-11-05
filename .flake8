@@ -1,4 +1,4 @@
 [flake8]
 exclude = .git,__pycache__,build,dist,versioneer.py,jet_tracking/_version.py,docs/source/conf.py
-ignore = 
+ignore = W504
 max-line-length = 100
