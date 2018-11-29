@@ -9,7 +9,7 @@ Table of Contents
    :caption: Setup
 
    installation.rst
-
+   sim.rst
 
 .. toctree::
    :maxdepth: 2 
