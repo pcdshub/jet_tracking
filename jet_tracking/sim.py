@@ -103,6 +103,8 @@ def generate_simulation(motor_precision=3,
 
     Returns
     -------
+    namespace: types.SimpleNamespace
+        With attributes, ``params``, ``beam``, ``inj_x`` and ``cspad_adu``
 
     Notes
     -----
@@ -130,6 +132,23 @@ def generate_simulation(motor_precision=3,
 
     Examples
     --------
+    Draw a quick scan through the distribution where the only noise is in the
+    energy of the beam
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> simulation = generate_simulation(jet_noise=0.,
+    ...                                  drop_rate=0.,
+    ...                                  energy_noise=0.4)
+    >>> positions = np.linspace(-1, 1, 250)
+    >>> values = []
+    >>> for position in positions:
+    ...     simulation.inj_x.set(position)
+    ...     simulation.cspad_adu.trigger()
+    ...     values.append(simulation.cspad_adu.get())
+    >>> plt.plot(positions, values, facecolors='none', edgecolors='blue')
+    >>> plt.show()
+
     """
     # Input parameters
     params = SimpleNamespace(beam_position=beam_position,
