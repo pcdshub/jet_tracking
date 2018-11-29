@@ -146,7 +146,7 @@ def generate_simulation(motor_precision=3,
     ...     simulation.inj_x.set(position)
     ...     simulation.cspad_adu.trigger()
     ...     values.append(simulation.cspad_adu.get())
-    >>> plt.plot(positions, values, facecolors='none', edgecolors='blue')
+    >>> plt.scatter(positions, values, facecolors='none', edgecolors='blue')
     >>> plt.show()
 
     """
