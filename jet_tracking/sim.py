@@ -112,7 +112,7 @@ def generate_simulation(motor_precision=3,
     added in a number of places to properly simulate real data:
 
     1. A :class:`.BeamEnergy` named ``beam`` is created and will simulate the
-    energy of the incoming photons. This also has a statistical flucuation with
+    energy of the incoming photons. This also has a statistical fluctuation with
     an introduced ``drop_rate``
 
     2. A ``SynAxis``, ``inj_x``, is instantiated. A simplification is made that
