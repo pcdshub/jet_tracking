@@ -117,7 +117,7 @@ def generate_simulation(motor_precision=3,
 
     2. A ``SynAxis``, ``inj_x``, is instantiated. A simplification is made that
     the position of the jet is equivalent to the position of this motor. In
-    order to simulate a flucuating jet, ``jet_noise`` can be modified to
+    order to simulate a fluctuating jet, ``jet_noise`` can be modified to
     introduce Gaussian noise on top of the injector position when
     considering the jet position
 
