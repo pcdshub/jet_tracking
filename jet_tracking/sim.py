@@ -86,7 +86,7 @@ def generate_simulation(motor_precision=3,
         signal.
 
     adu_sigma: float, optional
-        The value of a single standard deviation for flucuations in the CSPAD
+        The value of a single standard deviation for fluctuations in the CSPAD
         intensity.
 
     adu_floor: float, optional
