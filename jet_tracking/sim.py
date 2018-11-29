@@ -127,7 +127,7 @@ def generate_simulation(motor_precision=3,
     scaled by both ``adu_max`` and the current ``beam_energy`` reading. The
     detector will never report less than ``adu_floor``.
 
-    4. If the jet and the beam are considered non-overalapping, ``adu_floor``
+    4. If the jet and the beam are considered non-overlapping, ``adu_floor``
     is returned.
 
     Examples
