@@ -74,7 +74,7 @@ def generate_simulation(motor_precision=3,
         ``beam`` object.
 
     energy_noise: float, optional
-        The value of a single standard deviation for flucuations in beam
+        The value of a single standard deviation for fluctuations in beam
         energy. Stored on the ``beam`` object.
 
     beam_position: float, optional
