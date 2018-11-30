@@ -6,7 +6,7 @@ from ..devices import (Injector, Selector, CoolerShaker, HPLC,
                        PressureController, FlowIntegrator, Offaxis, Questar,
                        Parameters, OffaxisParams, Control, Diffract,
                        SDS)
-
+from ophyd.areadetector.plugins import PluginBase
 
 all_devices = (Injector, Selector, CoolerShaker, HPLC, PressureController,
                FlowIntegrator, Offaxis, Questar, Parameters, OffaxisParams,
@@ -38,9 +38,15 @@ def devices(monkeypatch):
     # Short-circuit all plugin type checks, array data
 
     for dev in (ns.Questar, ns.Offaxis):
-        for plugin_name in ('ROI', 'ROI_stats', 'ROI_image', 'image', 'stats'):
-            plugin_cls = getattr(dev, plugin_name).cls
-            monkeypatch.setattr(plugin_cls, '_plugin_type', None)
+        components = [
+            cpt.cls
+            for name, cpt in dev._sig_attrs.items()
+            if hasattr(cpt, 'cls') and issubclass(cpt.cls, PluginBase)
+        ]
+
+        for component_cls in components:
+            if hasattr(component_cls, '_plugin_type'):
+                monkeypatch.setattr(component_cls, '_plugin_type', None)
     return ns
 
 
@@ -205,7 +211,7 @@ def _instantiate_fake_device(dev_cls, name=None, prefix='_prefix',
                     sig.sim_put('')
                 else:
                     sig.sim_put(0)
-            except Exception as ex:
+            except Exception:
                 ...
 
     return dev

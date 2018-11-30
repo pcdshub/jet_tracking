@@ -2,13 +2,6 @@ import pytest
 from . import conftest
 
 
-def test_smoke_get_burst_avg(jet_control):
-    from ..jet_control import get_burst_avg
-    roi_image = jet_control.camera.ROI_image
-    conftest.set_random_image(roi_image)
-    get_burst_avg(2, roi_image)
-
-
 def test_smoke_set_beam(jet_control):
     from ..jet_control import set_beam
     set_beam(1, 2, jet_control.params)
@@ -33,25 +26,25 @@ def test_smoke_calibrate(jet_control, injector, questar, parameters,
 @pytest.mark.parametrize("use_offaxis", [False, True])
 def test_smoke_jet_calculate(questar, parameters,
                              offaxis_parameters, use_offaxis):
-    from ..jet_control import _jet_calculate_step_offaxis, _jet_calculate_step
+    from ..jet_control import jet_calculate_off_axis, jet_calculate_inline
     conftest.set_random_image(questar.image)
     conftest.set_random_image(questar.ROI_image)
     questar.ROI.min_xyz.min_x.sim_put(1)
     questar.ROI.min_xyz.min_y.sim_put(1)
     questar.ROI.min_xyz.min_z.sim_put(1)
     if use_offaxis:
-        _jet_calculate_step_offaxis(camera=questar, params=offaxis_parameters)
+        jet_calculate_off_axis(camera=questar, params=offaxis_parameters)
     else:
-        _jet_calculate_step(camera=questar, params=parameters)
+        jet_calculate_inline(camera=questar, params=parameters)
 
 
 @pytest.mark.parametrize("jet_x", [0.0, 0.1])
 def test_smoke_jet_move(injector, questar, parameters,
                         jet_x):
-    from ..jet_control import _jet_move_step
+    from ..jet_control import jet_move_inline
     questar.ROI.min_xyz.min_x.put(1)
     parameters.jet_x.sim_put(jet_x)
-    _jet_move_step(injector=injector, camera=questar, params=parameters)
+    jet_move_inline(injector=injector, camera=questar, params=parameters)
 
 
 devices_without_table = {'Questar', 'Offaxis', 'SDS'}

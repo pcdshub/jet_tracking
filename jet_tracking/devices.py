@@ -36,12 +36,12 @@ class _TableMixin:
         for name, signal in sorted(self._signals.items()):
             try:
                 value = signal.read()[signal.name]['value']
-            except Exception as ex:
+            except Exception:
                 value = None
 
             try:
                 units = signal.describe()[signal.name].get('units', '')
-            except Exception as ex:
+            except Exception:
                 units = None
 
             atable[name] = {

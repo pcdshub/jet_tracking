@@ -19,18 +19,25 @@ def jet_detect(img):
         Distance from (0,0) to the line in pixels
     theta : float
         Angle of the shortest vector from (0,0) to the line in radians
+
+    Raises
+    ------
+    ValueError
+        Unable to locate jet through hough line transform
     '''
-    c = 0
-    while True:
+    mean = img.mean()
+    std = img.std()
+    for c in range(30):
         try:
-            binary = (img / (img.mean() + 2 * img.std() * 0.90 ** c)).astype(np.uint8)
+            binary = (img / (mean + 2 * std * 0.90 ** c)).astype(np.uint8)
             lines = cv2.HoughLines(binary, 1, np.radians(0.25), 30)
             rho, theta = lines[0][0]
         except Exception:
-            c += 1
             continue
         else:
             return rho, theta
+
+    raise ValueError('Unable to detect jet')
 
 
 def get_jet_z(rho, theta, roi_y, roi_z, *, pxsize, cam_y, cam_z, beam_y,
@@ -136,8 +143,7 @@ def get_jet_pitch(theta, cam_pitch):
     jet_pitch : float
         Jet angle in radians
     '''
-    jet_pitch = (theta - np.pi / 2 - cam_pitch) % np.pi - np.pi / 2
-    return jet_pitch
+    return (theta - np.pi / 2 - cam_pitch) % np.pi - np.pi / 2
 
 
 def get_jet_roll(theta, cam_roll):
@@ -155,8 +161,7 @@ def get_jet_roll(theta, cam_roll):
     jet_roll : float
         Jet angle in radians
     '''
-    jet_roll = (theta - np.pi / 2 - cam_roll) % np.pi - np.pi / 2
-    return jet_roll
+    return (theta - np.pi / 2 - cam_roll) % np.pi - np.pi / 2
 
 
 def get_jet_width(im, rho, theta):
@@ -184,8 +189,7 @@ def get_jet_width(im, rho, theta):
 
     s = im[rows, column_indices].sum(axis=0)
 
-    w = peak_widths(s, [s.argmax()])[0]
-    return w
+    return peak_widths(s, [s.argmax()])[0]
 
 
 def get_offaxis_coords(cam_beam_y, cam_beam_z, *, cam_pitch, pxsize):
@@ -214,7 +218,6 @@ def get_offaxis_coords(cam_beam_y, cam_beam_z, *, cam_pitch, pxsize):
                       cam_beam_y * np.cos(cam_pitch))
     cam_z = pxsize * (cam_beam_z * np.cos(cam_pitch) -
                       cam_beam_y * np.sin(cam_pitch))
-
     return cam_y, cam_z
 
 
@@ -244,7 +247,6 @@ def get_cam_coords(cam_beam_x, cam_beam_y, *, cam_roll, pxsize):
                       cam_beam_x * np.cos(cam_roll))
     cam_y = pxsize * (cam_beam_y * np.cos(cam_roll) -
                       cam_beam_x * np.sin(cam_roll))
-
     return cam_x, cam_y
 
 
@@ -264,19 +266,14 @@ def get_cam_pitch(imgs):
     ytot = 0
     ztot = 0
     for i in range(len(imgs) - 1):
-        im1 = imgs[i]
-        im2 = imgs[i + 1]
-        shift, error, diffphase = register_translation(im1, im2, 100)
-        dy = shift[0]
-        dz = shift[1]
+        im1, im2 = imgs[i], imgs[i + 1]
+        (dy, dz), error, diffphase = register_translation(im1, im2, 100)
         if dy < 0:
             dy *= -1
             dz *= -1
         ytot += dy
         ztot += dz
-
-    cam_pitch = np.arctan(ytot / ztot)
-    return cam_pitch
+    return np.arctan(ytot / ztot)
 
 
 def get_cam_roll(imgs):
@@ -295,19 +292,14 @@ def get_cam_roll(imgs):
     ytot = 0
     xtot = 0
     for i in range(len(imgs) - 1):
-        im1 = imgs[i]
-        im2 = imgs[i + 1]
-        shift, error, diffphase = register_translation(im1, im2, 100)
-        dy = shift[0]
-        dx = shift[1]
+        im1, im2 = imgs[i], imgs[i + 1]
+        (dy, dx), error, diffphase = register_translation(im1, im2, 100)
         if dy < 0:
             dy *= -1
             dx *= -1
         ytot += dy
         xtot += dx
-
-    cam_roll = -np.arctan(ytot / xtot)
-    return cam_roll
+    return -np.arctan(ytot / xtot)
 
 
 def get_cam_pitch_pxsize(imgs, positions):
@@ -331,17 +323,13 @@ def get_cam_pitch_pxsize(imgs, positions):
     ztot = 0
     changetot = 0
     for i in range(len(positions) - 1):
-        im1 = imgs[i]
-        im2 = imgs[i + 1]
-        shift, error, diffphase = register_translation(im1, im2, 100)
-        dy = shift[0]
-        dz = shift[1]
+        im1, im2 = imgs[i], imgs[i + 1]
+        (dy, dz), error, diffphase = register_translation(im1, im2, 100)
         if dy < 0:
             dy *= -1
             dz *= -1
         ytot += dy
         ztot += dz
-
         changetot += abs(positions[i + 1] - positions[i])
 
     cam_pitch = np.arctan(ytot / ztot)
@@ -370,17 +358,13 @@ def get_cam_roll_pxsize(imgs, positions):
     xtot = 0
     changetot = 0
     for i in range(len(positions) - 1):
-        im1 = imgs[i]
-        im2 = imgs[i + 1]
-        shift, error, diffphase = register_translation(im1, im2, 100)
-        dy = shift[0]
-        dx = shift[1]
+        im1, im2 = imgs[i], imgs[i + 1]
+        (dy, dx), error, diffphase = register_translation(im1, im2, 100)
         if dy < 0:
             dy *= -1
             dx *= -1
         ytot += dy
         xtot += dx
-
         changetot += abs(positions[i + 1] - positions[i])
 
     cam_roll = -np.arctan(ytot / xtot)
@@ -410,10 +394,27 @@ def get_nozzle_shift(im1, im2, *, cam_roll, pxsize):
         Distance in x
     '''
 
-    shift, error, diffphase = register_translation(im1, im2, 100)
-    sy = shift[0]
-    sx = shift[1]
-
+    (sy, sx), error, diffphase = register_translation(im1, im2, 100)
     dx = (sx * np.cos(cam_roll) - sy * np.sin(cam_roll)) * pxsize
     dy = (sy * np.cos(cam_roll) + sx * np.sin(cam_roll)) * pxsize
     return dy, dx
+
+
+def get_burst_avg(n, image_plugin):
+    '''
+    Get the average of n consecutive images from a camera
+
+    Parameters
+    ----------
+    n : int
+        number of consecutive images to be averaged
+    image_plugin : ImagePlugin
+        camera ImagePlugin from which the images will be taken
+
+    Returns
+    -------
+    burst_avg : ndarray
+        average image
+    '''
+    images = [image_plugin.image for _ in range(n)]
+    return np.mean(images, axis=0)
