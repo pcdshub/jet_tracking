@@ -174,11 +174,11 @@
 <h1>jet_tracking.jet_control.JetControl<a class="headerlink" href="#jet-tracking-jet-control-jetcontrol" title="Permalink to this headline">¶</a></h1>
 <dl class="class">
 <dt id="jet_tracking.jet_control.JetControl">
-<em class="property">class </em><code class="descclassname">jet_tracking.jet_control.</code><code class="descname">JetControl</code><span class="sig-paren">(</span><em>name</em>, <em>injector</em>, <em>camera</em>, <em>params</em>, <em>diffract</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jet_tracking/jet_control.html#JetControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.jet_control.JetControl" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">jet_tracking.jet_control.</code><code class="descname">JetControl</code><span class="sig-paren">(</span><em>name</em>, <em>injector</em>, <em>camera</em>, <em>params</em>, <em>diffract</em>, <em>*</em>, <em>offaxis=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jet_tracking/jet_control.html#JetControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.jet_control.JetControl" title="Permalink to this definition">¶</a></dt>
 <dd><p>Jet tracking control class using jet_tracking methods</p>
 <dl class="method">
 <dt id="jet_tracking.jet_control.JetControl.__init__">
-<code class="descname">__init__</code><span class="sig-paren">(</span><em>name</em>, <em>injector</em>, <em>camera</em>, <em>params</em>, <em>diffract</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jet_tracking/jet_control.html#JetControl.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.jet_control.JetControl.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>name</em>, <em>injector</em>, <em>camera</em>, <em>params</em>, <em>diffract</em>, <em>*</em>, <em>offaxis=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jet_tracking/jet_control.html#JetControl.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.jet_control.JetControl.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 
@@ -192,7 +192,7 @@
 <tr class="row-odd"><td><a class="reference internal" href="#jet_tracking.jet_control.JetControl.__init__" title="jet_tracking.jet_control.JetControl.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(name,&nbsp;injector,&nbsp;camera,&nbsp;params,&nbsp;…)</td>
 <td>Initialize self.</td>
 </tr>
-<tr class="row-even"><td><a class="reference internal" href="jet_tracking.jet_control.JetControl.calibrate.html#jet_tracking.jet_control.JetControl.calibrate" title="jet_tracking.jet_control.JetControl.calibrate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calibrate</span></code></a>()</td>
+<tr class="row-even"><td><a class="reference internal" href="jet_tracking.jet_control.JetControl.calibrate.html#jet_tracking.jet_control.JetControl.calibrate" title="jet_tracking.jet_control.JetControl.calibrate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calibrate</span></code></a>(**kwargs)</td>
 <td>Calibrate the onaxis camera</td>
 </tr>
 <tr class="row-odd"><td><a class="reference internal" href="jet_tracking.jet_control.JetControl.jet_calculate.html#jet_tracking.jet_control.JetControl.jet_calculate" title="jet_tracking.jet_control.JetControl.jet_calculate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jet_calculate</span></code></a>()</td>
@@ -201,7 +201,7 @@
 <tr class="row-even"><td><a class="reference internal" href="jet_tracking.jet_control.JetControl.jet_move.html#jet_tracking.jet_control.JetControl.jet_move" title="jet_tracking.jet_control.JetControl.jet_move"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jet_move</span></code></a>()</td>
 <td>Move the sample jet to the x-ray beam</td>
 </tr>
-<tr class="row-odd"><td><a class="reference internal" href="jet_tracking.jet_control.JetControl.set_beam.html#jet_tracking.jet_control.JetControl.set_beam" title="jet_tracking.jet_control.JetControl.set_beam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_beam</span></code></a>(beamX,&nbsp;beamY)</td>
+<tr class="row-odd"><td><a class="reference internal" href="jet_tracking.jet_control.JetControl.set_beam.html#jet_tracking.jet_control.JetControl.set_beam" title="jet_tracking.jet_control.JetControl.set_beam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_beam</span></code></a>(beam_x_px,&nbsp;beam_y_px)</td>
 <td>Set the coordinates for the x-ray beam</td>
 </tr>
 </tbody>
@@ -255,7 +255,6 @@
         <script type="text/javascript" src="../_static/jquery.js"></script>
         <script type="text/javascript" src="../_static/underscore.js"></script>
         <script type="text/javascript" src="../_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
 
   

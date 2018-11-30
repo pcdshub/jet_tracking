@@ -158,8 +158,7 @@
            <div itemprop="articleBody">
             
   <h1>Source code for jet_tracking.jet_control</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">sleep</span>
+<span></span><span class="kn">from</span> <span class="nn">time</span> <span class="k">import</span> <span class="n">sleep</span>
 
 <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">cam_utils</span>
 <span class="kn">from</span> <span class="nn">.move_motor</span> <span class="k">import</span> <span class="n">movex</span>
@@ -170,95 +169,98 @@
 <span class="sd">    Jet tracking control class using jet_tracking methods</span>
 <span class="sd">    &#39;&#39;&#39;</span>
 
-<div class="viewcode-block" id="JetControl.__init__"><a class="viewcode-back" href="../../generated/jet_tracking.jet_control.JetControl.html#jet_tracking.jet_control.JetControl.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
-                 <span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">diffract</span><span class="p">,</span>
-                 <span class="c1"># camera_offaxis=None,</span>
-                 <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-
+<div class="viewcode-block" id="JetControl.__init__"><a class="viewcode-back" href="../../generated/jet_tracking.jet_control.JetControl.html#jet_tracking.jet_control.JetControl.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">diffract</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span>
+                 <span class="n">offaxis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">injector</span> <span class="o">=</span> <span class="n">injector</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">camera</span> <span class="o">=</span> <span class="n">camera</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">diffract</span> <span class="o">=</span> <span class="n">diffract</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diffract</span> <span class="o">=</span> <span class="n">diffract</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offaxis</span> <span class="o">=</span> <span class="n">offaxis</span></div>
 
-<div class="viewcode-block" id="JetControl.set_beam"><a class="viewcode-back" href="../../generated/jet_tracking.jet_control.JetControl.set_beam.html#jet_tracking.jet_control.JetControl.set_beam">[docs]</a>    <span class="k">def</span> <span class="nf">set_beam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beamX</span><span class="p">,</span> <span class="n">beamY</span><span class="p">):</span>
+<div class="viewcode-block" id="JetControl.set_beam"><a class="viewcode-back" href="../../generated/jet_tracking.jet_control.JetControl.set_beam.html#jet_tracking.jet_control.JetControl.set_beam">[docs]</a>    <span class="k">def</span> <span class="nf">set_beam</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">beam_x_px</span><span class="p">,</span> <span class="n">beam_y_px</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Set the coordinates for the x-ray beam</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        beamX_px : int</span>
+<span class="sd">        beam_x_px : int</span>
 <span class="sd">            x-coordinate of x-ray beam in the camera image in pixels</span>
-<span class="sd">        beamY_px : int</span>
+<span class="sd">        beam_y_px : int</span>
 <span class="sd">            y-coordinate of x-ray beam in the camera image in pixels</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">set_beam</span><span class="p">(</span><span class="n">beamX</span><span class="p">,</span> <span class="n">beamY</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span></div>
+        <span class="n">set_beam</span><span class="p">(</span><span class="n">beam_x_px</span><span class="p">,</span> <span class="n">beam_y_px</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="JetControl.calibrate"><a class="viewcode-back" href="../../generated/jet_tracking.jet_control.JetControl.calibrate.html#jet_tracking.jet_control.JetControl.calibrate">[docs]</a>    <span class="k">def</span> <span class="nf">calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="JetControl.calibrate"><a class="viewcode-back" href="../../generated/jet_tracking.jet_control.JetControl.calibrate.html#jet_tracking.jet_control.JetControl.calibrate">[docs]</a>    <span class="k">def</span> <span class="nf">calibrate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Calibrate the onaxis camera</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">calibrate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">injector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">offaxis</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">calibrate_off_axis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">injector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+                                      <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">calibrate_inline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">injector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+                                    <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="JetControl.jet_calculate"><a class="viewcode-back" href="../../generated/jet_tracking.jet_control.JetControl.jet_calculate.html#jet_tracking.jet_control.JetControl.jet_calculate">[docs]</a>    <span class="k">def</span> <span class="nf">jet_calculate</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Track the sample jet and calculate the distance to the x-ray beam</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">jet_calculate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">offaxis</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jet_calculate_off_axis</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">jet_calculate_inline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span></div>
 
 <div class="viewcode-block" id="JetControl.jet_move"><a class="viewcode-back" href="../../generated/jet_tracking.jet_control.JetControl.jet_move.html#jet_tracking.jet_control.JetControl.jet_move">[docs]</a>    <span class="k">def</span> <span class="nf">jet_move</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Move the sample jet to the x-ray beam</span>
 <span class="sd">        &#39;&#39;&#39;</span>
-        <span class="n">jet_move</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">injector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span></div></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">offaxis</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">jet_move_inline</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">injector</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">camera</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span></div></div>
 
 
-<span class="k">def</span> <span class="nf">get_burst_avg</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">image_plugin</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Get the average of n consecutive images from a camera</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    n : int</span>
-<span class="sd">        number of consecutive images to be averaged</span>
-<span class="sd">    image_plugin : ImagePlugin</span>
-<span class="sd">        camera ImagePlugin from which the images will be taken</span>
-
-<span class="sd">    Returns</span>
-<span class="sd">    -------</span>
-<span class="sd">    burst_avg : ndarray</span>
-<span class="sd">        average image</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">imageX</span><span class="p">,</span> <span class="n">imageY</span> <span class="o">=</span> <span class="n">image_plugin</span><span class="o">.</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span>
-    <span class="n">burst_imgs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">imageX</span><span class="p">,</span> <span class="n">imageY</span><span class="p">))</span>
-    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
-        <span class="n">burst_imgs</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">=</span> <span class="n">image_plugin</span><span class="o">.</span><span class="n">image</span>
-    <span class="n">burst_avg</span> <span class="o">=</span> <span class="n">burst_imgs</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">burst_avg</span>
-
-
-<span class="k">def</span> <span class="nf">set_beam</span><span class="p">(</span><span class="n">beamX_px</span><span class="p">,</span> <span class="n">beamY_px</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">set_beam</span><span class="p">(</span><span class="n">beam_x_px</span><span class="p">,</span> <span class="n">beam_y_px</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Set the coordinates for the x-ray beam</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
-<span class="sd">    beamX_px : int</span>
+<span class="sd">    beam_x_px : int</span>
 <span class="sd">        x-coordinate of x-ray beam in the camera image in pixels</span>
-<span class="sd">    beamY_px : int</span>
+<span class="sd">    beam_y_px : int</span>
 <span class="sd">        y-coordinate of x-ray beam in the camera image in pixels</span>
 <span class="sd">    params : Parameters</span>
 <span class="sd">        EPICS PVs used for recording jet tracking data</span>
 <span class="sd">    &#39;&#39;&#39;</span>
-    <span class="n">params</span><span class="o">.</span><span class="n">beam_x_px</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">beamX_px</span><span class="p">)</span>
-    <span class="n">params</span><span class="o">.</span><span class="n">beam_y_px</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">beamY_px</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">beam_x_px</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">beam_x_px</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">beam_y_px</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">beam_y_px</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">calibrate</span><span class="p">(</span><span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">offaxis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-              <span class="n">delay</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">get_calibration_images</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">settle_time</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                           <span class="n">burst_images</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+    <span class="c1"># collect images and motor positions to calculate pxsize and cam_roll</span>
+    <span class="n">imgs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">positions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">start_pos</span> <span class="o">=</span> <span class="n">axis</span><span class="o">.</span><span class="n">user_readback</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_burst_avg</span><span class="p">(</span><span class="n">burst_images</span><span class="p">,</span> <span class="n">camera</span><span class="o">.</span><span class="n">image</span><span class="p">)</span>
+        <span class="n">imgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        <span class="n">positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">axis</span><span class="o">.</span><span class="n">user_readback</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+        <span class="n">next_position</span> <span class="o">=</span> <span class="n">axis</span><span class="o">.</span><span class="n">user_setpoint</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">-</span> <span class="mf">0.1</span>
+        <span class="n">axis</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">next_position</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">sleep</span><span class="p">(</span><span class="n">settle_time</span><span class="p">)</span>
+
+    <span class="n">axis</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">start_pos</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">sleep</span><span class="p">(</span><span class="n">settle_time</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">positions</span><span class="p">,</span> <span class="n">imgs</span>
+
+
+<span class="k">def</span> <span class="nf">calibrate_off_axis</span><span class="p">(</span><span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">settle_time</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                       <span class="n">burst_images</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Calibrate the camera</span>
-<span class="sd">    NEED TO CHECK offaxis calculation sign</span>
+<span class="sd">    Calibrate the off-axis camera</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -268,130 +270,111 @@
 <span class="sd">        camera looking at sample jet and x-rays</span>
 <span class="sd">    params : Parameters</span>
 <span class="sd">        EPICS PVs used for recording jet tracking data</span>
-<span class="sd">    delay : float, optional</span>
+<span class="sd">    settle_time : float, optional</span>
+<span class="sd">        Additional settle time after moving the motor</span>
+<span class="sd">    burst_imagess : int, optional</span>
+<span class="sd">        Number of burst images to average from the camera</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># TODO (koglin) check sign for off-axis calculations</span>
+    <span class="n">injector_axis</span> <span class="o">=</span> <span class="n">injector</span><span class="o">.</span><span class="n">coarseX</span>
+    <span class="n">positions</span><span class="p">,</span> <span class="n">imgs</span> <span class="o">=</span> <span class="n">get_calibration_images</span><span class="p">(</span><span class="n">injector_axis</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span>
+                                             <span class="n">settle_time</span><span class="o">=</span><span class="n">settle_time</span><span class="p">)</span>
+
+    <span class="n">cam_pitch</span><span class="p">,</span> <span class="n">pxsize</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_cam_pitch_pxsize</span><span class="p">(</span><span class="n">imgs</span><span class="p">,</span> <span class="n">positions</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">pxsize</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">cam_pitch</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_pitch</span><span class="p">)</span>
+
+    <span class="n">beam_y_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_y_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">beam_z_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_z_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">cam_y</span><span class="p">,</span> <span class="n">cam_z</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_offaxis_coords</span><span class="p">(</span><span class="n">beam_y_px</span><span class="p">,</span> <span class="n">beam_z_px</span><span class="p">,</span>
+                                                <span class="n">cam_pitch</span><span class="o">=</span><span class="n">cam_pitch</span><span class="p">,</span>
+                                                <span class="n">pxsize</span><span class="o">=</span><span class="n">pxsize</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">cam_y</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_y</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">cam_z</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_z</span><span class="p">)</span>
+
+    <span class="c1"># find jet in camera ROI</span>
+    <span class="n">ROI_image</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_burst_avg</span><span class="p">(</span><span class="n">burst_images</span><span class="p">,</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI_image</span><span class="p">)</span>
+    <span class="n">rho</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">jet_detect</span><span class="p">(</span><span class="n">ROI_image</span><span class="p">)</span>
+
+    <span class="n">jet_pitch</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_jet_pitch</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">cam_pitch</span><span class="o">=</span><span class="n">cam_pitch</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">jet_pitch</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">jet_pitch</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">jet_pitch</span><span class="o">=</span><span class="n">jet_pitch</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span> <span class="n">pxsize</span><span class="o">=</span><span class="n">pxsize</span><span class="p">,</span>
+                <span class="n">cam_pitch</span><span class="o">=</span><span class="n">cam_pitch</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">calibrate_inline</span><span class="p">(</span><span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">settle_time</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                     <span class="n">burst_images</span><span class="o">=</span><span class="mi">20</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Calibrate the inline camera</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    injector : Injector</span>
+<span class="sd">        sample injector</span>
+<span class="sd">    camera : Questar</span>
+<span class="sd">        camera looking at sample jet and x-rays</span>
+<span class="sd">    params : Parameters</span>
+<span class="sd">        EPICS PVs used for recording jet tracking data</span>
+<span class="sd">    settle_time : float, optional</span>
+<span class="sd">        Additional settle time after moving the motor</span>
+<span class="sd">    burst_imagess : int, optional</span>
+<span class="sd">        Number of burst images to average from the camera</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">injector_axis</span> <span class="o">=</span> <span class="n">injector</span><span class="o">.</span><span class="n">coarseZ</span>
+    <span class="n">positions</span><span class="p">,</span> <span class="n">imgs</span> <span class="o">=</span> <span class="n">get_calibration_images</span><span class="p">(</span><span class="n">injector_axis</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span>
+                                             <span class="n">settle_time</span><span class="o">=</span><span class="n">settle_time</span><span class="p">,</span>
+                                             <span class="n">burst_images</span><span class="o">=</span><span class="n">burst_images</span><span class="p">)</span>
+
+    <span class="n">cam_roll</span><span class="p">,</span> <span class="n">pxsize</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_cam_roll_pxsize</span><span class="p">(</span><span class="n">imgs</span><span class="p">,</span> <span class="n">positions</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">pxsize</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">cam_roll</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_roll</span><span class="p">)</span>
+
+    <span class="n">beam_x_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_x_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">beam_y_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_y_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">cam_x</span><span class="p">,</span> <span class="n">cam_y</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_cam_coords</span><span class="p">(</span><span class="n">beam_x_px</span><span class="p">,</span> <span class="n">beam_y_px</span><span class="p">,</span>
+                                            <span class="n">cam_roll</span><span class="o">=</span><span class="n">cam_roll</span><span class="p">,</span> <span class="n">pxsize</span><span class="o">=</span><span class="n">pxsize</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">cam_x</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_x</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">cam_y</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_y</span><span class="p">)</span>
+
+    <span class="c1"># find jet in camera ROI</span>
+    <span class="n">ROI_image</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_burst_avg</span><span class="p">(</span><span class="n">burst_images</span><span class="p">,</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI_image</span><span class="p">)</span>
+    <span class="n">rho</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">jet_detect</span><span class="p">(</span><span class="n">ROI_image</span><span class="p">)</span>
+
+    <span class="n">jet_roll</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_jet_roll</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">cam_roll</span><span class="o">=</span><span class="n">cam_roll</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">jet_roll</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">jet_roll</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">jet_roll</span><span class="o">=</span><span class="n">jet_roll</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span> <span class="n">pxsize</span><span class="o">=</span><span class="n">pxsize</span><span class="p">,</span>
+                <span class="n">cam_roll</span><span class="o">=</span><span class="n">cam_roll</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">calibrate</span><span class="p">(</span><span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">offaxis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">settle_time</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Calibrate the camera</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    injector : Injector</span>
+<span class="sd">        sample injector</span>
+<span class="sd">    camera : Questar</span>
+<span class="sd">        camera looking at sample jet and x-rays</span>
+<span class="sd">    params : Parameters</span>
+<span class="sd">        EPICS PVs used for recording jet tracking data</span>
+<span class="sd">    settle_time : float, optional</span>
 <span class="sd">        Additional settle time after moving the motor</span>
 <span class="sd">    offaxis : bool, optional</span>
 <span class="sd">        Camera is off-axis in y-z plane</span>
 <span class="sd">    &#39;&#39;&#39;</span>
-
-    <span class="c1"># find jet in camera ROI</span>
-    <span class="n">ROI_image</span> <span class="o">=</span> <span class="n">get_burst_avg</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI_image</span><span class="p">)</span>
-    <span class="n">rho</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">jet_detect</span><span class="p">(</span><span class="n">ROI_image</span><span class="p">)</span>
-
     <span class="k">if</span> <span class="n">offaxis</span><span class="p">:</span>
-        <span class="n">injector_axis</span> <span class="o">=</span> <span class="n">injector</span><span class="o">.</span><span class="n">coarseX</span>
+        <span class="k">return</span> <span class="n">calibrate_off_axis</span><span class="p">(</span><span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span>
+                                  <span class="n">settle_time</span><span class="o">=</span><span class="n">settle_time</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">injector_axis</span> <span class="o">=</span> <span class="n">injector</span><span class="o">.</span><span class="n">coarseZ</span>
-
-    <span class="c1"># collect images and motor positions to calculate pxsize and cam_roll</span>
-    <span class="n">imgs</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">positions</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">start_pos</span> <span class="o">=</span> <span class="n">injector_axis</span><span class="o">.</span><span class="n">user_readback</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
-        <span class="n">image</span> <span class="o">=</span> <span class="n">get_burst_avg</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">camera</span><span class="o">.</span><span class="n">image</span><span class="p">)</span>
-        <span class="n">imgs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
-        <span class="n">positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">injector_axis</span><span class="o">.</span><span class="n">user_readback</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
-        <span class="n">next_position</span> <span class="o">=</span> <span class="n">injector_axis</span><span class="o">.</span><span class="n">user_setpoint</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">-</span> <span class="mf">0.1</span>
-        <span class="n">injector_axis</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">next_position</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">sleep</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
-
-    <span class="n">injector_axis</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">start_pos</span><span class="p">,</span> <span class="n">wait</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">sleep</span><span class="p">(</span><span class="n">delay</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">offaxis</span><span class="p">:</span>
-        <span class="n">cam_pitch</span><span class="p">,</span> <span class="n">pxsize</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_cam_pitch_pxsize</span><span class="p">(</span><span class="n">imgs</span><span class="p">,</span> <span class="n">positions</span><span class="p">)</span>
-        <span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">pxsize</span><span class="p">)</span>
-        <span class="n">params</span><span class="o">.</span><span class="n">cam_pitch</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_pitch</span><span class="p">)</span>
-
-        <span class="n">beamY_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_y_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-        <span class="n">beamZ_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_z_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-        <span class="n">camY</span><span class="p">,</span> <span class="n">camZ</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_offaxis_coords</span><span class="p">(</span><span class="n">beamY_px</span><span class="p">,</span> <span class="n">beamZ_px</span><span class="p">,</span>
-                                                  <span class="n">cam_pitch</span><span class="o">=</span><span class="n">cam_pitch</span><span class="p">,</span>
-                                                  <span class="n">pxsize</span><span class="o">=</span><span class="n">pxsize</span><span class="p">)</span>
-        <span class="n">params</span><span class="o">.</span><span class="n">cam_y</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">camY</span><span class="p">)</span>
-        <span class="n">params</span><span class="o">.</span><span class="n">cam_z</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">camZ</span><span class="p">)</span>
-
-        <span class="n">jet_pitch</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_jet_pitch</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">cam_pitch</span><span class="o">=</span><span class="n">cam_pitch</span><span class="p">)</span>
-        <span class="n">params</span><span class="o">.</span><span class="n">jet_pitch</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">jet_pitch</span><span class="p">)</span>
-
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">cam_roll</span><span class="p">,</span> <span class="n">pxsize</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_cam_roll_pxsize</span><span class="p">(</span><span class="n">imgs</span><span class="p">,</span> <span class="n">positions</span><span class="p">)</span>
-        <span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">pxsize</span><span class="p">)</span>
-        <span class="n">params</span><span class="o">.</span><span class="n">cam_roll</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_roll</span><span class="p">)</span>
-
-        <span class="n">beamX_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_x_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-        <span class="n">beamY_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_y_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-        <span class="n">camX</span><span class="p">,</span> <span class="n">camY</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_cam_coords</span><span class="p">(</span><span class="n">beamX_px</span><span class="p">,</span> <span class="n">beamY_px</span><span class="p">,</span>
-                                              <span class="n">cam_roll</span><span class="o">=</span><span class="n">cam_roll</span><span class="p">,</span> <span class="n">pxsize</span><span class="o">=</span><span class="n">pxsize</span><span class="p">)</span>
-        <span class="n">params</span><span class="o">.</span><span class="n">cam_x</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">camX</span><span class="p">)</span>
-        <span class="n">params</span><span class="o">.</span><span class="n">cam_y</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">camY</span><span class="p">)</span>
-
-        <span class="n">jet_roll</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_jet_roll</span><span class="p">(</span><span class="n">theta</span><span class="p">,</span> <span class="n">cam_roll</span><span class="o">=</span><span class="n">cam_roll</span><span class="p">)</span>
-        <span class="n">params</span><span class="o">.</span><span class="n">jet_roll</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">jet_roll</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">calibrate_inline</span><span class="p">(</span><span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span>
+                                <span class="n">settle_time</span><span class="o">=</span><span class="n">settle_time</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_jet_calculate_step_offaxis</span><span class="p">(</span><span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-    <span class="s1">&#39;A single step of the infinite-loop jet_calculate (off-axis)&#39;</span>
-    <span class="c1"># detect the jet in the camera ROI</span>
-    <span class="n">ROI_image</span> <span class="o">=</span> <span class="n">get_burst_avg</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI_image</span><span class="p">)</span>
-    <span class="n">rho</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">jet_detect</span><span class="p">(</span><span class="n">ROI_image</span><span class="p">)</span>
-
-    <span class="c1"># check x-ray beam position</span>
-    <span class="n">beamY_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_y_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-    <span class="n">beamZ_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_z_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-    <span class="n">camY</span><span class="p">,</span> <span class="n">camZ</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_offaxis_coords</span><span class="p">(</span><span class="n">beamY_px</span><span class="p">,</span> <span class="n">beamZ_px</span><span class="p">,</span>
-                                              <span class="n">cam_pitch</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">cam_pitch</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
-                                              <span class="n">pxsize</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
-
-    <span class="n">params</span><span class="o">.</span><span class="n">cam_y</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">camY</span><span class="p">)</span>
-    <span class="n">params</span><span class="o">.</span><span class="n">cam_z</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">camZ</span><span class="p">)</span>
-
-    <span class="c1"># find distance from jet to x-rays</span>
-    <span class="n">ROIz</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">min_xyz</span><span class="o">.</span><span class="n">min_x</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-    <span class="n">ROIy</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">min_xyz</span><span class="o">.</span><span class="n">min_y</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-    <span class="n">jetZ</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_jet_z</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">roi_y</span><span class="o">=</span><span class="n">ROIy</span><span class="p">,</span> <span class="n">roi_z</span><span class="o">=</span><span class="n">ROIz</span><span class="p">,</span>
-                               <span class="n">pxsize</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
-                               <span class="n">cam_y</span><span class="o">=</span><span class="n">camY</span><span class="p">,</span>
-                               <span class="n">cam_z</span><span class="o">=</span><span class="n">camZ</span><span class="p">,</span>
-                               <span class="n">beam_y</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">beam_y</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
-                               <span class="n">beam_z</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">beam_z</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
-                               <span class="n">cam_pitch</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">cam_pitch</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
-    <span class="n">params</span><span class="o">.</span><span class="n">jet_z</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">jetZ</span><span class="p">)</span>
-
-
-<span class="k">def</span> <span class="nf">_jet_calculate_step</span><span class="p">(</span><span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-    <span class="s1">&#39;A single step of the infinite-loop jet_calculate (on-axis)&#39;</span>
-    <span class="c1"># detect the jet in the camera ROI</span>
-    <span class="n">ROI_image</span> <span class="o">=</span> <span class="n">get_burst_avg</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI_image</span><span class="p">)</span>
-    <span class="n">rho</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">jet_detect</span><span class="p">(</span><span class="n">ROI_image</span><span class="p">)</span>
-
-    <span class="c1"># check x-ray beam position</span>
-    <span class="n">beamX_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_x_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-    <span class="n">beamY_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_y_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-    <span class="n">camX</span><span class="p">,</span> <span class="n">camY</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_cam_coords</span><span class="p">(</span><span class="n">beamX_px</span><span class="p">,</span> <span class="n">beamY_px</span><span class="p">,</span>
-                                          <span class="n">cam_roll</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">cam_roll</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
-                                          <span class="n">pxsize</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
-
-    <span class="n">params</span><span class="o">.</span><span class="n">cam_x</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">camX</span><span class="p">)</span>
-    <span class="n">params</span><span class="o">.</span><span class="n">cam_y</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">camY</span><span class="p">)</span>
-
-    <span class="c1"># find distance from jet to x-rays</span>
-    <span class="n">ROIx</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">min_xyz</span><span class="o">.</span><span class="n">min_x</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-    <span class="n">ROIy</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">min_xyz</span><span class="o">.</span><span class="n">min_y</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-    <span class="n">jetX</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_jet_x</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">ROIx</span><span class="p">,</span> <span class="n">ROIy</span><span class="p">,</span>
-                               <span class="n">pxsize</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
-                               <span class="n">cam_x</span><span class="o">=</span><span class="n">camX</span><span class="p">,</span>
-                               <span class="n">cam_y</span><span class="o">=</span><span class="n">camY</span><span class="p">,</span>
-                               <span class="n">beam_x</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">beam_x</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
-                               <span class="n">beam_y</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">beam_y</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
-                               <span class="n">cam_roll</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">cam_roll</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
-    <span class="n">params</span><span class="o">.</span><span class="n">jet_x</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">jetX</span><span class="p">)</span>
-
-
-<span class="k">def</span> <span class="nf">jet_calculate</span><span class="p">(</span><span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">offaxis</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">jet_calculate_off_axis</span><span class="p">(</span><span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Track the sample jet and calculate the distance to the x-ray beam</span>
-<span class="sd">    NEED TO CHECK offaxis calculation sign</span>
+<span class="sd">    Detect the sample jet and calculate the distance to the x-ray beam using</span>
+<span class="sd">    the off-axis camera</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -402,22 +385,76 @@
 <span class="sd">    offaxis : bool</span>
 <span class="sd">        Camera is off-axis in y-z plane</span>
 <span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># detect the jet in the camera ROI</span>
+    <span class="n">ROI_image</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_burst_avg</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI_image</span><span class="p">)</span>
+    <span class="n">rho</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">jet_detect</span><span class="p">(</span><span class="n">ROI_image</span><span class="p">)</span>
 
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running...&#39;</span><span class="p">)</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">offaxis</span><span class="p">:</span>
-                <span class="n">_jet_calculate_step_offaxis</span><span class="p">(</span><span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">_jet_calculate_step</span><span class="p">(</span><span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Stopped.&#39;</span><span class="p">)</span>
+    <span class="c1"># check x-ray beam position</span>
+    <span class="n">beam_y_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_y_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">beam_z_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_z_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">cam_y</span><span class="p">,</span> <span class="n">cam_z</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_offaxis_coords</span><span class="p">(</span>
+        <span class="n">beam_y_px</span><span class="p">,</span> <span class="n">beam_z_px</span><span class="p">,</span> <span class="n">cam_pitch</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">cam_pitch</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
+        <span class="n">pxsize</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+
+    <span class="n">params</span><span class="o">.</span><span class="n">cam_y</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_y</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">cam_z</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_z</span><span class="p">)</span>
+
+    <span class="c1"># find distance from jet to x-rays</span>
+    <span class="n">roi_z</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">min_xyz</span><span class="o">.</span><span class="n">min_x</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">roi_y</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">min_xyz</span><span class="o">.</span><span class="n">min_y</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">jet_z</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_jet_z</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">roi_y</span><span class="o">=</span><span class="n">roi_y</span><span class="p">,</span> <span class="n">roi_z</span><span class="o">=</span><span class="n">roi_z</span><span class="p">,</span>
+                                <span class="n">pxsize</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="n">cam_y</span><span class="o">=</span><span class="n">cam_y</span><span class="p">,</span>
+                                <span class="n">cam_z</span><span class="o">=</span><span class="n">cam_z</span><span class="p">,</span> <span class="n">beam_y</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">beam_y</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
+                                <span class="n">beam_z</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">beam_z</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
+                                <span class="n">cam_pitch</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">cam_pitch</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">jet_z</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">jet_z</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span> <span class="n">cam_y</span><span class="o">=</span><span class="n">cam_y</span><span class="p">,</span> <span class="n">cam_z</span><span class="o">=</span><span class="n">cam_z</span><span class="p">,</span> <span class="n">jet_z</span><span class="o">=</span><span class="n">jet_z</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_jet_move_step</span><span class="p">(</span><span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">jet_calculate_inline</span><span class="p">(</span><span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    Detect the sample jet and calculate the distance to the x-ray beam using</span>
+<span class="sd">    the inline camera</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    camera : Questar</span>
+<span class="sd">        camera looking at the sample jet and x-ray beam</span>
+<span class="sd">    params : Parameters</span>
+<span class="sd">        EPICS PVs used for recording jet tracking data</span>
+<span class="sd">    offaxis : bool</span>
+<span class="sd">        Camera is off-axis in y-z plane</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="c1"># detect the jet in the camera ROI</span>
+    <span class="n">ROI_image</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_burst_avg</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI_image</span><span class="p">)</span>
+    <span class="n">rho</span><span class="p">,</span> <span class="n">theta</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">jet_detect</span><span class="p">(</span><span class="n">ROI_image</span><span class="p">)</span>
+
+    <span class="c1"># check x-ray beam position</span>
+    <span class="n">beam_x_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_x_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">beam_y_px</span> <span class="o">=</span> <span class="n">params</span><span class="o">.</span><span class="n">beam_y_px</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">cam_x</span><span class="p">,</span> <span class="n">cam_y</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_cam_coords</span><span class="p">(</span>
+        <span class="n">beam_x_px</span><span class="p">,</span> <span class="n">beam_y_px</span><span class="p">,</span> <span class="n">cam_roll</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">cam_roll</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
+        <span class="n">pxsize</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+
+    <span class="n">params</span><span class="o">.</span><span class="n">cam_x</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_x</span><span class="p">)</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">cam_y</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">cam_y</span><span class="p">)</span>
+
+    <span class="c1"># find distance from jet to x-rays</span>
+    <span class="n">ROIx</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">min_xyz</span><span class="o">.</span><span class="n">min_x</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">roi_y</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">min_xyz</span><span class="o">.</span><span class="n">min_y</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="n">jet_x</span> <span class="o">=</span> <span class="n">cam_utils</span><span class="o">.</span><span class="n">get_jet_x</span><span class="p">(</span><span class="n">rho</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">ROIx</span><span class="p">,</span> <span class="n">roi_y</span><span class="p">,</span>
+                                <span class="n">pxsize</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">pxsize</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="n">cam_x</span><span class="o">=</span><span class="n">cam_x</span><span class="p">,</span>
+                                <span class="n">cam_y</span><span class="o">=</span><span class="n">cam_y</span><span class="p">,</span> <span class="n">beam_x</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">beam_x</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
+                                <span class="n">beam_y</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">beam_y</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span>
+                                <span class="n">cam_roll</span><span class="o">=</span><span class="n">params</span><span class="o">.</span><span class="n">cam_roll</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+    <span class="n">params</span><span class="o">.</span><span class="n">jet_x</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">jet_x</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">theta</span><span class="o">=</span><span class="n">theta</span><span class="p">,</span> <span class="n">cam_y</span><span class="o">=</span><span class="n">cam_y</span><span class="p">,</span> <span class="n">cam_x</span><span class="o">=</span><span class="n">cam_x</span><span class="p">,</span> <span class="n">jet_x</span><span class="o">=</span><span class="n">jet_x</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">jet_move_inline</span><span class="p">(</span><span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
     <span class="s1">&#39;A single step of the infinite-loop jet_move&#39;</span>
     <span class="n">ROIx</span> <span class="o">=</span> <span class="n">camera</span><span class="o">.</span><span class="n">ROI</span><span class="o">.</span><span class="n">min_xyz</span><span class="o">.</span><span class="n">min_x</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-    <span class="c1"># ROIy = camera.ROI.min_xyz.min_y.get()</span>
+    <span class="c1"># roi_y = camera.ROI.min_xyz.min_y.get()</span>
 
     <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">params</span><span class="o">.</span><span class="n">jet_x</span><span class="o">.</span><span class="n">get</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mf">0.01</span><span class="p">:</span>
         <span class="c1"># move jet to x-rays using injector motor</span>
@@ -435,38 +472,15 @@
     <span class="c1"># etc...</span>
 
     <span class="c1"># if jet is clear in image:</span>
-    <span class="c1">#     if jetX != beamX:</span>
+    <span class="c1">#     if jet_x != beam_x:</span>
     <span class="c1">#         move injector.coarseX</span>
     <span class="c1">#         walk_to_pixel(detector, motor, target) ??</span>
     <span class="c1"># else if nozzle is clear in image:</span>
-    <span class="c1">#     if nozzleX != beamX:</span>
+    <span class="c1">#     if nozzleX != beam_x:</span>
     <span class="c1">#         move injector.coarseX</span>
     <span class="c1"># else:</span>
     <span class="c1">#     if injector.coarseX.get() != beam_x:</span>
     <span class="c1">#         move injector.coarseX</span>
-
-
-<span class="k">def</span> <span class="nf">jet_move</span><span class="p">(</span><span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">):</span>
-    <span class="sd">&#39;&#39;&#39;</span>
-<span class="sd">    Move the sample jet to the x-ray beam</span>
-
-<span class="sd">    Parameters</span>
-<span class="sd">    ----------</span>
-<span class="sd">    injector : Injector</span>
-<span class="sd">        sample injector</span>
-<span class="sd">    camera : Questar</span>
-<span class="sd">        camera looking at the sample jet and x-ray beam</span>
-<span class="sd">    params : Parameters</span>
-<span class="sd">        EPICS PVs used for recording jet tracking data</span>
-<span class="sd">    &#39;&#39;&#39;</span>
-
-    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Running...&#39;</span><span class="p">)</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-            <span class="n">_jet_move_step</span><span class="p">(</span><span class="n">injector</span><span class="p">,</span> <span class="n">camera</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
-            <span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Stopped.&#39;</span><span class="p">)</span>
 </pre></div>
 
            </div>
@@ -504,7 +518,6 @@
         <script type="text/javascript" src="../../_static/jquery.js"></script>
         <script type="text/javascript" src="../../_static/underscore.js"></script>
         <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     
 
   
