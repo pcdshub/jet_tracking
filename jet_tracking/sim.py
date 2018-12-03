@@ -1,3 +1,5 @@
+import types
+
 import numpy as np
 from ophyd.sim import SynAxis, SynSignal
 
@@ -32,19 +34,24 @@ def generate_simulation(motor_column, signal_column, dataframe,
 
     random_state: np.random.RandomState, optional
         Seed the simulation
+
+    Returns
+    -------
+    namespace: types.SimpleNamespace
+        A namespace with attributes ``motor``, ``signal``, and ``data``.
     """
     # Create our motor that will serve as the independent variable
     motor = SynAxis(name=motor_column, precision=motor_precision)
-
-    # Create a function to return a random value from closest motor position
-    motor_positions = dataframe[motor_column].unique()
-    sim_data = dict(iter(dataframe.groupby(motor_column)))
+    ns = types.SimpleNamespace(data=dataframe, motor=motor)
     random_state = random_state or np.random.RandomState(0)
 
+    # Create a function to return a random value from closest motor position
     def func():
-        pos = motor.position
+        motor_positions = ns.data[motor_column].unique()
+        sim_data = dict(iter(ns.data.groupby(motor_column)))
+        pos = ns.motor.position
         closest_position = motor_positions[np.abs(motor_positions - pos).argmin()]
         return random_state.choice(sim_data[closest_position][signal_column])
 
-    sig = SynSignal(name=signal_column, func=func)
-    return (motor, sig)
+    ns.signal = SynSignal(name=signal_column, func=func)
+    return ns
