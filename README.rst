@@ -11,4 +11,4 @@ CXI Jet Tracking
 
 CXI liquid jet positioning feedback and tracking methods and utilities.
 
-* Documentation: http://pswww.slac.stanford.edu/swdoc/releases/jet_tracking/
+* Documentation: https://pcdshub.github.io/jet_tracking/ (http://pswww.slac.stanford.edu/swdoc/releases/jet_tracking/)
