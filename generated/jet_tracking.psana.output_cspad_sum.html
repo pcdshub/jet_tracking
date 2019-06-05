@@ -17,34 +17,36 @@
   
 
   
+  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../_static/jquery.js"></script>
+        <script type="text/javascript" src="../_static/underscore.js"></script>
+        <script type="text/javascript" src="../_static/doctools.js"></script>
+        <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Epics pvNotepad configuration" href="../pvNotepad.html" />
     <link rel="prev" title="Jet Tracking Shared Memory Application" href="../shared_memory.html" /> 
-
-  
-  <script src="../_static/js/modernizr.min.js"></script>
-
 </head>
 
 <body class="wy-body-for-nav">
 
    
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -178,23 +180,19 @@
 <dt id="jet_tracking.psana.output_cspad_sum">
 <code class="descclassname">jet_tracking.psana.</code><code class="descname">output_cspad_sum</code><span class="sig-paren">(</span><em>ds=None</em>, <em>alias='DscCsPad'</em>, <em>pvbase='CXI:SC1:DIFFRACT'</em>, <em>calc_period=True</em>, <em>calc_streak=False</em>, <em>psd_events=None</em>, <em>psd_rate=None</em>, <em>psd_resolution=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jet_tracking/psana/psana2epics.html#output_cspad_sum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.psana.output_cspad_sum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Outputs cspad sum and certain statistics as PVs</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>ds</strong> (<em>DataSource</em><em>, </em><em>optional</em>) – DataSource object, if not specified, loads it using kwargs</li>
-<li><strong>alias</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for CsPad data</li>
-<li><strong>pvbase</strong> (<em>str</em><em>, </em><em>optional</em>) – Base for PV names</li>
-<li><strong>calc_period</strong> (<em>bool</em><em>, </em><em>optional</em>) – Determines the execution of frequency analysis</li>
-<li><strong>psd_events</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of events for frequency analysis, default is 240</li>
-<li><strong>psd_rate</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Event rate [Hz], default is 120</li>
-<li><strong>psd_resolution</strong> (<em>int</em><em>, </em><em>optional</em>) – Resolution setting will perform rolling mean [Hz]</li>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>DataSource</em><em>, </em><em>optional</em>) – DataSource object, if not specified, loads it using kwargs</p></li>
+<li><p><strong>alias</strong> (<em>str</em><em>, </em><em>optional</em>) – Name for CsPad data</p></li>
+<li><p><strong>pvbase</strong> (<em>str</em><em>, </em><em>optional</em>) – Base for PV names</p></li>
+<li><p><strong>calc_period</strong> (<em>bool</em><em>, </em><em>optional</em>) – Determines the execution of frequency analysis</p></li>
+<li><p><strong>psd_events</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of events for frequency analysis, default is 240</p></li>
+<li><p><strong>psd_rate</strong> (<em>int</em><em> or </em><em>float</em><em>, </em><em>optional</em>) – Event rate [Hz], default is 120</p></li>
+<li><p><strong>psd_resolution</strong> (<em>int</em><em>, </em><em>optional</em>) – Resolution setting will perform rolling mean [Hz]</p></li>
 </ul>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
@@ -210,7 +208,7 @@
         <a href="../pvNotepad.html" class="btn btn-neutral float-right" title="Epics pvNotepad configuration" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="../shared_memory.html" class="btn btn-neutral" title="Jet Tracking Shared Memory Application" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="../shared_memory.html" class="btn btn-neutral float-left" title="Jet Tracking Shared Memory Application" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -219,7 +217,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2018, SLAC National Accelerator Laboratory
+        &copy; Copyright 2019, SLAC National Accelerator Laboratory
 
     </p>
   </div>
@@ -236,25 +234,16 @@
   
 
 
-  
-
-    
-    
-      <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../_static/jquery.js"></script>
-        <script type="text/javascript" src="../_static/underscore.js"></script>
-        <script type="text/javascript" src="../_static/doctools.js"></script>
-    
-
-  
-
-  <script type="text/javascript" src="../_static/js/theme.js"></script>
-
   <script type="text/javascript">
       jQuery(function () {
           SphinxRtdTheme.Navigation.enable(true);
       });
-  </script> 
+  </script>
+
+  
+  
+    
+   
 
 </body>
 </html>
