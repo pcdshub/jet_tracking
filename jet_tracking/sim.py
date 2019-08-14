@@ -1,6 +1,7 @@
 import types
 
 import numpy as np
+from ophyd import Signal
 from ophyd.sim import SynAxis, SynSignal
 
 
@@ -50,8 +51,9 @@ def generate_simulation(motor_column, signal_column, dataframe,
         motor_positions = ns.data[motor_column].unique()
         sim_data = dict(iter(ns.data.groupby(motor_column)))
         pos = ns.motor.position
-        closest_position = motor_positions[np.abs(motor_positions - pos).argmin()]
+        closest_position = motor_positions[np.abs(motor_positions - pos - ns.offset.value).argmin()]
         return random_state.choice(sim_data[closest_position][signal_column])
 
+    ns.offset = Signal(name='offset', value=0)
     ns.signal = SynSignal(name=signal_column, func=func)
     return ns

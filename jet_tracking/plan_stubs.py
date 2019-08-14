@@ -32,7 +32,7 @@ def wiggle(detectors, target_field, motor, step_size, per_step=None):
     first_sample = yield from sample_at_point(start_position + step_size)
     second_sample = yield from sample_at_point(start_position - step_size)
 
-    return max(start_sample, first_sample, second_sample, key=lambda x: x[1])
+    return max(start_sample, first_sample, second_sample, key=lambda x: x[1]['value'])
 
 
 def watch(detectors, target_field, threshold,
