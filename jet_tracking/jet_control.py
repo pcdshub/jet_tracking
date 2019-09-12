@@ -1,6 +1,7 @@
 from time import sleep
 
 from . import cam_utils
+from . import jt_utils
 from .move_motor import movex
 
 
@@ -59,6 +60,31 @@ class JetControl:
             raise NotImplementedError()
         else:
             jet_move_inline(self.injector, self.camera, self.params)
+
+
+def get_burst_avg(n, image_plugin):
+    '''
+    Get the average of n consecutive images from a camera
+
+    Parameters
+    ----------
+    n : int
+        number of consecutive images to be averaged
+    image_plugin : ImagePlugin
+        camera ImagePlugin from which the images will be taken
+
+    Returns
+    -------
+    burst_avg : ndarray
+        average image
+    '''
+    imageX, imageY = image_plugin.image.shape
+    burst_imgs = np.empty((n, imageX, imageY))
+    for x in range(n):
+        burst_imgs[x] = image_plugin.image
+    burst_avg = burst_imgs.mean(axis=0)
+
+    return burst_avg
 
 
 def set_beam(beam_x_px, beam_y_px, params):
@@ -203,6 +229,21 @@ def calibrate(injector, camera, params, *, offaxis=False, settle_time=0.1):
     offaxis : bool, optional
         Camera is off-axis in y-z plane
     '''
+
+    # find jet in camera ROI
+    ROI_image = get_burst_avg(params.frames_cam.get(), camera.ROI_image)
+    mean, std = cam_utils.image_stats(ROI_image)
+    rho, theta = cam_utils.jet_detect(ROI_image, mean, std)
+    params.mean.put(mean)
+    params.std.put(std)
+
+    # take calibration CSPAD data
+    # get CSPAD and wave8 data
+    azav, norm = get_azav(CSPAD) # call azimuthal average function
+    r, i = jt_utils.fit_CSPAD(azav, norm, gas_det) 
+    params.radius.put(r)
+    params.intensity.put(i)
+
     if offaxis:
         return calibrate_off_axis(injector, camera, params,
                                   settle_time=settle_time)
@@ -321,3 +362,29 @@ def jet_move_inline(injector, camera, params):
     # else:
     #     if injector.coarseX.get() != beam_x:
     #         move injector.coarseX
+
+
+def jet_scan(injector, cspad, params):
+  x_min = 0.0012
+  steps = 50
+  x_step = (-1) * steps * x_min / 2
+  hi_intensities = []
+  best_pos = []
+  for i in range(2):
+    # move motor to first position  
+    injector.coarseX.mv(x_step, wait=True)
+    intensities = []
+    positions = []
+    for j in range(steps):
+      positions.append(injector.coarseX.user_readback.get())
+      # get azav from CSPAD
+      # get CSPAD and wave8
+      azav, norm = get_azav(CSPAD) #call azimuthal average function
+      intensities.append(jt_utils.get_cspad(azav, params.radius.get(), gas_det))
+    hi_intensities.append(max(intensities))
+    best_pos.append(positions[intensities.index(max(intensities))])
+  # move motor to average of best positions from two sweeps
+  injector.coarseX.mv(np.average(best_pos)) 
+  # save CSPAD intensity
+  params.intensity.put(np.average(hi_intensities))
+

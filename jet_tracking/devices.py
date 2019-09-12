@@ -746,6 +746,28 @@ class Parameters(Device, _TableMixin):
                          doc='Nozzle counter')
     nozzle_reprate = Cpt(EpicsSignal, ':NOZZLE_RepRate',
                          doc='Nozzle repetition rate')
+    mean = Cpt(EpicsSignal, ':ROI_mean',
+               doc='mean of calibration ROI image with jet')
+    std = Cpt(EpicsSignal, ':ROI_std',
+              doc='standard devation of calibration ROI image with jet')
+    radius = Cpt(EpicsSignal, ':RADIUS',
+                 doc='radius of calibration diffraction ring')
+    intensity = Cpt(EpicsSignal, ':INTENSITY',
+                    doc='intensity of calibration diffraction ring')
+    thresh_hi = Cpt(EpicsSignal, ':THRESH_hi',
+                    doc='upper threshold for CSPAD ring intensity')
+    thresh_lo = Cpt(EpicsSignal, ':THRESH_lo',
+                    doc='lower threshold for CSPAD ring intensity')
+    thresh_w8 = Cpt(EpicsSignal, ':THRESH_w8',
+                    doc='threshold for wave8')
+    thresh_cam = Cpt(EpicsSignal, ':THRESH_cam',
+                     doc='threshold for camera-based jet tracking')
+    bypass_cam = Cpt(EpicsSignal, ':BYPASS_cam',
+                     doc='bypass camera during jet tracking')
+    frames_cam = Cpt(EpicsSignal, ':FRAMES_cam',
+                     doc='number of frames for integration for camera')
+    frames_cspad = Cpt(EpicsSignal, ':FRAMES_cspad',
+                       doc='number of frames for integration for cspad')
 
 
 class OffaxisParams(Device, _TableMixin):
@@ -788,6 +810,28 @@ class OffaxisParams(Device, _TableMixin):
                          doc='Nozzle counter')
     nozzle_reprate = Cpt(EpicsSignal, ':NOZZLE_RepRate',
                          doc='Nozzle repetition rate')
+    mean = Cpt(EpicsSignal, ':ROI_mean',
+               doc='mean of calibration ROI image with jet')
+    std = Cpt(EpicsSignal, ':ROI_std',
+              doc='standard devation of calibration ROI image with jet')
+    radius = Cpt(EpicsSignal, ':RADIUS',
+                 doc='radius of calibration diffraction ring')
+    intensity = Cpt(EpicsSignal, ':INTENSITY',
+                    doc='intensity of calibration diffraction ring')
+    thresh_hi = Cpt(EpicsSignal, ':THRESH_hi',
+                    doc='upper threshold for CSPAD ring intensity')
+    thresh_lo = Cpt(EpicsSignal, ':THRESH_lo',
+                    doc='lower threshold for CSPAD ring intensity')
+    thresh_w8 = Cpt(EpicsSignal, ':THRESH_w8',
+                    doc='threshold for wave8')
+    thresh_cam = Cpt(EpicsSignal, ':THRESH_cam',
+                     doc='threshold for camera-based jet tracking')
+    bypass_cam = Cpt(EpicsSignal, ':BYPASS_cam',
+                     doc='bypass camera during jet tracking')
+    frames_cam = Cpt(EpicsSignal, ':FRAMES_cam',
+                     doc='number of frames for integration for camera')
+    frames_cspad = Cpt(EpicsSignal, ':FRAMES_cspad',
+                       doc='number of frames for integration for cspad')
 
 
 class Control(Device, _TableMixin):
