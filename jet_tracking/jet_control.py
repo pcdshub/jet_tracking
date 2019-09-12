@@ -158,13 +158,9 @@ def calibrate_off_axis(injector, camera, params, *, settle_time=1.0,
     params.cam_y.put(cam_y)
     params.cam_z.put(cam_z)
 
-    # find jet in camera ROI
-    ROI_image = cam_utils.get_burst_avg(burst_images, camera.ROI_image)
-    rho, theta = cam_utils.jet_detect(ROI_image)
-
-    jet_pitch = cam_utils.get_jet_pitch(theta, cam_pitch=cam_pitch)
+    jet_pitch = cam_utils.get_jet_pitch(params.theta.get(), cam_pitch=cam_pitch)
     params.jet_pitch.put(jet_pitch)
-    return dict(jet_pitch=jet_pitch, rho=rho, theta=theta, pxsize=pxsize,
+    return dict(jet_pitch=jet_pitch, pxsize=pxsize,
                 cam_pitch=cam_pitch)
 
 
@@ -186,35 +182,53 @@ def calibrate_inline(injector, camera, params, *, settle_time=1.0,
     burst_imagess : int, optional
         Number of burst images to average from the camera
     '''
+
     injector_axis = injector.coarseZ
+    # collect images and motor positions needed for calibration
     positions, imgs = get_calibration_images(injector_axis, camera,
                                              settle_time=settle_time,
                                              burst_images=burst_images)
 
+    # cam_roll: rotation of camera about z axis in radians
+    # pxsize: size of pixel in mm
     cam_roll, pxsize = cam_utils.get_cam_roll_pxsize(imgs, positions)
     params.pxsize.put(pxsize)
     params.cam_roll.put(cam_roll)
 
+    # beam_x_px: x-coordinate of x-ray beam in camera image in pixels
     beam_x_px = params.beam_x_px.get()
+    # beam_y_px: y-coordinate of x-ray beam in camera image in pixels
     beam_y_px = params.beam_y_px.get()
+    # cam_x: x-coordinate of camera position in mm
+    # cam_y: y-coordinate of camera position in mm
     cam_x, cam_y = cam_utils.get_cam_coords(beam_x_px, beam_y_px,
                                             cam_roll=cam_roll, pxsize=pxsize)
     params.cam_x.put(cam_x)
     params.cam_y.put(cam_y)
 
-    # find jet in camera ROI
-    ROI_image = cam_utils.get_burst_avg(burst_images, camera.ROI_image)
-    rho, theta = cam_utils.jet_detect(ROI_image)
-
-    jet_roll = cam_utils.get_jet_roll(theta, cam_roll=cam_roll)
+    # jet_roll: rotation of sample jet about z axis in radians
+    jet_roll = cam_utils.get_jet_roll(params.theta.get(), cam_roll=cam_roll)
     params.jet_roll.put(jet_roll)
-    return dict(jet_roll=jet_roll, rho=rho, theta=theta, pxsize=pxsize,
+    return dict(jet_roll=jet_roll, pxsize=pxsize,
                 cam_roll=cam_roll)
 
 
-def calibrate(injector, camera, params, *, offaxis=False, settle_time=0.1):
+def calibrate(injector, camera, cspad, wave8, params, *, offaxis=False, settle_time=0.1):
     '''
-    Calibrate the camera
+    Calibrate the camera and CSPAD and determine parameters needed for
+    jet tracking
+    NEED TO CHECK offaxis calculation sign
+
+    First set the ROI of the camera to show the proper jet and illumination.
+
+    Determines the mean, standard deviation, radius, intensity, jet position and
+    tilt, pixel size, beam position, camera position and tilt
+
+    Params determined if onaxis camera used: mean, std, radius, intensity, pxsize,
+    camX, camY, cam_roll, beamX_px, beamY_px, jet_roll
+
+    Params determined if offaxis camera used: mean, std, radius, intensity, pxsize,
+    camY, camZ, cam_pitch, beamY_px, beamZ_px, jet_pitch
 
     Parameters
     ----------
@@ -222,6 +236,10 @@ def calibrate(injector, camera, params, *, offaxis=False, settle_time=0.1):
         sample injector
     camera : Questar
         camera looking at sample jet and x-rays
+    cspad : CSPAD
+        CSPAD for data
+    wave8 : Wave8
+        Wave8 to normalize data from CSPAD
     params : Parameters
         EPICS PVs used for recording jet tracking data
     settle_time : float, optional
@@ -239,7 +257,7 @@ def calibrate(injector, camera, params, *, offaxis=False, settle_time=0.1):
 
     # take calibration CSPAD data
     # get CSPAD and wave8 data
-    azav, norm = get_azav(CSPAD) # call azimuthal average function
+    azav, norm = get_azav(cspad) # call azimuthal average function
     r, i = jt_utils.fit_CSPAD(azav, norm, gas_det) 
     params.radius.put(r)
     params.intensity.put(i)

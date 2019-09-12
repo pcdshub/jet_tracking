@@ -760,8 +760,6 @@ class Parameters(Device, _TableMixin):
                     doc='lower threshold for CSPAD ring intensity')
     thresh_w8 = Cpt(EpicsSignal, ':THRESH_w8',
                     doc='threshold for wave8')
-    thresh_cam = Cpt(EpicsSignal, ':THRESH_cam',
-                     doc='threshold for camera-based jet tracking')
     bypass_cam = Cpt(EpicsSignal, ':BYPASS_cam',
                      doc='bypass camera during jet tracking')
     frames_cam = Cpt(EpicsSignal, ':FRAMES_cam',
@@ -824,8 +822,6 @@ class OffaxisParams(Device, _TableMixin):
                     doc='lower threshold for CSPAD ring intensity')
     thresh_w8 = Cpt(EpicsSignal, ':THRESH_w8',
                     doc='threshold for wave8')
-    thresh_cam = Cpt(EpicsSignal, ':THRESH_cam',
-                     doc='threshold for camera-based jet tracking')
     bypass_cam = Cpt(EpicsSignal, ':BYPASS_cam',
                      doc='bypass camera during jet tracking')
     frames_cam = Cpt(EpicsSignal, ':FRAMES_cam',

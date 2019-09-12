@@ -55,7 +55,7 @@ class TrackThread(QThread):
           try:
             jet_control.jet_calculate_inline(self.camera, self.params)
             # if jet is more than certain microns away from x-rays, move jet using camera feedback
-            if (self.params.jet_x.get() > self.params.thresh_cam):
+            if (self.params.jet_x.get() > 0.01):
               jet_control.jet_move_inline(self.injector, self.camera, self.params)
               continue
           except Exception:
