@@ -1,0 +1,40 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: jet_tracking
+  version : {{ data.get('version') }}
+
+source:
+  path: ..
+
+build:
+  number: 1
+
+requirements:
+  build:
+    - python {{PY_VER}}*,>=3.6
+    - setuptools
+
+  run:
+    - python {{PY_VER}}*,>=3.6
+    - pyyaml
+    - pcdsdevices >=1.0.0
+    - hutch-python >=1.0.0
+    - happi >1.1.1
+    - matplotlib
+    - numpy
+    - ophyd >=1.2.0
+    - bluesky >=1.2.0
+    - opencv
+    - pandas
+    - scikit-image
+    - scipy
+
+test:
+  imports:
+    - jet_tracking
+
+about:
+  home: https://github.com/pcdshub/jet_tracking
+  license: SLAC Open License
+  summary: CXI liquid jet positioning feedback and tracking

@@ -1,0 +1,55 @@
+language: python
+sudo: false
+
+env:
+  global:
+    - OFFICIAL_REPO="pcdshub/jet_tracking"
+    # Doctr deploy key for pcdshub/jet_tracking
+    - secure: "vUuAt00AjoyYdCEfrqDiYEBN/0j5Rg0YF4er9fwbtgzlb/q9eHjyEI1XZm+WrTZE1k6U3RHM4SLct7FWMYVMrJ5nDehZF2iaFbDMjSBbANe3+zj7iaBZsLRDh9tivALv1pqavtVivZ98ypiX/GGwvGgtruOeFAsYdCAabPpsRHzsMZzWYr5vkm+ylUtncsJBRuqaHEczf3NMIL7TdO5B3Qwsws1ohgMQfedby2DI4cgZ8jLcJ5ZVnfS0gshy1RNpWc+lY0xb6/dIHW2V6Ca+YAl6VcN8uiF6RD4XgaDvzoZTfwWI5BcvgBULS1w1/aUzSWAWYARVEwA0v/QJ/ftFmx602a9yvFWje67TEPuCYR0uDU/osDYywnkEZNVZuv5CGO8KncBi12zBUGRW+aPpr+59cUOpQhkoRfJAFXRBwsCrKrXSYubNv1K64S+C6SkuPOIdGJdurh7naMPK4S3yUQmJ4I/samGq5MCy560YcKqj7KtDiRwgqXa5ho6meoaFKBCsfFpcF8flcygsSTCIa0WaKm4s79HcbiqJEO/CwZvWAjpz2DDuxApebM2uRWBa5S0AyY9vCQMAojyP67wd6z/RoZenDMl3Vrc197+RRbbujvpI/XkTS1SOV/9K2/+lX+Tj0Xv5XImiBTIdq8LPo2QgyMna7H7HmJ1uDeqXlGM="
+
+matrix:
+  include:
+    - python: 3.6
+      env:
+         - PCDS_CHANNEL=pcds-tag
+    - python: 3.6
+      env:
+         - PCDS_CHANNEL=pcds-dev
+         - BUILD_DOCS=1
+
+install:
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda install conda-build anaconda-client
+  - conda update -q conda conda-build
+  - conda config --add channels pcds-tag
+  - conda config --add channels $PCDS_CHANNEL
+  - conda config --append channels conda-forge
+  - conda info -a
+  # Test conda build
+  - conda build -q conda-recipe --python $TRAVIS_PYTHON_VERSION --output-folder bld-dir
+  - conda config --add channels "file://`pwd`/bld-dir"
+  # Create test environment
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION jet_tracking --file requirements-dev.txt
+  - source activate test-environment
+
+script:
+  - coverage run -m pytest -vv jet_tracking/tests
+  - make -C docs html  # Build the documentation.
+  - coverage report -m
+  - flake8 jet_tracking/
+  # Build docs
+  - set -e
+  - |
+    if [[ $BUILD_DOCS ]]; then
+      pushd docs
+      make html
+      popd
+      doctr deploy . --built-docs docs/build/html --deploy-branch-name gh-pages
+    fi
+
+after_success:
+  - codecov

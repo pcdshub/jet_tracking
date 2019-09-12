@@ -1,0 +1,6 @@
+[run]
+source = jet_tracking
+
+[report]
+omit = 
+    jet_tracking/_version.py
