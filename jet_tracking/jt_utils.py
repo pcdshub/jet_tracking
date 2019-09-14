@@ -1,4 +1,4 @@
-# methods for jet tracking
+# methods for jet tracking that do not involve the camera
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -54,7 +54,8 @@ def fit_cspad(azav, norm, gas_det):
     sum of qbins 5 above and below the center, normalized by gas detector
   '''
 
-  # determine number of pixels in each qbin, only use qbins where pixels > 15
+  # determine number of pixels in each qbin, only use qbins where pixels > 150
+  # **can change 150 to different value if needed
   start = 0
   end = len(norm)
   begin = end / 2
@@ -73,7 +74,9 @@ def fit_cspad(azav, norm, gas_det):
   mean = sum(x*azav) / sum(azav)
   std = np.sqrt(sum((x-mean)**2)/n)
 
-  # estimate slope and y-intercept for linear baseline
+  # estimate slope and y-intercept for linear baseline by taking first & last
+  # 50 points and fitting a line between them
+  # **can change 50 to different value if needed
   x0 = 50/2
   l = len(azav)
   x1 = l - (50/2)
@@ -112,6 +115,9 @@ def get_cspad(azav, r, gas_det):
   intensity = sum(azav[r-5:r+5]) / gas_det
   return intensity
 
+
+# unfinished methods for checking stopper, pulse picker, and Wave8
+# can make Ophyd devices or load specific PV needed directly into beamline.py
 
 def get_stopper(stopper):
   return stopper

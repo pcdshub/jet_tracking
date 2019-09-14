@@ -1,3 +1,8 @@
+'''
+Calls the GUI for jet tracking. Ultimately only this file should need to be run, and the GUI will
+control when the jet tracking methods e.g. calibrate(), jet_detect(), etc should be run
+'''
+
 from qtpy.QtCore import QThread
 from pydm import Display
 
@@ -48,13 +53,16 @@ class TrackThread(QThread):
         continue
 
       # check CSPAD
-      if (jt_utils.get_cspad(self.cspad) < self.params.thresh_lo):
+      # get azimuthal average from CSPAD & Wave8 data
+      if (jt_utils.get_cspad(azav, params.radius.get(), gas_det) <
+          self.params.intensity.get() * self.params.thresh_lo.get()):
         # if CSPAD is below lower threshold, move jet
         if (not self.params.bypass_camera()):
           # if camera is not bypassed, check if there is a jet and location of jet
           try:
             jet_control.jet_calculate_inline(self.camera, self.params)
-            # if jet is more than certain microns away from x-rays, move jet using camera feedback
+            # if jet is more than 10 microns away from x-rays, move jet using camera feedback
+            # threshold for this can be changed if needed
             if (self.params.jet_x.get() > 0.01):
               jet_control.jet_move_inline(self.injector, self.camera, self.params)
               continue
@@ -63,13 +71,15 @@ class TrackThread(QThread):
             print('Cannot find jet - NOT TRACKING')
             continue
 
-        # if camera is bypassed or if jet is less than certain microns away from x-rays, scan jet across x-rays to find new maximum
+        # if camera is bypassed or if jet is less than 10 microns away from x-rays, scan jet across x-rays to find new maximum
         jet_control.scan(self.injector, self.cspad)
+        # get azimuthal average from CSPAD & Wave8 data
         intensity = jt_utils.get_cspad(azav, self.params.radius.get(), gas_det)
         self.params.intensity.put(intensity)
 
         # if CSPAD is still below upper threshold, stop jet tracking
-        if (get_cspad(self.cspad) < self.params.thresh_hi):
+        if (jt_utils.get_cspad(azav, self.params.radius.get(), gas_det) <
+            self.params.intensity.get() * self.params.thresh_hi.get()):
           print('CSPAD below threshold - TRACKING STOPPED')
           self.requestInterruption()
     '''
@@ -80,6 +90,7 @@ class JetTrack(Display):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
 
+    # TrackThread to run jet tracking in
     self.track_thread = TrackThread()
     # self.track_thread = TrackThread(injector, camera, cspad, stopper, pulse_picker, wave8, params)
 
@@ -88,6 +99,7 @@ class JetTrack(Display):
     self.ui.start_btn.clicked.connect(self.start_clicked)
     self.ui.stop_btn.clicked.connect(self.stop_clicked)
 
+    # set initial availability of buttons
     self.ui.calibrate_btn.setEnabled(True)
     self.ui.start_btn.setEnabled(False)
     self.ui.stop_btn.setEnabled(False)
@@ -122,6 +134,7 @@ class JetTrack(Display):
     self.ui.start_btn.setEnabled(False)
     self.ui.stop_btn.setEnabled(True)
     self.ui.calibrate_btn.setEnabled(False)
+    # start TrackThread
     self.track_thread.start()
 
   def stop_clicked(self):

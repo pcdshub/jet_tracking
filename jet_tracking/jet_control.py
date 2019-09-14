@@ -222,13 +222,13 @@ def calibrate(injector, camera, cspad, wave8, params, *, offaxis=False, settle_t
     First set the ROI of the camera to show the proper jet and illumination.
 
     Determines the mean, standard deviation, radius, intensity, jet position and
-    tilt, pixel size, beam position, camera position and tilt
+    tilt, pixel size, camera position and tilt
 
     Params determined if onaxis camera used: mean, std, radius, intensity, pxsize,
-    camX, camY, cam_roll, beamX_px, beamY_px, jet_roll
+    camX, camY, cam_roll, jet_roll
 
     Params determined if offaxis camera used: mean, std, radius, intensity, pxsize,
-    camY, camZ, cam_pitch, beamY_px, beamZ_px, jet_pitch
+    camY, camZ, cam_pitch, jet_pitch
 
     Parameters
     ----------
@@ -262,6 +262,7 @@ def calibrate(injector, camera, cspad, wave8, params, *, offaxis=False, settle_t
     params.radius.put(r)
     params.intensity.put(i)
 
+    # call appropriate camera calibration method
     if offaxis:
         return calibrate_off_axis(injector, camera, params,
                                   settle_time=settle_time)
@@ -324,6 +325,7 @@ def jet_calculate_inline(camera, params):
     offaxis : bool
         Camera is off-axis in y-z plane
     '''
+    
     # detect the jet in the camera ROI
     ROI_image = cam_utils.get_burst_avg(20, camera.ROI_image)
     rho, theta = cam_utils.jet_detect(ROI_image)
@@ -382,12 +384,28 @@ def jet_move_inline(injector, camera, params):
     #         move injector.coarseX
 
 
-def jet_scan(injector, cspad, params):
+def jet_scan(injector, cspad):
+  '''
+  Scans jet across x-rays twice to determine highest intensity, then moves jet
+  to that position
+
+  Parameters
+  ----------
+  injector : Injector
+      sample injector
+  cspad : CSPAD
+      CSPAD for data
+  '''
+
+  # step number & sizes from Mark's code
   x_min = 0.0012
   steps = 50
+  
   x_step = (-1) * steps * x_min / 2
+
   hi_intensities = []
   best_pos = []
+
   for i in range(2):
     # move motor to first position  
     injector.coarseX.mv(x_step, wait=True)
@@ -401,8 +419,8 @@ def jet_scan(injector, cspad, params):
       intensities.append(jt_utils.get_cspad(azav, params.radius.get(), gas_det))
     hi_intensities.append(max(intensities))
     best_pos.append(positions[intensities.index(max(intensities))])
+
   # move motor to average of best positions from two sweeps
   injector.coarseX.mv(np.average(best_pos)) 
-  # save CSPAD intensity
-  params.intensity.put(np.average(hi_intensities))
+
 
