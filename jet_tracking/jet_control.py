@@ -2,8 +2,13 @@ import numpy as np
 from time import sleep
 
 from . import cam_utils
+from . import jt_utils
 from .move_motor import movex
 
+
+# import cam_utils
+# import jt_utils
+# from move_motor import movex
 
 class JetControl:
     '''
@@ -94,11 +99,23 @@ def set_beam(beamX_px, beamY_px, params):
     params.beam_y_px.put(beamY_px)
 
 
-def calibrate(injector, camera, params, *, offaxis=False,
+def calibrate(injector, camera, CSPAD, params, *, offaxis=False,
               delay=0.1):
     '''
-    Calibrate the camera
+    Calibrate the camera and CSPAD and determine parameters needed for
+    jet tracking
     NEED TO CHECK offaxis calculation sign
+
+    First set the ROI of the camera to show the proper jet and illumination.
+
+    Determines the mean, standard deviation, jet position and tilt, pixel
+    size, beam position, camera position and tilt
+
+    Params determined if onaxis camera used: mean, std, pxsize, camX, camY,
+    cam_roll, beamX_px, beamY_px, jet_roll
+
+    Params determined if offaxis camera used: mean, std, pxsize, camY, camZ,
+    cam_pitch, beamY_px, beamZ_px, jet_pitch
 
     Parameters
     ----------
@@ -106,6 +123,8 @@ def calibrate(injector, camera, params, *, offaxis=False,
         sample injector
     camera : Questar
         camera looking at sample jet and x-rays
+    CSPAD : CSPAD
+        CSPAD for data
     params : Parameters
         EPICS PVs used for recording jet tracking data
     delay : float, optional
@@ -115,20 +134,31 @@ def calibrate(injector, camera, params, *, offaxis=False,
     '''
 
     # find jet in camera ROI
-    ROI_image = get_burst_avg(20, camera.ROI_image)
-    rho, theta = cam_utils.jet_detect(ROI_image)
+    ROI_image = get_burst_avg(params.frames_cam.get(), camera.ROI_image)
+    mean, std = cam_utils.image_stats(ROI_image)
+    rho, theta = cam_utils.jet_detect(ROI_image, mean, std)
+    params.mean.put(mean)
+    params.std.put(std)
 
+    # take calibration CSPAD data
+    # get CSPAD and wave8 data
+    azav, norm = get_azav(CSPAD) # call azimuthal average function
+    r, i = jt_utils.fit_CSPAD(azav, norm, gas_det) 
+    params.radius.put(r)
+    params.intensity.put(i)
+
+    # set injector motor based on camera inline or offaxis
     if offaxis:
-        injector_axis = injector.coarseX
-    else:
         injector_axis = injector.coarseZ
+    else:
+        injector_axis = injector.coarseX
 
-    # collect images and motor positions to calculate pxsize and cam_roll
+    # collect images and motor positions needed for calibration
     imgs = []
     positions = []
     start_pos = injector_axis.user_readback.get()
     for i in range(2):
-        image = get_burst_avg(20, camera.image)
+        image = get_burst_avg(params.frames_cam.get(), camera.image)
         imgs.append(image)
         positions.append(injector_axis.user_readback.get())
         next_position = injector_axis.user_setpoint.get() - 0.1
@@ -155,17 +185,24 @@ def calibrate(injector, camera, params, *, offaxis=False,
         params.jet_pitch.put(jet_pitch)
 
     else:
+        # cam_roll: rotation of camera abou z axis in radians
+        # pxsize: size of pixel in mm
         cam_roll, pxsize = cam_utils.get_cam_roll_pxsize(imgs, positions)
         params.pxsize.put(pxsize)
         params.cam_roll.put(cam_roll)
 
+        # beam_x_px: x-coordinate of x-ray beam in camera image in pixels
         beamX_px = params.beam_x_px.get()
+        # beam_y_ox: y-coordinate of x-ray beam in camera image in pixels
         beamY_px = params.beam_y_px.get()
+        # cam_x: x-coordinate of camera position in mm
+        # cam_y: y-coordinate of camera position in mm
         camX, camY = cam_utils.get_cam_coords(beamX_px, beamY_px,
                                               cam_roll=cam_roll, pxsize=pxsize)
         params.cam_x.put(camX)
         params.cam_y.put(camY)
 
+        # jet_roll: rotation of sample jet about z axis in radians
         jet_roll = cam_utils.get_jet_roll(theta, cam_roll=cam_roll)
         params.jet_roll.put(jet_roll)
 
@@ -173,8 +210,8 @@ def calibrate(injector, camera, params, *, offaxis=False,
 def _jet_calculate_step_offaxis(camera, params):
     'A single step of the infinite-loop jet_calculate (off-axis)'
     # detect the jet in the camera ROI
-    ROI_image = get_burst_avg(20, camera.ROI_image)
-    rho, theta = cam_utils.jet_detect(ROI_image)
+    ROI_image = get_burst_avg(params.frames_cam.get(), camera.ROI_image)
+    rho, theta = cam_utils.jet_detect(ROI_image, params.mean.get(), params.std.get())
 
     # check x-ray beam position
     beamY_px = params.beam_y_px.get()
@@ -202,8 +239,8 @@ def _jet_calculate_step_offaxis(camera, params):
 def _jet_calculate_step(camera, params):
     'A single step of the infinite-loop jet_calculate (on-axis)'
     # detect the jet in the camera ROI
-    ROI_image = get_burst_avg(20, camera.ROI_image)
-    rho, theta = cam_utils.jet_detect(ROI_image)
+    ROI_image = get_burst_avg(params.frames_cam, camera.ROI_image)
+    rho, theta = cam_utils.jet_detect(ROI_image, params.mean.get(), params.std.get())
 
     # check x-ray beam position
     beamX_px = params.beam_x_px.get()
@@ -266,24 +303,6 @@ def _jet_move_step(injector, camera, params):
         # move the ROI to keep looking at the jet
         min_x = ROIx + (params.jet_x.get() / params.pxsize.get())
         camera.ROI.min_xyz.min_x.put(min_x)
-    # if params.state == [some state]
-    #     [use [x] for jet tracking]
-    # else if params.state == [some other state]:
-    #     [use [y] for jet tracking]
-    # else if params.state == [some other state]:
-    #     [revert to manual injector controls]
-    # etc...
-
-    # if jet is clear in image:
-    #     if jetX != beamX:
-    #         move injector.coarseX
-    #         walk_to_pixel(detector, motor, target) ??
-    # else if nozzle is clear in image:
-    #     if nozzleX != beamX:
-    #         move injector.coarseX
-    # else:
-    #     if injector.coarseX.get() != beam_x:
-    #         move injector.coarseX
 
 
 def jet_move(injector, camera, params):
@@ -307,3 +326,30 @@ def jet_move(injector, camera, params):
             sleep(5)
     except KeyboardInterrupt:
         print('Stopped.')
+
+
+def jet_scan(injector, cspad, params):
+  x_min = 0.0012
+  steps = 50
+  x_step = (-1) * steps * x_min / 2
+  hi_intensities = []
+  best_pos = []
+  for i in range(2):
+    # move motor to first position  
+    injector.coarseX.mv(x_step, wait=True)
+    intensities = []
+    positions = []
+    for j in range(steps):
+      positions.append(injector.coarseX.user_readback.get())
+      # get azav from CSPAD
+      # get CSPAD and wave8
+      azav, norm = get_azav(CSPAD) #call azimuthal average function
+      intensities.append(jt_utils.get_cspad(azav, params.radius.get(), gas_det))
+    hi_intensities.append(max(intensities))
+    best_pos.append(positions[intensities.index(max(intensities))])
+  # move motor to average of best positions from two sweeps
+  injector.coarseX.mv(np.average(best_pos)) 
+  # save CSPAD intensity
+  params.intensity.put(np.average(hi_intensities))
+
+
