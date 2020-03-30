@@ -760,6 +760,8 @@ class Parameters(Device, _TableMixin):
                     doc='lower threshold for CSPAD ring intensity')
     thresh_w8 = Cpt(EpicsSignal, ':THRESH_w8',
                     doc='threshold for wave8')
+    thresh_cam = Cpt(EpicsSignal, ':THRESH_cam',
+                     doc='threshold for camera-based jet tracking')
     bypass_cam = Cpt(EpicsSignal, ':BYPASS_cam',
                      doc='bypass camera during jet tracking')
     frames_cam = Cpt(EpicsSignal, ':FRAMES_cam',
@@ -822,6 +824,8 @@ class OffaxisParams(Device, _TableMixin):
                     doc='lower threshold for CSPAD ring intensity')
     thresh_w8 = Cpt(EpicsSignal, ':THRESH_w8',
                     doc='threshold for wave8')
+    thresh_cam = Cpt(EpicsSignal, ':THRESH_cam',
+                     doc='threshold for camera-based jet tracking')
     bypass_cam = Cpt(EpicsSignal, ':BYPASS_cam',
                      doc='bypass camera during jet tracking')
     frames_cam = Cpt(EpicsSignal, ':FRAMES_cam',
@@ -906,3 +910,21 @@ class Diffract(Device, _TableMixin):
                         doc='Diffraction periodogram Frequency analysis amplitude array')
     state = Cpt(EpicsSignal, ':STATE',
                 doc='State of diffraction analysis')
+
+# classes used for jet tracking testing
+class JTInput(Device):
+  nframe = Cpt(EpicsSignal, ':NFRAME', doc='number of frames passed')
+  i0 = Cpt(EpicsSignal, ':i0', doc='Wave8')
+  evtcode = Cpt(EpicsSignal, ':EVTCODE', doc='event code')
+  mtr = Cpt(EpicsSignal, ':MTR', doc='motor position')
+  mtr_prec = Cpt(EpicsSignal, ':MTR_PREC', doc='motor precision')
+
+class JTOutput(Device):
+  nframe = Cpt(EpicsSignal, ':NFRAME', doc='number of frames used')
+  det = Cpt(EpicsSignal, ':DET', doc='detector intensity')
+  i0 = Cpt(EpicsSignal, ':I0', doc='Wave8')
+  mtr = Cpt(EpicsSignal, ':MTR', doc='motor position')
+
+class JTFake(Device):
+  stopper = Cpt(EpicsSignal, ':STOPPER', doc='fake stopper')
+  pulse_picker = Cpt(EpicsSignal, ':PP', doc='fake pulse picker')

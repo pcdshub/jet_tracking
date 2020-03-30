@@ -5,6 +5,10 @@ from . import jt_utils
 from .move_motor import movex
 
 
+# import cam_utils
+# import jt_utils
+# from move_motor import movex
+
 class JetControl:
     '''
     Jet tracking control class using jet_tracking methods
@@ -128,12 +132,25 @@ def calibrate_off_axis(injector, camera, params, *, settle_time=1.0,
     '''
     Calibrate the off-axis camera
 
+    First set the ROI of the camera to show the proper jet and illumination.
+
+    Determines the mean, standard deviation, jet position and tilt, pixel
+    size, beam position, camera position and tilt
+
+    Params determined if onaxis camera used: mean, std, pxsize, camX, camY,
+    cam_roll, beamX_px, beamY_px, jet_roll
+
+    Params determined if offaxis camera used: mean, std, pxsize, camY, camZ,
+    cam_pitch, beamY_px, beamZ_px, jet_pitch
+
     Parameters
     ----------
     injector : Injector
         sample injector
     camera : Questar
         camera looking at sample jet and x-rays
+    CSPAD : CSPAD
+        CSPAD for data
     params : Parameters
         EPICS PVs used for recording jet tracking data
     settle_time : float, optional
@@ -286,8 +303,8 @@ def jet_calculate_off_axis(camera, params):
         Camera is off-axis in y-z plane
     '''
     # detect the jet in the camera ROI
-    ROI_image = cam_utils.get_burst_avg(20, camera.ROI_image)
-    rho, theta = cam_utils.jet_detect(ROI_image)
+    ROI_image = get_burst_avg(params.frames_cam, camera.ROI_image)
+    rho, theta = cam_utils.jet_detect(ROI_image, params.mean.get(), params.std.get())
 
     # check x-ray beam position
     beam_y_px = params.beam_y_px.get()
@@ -364,48 +381,14 @@ def jet_move_inline(injector, camera, params):
         # move the ROI to keep looking at the jet
         min_x = ROIx + (params.jet_x.get() / params.pxsize.get())
         camera.ROI.min_xyz.min_x.put(min_x)
-    # if params.state == [some state]
-    #     [use [x] for jet tracking]
-    # else if params.state == [some other state]:
-    #     [use [y] for jet tracking]
-    # else if params.state == [some other state]:
-    #     [revert to manual injector controls]
-    # etc...
-
-    # if jet is clear in image:
-    #     if jet_x != beam_x:
-    #         move injector.coarseX
-    #         walk_to_pixel(detector, motor, target) ??
-    # else if nozzle is clear in image:
-    #     if nozzleX != beam_x:
-    #         move injector.coarseX
-    # else:
-    #     if injector.coarseX.get() != beam_x:
-    #         move injector.coarseX
 
 
-def jet_scan(injector, cspad):
-  '''
-  Scans jet across x-rays twice to determine highest intensity, then moves jet
-  to that position
-
-  Parameters
-  ----------
-  injector : Injector
-      sample injector
-  cspad : CSPAD
-      CSPAD for data
-  '''
-
-  # step number & sizes from Mark's code
+def jet_scan(injector, cspad, params):
   x_min = 0.0012
   steps = 50
-  
   x_step = (-1) * steps * x_min / 2
-
   hi_intensities = []
   best_pos = []
-
   for i in range(2):
     # move motor to first position  
     injector.coarseX.mv(x_step, wait=True)
@@ -419,8 +402,7 @@ def jet_scan(injector, cspad):
       intensities.append(jt_utils.get_cspad(azav, params.radius.get(), gas_det))
     hi_intensities.append(max(intensities))
     best_pos.append(positions[intensities.index(max(intensities))])
-
   # move motor to average of best positions from two sweeps
   injector.coarseX.mv(np.average(best_pos)) 
-
-
+  # save CSPAD intensity
+  params.intensity.put(np.average(hi_intensities))

@@ -3,7 +3,6 @@ import cv2
 
 from scipy.signal import peak_widths
 from skimage.feature import register_translation
-from skimage.feature import register_translation
 from skimage.feature import canny, peak_local_max
 from skimage.transform import hough_line, hough_line_peaks, rotate
 

@@ -13,11 +13,10 @@ from time import sleep
 
 class TrackThread(QThread):
 
-  def __init__(self):
-  # def __init__(self, injector, camera, cspad, stopper, pulse_picker, wave8, params):
+  # def __init__(self):
+  def __init__(self, injector, camera, cspad, stopper, pulse_picker, wave8, params):
     super().__init__()
-
-    '''
+    # '''
     self.stopper = stopper
     self.pulse_picker = pulse_picker
     self.wave8 = wave8
@@ -25,12 +24,11 @@ class TrackThread(QThread):
     self.camera = camera
     self.injector = injector
     self.params = params
-    '''
+    # '''
 
   def run(self):
     while not self.isInterruptionRequested():
-      
-      '''
+      # '''
       # check devices first
       # check if stopper is in
       if (jt_utils.get_stopper(self.stopper) == 1):
@@ -50,12 +48,11 @@ class TrackThread(QThread):
       if (jt_utils.get_wave8(self.wave8) < self.params.thresh_w8):
         # if wave8 is below threshold, continue running jet tracking but do not move
         print('Wave8 below threshold - NOT TRACKING')
+        sleep(2)
         continue
 
       # check CSPAD
-      # get azimuthal average from CSPAD & Wave8 data
-      if (jt_utils.get_cspad(azav, params.radius.get(), gas_det) <
-          self.params.intensity.get() * self.params.thresh_lo.get()):
+      if (jt_utils.get_cspad(self.cspad) < self.params.thresh_lo):
         # if CSPAD is below lower threshold, move jet
         if (not self.params.bypass_camera()):
           # if camera is not bypassed, check if there is a jet and location of jet
@@ -63,36 +60,39 @@ class TrackThread(QThread):
             jet_control.jet_calculate_inline(self.camera, self.params)
             # if jet is more than 10 microns away from x-rays, move jet using camera feedback
             # threshold for this can be changed if needed
-            if (self.params.jet_x.get() > 0.01):
+            if (self.params.jet_x.get() > self.params.thresh_cam):
               jet_control.jet_move_inline(self.injector, self.camera, self.params)
+              sleep(1) # change to however long it takes for jet to move
               continue
           except Exception:
             # if jet is not detected, continue running jet tracking but do not move
             print('Cannot find jet - NOT TRACKING')
+            sleep(2)
             continue
 
         # if camera is bypassed or if jet is less than 10 microns away from x-rays, scan jet across x-rays to find new maximum
         jet_control.scan(self.injector, self.cspad)
-        # get azimuthal average from CSPAD & Wave8 data
         intensity = jt_utils.get_cspad(azav, self.params.radius.get(), gas_det)
         self.params.intensity.put(intensity)
+        sleep(1) # change to however long it takes for jet to scan
 
         # if CSPAD is still below upper threshold, stop jet tracking
-        if (jt_utils.get_cspad(azav, self.params.radius.get(), gas_det) <
-            self.params.intensity.get() * self.params.thresh_hi.get()):
+        if (get_cspad(self.cspad) < self.params.thresh_hi):
           print('CSPAD below threshold - TRACKING STOPPED')
           self.requestInterruption()
-    '''
+          continue
+      # '''
 
 
 class JetTrack(Display):
 
-  def __init__(self, *args, **kwargs):
+  # def __init__(self, *args, **kwargs):
+  def __init__(self, injector, camera, cspad, stopper, pulse_picker, wave8, params,
+               *args, **kwargs):
     super().__init__(*args, **kwargs)
 
-    # TrackThread to run jet tracking in
-    self.track_thread = TrackThread()
-    # self.track_thread = TrackThread(injector, camera, cspad, stopper, pulse_picker, wave8, params)
+    # self.track_thread = TrackThread()
+    self.track_thread = TrackThread(injector, camera, cspad, stopper, pulse_picker, wave8, params)
 
     # connect GUI buttons to appropriate methods
     self.ui.calibrate_btn.clicked.connect(self.calibrate_clicked)
@@ -103,6 +103,13 @@ class JetTrack(Display):
     self.ui.calibrate_btn.setEnabled(True)
     self.ui.start_btn.setEnabled(False)
     self.ui.stop_btn.setEnabled(False)
+
+  def ui_filepath(self):
+    '''
+    File path for ui file for GUI
+    '''
+
+    return '/reg/g/pcds/pyps/apps/hutch-python/cxi/dev/jet_tracking/jet_tracking/jettracking.ui'
 
   def ui_filename(self):
     '''

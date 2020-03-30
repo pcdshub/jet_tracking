@@ -1,7 +1,10 @@
-# methods for jet tracking that do not involve the camera
+# Files used to implement various utilities and get values
+# Will be removed when a better solution as reached
+# methods for jet tracking
 
 import numpy as np
 from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
 
 
 def gaussianslope(x, a, mean, std, m, b):
@@ -91,6 +94,11 @@ def fit_cspad(azav, norm, gas_det):
   center = int(round(popt[1]))
   intensity = sum(azav[center-5:center+5]) / gas_det
 
+  # display fit
+  plt.plot(x, azav, 'ro')
+  plt.plot(x, gaussianslope(x, *popt), 'b-')
+  plt.show()
+
   return center, intensity
 
 
@@ -118,7 +126,6 @@ def get_cspad(azav, r, gas_det):
 
 # unfinished methods for checking stopper, pulse picker, and Wave8
 # can make Ophyd devices or load specific PV needed directly into beamline.py
-
 def get_stopper(stopper):
   return stopper
 
