@@ -16,7 +16,7 @@ app = pydm.application.PyDMApplication()
 
 # fill widget variable with instance of jet tracking Display class
 # pass Ophyd objects as arguments for Display
-jt_macros = {'PARAMS':'CXI:SC1:INLINE', 'REQ':'CXI:JTRK:REQ', 'PASS':'CXI:JTRK:PASS'}
+jt_macros = {'PARAMS': 'CXI:SC1:INLINE', 'REQ': 'CXI:JTRK:REQ', 'PASS': 'CXI:JTRK:PASS'}
 widget = JetTrack(JT_input, JT_output, JT_fake, macros=jt_macros)
 
 # load jet tracking GUI

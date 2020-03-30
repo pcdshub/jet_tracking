@@ -1,5 +1,4 @@
 import numpy as np
-import cv2
 
 from scipy.signal import peak_widths
 from skimage.feature import register_translation
@@ -61,11 +60,13 @@ def jet_detect(img, calibratemean, calibratestd):
 
     try:
         # use canny edge detection to convert image to binary
-        binary = canny(img, sigma=2, use_quantiles=True, low_threshold=0.9, high_threshold=0.99)
+        binary = canny(img, sigma=2, use_quantiles=True, low_threshold=0.9,
+                       high_threshold=0.99)
 
         # perform Hough Line Transform on binary image
         h, angles, d = hough_line(binary)
-        res = hough_line_peaks(h, angles, d, min_distance=1, threshold=int(img.shape[0]/3))
+        res = hough_line_peaks(h, angles, d, min_distance=1,
+                               threshold=int(img.shape[0] / 3))
 
         # keep only valid lines
         valid = []
@@ -80,7 +81,7 @@ def jet_detect(img, calibratemean, calibratestd):
             if (dist < 0) or (xint > binary.shape[1]):
                 jetValid = False
             # jet must be within [x] pixels width
-            #if (cam_utils.get_jet_width(img, rho, theta) * pxsize > 0.01):
+            # if (cam_utils.get_jet_width(img, rho, theta) * pxsize > 0.01):
                 #  jetValid = false
                 #  print('ERROR width: not a jet')
             if (jetValid):
@@ -99,7 +100,7 @@ def jet_detect(img, calibratemean, calibratestd):
     for x in range(10):
         # try to find local maxes (corresponds to jet) in 10 rows along height of image)
         col = int(imgr.shape[1] / 10 * x)
-        ymax = peak_local_max(imgr[:,col], threshold_rel=0.9, num_peaks=1)[0][0]
+        ymax = peak_local_max(imgr[:, col], threshold_rel=0.9, num_peaks=1)[0][0]
 
         # check if point found for max is close to jet lines found with Hough transform
         miny = imgr.shape[0]
@@ -107,13 +108,13 @@ def jet_detect(img, calibratemean, calibratestd):
         for theta, dist in valid:
             xint = dist / np.sin(theta)
             y = imgr.shape[0] - ((xint - col) * np.tan(theta))
- 
+
             if (y < miny):
                 miny = y
             if (y > maxy):
                 maxy = y
-  
-        # if x found using local max is close to lines found with Hough transform, keep it 
+
+        # if x found using local max is close to lines found with Hough transform, keep it
         if (ymax >= (miny - 5)) and (ymax <= (maxy + 5)):
             jet_xcoords.append(col)
             jet_ycoords.append(ymax)

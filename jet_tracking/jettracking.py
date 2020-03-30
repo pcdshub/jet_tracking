@@ -13,18 +13,18 @@ from time import sleep
 
 class TrackThread(QThread):
 
-  # def __init__(self):
-  def __init__(self, injector, camera, cspad, stopper, pulse_picker, wave8, params):
-    super().__init__()
-    # '''
-    self.stopper = stopper
-    self.pulse_picker = pulse_picker
-    self.wave8 = wave8
-    self.cspad = cspad
-    self.camera = camera
-    self.injector = injector
-    self.params = params
-    # '''
+    # def __init__(self):
+    def __init__(self, injector, camera, cspad, stopper, pulse_picker, wave8, params):
+        super().__init__()
+        # '''
+        self.stopper = stopper
+        self.pulse_picker = pulse_picker
+        self.wave8 = wave8
+        self.cspad = cspad
+        self.camera = camera
+        self.injector = injector
+        self.params = params
+        # '''
 
   def run(self):
     while not self.isInterruptionRequested():
@@ -154,4 +154,3 @@ class JetTrack(Display):
     self.ui.stop_btn.setEnabled(False)
     self.ui.start_btn.setEnabled(True)
     self.ui.calibrate_btn.setEnabled(True)
-

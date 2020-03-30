@@ -274,8 +274,8 @@ def calibrate(injector, camera, cspad, wave8, params, *, offaxis=False, settle_t
 
     # take calibration CSPAD data
     # get CSPAD and wave8 data
-    azav, norm = get_azav(cspad) # call azimuthal average function
-    r, i = jt_utils.fit_CSPAD(azav, norm, gas_det) 
+    azav, norm = get_azav(cspad)  # call azimuthal average function
+    r, i = jt_utils.fit_CSPAD(azav, norm, gas_det)
     params.radius.put(r)
     params.intensity.put(i)
 
@@ -342,7 +342,7 @@ def jet_calculate_inline(camera, params):
     offaxis : bool
         Camera is off-axis in y-z plane
     '''
-    
+
     # detect the jet in the camera ROI
     ROI_image = cam_utils.get_burst_avg(20, camera.ROI_image)
     rho, theta = cam_utils.jet_detect(ROI_image)
@@ -384,25 +384,25 @@ def jet_move_inline(injector, camera, params):
 
 
 def jet_scan(injector, cspad, params):
-  x_min = 0.0012
-  steps = 50
-  x_step = (-1) * steps * x_min / 2
-  hi_intensities = []
-  best_pos = []
-  for i in range(2):
-    # move motor to first position  
-    injector.coarseX.mv(x_step, wait=True)
-    intensities = []
-    positions = []
-    for j in range(steps):
-      positions.append(injector.coarseX.user_readback.get())
-      # get azav from CSPAD
-      # get CSPAD and wave8
-      azav, norm = get_azav(CSPAD) #call azimuthal average function
-      intensities.append(jt_utils.get_cspad(azav, params.radius.get(), gas_det))
-    hi_intensities.append(max(intensities))
-    best_pos.append(positions[intensities.index(max(intensities))])
-  # move motor to average of best positions from two sweeps
-  injector.coarseX.mv(np.average(best_pos)) 
-  # save CSPAD intensity
-  params.intensity.put(np.average(hi_intensities))
+    x_min = 0.0012
+    steps = 50
+    x_step = (-1) * steps * x_min / 2
+    hi_intensities = []
+    best_pos = []
+    for i in range(2):
+        # move motor to first position
+        injector.coarseX.mv(x_step, wait=True)
+        intensities = []
+        positions = []
+        for j in range(steps):
+            positions.append(injector.coarseX.user_readback.get())
+            # get azav from CSPAD
+            # get CSPAD and wave8
+            azav, norm = get_azav(cspad)  # call azimuthal average function
+            intensities.append(jt_utils.get_cspad(azav, params.radius.get(), gas_det))
+        hi_intensities.append(max(intensities))
+        best_pos.append(positions[intensities.index(max(intensities))])
+    # move motor to average of best positions from two sweeps
+    injector.coarseX.mv(np.average(best_pos))
+    # save CSPAD intensity
+    params.intensity.put(np.average(hi_intensities))
