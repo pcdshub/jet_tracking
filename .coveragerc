@@ -2,5 +2,6 @@
 source = jet_tracking
 
 [report]
-omit = 
+omit =
     jet_tracking/_version.py
+    jet_tracking/snippet.py
