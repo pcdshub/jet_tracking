@@ -10,8 +10,9 @@ def onaxis_image():
     return np.random.random((100, 100))
 
 
+# This doesn't really test much...
 def test_smoke_jet_detect(onaxis_image):
-    print(cam_utils.jet_detect(onaxis_image))
+    print(cam_utils.jet_detect(onaxis_image, onaxis_image.mean(), onaxis_image.std()))
 
 
 def test_smoke_get_jet_z():

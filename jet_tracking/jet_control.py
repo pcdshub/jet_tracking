@@ -281,7 +281,7 @@ def jet_calculate_off_axis(camera, params):
         Camera is off-axis in y-z plane
     '''
     # detect the jet in the camera ROI
-    ROI_image = cam_utils.get_burst_avg(params.frames_cam, camera.ROI_image)
+    ROI_image = cam_utils.get_burst_avg(params.frames_cam.get(), camera.ROI_image)
     rho, theta = cam_utils.jet_detect(ROI_image, params.mean.get(), params.std.get())
 
     # check x-ray beam position

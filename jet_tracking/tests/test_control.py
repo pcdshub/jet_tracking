@@ -9,7 +9,8 @@ def test_smoke_set_beam(jet_control):
     assert jet_control.params.beam_y_px.get() == 2
 
 
-@pytest.mark.parametrize("use_offaxis", [False, True])
+@pytest.mark.skip(reason="The calibrate function is far from complete")
+# @pytest.mark.parametrize("use_offaxis", [False, True])
 def test_smoke_calibrate(jet_control, injector, questar, parameters,
                          offaxis_parameters, use_offaxis):
     from ..jet_control import calibrate
