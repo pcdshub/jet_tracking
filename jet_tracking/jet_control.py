@@ -1,4 +1,5 @@
 from time import sleep
+import numpy as np
 
 from . import cam_utils
 from . import jt_utils
@@ -230,7 +231,7 @@ def calibrate_inline(injector, camera, params, *, settle_time=1.0,
                 cam_roll=cam_roll)
 
 
-def calibrate(injector, camera, cspad, wave8, params, *, offaxis=False, settle_time=0.1):
+def calibrate(injector, camera, cspad, wave8, gas_det, params, *, offaxis=False, settle_time=0.1):
     '''
     Calibrate the camera and CSPAD and determine parameters needed for
     jet tracking
@@ -257,6 +258,8 @@ def calibrate(injector, camera, cspad, wave8, params, *, offaxis=False, settle_t
         CSPAD for data
     wave8 : Wave8
         Wave8 to normalize data from CSPAD
+    gas_det : float
+        gas detector
     params : Parameters
         EPICS PVs used for recording jet tracking data
     settle_time : float, optional
@@ -383,7 +386,7 @@ def jet_move_inline(injector, camera, params):
         camera.ROI.min_xyz.min_x.put(min_x)
 
 
-def jet_scan(injector, cspad, params):
+def jet_scan(injector, cspad, gas_det, params):
     x_min = 0.0012
     steps = 50
     x_step = (-1) * steps * x_min / 2
@@ -406,3 +409,7 @@ def jet_scan(injector, cspad, params):
     injector.coarseX.mv(np.average(best_pos))
     # save CSPAD intensity
     params.intensity.put(np.average(hi_intensities))
+
+
+def get_azav(cspad):
+    return NotImplemented

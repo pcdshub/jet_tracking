@@ -1,8 +1,5 @@
 import numpy as np
-import cv2
 from matplotlib import pyplot as plt
-from .. import cam_utils
-from ..move_motor import movex
 from skimage.feature import canny, peak_local_max
 from skimage.transform import hough_line, hough_line_peaks, rotate
 
