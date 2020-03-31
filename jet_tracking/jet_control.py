@@ -67,31 +67,6 @@ class JetControl:
             jet_move_inline(self.injector, self.camera, self.params)
 
 
-def get_burst_avg(n, image_plugin):
-    '''
-    Get the average of n consecutive images from a camera
-
-    Parameters
-    ----------
-    n : int
-        number of consecutive images to be averaged
-    image_plugin : ImagePlugin
-        camera ImagePlugin from which the images will be taken
-
-    Returns
-    -------
-    burst_avg : ndarray
-        average image
-    '''
-    imageX, imageY = image_plugin.image.shape
-    burst_imgs = np.empty((n, imageX, imageY))
-    for x in range(n):
-        burst_imgs[x] = image_plugin.image
-    burst_avg = burst_imgs.mean(axis=0)
-
-    return burst_avg
-
-
 def set_beam(beam_x_px, beam_y_px, params):
     '''
     Set the coordinates for the x-ray beam
@@ -269,7 +244,7 @@ def calibrate(injector, camera, cspad, wave8, gas_det, params, *, offaxis=False,
     '''
 
     # find jet in camera ROI
-    ROI_image = get_burst_avg(params.frames_cam.get(), camera.ROI_image)
+    ROI_image = cam_utils.get_burst_avg(params.frames_cam.get(), camera.ROI_image)
     mean, std = cam_utils.image_stats(ROI_image)
     rho, theta = cam_utils.jet_detect(ROI_image, mean, std)
     params.mean.put(mean)
@@ -306,7 +281,7 @@ def jet_calculate_off_axis(camera, params):
         Camera is off-axis in y-z plane
     '''
     # detect the jet in the camera ROI
-    ROI_image = get_burst_avg(params.frames_cam, camera.ROI_image)
+    ROI_image = cam_utils.get_burst_avg(params.frames_cam, camera.ROI_image)
     rho, theta = cam_utils.jet_detect(ROI_image, params.mean.get(), params.std.get())
 
     # check x-ray beam position

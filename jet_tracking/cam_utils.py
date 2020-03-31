@@ -487,3 +487,28 @@ def get_nozzle_shift(im1, im2, *, cam_roll, pxsize):
     dx = (sx * np.cos(cam_roll) - sy * np.sin(cam_roll)) * pxsize
     dy = (sy * np.cos(cam_roll) + sx * np.sin(cam_roll)) * pxsize
     return dy, dx
+
+
+def get_burst_avg(n, image_plugin):
+    '''
+    Get the average of n consecutive images from a camera
+
+    Parameters
+    ----------
+    n : int
+        number of consecutive images to be averaged
+    image_plugin : ImagePlugin
+        camera ImagePlugin from which the images will be taken
+
+    Returns
+    -------
+    burst_avg : ndarray
+        average image
+    '''
+    imageX, imageY = image_plugin.image.shape
+    burst_imgs = np.empty((n, imageX, imageY))
+    for x in range(n):
+        burst_imgs[x] = image_plugin.image
+    burst_avg = burst_imgs.mean(axis=0)
+
+    return burst_avg
