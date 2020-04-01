@@ -282,7 +282,8 @@ def jet_calculate_off_axis(camera, params):
     '''
     # detect the jet in the camera ROI
     ROI_image = cam_utils.get_burst_avg(params.frames_cam.get(), camera.ROI_image)
-    rho, theta = cam_utils.jet_detect(ROI_image, params.mean.get(), params.std.get())
+    mean, std = cam_utils.image_stats(ROI_image)
+    rho, theta = cam_utils.jet_detect(ROI_image, mean, std)
 
     # check x-ray beam position
     beam_y_px = params.beam_y_px.get()
@@ -323,7 +324,8 @@ def jet_calculate_inline(camera, params):
 
     # detect the jet in the camera ROI
     ROI_image = cam_utils.get_burst_avg(20, camera.ROI_image)
-    rho, theta = cam_utils.jet_detect(ROI_image)
+    mean, std = cam_utils.image_stats(ROI_image)
+    rho, theta = cam_utils.jet_detect(ROI_image, mean, std)
 
     # check x-ray beam position
     beam_x_px = params.beam_x_px.get()
