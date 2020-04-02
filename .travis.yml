@@ -28,6 +28,8 @@ install:
   - conda config --add channels pcds-tag
   - conda config --add channels $PCDS_CHANNEL
   - conda config --append channels conda-forge
+  - conda config --remove channels defaults
+  # Useful for debugging any issues with conda
   - conda info -a
   # Test conda build
   - conda build -q conda-recipe --python $TRAVIS_PYTHON_VERSION --output-folder bld-dir
