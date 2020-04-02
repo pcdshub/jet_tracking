@@ -1,7 +1,12 @@
+from os import path
 import numpy as np
 import pytest
 import types
 import inspect
+from matplotlib import image
+from skimage.transform import resize
+from skimage.color import rgb2gray
+
 from ..devices import (Injector, Selector, CoolerShaker, HPLC,
                        PressureController, FlowIntegrator, Offaxis, Questar,
                        Parameters, OffaxisParams, Control, Diffract,
@@ -243,6 +248,22 @@ def device_instances(injector, questar, offaxis_camera, parameters,
 def set_random_image(plugin, dimx=100, dimy=100):
     'Set up a random image of dimensions (dimx, dimy) on the given image plugin'
     plugin.array_data.put(np.random.random((dimx, dimy)))
+    plugin.array_size.width.sim_put(dimx)
+    plugin.array_size.height.sim_put(dimy)
+    plugin.array_size.depth.sim_put(0)
+    plugin.ndimensions.sim_put(2)
+
+
+def test_jet_image(dimx=100, dimy=100):
+    'Returns a test image of the jet, sampled at the desired dimensions'
+    imgpath = path.join(path.dirname(__file__), 'test_jet.png')
+    testimage = image.imread(imgpath)
+    return rgb2gray(resize(testimage, (dimx, dimy)))
+
+
+def set_test_jet_image(plugin, dimx=100, dimy=100):
+    'Set up a test jet image of dimensions (dimx, dimy) on the given image plugin'
+    plugin.array_data.put(test_jet_image(dimx, dimy))
     plugin.array_size.width.sim_put(dimx)
     plugin.array_size.height.sim_put(dimy)
     plugin.array_size.depth.sim_put(0)
