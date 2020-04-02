@@ -5,7 +5,7 @@ from ophyd.device import Device, FormattedComponent as FCpt, Component as Cpt
 from ophyd.signal import EpicsSignal
 from ophyd.areadetector.plugins import ROIPlugin, StatsPlugin, ImagePlugin
 
-from pcdsdevices.areadetector.detectors import PCDSDetector
+from pcdsdevices.areadetector.detectors import PCDSAreaDetector
 from pcdsdevices.epics_motor import IMS
 
 
@@ -623,7 +623,7 @@ class SDS:
             print(f'WARNING: {device} is not a valid device type')
 
 
-class Offaxis(PCDSDetector):
+class Offaxis(PCDSAreaDetector):
     '''Area detector for Offaxis camera in CXI
 
     Parameters
@@ -664,7 +664,7 @@ class Offaxis(PCDSDetector):
         self.ROI_image.enable.put('Enabled')
 
 
-class Questar(PCDSDetector):
+class Questar(PCDSAreaDetector):
     '''
     Area detector for Inline Questar Camera in CXI
 
