@@ -144,6 +144,7 @@ def offaxis_parameters(devices):
     params.cam_z.put(1.0)
     params.pxsize.put(0.001)
     params.cam_pitch.put(1.0)
+    params.frames_cam.put(20)
     return params
 
 
@@ -162,6 +163,7 @@ def parameters(devices):
     params.cam_y.put(1.0)
     params.pxsize.put(0.001)
     params.cam_roll.put(1.0)
+    params.frames_cam.put(20)
     return params
 
 

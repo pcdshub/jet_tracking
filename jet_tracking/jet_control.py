@@ -323,7 +323,7 @@ def jet_calculate_inline(camera, params):
     '''
 
     # detect the jet in the camera ROI
-    ROI_image = cam_utils.get_burst_avg(20, camera.ROI_image)
+    ROI_image = cam_utils.get_burst_avg(params.frames_cam.get(), camera.ROI_image)
     mean, std = cam_utils.image_stats(ROI_image)
     rho, theta = cam_utils.jet_detect(ROI_image, mean, std)
 
