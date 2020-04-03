@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
+from jet_tracking import cam_utils
 
-from .. import cam_utils
 from . import conftest
 
 

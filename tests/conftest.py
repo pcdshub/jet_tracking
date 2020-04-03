@@ -4,14 +4,14 @@ from os import path
 
 import numpy as np
 import pytest
+from jet_tracking.devices import (HPLC, SDS, Control, CoolerShaker, Diffract,
+                                  FlowIntegrator, Injector, Offaxis,
+                                  OffaxisParams, Parameters,
+                                  PressureController, Questar, Selector)
 from matplotlib import image
 from ophyd.areadetector.plugins import PluginBase
 from skimage.color import rgb2gray
 from skimage.transform import resize
-
-from ..devices import (HPLC, SDS, Control, CoolerShaker, Diffract,
-                       FlowIntegrator, Injector, Offaxis, OffaxisParams,
-                       Parameters, PressureController, Questar, Selector)
 
 all_devices = (Injector, Selector, CoolerShaker, HPLC, PressureController,
                FlowIntegrator, Offaxis, Questar, Parameters, OffaxisParams,
