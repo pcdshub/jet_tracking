@@ -1,17 +1,17 @@
+import inspect
+import types
 from os import path
+
 import numpy as np
 import pytest
-import types
-import inspect
 from matplotlib import image
-from skimage.transform import resize
-from skimage.color import rgb2gray
-
-from ..devices import (Injector, Selector, CoolerShaker, HPLC,
-                       PressureController, FlowIntegrator, Offaxis, Questar,
-                       Parameters, OffaxisParams, Control, Diffract,
-                       SDS)
 from ophyd.areadetector.plugins import PluginBase
+from skimage.color import rgb2gray
+from skimage.transform import resize
+
+from ..devices import (HPLC, SDS, Control, CoolerShaker, Diffract,
+                       FlowIntegrator, Injector, Offaxis, OffaxisParams,
+                       Parameters, PressureController, Questar, Selector)
 
 all_devices = (Injector, Selector, CoolerShaker, HPLC, PressureController,
                FlowIntegrator, Offaxis, Questar, Parameters, OffaxisParams,

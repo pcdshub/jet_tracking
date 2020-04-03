@@ -2,10 +2,8 @@
 
 import pydm
 from IPython import get_ipython
-
 # 'real' jet tracking GUI
 # from jet_tracking.jettracking import JetTrack
-
 # jet tracking GUI for testing
 from jet_tracking.testscreen import JetTrack
 

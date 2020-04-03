@@ -1,10 +1,10 @@
-import pandas as pd
 import epics
-
-from ophyd.device import Device, FormattedComponent as FCpt, Component as Cpt
+import pandas as pd
+from ophyd.areadetector.plugins import ImagePlugin, ROIPlugin, StatsPlugin
+from ophyd.device import Component as Cpt
+from ophyd.device import Device
+from ophyd.device import FormattedComponent as FCpt
 from ophyd.signal import EpicsSignal
-from ophyd.areadetector.plugins import ROIPlugin, StatsPlugin, ImagePlugin
-
 from pcdsdevices.areadetector.detectors import PCDSAreaDetector
 from pcdsdevices.epics_motor import IMS
 

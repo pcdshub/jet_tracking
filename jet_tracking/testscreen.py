@@ -1,7 +1,7 @@
-from qtpy.QtCore import QThread
-from pydm import Display
-
 from time import sleep
+
+from pydm import Display
+from qtpy.QtCore import QThread
 
 # import jt_utils
 # import jet_control

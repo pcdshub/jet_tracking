@@ -1,12 +1,11 @@
+import argparse
 import sys
 import time
-import argparse
 
 import numpy as np
 import pandas as pd
 from epics import PV
-from scipy.signal import periodogram, peak_widths
-
+from scipy.signal import peak_widths, periodogram
 
 time0 = time.time()
 
