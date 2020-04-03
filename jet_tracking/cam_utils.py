@@ -1,17 +1,49 @@
 import numpy as np
-import cv2
 
 from scipy.signal import peak_widths
 from skimage.feature import register_translation
+from skimage.feature import canny, peak_local_max
+from skimage.transform import hough_line, hough_line_peaks, rotate
 
 
-def jet_detect(img):
-    '''Finds the jet from the online camera roi using HoughLines
+def image_stats(img):
+    '''
+    Parameters
+    ----------
+    img : ndarray
+        image
+
+    Returns
+    -------
+    mean : float
+        mean of given image
+    std : float
+        standard deviation of image
+    '''
+    return img.mean(), img.std()
+
+
+def jet_detect(img, calibratemean, calibratestd):
+    '''Finds the jet from the online camera roi using Canny edge detection and Hough line transform
+
+    This method first compares the mean of the ROI image to the mean of the calibrated ROI.
+    Then Canny edge detection is used to detect the edges of the jet in the ROI and convert
+    the original image to a binary image.
+    Hough line transform is performed on the binary image to determine the approximate position
+    of the jet.
+    Peak-finding is performed on several horizontal slices of the image, and a line is fitted
+    to these points to determine the actual position of the jet.
+    If a peak is found that is not in the approximate position of the jet determined by the
+    Hough line transform, that point is not considered in the line fitting.
 
     Parameters
     ----------
     img : ndarray
         ROI of the on-axis image
+    mean : float
+      mean of calibration ROI image with jet (see calibrate())
+    calibratestd : float
+      standard deviation calibration ROI image with jet (see calibrate())
 
     Returns
     -------
@@ -19,25 +51,82 @@ def jet_detect(img):
         Distance from (0,0) to the line in pixels
     theta : float
         Angle of the shortest vector from (0,0) to the line in radians
-
-    Raises
-    ------
-    ValueError
-        Unable to locate jet through hough line transform
     '''
-    mean = img.mean()
-    std = img.std()
-    for c in range(30):
-        try:
-            binary = (img / (mean + 2 * std * 0.90 ** c)).astype(np.uint8)
-            lines = cv2.HoughLines(binary, 1, np.radians(0.25), 30)
-            rho, theta = lines[0][0]
-        except Exception:
-            continue
-        else:
-            return rho, theta
 
-    raise ValueError('Unable to detect jet')
+    # compare mean & std of current image to mean & std of calibrate image
+    mean, std = image_stats(img)
+    if (mean < calibratemean * 0.8) or (mean > calibratemean * 1.2):
+        raise ValueError('ERROR mean: no jet')
+
+    try:
+        # use canny edge detection to convert image to binary
+        binary = canny(img, sigma=2, use_quantiles=True, low_threshold=0.9,
+                       high_threshold=0.99)
+
+        # perform Hough Line Transform on binary image
+        h, angles, d = hough_line(binary)
+        res = hough_line_peaks(h, angles, d, min_distance=1,
+                               threshold=int(img.shape[0] / 3))
+
+        # keep only valid lines
+        valid = []
+        for _, theta, dist in zip(*res):
+            jetValid = True
+            # jet must be within 45 degrees of vertical
+            if (theta < np.radians(-45)) or (theta > np.radians(45)):
+                jetValid = False
+            # jet must start from top edge of imagei
+            yint = dist / np.sin(theta)
+            xint = np.tan(theta) * yint
+            if (dist < 0) or (xint > binary.shape[1]):
+                jetValid = False
+            # jet must be within [x] pixels width
+            # if (cam_utils.get_jet_width(img, rho, theta) * pxsize > 0.01):
+                #  jetValid = false
+                #  print('ERROR width: not a jet')
+            if (jetValid):
+                valid.append([theta, dist])
+    except Exception:
+        raise ValueError('ERROR hough: no jet')
+
+    # use local maxes to determine exact jet position
+    # line-fitting cannot be performed on vertical line (which is highly likely due to
+    # nature of jet) so rotate image first
+    imgr = rotate(img, 90, resize=True, preserve_range=True)
+
+    jet_xcoords = []
+    jet_ycoords = []
+
+    for x in range(10):
+        # try to find local maxes (corresponds to jet) in 10 rows along height of image)
+        col = int(imgr.shape[1] / 10 * x)
+        ymax = peak_local_max(imgr[:, col], threshold_rel=0.9, num_peaks=1)[0][0]
+
+        # check if point found for max is close to jet lines found with Hough transform
+        miny = imgr.shape[0]
+        maxy = 0
+        for theta, dist in valid:
+            xint = dist / np.sin(theta)
+            y = imgr.shape[0] - ((xint - col) * np.tan(theta))
+
+            if (y < miny):
+                miny = y
+            if (y > maxy):
+                maxy = y
+
+        # if x found using local max is close to lines found with Hough transform, keep it
+        if (ymax >= (miny - 5)) and (ymax <= (maxy + 5)):
+            jet_xcoords.append(col)
+            jet_ycoords.append(ymax)
+
+    try:
+        # fit a line to the points found using local max
+        m, b = np.polyfit(jet_xcoords, jet_ycoords, 1)
+        theta = -np.arctan(m)
+        rho = np.cos(theta) * (imgr.shape[0] - b)
+    except Exception:
+        raise ValueError('ERROR polyfit: no jet')
+    return rho, theta
 
 
 def get_jet_z(rho, theta, roi_y, roi_z, *, pxsize, cam_y, cam_z, beam_y,
@@ -416,5 +505,10 @@ def get_burst_avg(n, image_plugin):
     burst_avg : ndarray
         average image
     '''
-    images = [image_plugin.image for _ in range(n)]
-    return np.mean(images, axis=0)
+    imageX, imageY = image_plugin.image.shape
+    burst_imgs = np.empty((n, imageX, imageY))
+    for x in range(n):
+        burst_imgs[x] = image_plugin.image
+    burst_avg = burst_imgs.mean(axis=0)
+
+    return burst_avg

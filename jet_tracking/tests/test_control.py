@@ -9,6 +9,7 @@ def test_smoke_set_beam(jet_control):
     assert jet_control.params.beam_y_px.get() == 2
 
 
+@pytest.mark.skip(reason="The calibrate function is far from complete")
 @pytest.mark.parametrize("use_offaxis", [False, True])
 def test_smoke_calibrate(jet_control, injector, questar, parameters,
                          offaxis_parameters, use_offaxis):
@@ -17,8 +18,8 @@ def test_smoke_calibrate(jet_control, injector, questar, parameters,
               if use_offaxis
               else parameters)
 
-    conftest.set_random_image(questar.image)
-    conftest.set_random_image(questar.ROI_image)
+    conftest.set_test_jet_image(questar.image)
+    conftest.set_test_jet_image(questar.ROI_image)
     calibrate(injector=injector, camera=questar, params=params,
               offaxis=use_offaxis)
 
@@ -27,8 +28,8 @@ def test_smoke_calibrate(jet_control, injector, questar, parameters,
 def test_smoke_jet_calculate(questar, parameters,
                              offaxis_parameters, use_offaxis):
     from ..jet_control import jet_calculate_off_axis, jet_calculate_inline
-    conftest.set_random_image(questar.image)
-    conftest.set_random_image(questar.ROI_image)
+    conftest.set_test_jet_image(questar.image)
+    conftest.set_test_jet_image(questar.ROI_image)
     questar.ROI.min_xyz.min_x.sim_put(1)
     questar.ROI.min_xyz.min_y.sim_put(1)
     questar.ROI.min_xyz.min_z.sim_put(1)
