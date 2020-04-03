@@ -192,6 +192,3 @@ texinfo_documents = [
      author, 'jet_tracking', 'Liquid jet positioning feedback and tracking.',
      'Miscellaneous'),
 ]
-
-
-
