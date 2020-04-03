@@ -1,4 +1,4 @@
-Notes for auto jet tracking 
+Notes for auto jet tracking
 
 See HXR Jet Tracking google drive for project notes:
 - https://drive.google.com/drive/folders/1TJdb9qK85oxeFpoPQ5m080HZw-Dptm7e
@@ -35,24 +35,24 @@ Source Information:
 *Detectors in group 0 are "BLD" data recorded at 120 Hz on event code 40
 *Detectors listed as Controls are controls devices with unknown event code (but likely 40).
 
-Alias                Grp   Description Code Pol   Delay [s]   Width [s] Source                        
+Alias                Grp   Description Code Pol   Delay [s]   Width [s] Source
 ------------------------------------------------------------------------------------------------------
-CXI_DG2_BMMON          1                                                BldInfo(CXI-DG2-BMMON)        
-DsaCsPad               1        120 Hz   40 Neg 0.000790723 0.000040000 DetInfo(CxiDs2.0:Cspad.0)     
-EBeam                  1                                                BldInfo(EBeam)                
-FEEGasDetEnergy        1                                                BldInfo(FEEGasDetEnergy)      
-HFX_DG2_BMMON          1                                                BldInfo(HFX-DG2-BMMON)        
-HX2_SB1_BMMON          1                                                BldInfo(HX2-SB1-BMMON)        
+CXI_DG2_BMMON          1                                                BldInfo(CXI-DG2-BMMON)
+DsaCsPad               1        120 Hz   40 Neg 0.000790723 0.000040000 DetInfo(CxiDs2.0:Cspad.0)
+EBeam                  1                                                BldInfo(EBeam)
+FEEGasDetEnergy        1                                                BldInfo(FEEGasDetEnergy)
+HFX_DG2_BMMON          1                                                BldInfo(HFX-DG2-BMMON)
+HX2_SB1_BMMON          1                                                BldInfo(HX2-SB1-BMMON)
 KbEncoder              1        120 Hz   40 Pos 0.000490723 0.000010000 DetInfo(CxiEndstation.0:USDUSB.0)
-PhaseCavity            1                                                BldInfo(PhaseCavity)          
-Sc2Inline              1        120 Hz   40 Pos 0.000790723 0.007000000 DetInfo(CxiSc2.0:Opal1000.0)  
-XCS_SB1_BMMON          1                                                BldInfo(XCS-SB1-BMMON)        
+PhaseCavity            1                                                BldInfo(PhaseCavity)
+Sc2Inline              1        120 Hz   40 Pos 0.000790723 0.007000000 DetInfo(CxiSc2.0:Opal1000.0)
+XCS_SB1_BMMON          1                                                BldInfo(XCS-SB1-BMMON)
 --------------------------------------------------------------------------------
 Event Code Information:
 ------------------
-code     group type         description         
+code     group type         description
 ----------------------------------------------------------
-      40    1 Readout      120 Hz              
+      40    1 Readout      120 Hz
 
 Load time: 11.4506380558 sec
 ... done
@@ -63,11 +63,11 @@ Load time: 11.4506380558 sec
 For CXI, monitor PV from cxi control room machine
 
 cxi-daq:cxi> camonitor CXI:SC2:DIFFRACT:TOTAL_ADU
-CXI:SC2:DIFFRACT:TOTAL_ADU     2018-09-06 21:35:01.535993 5.33097e+06  
-CXI:SC2:DIFFRACT:TOTAL_ADU     2018-09-06 21:35:01.579956 4.1387e+06  
-CXI:SC2:DIFFRACT:TOTAL_ADU     2018-09-06 21:35:01.591779 4.3779e+06  
-CXI:SC2:DIFFRACT:TOTAL_ADU     2018-09-06 21:35:01.603362 4.53231e+06  
-CXI:SC2:DIFFRACT:TOTAL_ADU     2018-09-06 21:35:01.614737 3.38e+06  
+CXI:SC2:DIFFRACT:TOTAL_ADU     2018-09-06 21:35:01.535993 5.33097e+06
+CXI:SC2:DIFFRACT:TOTAL_ADU     2018-09-06 21:35:01.579956 4.1387e+06
+CXI:SC2:DIFFRACT:TOTAL_ADU     2018-09-06 21:35:01.591779 4.3779e+06
+CXI:SC2:DIFFRACT:TOTAL_ADU     2018-09-06 21:35:01.603362 4.53231e+06
+CXI:SC2:DIFFRACT:TOTAL_ADU     2018-09-06 21:35:01.614737 3.38e+06
 ...
 
 cxi-daq:cxi> caEventRate CXI:SC2:DIFFRACT:TOTAL_ADU.VAL
@@ -83,4 +83,3 @@ CA Event Rate (Hz): current 38.4994 mean 39.6651 std dev 1.02671
 For mfx on daq-mfx-mon02:
 
 daq-mfx-mon02> /reg/g/pcds/pyps/apps/hutch-python/mfx/mfx/jet_tracking/psana/psana2epics.sh --alias='Rayonix' --pvbase='MFX:DET:DIFFRACT' --exp='mfxlt3017'
-

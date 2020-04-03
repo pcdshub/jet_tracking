@@ -3,7 +3,6 @@ import os.path
 import numpy as np
 import pandas as pd
 import pytest
-
 from jet_tracking.sim import generate_simulation
 
 

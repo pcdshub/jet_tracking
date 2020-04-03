@@ -1,14 +1,10 @@
 from time import sleep
+
 import numpy as np
 
-from . import cam_utils
-from . import jt_utils
+from . import cam_utils, jt_utils
 from .move_motor import movex
 
-
-# import cam_utils
-# import jt_utils
-# from move_motor import movex
 
 class JetControl:
     '''

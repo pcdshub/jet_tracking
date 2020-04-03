@@ -2,9 +2,9 @@
 # Will be removed when a better solution as reached
 # methods for jet tracking
 
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
-import matplotlib.pyplot as plt
 
 
 def gaussianslope(x, a, mean, std, m, b):

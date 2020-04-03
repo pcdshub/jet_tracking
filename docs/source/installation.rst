@@ -9,14 +9,14 @@ https://pcdshub.github.io/installation.html
 
 The current conda environment can be set with:
 
-.. code-block:: bash 
+.. code-block:: bash
 
     source /reg/g/pcds/pyps/conda/py36env.sh
 
 
 Jet tracking code is installed in the working python3 environment for cxi.
 
-.. code-block:: bash 
+.. code-block:: bash
 
     /reg/g/pcds/pyps/apps/hutch-python/cxi/cxi/jet_tracking
 
@@ -64,8 +64,3 @@ The jet tracking devices for the cxi SC2 chamber are implemented in the beamline
     with safe_load('SC2_control'):
         SC2_control = JetControl('SC2_control',
                 PI2_injector, SC2_questar, SC2_params, SC2_diffract)
-
-
-     
-
-

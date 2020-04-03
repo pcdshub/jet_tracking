@@ -3,12 +3,12 @@ Calls the GUI for jet tracking. Ultimately only this file should need to be run,
 control when the jet tracking methods e.g. calibrate(), jet_detect(), etc should be run
 '''
 
-from qtpy.QtCore import QThread
-from pydm import Display
-
-import jt_utils
-import jet_control
 from time import sleep
+
+from pydm import Display
+from qtpy.QtCore import QThread
+
+from . import jet_control, jt_utils
 
 
 class TrackThread(QThread):

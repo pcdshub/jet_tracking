@@ -11,10 +11,10 @@ source /reg/g/psdm/etc/psconda.sh > /dev/null
 
 SOURCE="${BASH_SOURCE[0]}"
 # resolve $SOURCE until the file is no longer a symlink
-while [ -h "$SOURCE" ]; do 
+while [ -h "$SOURCE" ]; do
   DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
   SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" 
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
   # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
 
@@ -24,5 +24,3 @@ cd $DIR
 
 args="$@"
 python psana2epics.py $args
-
-

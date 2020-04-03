@@ -7,13 +7,13 @@ Jet Control Overview
 
 To start ipython for cxi hutch-python3.
 
-.. code-block:: bash 
+.. code-block:: bash
 
     /reg/g/pcds/pyps/apps/hutch-python/cxi/cxipython
- 
-There is a soft link in ~cxiopr/bin, so that on cxi machines one can start ipython as follows:  
 
-.. code-block:: bash 
+There is a soft link in ~cxiopr/bin, so that on cxi machines one can start ipython as follows:
+
+.. code-block:: bash
 
     cxi3
 
