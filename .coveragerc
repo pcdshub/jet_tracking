@@ -1,6 +1,11 @@
 [run]
-source = jet_tracking
-
+source =
+    jet_tracking
 [report]
 omit =
-    jet_tracking/_version.py
+    #tests
+    */tests/*
+    *test*
+    #versioning
+    .*version.*
+    *_version.py

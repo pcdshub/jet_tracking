@@ -17,10 +17,8 @@ requirements:
 
   run:
     - python {{PY_VER}}*,>=3.6
-    - pyyaml
     - pcdsdevices >=2.0.0
     - hutch-python >=1.0.0
-    - happi >1.1.1
     - matplotlib
     - numpy
     - ophyd >=1.2.0
