@@ -4,21 +4,7 @@
 
 Jet Tracking Classes
 ####################
-Base classes used in jet tracking and control.  
-
-JetControl Class
-----------------
-
-.. autoclass:: JetControl
-
-.. autosummary::
-    :toctree: generated/
-    
-    JetControl.set_beam
-    JetControl.calibrate
-    JetControl.jet_calculate
-    JetControl.jet_move
-
+Base classes used in jet tracking and control.
 
 Injector Class
 --------------

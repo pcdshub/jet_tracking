@@ -21,10 +21,10 @@
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
-        <script type="text/javascript" src="../../_static/jquery.js"></script>
-        <script type="text/javascript" src="../../_static/underscore.js"></script>
-        <script type="text/javascript" src="../../_static/doctools.js"></script>
-        <script type="text/javascript" src="../../_static/language_data.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
     
     <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
@@ -163,18 +163,18 @@
 <span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">epics</span>
 
-<span class="kn">from</span> <span class="nn">ophyd.device</span> <span class="k">import</span> <span class="n">Device</span><span class="p">,</span> <span class="n">FormattedComponent</span> <span class="k">as</span> <span class="n">FCpt</span><span class="p">,</span> <span class="n">Component</span> <span class="k">as</span> <span class="n">Cpt</span>
-<span class="kn">from</span> <span class="nn">ophyd.signal</span> <span class="k">import</span> <span class="n">EpicsSignal</span>
-<span class="kn">from</span> <span class="nn">ophyd.areadetector.plugins</span> <span class="k">import</span> <span class="n">ROIPlugin</span><span class="p">,</span> <span class="n">StatsPlugin</span><span class="p">,</span> <span class="n">ImagePlugin</span>
+<span class="kn">from</span> <span class="nn">ophyd.device</span> <span class="kn">import</span> <span class="n">Device</span><span class="p">,</span> <span class="n">FormattedComponent</span> <span class="k">as</span> <span class="n">FCpt</span><span class="p">,</span> <span class="n">Component</span> <span class="k">as</span> <span class="n">Cpt</span>
+<span class="kn">from</span> <span class="nn">ophyd.signal</span> <span class="kn">import</span> <span class="n">EpicsSignal</span>
+<span class="kn">from</span> <span class="nn">ophyd.areadetector.plugins</span> <span class="kn">import</span> <span class="n">ROIPlugin</span><span class="p">,</span> <span class="n">StatsPlugin</span><span class="p">,</span> <span class="n">ImagePlugin</span>
 
-<span class="kn">from</span> <span class="nn">pcdsdevices.areadetector.detectors</span> <span class="k">import</span> <span class="n">PCDSDetector</span>
-<span class="kn">from</span> <span class="nn">pcdsdevices.epics_motor</span> <span class="k">import</span> <span class="n">IMS</span>
+<span class="kn">from</span> <span class="nn">pcdsdevices.areadetector.detectors</span> <span class="kn">import</span> <span class="n">PCDSAreaDetector</span>
+<span class="kn">from</span> <span class="nn">pcdsdevices.epics_motor</span> <span class="kn">import</span> <span class="n">IMS</span>
 
 
 <span class="k">class</span> <span class="nc">_TableMixin</span><span class="p">:</span>
     <span class="n">_table_attrs</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;value&#39;</span><span class="p">,</span> <span class="s1">&#39;units&#39;</span><span class="p">,</span> <span class="s1">&#39;desc&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_descriptions</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -247,7 +247,7 @@
     <span class="n">fineY</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">IMS</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._fineY}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="n">fineZ</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">IMS</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._fineZ}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">coarseX</span><span class="p">,</span> <span class="n">coarseY</span><span class="p">,</span> <span class="n">coarseZ</span><span class="p">,</span>
                  <span class="n">fineX</span><span class="p">,</span> <span class="n">fineY</span><span class="p">,</span> <span class="n">fineZ</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 
@@ -329,7 +329,7 @@
     <span class="n">shaker3</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._shaker3}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="n">shaker4</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._shaker4}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">remote_control</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span>
                  <span class="n">flow</span><span class="p">,</span> <span class="n">flowstate</span><span class="p">,</span> <span class="n">flowtype</span><span class="p">,</span>
                  <span class="n">FM_rb</span><span class="p">,</span> <span class="n">FM_reset</span><span class="p">,</span> <span class="n">FM</span><span class="p">,</span>
@@ -404,7 +404,7 @@
 
     <span class="n">reboot</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._reboot}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">temperature1</span><span class="p">,</span> <span class="n">SP1</span><span class="p">,</span> <span class="n">set_SP1</span><span class="p">,</span> <span class="n">current1</span><span class="p">,</span>
                  <span class="n">temperature2</span><span class="p">,</span> <span class="n">SP2</span><span class="p">,</span> <span class="n">set_SP2</span><span class="p">,</span> <span class="n">current2</span><span class="p">,</span>
                  <span class="n">reboot</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -472,7 +472,7 @@
 
     <span class="n">clear_error</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._clear_error}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">status</span><span class="p">,</span> <span class="n">run</span><span class="p">,</span>
                  <span class="n">flowrate</span><span class="p">,</span> <span class="n">set_flowrate</span><span class="p">,</span> <span class="n">flowrate_SP</span><span class="p">,</span>
                  <span class="n">pressure</span><span class="p">,</span> <span class="n">pressure_units</span><span class="p">,</span> <span class="n">set_max_pressure</span><span class="p">,</span> <span class="n">max_pressure</span><span class="p">,</span>
@@ -539,7 +539,7 @@
     <span class="n">limit2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._limit2}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="n">SP2</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._SP2}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">status</span><span class="p">,</span>
                  <span class="n">pressure1</span><span class="p">,</span> <span class="n">enabled1</span><span class="p">,</span> <span class="n">limit1</span><span class="p">,</span> <span class="n">SP1</span><span class="p">,</span>
                  <span class="n">pressure2</span><span class="p">,</span> <span class="n">enabled2</span><span class="p">,</span> <span class="n">limit2</span><span class="p">,</span> <span class="n">SP2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -683,7 +683,7 @@
     <span class="n">used10</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._used10}</span><span class="s1">&#39;</span><span class="p">)</span>
     <span class="n">time10</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self._time10}</span><span class="s1">&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span>
                  <span class="n">integrator_source</span><span class="p">,</span> <span class="n">flow_source</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span>
                  <span class="n">start1</span><span class="p">,</span> <span class="n">used1</span><span class="p">,</span> <span class="n">time1</span><span class="p">,</span>
                  <span class="n">start2</span><span class="p">,</span> <span class="n">used2</span><span class="p">,</span> <span class="n">time2</span><span class="p">,</span>
@@ -772,7 +772,7 @@
         <span class="s1">&#39;flow_integrator&#39;</span><span class="p">:</span> <span class="n">FlowIntegrator</span><span class="p">,</span>
     <span class="p">}</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">devices</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">devices</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">SDS_devices</span> <span class="o">=</span> <span class="p">[</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">device_types</span><span class="p">[</span><span class="n">dev</span><span class="p">](</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">dev</span><span class="p">,</span> <span class="n">kwargs</span> <span class="ow">in</span> <span class="n">devices</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
@@ -782,10 +782,10 @@
         <span class="n">invalid_devices</span> <span class="o">=</span> <span class="p">[</span><span class="n">dev</span> <span class="k">for</span> <span class="n">dev</span> <span class="ow">in</span> <span class="n">devices</span>
                            <span class="k">if</span> <span class="n">dev</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">device_types</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">device</span> <span class="ow">in</span> <span class="n">invalid_devices</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="n">f</span><span class="s1">&#39;WARNING: </span><span class="si">{device}</span><span class="s1"> is not a valid device type&#39;</span><span class="p">)</span></div>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;WARNING: </span><span class="si">{</span><span class="n">device</span><span class="si">}</span><span class="s1"> is not a valid device type&#39;</span><span class="p">)</span></div>
 
 
-<span class="k">class</span> <span class="nc">Offaxis</span><span class="p">(</span><span class="n">PCDSDetector</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Offaxis</span><span class="p">(</span><span class="n">PCDSAreaDetector</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;Area detector for Offaxis camera in CXI</span>
 
 <span class="sd">    Parameters</span>
@@ -809,7 +809,7 @@
     <span class="n">ROI_stats</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">StatsPlugin</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self.prefix}</span><span class="s1">:</span><span class="si">{self._ROI_stats_port}</span><span class="s1">:&#39;</span><span class="p">)</span>
     <span class="n">ROI_image</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">ImagePlugin</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self.prefix}</span><span class="s1">:</span><span class="si">{self._ROI_image_port}</span><span class="s1">:&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ROI_port</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ROI_port</span><span class="p">,</span>
                  <span class="n">ROI_stats_port</span><span class="p">,</span>
                  <span class="n">ROI_image_port</span><span class="p">,</span>
                  <span class="n">prefix</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -826,7 +826,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">ROI_image</span><span class="o">.</span><span class="n">enable</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="s1">&#39;Enabled&#39;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Questar"><a class="viewcode-back" href="../../devices.html#jet_tracking.devices.Questar">[docs]</a><span class="k">class</span> <span class="nc">Questar</span><span class="p">(</span><span class="n">PCDSDetector</span><span class="p">):</span>
+<div class="viewcode-block" id="Questar"><a class="viewcode-back" href="../../devices.html#jet_tracking.devices.Questar">[docs]</a><span class="k">class</span> <span class="nc">Questar</span><span class="p">(</span><span class="n">PCDSAreaDetector</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Area detector for Inline Questar Camera in CXI</span>
 
@@ -851,7 +851,7 @@
     <span class="n">ROI_stats</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">StatsPlugin</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self.prefix}</span><span class="s1">:</span><span class="si">{self._ROI_stats_port}</span><span class="s1">:&#39;</span><span class="p">)</span>
     <span class="n">ROI_image</span> <span class="o">=</span> <span class="n">FCpt</span><span class="p">(</span><span class="n">ImagePlugin</span><span class="p">,</span> <span class="s1">&#39;</span><span class="si">{self.prefix}</span><span class="s1">:</span><span class="si">{self._ROI_image_port}</span><span class="s1">:&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ROI_port</span><span class="p">,</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ROI_port</span><span class="p">,</span>
                  <span class="n">ROI_stats_port</span><span class="p">,</span>
                  <span class="n">ROI_image_port</span><span class="p">,</span>
                  <span class="n">prefix</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -907,7 +907,29 @@
     <span class="n">nozzle_counter</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_Counter&#39;</span><span class="p">,</span>
                          <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Nozzle counter&#39;</span><span class="p">)</span>
     <span class="n">nozzle_reprate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_RepRate&#39;</span><span class="p">,</span>
-                         <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Nozzle repetition rate&#39;</span><span class="p">)</span></div>
+                         <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Nozzle repetition rate&#39;</span><span class="p">)</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:ROI_mean&#39;</span><span class="p">,</span>
+               <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;mean of calibration ROI image with jet&#39;</span><span class="p">)</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:ROI_std&#39;</span><span class="p">,</span>
+              <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;standard devation of calibration ROI image with jet&#39;</span><span class="p">)</span>
+    <span class="n">radius</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:RADIUS&#39;</span><span class="p">,</span>
+                 <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;radius of calibration diffraction ring&#39;</span><span class="p">)</span>
+    <span class="n">intensity</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:INTENSITY&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;intensity of calibration diffraction ring&#39;</span><span class="p">)</span>
+    <span class="n">thresh_hi</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:THRESH_hi&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;upper threshold for CSPAD ring intensity&#39;</span><span class="p">)</span>
+    <span class="n">thresh_lo</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:THRESH_lo&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;lower threshold for CSPAD ring intensity&#39;</span><span class="p">)</span>
+    <span class="n">thresh_w8</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:THRESH_w8&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;threshold for wave8&#39;</span><span class="p">)</span>
+    <span class="n">thresh_cam</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:THRESH_cam&#39;</span><span class="p">,</span>
+                     <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;threshold for camera-based jet tracking&#39;</span><span class="p">)</span>
+    <span class="n">bypass_cam</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BYPASS_cam&#39;</span><span class="p">,</span>
+                     <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;bypass camera during jet tracking&#39;</span><span class="p">)</span>
+    <span class="n">frames_cam</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:FRAMES_cam&#39;</span><span class="p">,</span>
+                     <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;number of frames for integration for camera&#39;</span><span class="p">)</span>
+    <span class="n">frames_cspad</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:FRAMES_cspad&#39;</span><span class="p">,</span>
+                       <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;number of frames for integration for cspad&#39;</span><span class="p">)</span></div>
 
 
 <span class="k">class</span> <span class="nc">OffaxisParams</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
@@ -950,6 +972,28 @@
                          <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Nozzle counter&#39;</span><span class="p">)</span>
     <span class="n">nozzle_reprate</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NOZZLE_RepRate&#39;</span><span class="p">,</span>
                          <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Nozzle repetition rate&#39;</span><span class="p">)</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:ROI_mean&#39;</span><span class="p">,</span>
+               <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;mean of calibration ROI image with jet&#39;</span><span class="p">)</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:ROI_std&#39;</span><span class="p">,</span>
+              <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;standard devation of calibration ROI image with jet&#39;</span><span class="p">)</span>
+    <span class="n">radius</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:RADIUS&#39;</span><span class="p">,</span>
+                 <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;radius of calibration diffraction ring&#39;</span><span class="p">)</span>
+    <span class="n">intensity</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:INTENSITY&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;intensity of calibration diffraction ring&#39;</span><span class="p">)</span>
+    <span class="n">thresh_hi</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:THRESH_hi&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;upper threshold for CSPAD ring intensity&#39;</span><span class="p">)</span>
+    <span class="n">thresh_lo</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:THRESH_lo&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;lower threshold for CSPAD ring intensity&#39;</span><span class="p">)</span>
+    <span class="n">thresh_w8</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:THRESH_w8&#39;</span><span class="p">,</span>
+                    <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;threshold for wave8&#39;</span><span class="p">)</span>
+    <span class="n">thresh_cam</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:THRESH_cam&#39;</span><span class="p">,</span>
+                     <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;threshold for camera-based jet tracking&#39;</span><span class="p">)</span>
+    <span class="n">bypass_cam</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:BYPASS_cam&#39;</span><span class="p">,</span>
+                     <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;bypass camera during jet tracking&#39;</span><span class="p">)</span>
+    <span class="n">frames_cam</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:FRAMES_cam&#39;</span><span class="p">,</span>
+                     <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;number of frames for integration for camera&#39;</span><span class="p">)</span>
+    <span class="n">frames_cspad</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:FRAMES_cspad&#39;</span><span class="p">,</span>
+                       <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;number of frames for integration for cspad&#39;</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">Control</span><span class="p">(</span><span class="n">Device</span><span class="p">,</span> <span class="n">_TableMixin</span><span class="p">):</span>
@@ -1028,6 +1072,27 @@
                         <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Diffraction periodogram Frequency analysis amplitude array&#39;</span><span class="p">)</span>
     <span class="n">state</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STATE&#39;</span><span class="p">,</span>
                 <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;State of diffraction analysis&#39;</span><span class="p">)</span></div>
+
+
+<span class="c1"># classes used for jet tracking testing</span>
+<span class="k">class</span> <span class="nc">JTInput</span><span class="p">(</span><span class="n">Device</span><span class="p">):</span>
+    <span class="n">nframe</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NFRAME&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;number of frames passed&#39;</span><span class="p">)</span>
+    <span class="n">i0</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:i0&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Wave8&#39;</span><span class="p">)</span>
+    <span class="n">evtcode</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:EVTCODE&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;event code&#39;</span><span class="p">)</span>
+    <span class="n">mtr</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:MTR&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;motor position&#39;</span><span class="p">)</span>
+    <span class="n">mtr_prec</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:MTR_PREC&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;motor precision&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">JTOutput</span><span class="p">(</span><span class="n">Device</span><span class="p">):</span>
+    <span class="n">nframe</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:NFRAME&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;number of frames used&#39;</span><span class="p">)</span>
+    <span class="n">det</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:DET&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;detector intensity&#39;</span><span class="p">)</span>
+    <span class="n">i0</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:I0&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;Wave8&#39;</span><span class="p">)</span>
+    <span class="n">mtr</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:MTR&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;motor position&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">JTFake</span><span class="p">(</span><span class="n">Device</span><span class="p">):</span>
+    <span class="n">stopper</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:STOPPER&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;fake stopper&#39;</span><span class="p">)</span>
+    <span class="n">pulse_picker</span> <span class="o">=</span> <span class="n">Cpt</span><span class="p">(</span><span class="n">EpicsSignal</span><span class="p">,</span> <span class="s1">&#39;:PP&#39;</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s1">&#39;fake pulse picker&#39;</span><span class="p">)</span>
 </pre></div>
 
            </div>
@@ -1040,7 +1105,7 @@
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2019, SLAC National Accelerator Laboratory
+        &copy; Copyright 2020, SLAC National Accelerator Laboratory
 
     </p>
   </div>
