@@ -58,6 +58,3 @@ FlowInegrator Class
 -------------------
 
 .. autoclass:: jet_tracking.devices.FlowIntegrator
-
-
-
