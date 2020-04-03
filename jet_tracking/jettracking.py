@@ -5,10 +5,10 @@ control when the jet tracking methods e.g. calibrate(), jet_detect(), etc should
 
 from time import sleep
 
-import jet_control
-import jt_utils
 from pydm import Display
 from qtpy.QtCore import QThread
+
+from . import jet_control, jt_utils
 
 
 class TrackThread(QThread):

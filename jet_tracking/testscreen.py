@@ -3,8 +3,7 @@ from time import sleep
 from pydm import Display
 from qtpy.QtCore import QThread
 
-# import jt_utils
-# import jet_control
+# from . import jet_control, jt_utils
 
 
 class TrackThread(QThread):
