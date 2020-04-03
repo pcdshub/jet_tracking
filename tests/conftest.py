@@ -3,12 +3,16 @@ import types
 from os import path
 
 import numpy as np
+import ophyd.sim
 import pytest
+from jet_tracking import devices as _devices
 from jet_tracking.devices import (HPLC, SDS, Control, CoolerShaker, Diffract,
                                   FlowIntegrator, Injector, Offaxis,
                                   OffaxisParams, Parameters,
                                   PressureController, Questar, Selector)
+from jet_tracking.jet_control import JetControl
 from matplotlib import image
+from ophyd.areadetector import EpicsSignalWithRBV
 from ophyd.areadetector.plugins import PluginBase
 from skimage.color import rgb2gray
 from skimage.transform import resize
@@ -25,9 +29,6 @@ def devices(monkeypatch):
     Separately, this monkeypatches jet_tracking.devices so that all access
     to those devices returns the faked versions.
     '''
-    from .. import devices as _devices
-    from ophyd.areadetector import EpicsSignalWithRBV
-    import ophyd.sim
 
     ns = types.SimpleNamespace()
     ophyd.sim.fake_device_cache[EpicsSignalWithRBV] = ophyd.sim.FakeEpicsSignal
@@ -176,7 +177,6 @@ def diffract(devices):
 
 @pytest.fixture(scope='function')
 def jet_control(injector, questar, parameters, diffract):
-    from ..jet_control import JetControl
     return JetControl(name='test_control',
                       injector=injector,
                       camera=questar,
