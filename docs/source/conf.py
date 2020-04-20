@@ -17,9 +17,10 @@ import datetime
 import os
 import sys
 
-import jet_tracking
 import matplotlib
 import sphinx_rtd_theme
+
+import jet_tracking
 
 matplotlib.use('Agg')
 
