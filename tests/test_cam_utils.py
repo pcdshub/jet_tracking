@@ -1,14 +1,6 @@
 import numpy as np
-import pytest
 
 from jet_tracking import cam_utils
-
-from . import conftest
-
-
-@pytest.fixture()
-def onaxis_image():
-    return conftest.test_jet_image()
 
 
 # This doesn't really test much...
@@ -77,7 +69,5 @@ def test_smoke_get_nozzle_shift(onaxis_image):
         cam_roll=1, pxsize=0.001)
 
 
-def test_smoke_get_burst_avg(jet_control):
-    roi_image = jet_control.camera.ROI_image
-    conftest.set_test_jet_image(roi_image)
-    cam_utils.get_burst_avg(2, roi_image)
+def test_smoke_get_burst_avg(questar):
+    cam_utils.get_burst_avg(2, questar.ROI_image)
