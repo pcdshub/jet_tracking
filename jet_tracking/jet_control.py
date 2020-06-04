@@ -3,7 +3,6 @@ from time import sleep
 import numpy as np
 
 from . import cam_utils, jt_utils
-from .move_motor import movex
 
 
 class JetControl:
@@ -353,7 +352,7 @@ def jet_move_inline(injector, camera, params):
     if abs(params.jet_x.get()) > 0.01:
         # move jet to x-rays using injector motor
         print(f'Moving {params.jet_x.get()} mm')
-        movex(injector.coarseX, -params.jet_x.get())
+        injector.coarseX.mvr(-params.jet_x.get())
         # move the ROI to keep looking at the jet
         min_x = ROIx + (params.jet_x.get() / params.pxsize.get())
         camera.ROI.min_xyz.min_x.put(min_x)
