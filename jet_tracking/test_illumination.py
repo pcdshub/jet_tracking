@@ -138,7 +138,7 @@ def jet_detect(img, calibratemean, calibratestd):
 def find_jet(camera, params):
     # get image from Questar
     # img = get_burst_avg(20, camera.ROI_image)
-    img = camera.ROI_image.image
+    img = camera.ROI_image.image2
 
     # get mean and std for calibration
     mean, std = image_stats(img)
