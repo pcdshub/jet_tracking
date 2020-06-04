@@ -87,7 +87,7 @@ def get_calibration_images(axis, camera, *, settle_time=1.0,
     positions = []
     start_pos = axis.user_readback.get()
     for i in range(2):
-        image = cam_utils.get_burst_avg(burst_images, camera.image)
+        image = cam_utils.get_burst_avg(burst_images, camera.image2)
         imgs.append(image)
         positions.append(axis.user_readback.get())
         next_position = axis.user_setpoint.get() - 0.1

@@ -11,5 +11,5 @@ opencv-python
 
 # Dependencies-of-dependencies that need updating:
 pyyaml
-cf_units >=2.0.1
+cf-units
 pyepics
