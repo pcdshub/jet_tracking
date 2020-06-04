@@ -6,7 +6,7 @@ from ophyd.sim import make_fake_device
 from skimage.color import rgb2gray
 from skimage.transform import resize
 
-from jet_tracking.devices import OffaxisParams, Parameters, Questar
+from jet_tracking.devices import InlineParams, JetCamera, OffaxisParams
 from pcdsdevices.jet import Injector
 
 
@@ -38,15 +38,15 @@ def set_test_jet_image(plugin, dimx=100, dimy=100):
 
 
 @pytest.fixture(scope='function')
-def questar():
-    fake_questar = instantiate_fake_device(Questar, 'FAKE:INLINE',
-                                           name='fake_inline',
-                                           ROI_port='ROI1',
-                                           ROI_stats_port='Stats1',
-                                           ROI_image_port='IMAGE1')
-    set_test_jet_image(fake_questar.image2)
-    set_test_jet_image(fake_questar.ROI_image)
-    return fake_questar
+def camera():
+    fake_camera = instantiate_fake_device(JetCamera, 'FAKE:CAM',
+                                          name='fake_camera',
+                                          ROI_port='ROI1',
+                                          ROI_stats_port='Stats1',
+                                          ROI_image_port='IMAGE1')
+    set_test_jet_image(fake_camera.image2)
+    set_test_jet_image(fake_camera.ROI_image)
+    return fake_camera
 
 
 def _patch_user_setpoint(motor):
@@ -59,8 +59,7 @@ def _patch_user_setpoint(motor):
 
 @pytest.fixture(scope='function')
 def injector():
-    injector = instantiate_fake_device(Injector, 'FAKE:INJECT',
-                                       name='fake_injector',
+    injector = instantiate_fake_device(Injector, name='fake_injector',
                                        coarseX_prefix='fake_X',
                                        coarseY_prefix='fake_Y',
                                        coarseZ_prefix='fake_Z',
@@ -95,7 +94,7 @@ def offaxis_parameters():
 
 @pytest.fixture(scope='function')
 def inline_parameters():
-    params = instantiate_fake_device(Parameters, 'FAKE:INLINE:PARAMS',
+    params = instantiate_fake_device(InlineParams, 'FAKE:INLINE:PARAMS',
                                      name='fake_inline_params')
     params.beam_x.put(1.0)
     params.beam_y.put(1.0)

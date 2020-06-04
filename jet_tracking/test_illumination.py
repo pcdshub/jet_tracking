@@ -136,7 +136,7 @@ def jet_detect(img, calibratemean, calibratestd):
 
 
 def find_jet(camera, params):
-    # get image from Questar
+    # get image from JetCamera
     # img = get_burst_avg(20, camera.ROI_image)
     img = camera.ROI_image.image2
 
@@ -170,7 +170,7 @@ def find_jet(camera, params):
 #     - save mean & std (w/ some +/- ?) to params
 # 2c. jet_detect returns rho, theta, c - save c (w/ some +/- ?) to params
 # 3. use jet_detect(img, mean, std, x) in cam_utils.py for constant tracking of
-#    jet position (pass image from Questar; mean, std, x from params)
+#    jet position (pass image from JetCamera; mean, std, x from params)
 # 3b. call jet_detect() from jet_calculate(camera, params) in jet_control.py
 
 # *** check which other functions call jet_detect()

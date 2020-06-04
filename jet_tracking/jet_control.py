@@ -72,7 +72,7 @@ def set_beam(beam_x_px, beam_y_px, params):
         x-coordinate of x-ray beam in the camera image in pixels
     beam_y_px : int
         y-coordinate of x-ray beam in the camera image in pixels
-    params : Parameters
+    params : InlineParams
         EPICS PVs used for recording jet tracking data
     '''
     params.beam_x_px.put(beam_x_px)
@@ -118,11 +118,11 @@ def calibrate_off_axis(injector, camera, params, *, settle_time=1.0,
     ----------
     injector : Injector
         sample injector
-    camera : Questar
+    camera : JetCamera
         camera looking at sample jet and x-rays
     CSPAD : CSPAD
         CSPAD for data
-    params : Parameters
+    params : OffaxisParams
         EPICS PVs used for recording jet tracking data
     settle_time : float, optional
         Additional settle time after moving the motor
@@ -161,9 +161,9 @@ def calibrate_inline(injector, camera, params, *, settle_time=1.0,
     ----------
     injector : Injector
         sample injector
-    camera : Questar
+    camera : JetCamera
         camera looking at sample jet and x-rays
-    params : Parameters
+    params : InlineParams
         EPICS PVs used for recording jet tracking data
     settle_time : float, optional
         Additional settle time after moving the motor
@@ -222,7 +222,7 @@ def calibrate(injector, camera, cspad, wave8, gas_det, params, *, offaxis=False,
     ----------
     injector : Injector
         sample injector
-    camera : Questar
+    camera : JetCamera
         camera looking at sample jet and x-rays
     cspad : CSPAD
         CSPAD for data
@@ -230,7 +230,7 @@ def calibrate(injector, camera, cspad, wave8, gas_det, params, *, offaxis=False,
         Wave8 to normalize data from CSPAD
     gas_det : float
         gas detector
-    params : Parameters
+    params : InlineParams or OffaxisParams
         EPICS PVs used for recording jet tracking data
     settle_time : float, optional
         Additional settle time after moving the motor
@@ -268,9 +268,9 @@ def jet_calculate_off_axis(camera, params):
 
     Parameters
     ----------
-    camera : Questar
+    camera : JetCamera
         camera looking at the sample jet and x-ray beam
-    params : Parameters
+    params : OffaxisParams
         EPICS PVs used for recording jet tracking data
     offaxis : bool
         Camera is off-axis in y-z plane
@@ -309,9 +309,9 @@ def jet_calculate_inline(camera, params):
 
     Parameters
     ----------
-    camera : Questar
+    camera : JetCamera
         camera looking at the sample jet and x-ray beam
-    params : Parameters
+    params : InlineParams
         EPICS PVs used for recording jet tracking data
     offaxis : bool
         Camera is off-axis in y-z plane

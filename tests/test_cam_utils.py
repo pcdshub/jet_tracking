@@ -69,5 +69,5 @@ def test_smoke_get_nozzle_shift(onaxis_image):
         cam_roll=1, pxsize=0.001)
 
 
-def test_smoke_get_burst_avg(questar):
-    cam_utils.get_burst_avg(2, questar.ROI_image)
+def test_smoke_get_burst_avg(camera):
+    cam_utils.get_burst_avg(2, camera.ROI_image)
