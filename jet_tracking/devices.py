@@ -1,43 +1,45 @@
 from ophyd.areadetector.plugins import ImagePlugin, ROIPlugin, StatsPlugin
 from ophyd.device import Component as Cpt
 from ophyd.device import Device
+from ophyd.device import FormattedComponent as FCpt
 from ophyd.signal import EpicsSignal
 
 from pcdsdevices.areadetector.detectors import PCDSAreaDetector
-from pcdsdevices.component import UnrelatedComponent as UCpt
 
 
-class Offaxis(PCDSAreaDetector):
+class JetCamera(PCDSAreaDetector):
     """
-    Area detector for Offaxis camera in CXI.
+    Area detector for inline and offaxis cameras in CXI.
 
     Parameters
     ----------
-    port_names : str dict
-        A dictionary containing the access port names for the plugins.
-
     prefix : str
-        Prefix for the PV name of the camera.
+        The base PV for the camera.
 
     name : str
         Name of the camera.
 
-    Attributes
-    ----------
-    ROI : ROIPlugin
-        ROI on original rate image.
+    ROI_port : str
+        Port for the `~ophyd.areadetector.plugins.ROIPlugin`, which gives an
+        ROI on the original rate image.
 
-    ROI_stats : StatsPlugin
-        Stats on ROI of original rate image.
+    ROI_stats_port : str
+        Port for the `~ophyd.areadetector.plugins.StatsPlugin`, which gives
+        stats on an ROI of the original rate image.
+
+    ROI_image_port : str
+        Port for the `~ophyd.areadetector.plugins.ImagePlugin`.
     """
 
-    ROI = UCpt(ROIPlugin)
-    ROI_stats = UCpt(StatsPlugin)
-    ROI_image = UCpt(ImagePlugin)
+    ROI = FCpt(ROIPlugin, '{prefix}:{_ROI_port}')
+    ROI_stats = FCpt(StatsPlugin, '{prefix}:{_ROI_stats_port}')
+    ROI_image = FCpt(ImagePlugin, '{prefix}:{_ROI_image_port}')
 
-    # TODO: Figure out good default ROI_port
-    def __init__(self, prefix, *, name, ROI_port=0, **kwargs):
-        UCpt.collect_prefixes(self, kwargs)
+    def __init__(self, prefix, *, name, ROI_port, ROI_stats_port,
+                 ROI_image_port, **kwargs):
+        self._ROI_port = ROI_port
+        self._ROI_stats_port = ROI_stats_port
+        self._ROI_image_port = ROI_image_port
         super().__init__(prefix, name=name, **kwargs)
 
         self.ROI_stats.nd_array_port.put(ROI_port)
@@ -47,46 +49,7 @@ class Offaxis(PCDSAreaDetector):
         self.ROI_image.enable.put('Enabled')
 
 
-class Questar(PCDSAreaDetector):
-    """
-    Area detector for Inline Questar Camera in CXI.
-
-    Parameters
-    ----------
-    port_names : str dict
-        A dictionary containing the access port names for the plugins.
-
-    prefix : str
-        Prefix for the PV name of the camera.
-
-    name : str
-        Name of the camera.
-
-    Attributes
-    ----------
-    ROI : ROIPlugin
-        ROI on original rate image.
-
-    ROI_stats : StatsPlugin
-        Stats on ROI of original rate image.
-    """
-
-    ROI = UCpt(ROIPlugin)
-    ROI_stats = UCpt(StatsPlugin)
-    ROI_image = UCpt(ImagePlugin)
-
-    def __init__(self, prefix, *, name, ROI_port=0, **kwargs):
-        UCpt.collect_prefixes(self, kwargs)
-        super().__init__(prefix, name=name, **kwargs)
-
-        self.ROI_stats.nd_array_port.put(ROI_port)
-        self.ROI_image.nd_array_port.put(ROI_port)
-        self.ROI.enable.put('Enabled')
-        self.ROI_stats.enable.put('Enabled')
-        self.ROI_image.enable.put('Enabled')
-
-
-class Parameters(Device):
+class InlineParams(Device):
     """Contains EPICS PVs used for jet tracking."""
     cam_x = Cpt(EpicsSignal, ':CAM_X',
                 doc='x-coordinate of camera position in mm')
