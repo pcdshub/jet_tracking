@@ -156,7 +156,7 @@ class JetTrack(Display):
         return
 
     def start_clicked(self):
-        ''' Starts new thread to run jet tracking in when start button is clicked '''
+        """Starts new jet tracking thread when start button is clicked."""
         self.ui.logger.write('Running jet tracking')
         self.ui.start_btn.setEnabled(False)
         self.ui.stop_btn.setEnabled(True)
@@ -164,7 +164,7 @@ class JetTrack(Display):
         self.track_thread.start()
 
     def stop_clicked(self):
-        ''' Stops jet tracking when stop button is clicked '''
+        """Stops jet tracking when stop button is clicked."""
         self.track_thread.requestInterruption()
         self.ui.logger.write('Jet tracking stopped')
         self.ui.stop_btn.setEnabled(False)

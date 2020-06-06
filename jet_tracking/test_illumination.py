@@ -9,12 +9,18 @@ def image_stats(img):
 
 
 def detect_edge(img):
-    # use Canny edge detection from skimage to convert image to binary and detect edges of jet
-    # sigma: standard deviation of Gaussian filter
-    # use_quantiles=True: treat low_threshold & high_threshold as quantiles
-    # rather than absolute values
-    # low_threshold & high_threshold: thresholds for edge detection
-    binary = canny(img, sigma=2, use_quantiles=True, low_threshold=0.9, high_threshold=0.99)
+    """
+    Use detect jet edges with Canny edge detection.
+
+    Canny parameters:
+    sigma: standard deviation of Gaussian filter
+    use_quantiles=True: treat low_threshold & high_threshold as quantiles
+    rather than absolute values
+    low_threshold & high_threshold: thresholds for edge detection
+    """
+
+    binary = canny(img, sigma=2, use_quantiles=True, low_threshold=0.9,
+                   high_threshold=0.99)
     fix, axes = plt.subplots(1, 2)
     axes[0].imshow(img)
     axes[1].imshow(binary)
@@ -25,7 +31,8 @@ def detect_edge(img):
 def hough_transform(binary):
     try:
         h, angles, d = hough_line(binary)
-        res = hough_line_peaks(h, angles, d, min_distance=1, threshold=int(binary.shape[0] / 3))
+        res = hough_line_peaks(h, angles, d, min_distance=1,
+                               threshold=int(binary.shape[0] / 3))
     except Exception:
         raise ValueError('ERROR hough: not a jet')
     fig, axes = plt.subplots(1, 2)
@@ -54,12 +61,16 @@ def hough_transform(binary):
 
 # def jet_detect(img, calibratemean, calibratestd, pxsize):
 def jet_detect(img, calibratemean, calibratestd):
-    '''
+    """
+    Detect the jet.
+
+    Canny Parameters:
     img: ROI image to look for jet in
     mean: mean from calibration ROI image with jet (see calibrate())
-    std: standard deviation from calibration ROI image with jet (see calibrate())
+    std: standard deviation from calibration ROI image
+         with jet (see calibrate())
     pxsize: pixel size in mm (see calibrate())
-    '''
+    """
 
     # compare mean & std of current image to mean & std of calibrate image
     mean, std = image_stats(img)
@@ -68,11 +79,13 @@ def jet_detect(img, calibratemean, calibratestd):
 
     try:
         # use canny edge detection to convert image to binary
-        binary = canny(img, sigma=2, use_quantiles=True, low_threshold=0.9, high_threshold=0.99)
+        binary = canny(img, sigma=2, use_quantiles=True, low_threshold=0.9,
+                       high_threshold=0.99)
 
         # perform Hough Line Transform on binary image
         h, angles, d = hough_line(binary)
-        res = hough_line_peaks(h, angles, d, min_distance=1, threshold=int(img.shape[0] / 3))
+        res = hough_line_peaks(h, angles, d, min_distance=1,
+                               threshold=int(img.shape[0] / 3))
 
         # keep only valid lines
         valid = []
@@ -96,19 +109,22 @@ def jet_detect(img, calibratemean, calibratestd):
         raise ValueError('ERROR hough: no jet')
 
     # use local maxes to determine exact jet position
-    # line-fitting cannot be performed on a vertical line (which is highly likely
-    # due to the nature of the jet) so rotate the image first
+    # line-fitting cannot be performed on a vertical line (which is highly
+    # likely due to the nature of the jet) so rotate the image first
     imgr = rotate(img, 90, resize=True, preserve_range=True)
 
     jet_xcoords = []
     jet_ycoords = []
 
     for x in range(10):
-        # try to find local maxes (corresponds to jet) in 10 rows along height of image)
+        # try to find local maxes (corresponds to jet) in 10 rows along height
+        # of image)
         col = int(imgr.shape[1] / 10 * x)
-        ymax = peak_local_max(imgr[:, col], threshold_rel=0.9, num_peaks=1)[0][0]
+        ymax = peak_local_max(imgr[:, col], threshold_rel=0.9,
+                              num_peaks=1)[0][0]
 
-        # check if point found for max is close to jet lines found with Hough transform
+        # check if point found for max is close to jet lines found with Hough
+        # transform
         miny = imgr.shape[0]
         maxy = 0
         for theta, dist in valid:
@@ -120,7 +136,8 @@ def jet_detect(img, calibratemean, calibratestd):
             if (y > maxy):
                 maxy = y
 
-        # if x found using local max is close to lines found with Hough transform, keep it
+        # if x found using local max is close to lines found with Hough
+        # transform, keep it
         if (ymax >= (miny - 5)) and (ymax <= (maxy + 5)):
             jet_xcoords.append(col)
             jet_ycoords.append(ymax)
@@ -146,7 +163,8 @@ def find_jet(camera, params):
     params.std.put(mean)
 
     try:
-        # m, b = jet_detect(img, params.mean.get(), params.std.get(), params.pxsize.get())
+        # m, b = jet_detect(img, params.mean.get(), params.std.get(),
+        # params.pxsize.get())
         rho, theta = jet_detect(img, params.mean.get(), params.std.get())
         print(rho, theta)
 

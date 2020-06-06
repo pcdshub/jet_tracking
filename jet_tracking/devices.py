@@ -20,15 +20,15 @@ class JetCamera(PCDSAreaDetector):
         Name of the camera.
 
     ROI_port : str
-        Port for the `~ophyd.areadetector.plugins.ROIPlugin`, which gives an
-        ROI on the original rate image.
+        Port for the :class:`~ophyd.areadetector.plugins.ROIPlugin`, which
+        gives an ROI on the original rate image.
 
     ROI_stats_port : str
-        Port for the `~ophyd.areadetector.plugins.StatsPlugin`, which gives
-        stats on an ROI of the original rate image.
+        Port for the :class:`~ophyd.areadetector.plugins.StatsPlugin`, which
+        gives stats on an ROI of the original rate image.
 
     ROI_image_port : str
-        Port for the `~ophyd.areadetector.plugins.ImagePlugin`.
+        Port for the :class:`~ophyd.areadetector.plugins.ImagePlugin`.
     """
 
     ROI = FCpt(ROIPlugin, '{prefix}:{_ROI_port}')

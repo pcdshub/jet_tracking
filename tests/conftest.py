@@ -17,7 +17,7 @@ def instantiate_fake_device(cls, *args, **kwargs):
 
 
 def test_jet_image(dimx=100, dimy=100):
-    'Returns a test image of the jet, sampled at the desired dimensions'
+    """Returns a test image of the jet, sampled at the desired dimensions."""
     imgpath = path.join(path.dirname(__file__), 'test_jet.png')
     testimage = image.imread(imgpath)[:, :, :3]
     return rgb2gray(resize(testimage, (dimx, dimy)))
@@ -29,7 +29,10 @@ def onaxis_image():
 
 
 def set_test_jet_image(plugin, dimx=100, dimy=100):
-    'Set up a test jet image of dimensions (dimx, dimy) on the given image plugin'
+    """
+    Set up a test jet image of dimensions (dimx, dimy) on the given image
+    plugin.
+    """
     plugin.array_data.put(test_jet_image(dimx, dimy))
     plugin.array_size.width.sim_put(dimx)
     plugin.array_size.height.sim_put(dimy)
