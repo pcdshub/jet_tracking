@@ -4,7 +4,8 @@ Credits
 
 Contributors
 ------------
-
-* Jason Koglin
-* Matias Arola
+* Tyler Pennebaker
+* Adam Egger
 * Jeanna Sheen
+* Matias Arola
+* Jason Koglin

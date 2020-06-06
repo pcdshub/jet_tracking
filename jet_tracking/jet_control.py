@@ -6,9 +6,7 @@ from . import cam_utils, jt_utils
 
 
 class JetControl:
-    '''
-    Jet tracking control class using jet_tracking methods
-    '''
+    """Jet tracking control class using jet_tracking methods."""
 
     def __init__(self, name, injector, camera, params, diffract, *,
                  offaxis=False, **kwargs):
@@ -20,22 +18,22 @@ class JetControl:
         self.offaxis = offaxis
 
     def set_beam(self, beam_x_px, beam_y_px):
-        '''
-        Set the coordinates for the x-ray beam
+        """
+        Set the coordinates for the x-ray beam.
 
         Parameters
         ----------
         beam_x_px : int
-            x-coordinate of x-ray beam in the camera image in pixels
+            X-coordinate of x-ray beam in the camera image in pixels.
+
         beam_y_px : int
-            y-coordinate of x-ray beam in the camera image in pixels
-        '''
+            Y-coordinate of x-ray beam in the camera image in pixels.
+        """
+
         set_beam(beam_x_px, beam_y_px, self.params)
 
     def calibrate(self, **kwargs):
-        '''
-        Calibrate the onaxis camera
-        '''
+        """Calibrate the onaxis camera."""
         if self.offaxis:
             return calibrate_off_axis(self.injector, self.camera, self.params,
                                       **kwargs)
@@ -44,18 +42,16 @@ class JetControl:
                                     **kwargs)
 
     def jet_calculate(self):
-        '''
-        Track the sample jet and calculate the distance to the x-ray beam
-        '''
+        """
+        Track the sample jet and calculate the distance to the x-ray beam.
+        """
         if self.offaxis:
             return jet_calculate_off_axis(self.camera, self.params)
         else:
             return jet_calculate_inline(self.camera, self.params)
 
     def jet_move(self):
-        '''
-        Move the sample jet to the x-ray beam
-        '''
+        """Move the sample jet to the x-ray beam."""
         if self.offaxis:
             raise NotImplementedError()
         else:
@@ -63,18 +59,21 @@ class JetControl:
 
 
 def set_beam(beam_x_px, beam_y_px, params):
-    '''
-    Set the coordinates for the x-ray beam
+    """
+    Set the coordinates for the x-ray beam.
 
     Parameters
     ----------
     beam_x_px : int
-        x-coordinate of x-ray beam in the camera image in pixels
+        X-coordinate of x-ray beam in the camera image in pixels.
+
     beam_y_px : int
-        y-coordinate of x-ray beam in the camera image in pixels
+        Y-coordinate of x-ray beam in the camera image in pixels.
+
     params : InlineParams
-        EPICS PVs used for recording jet tracking data
-    '''
+        EPICS PVs used for recording jet tracking data.
+    """
+
     params.beam_x_px.put(beam_x_px)
     params.beam_y_px.put(beam_y_px)
 
@@ -100,10 +99,10 @@ def get_calibration_images(axis, camera, *, settle_time=1.0,
 
 def calibrate_off_axis(injector, camera, params, *, settle_time=1.0,
                        burst_images=20):
-    '''
-    Calibrate the off-axis camera
+    """
+    Calibrate the off-axis camera.
 
-    First set the ROI of the camera to show the proper jet and illumination.
+    First, set the ROI of the camera to show the proper jet and illumination.
 
     Determines the mean, standard deviation, jet position and tilt, pixel
     size, beam position, camera position and tilt
@@ -117,19 +116,25 @@ def calibrate_off_axis(injector, camera, params, *, settle_time=1.0,
     Parameters
     ----------
     injector : Injector
-        sample injector
+        Sample injector.
+
     camera : JetCamera
-        camera looking at sample jet and x-rays
+        Camera looking at sample jet and x-rays.
+
     CSPAD : CSPAD
-        CSPAD for data
+        CSPAD for data.
+
     params : OffaxisParams
-        EPICS PVs used for recording jet tracking data
+        EPICS PVs used for recording jet tracking data.
+
     settle_time : float, optional
-        Additional settle time after moving the motor
+        Additional settle time after moving the motor.
+
     burst_imagess : int, optional
-        Number of burst images to average from the camera
-    '''
-    # TODO (koglin) check sign for off-axis calculations
+        Number of burst images to average from the camera.
+    """
+
+    # TODO: (koglin) check sign for off-axis calculations
     injector_axis = injector.coarseX
     positions, imgs = get_calibration_images(injector_axis, camera,
                                              settle_time=settle_time)
@@ -154,22 +159,26 @@ def calibrate_off_axis(injector, camera, params, *, settle_time=1.0,
 
 def calibrate_inline(injector, camera, params, *, settle_time=1.0,
                      burst_images=20):
-    '''
-    Calibrate the inline camera
+    """
+    Calibrate the inline camera.
 
     Parameters
     ----------
     injector : Injector
-        sample injector
+        Sample injector.
+
     camera : JetCamera
-        camera looking at sample jet and x-rays
+        Camera looking at sample jet and x-rays.
+
     params : InlineParams
-        EPICS PVs used for recording jet tracking data
+        EPICS PVs used for recording jet tracking data.
+
     settle_time : float, optional
-        Additional settle time after moving the motor
+        Additional settle time after moving the motor.
+
     burst_imagess : int, optional
-        Number of burst images to average from the camera
-    '''
+        Number of burst images to average from the camera.
+    """
 
     injector_axis = injector.coarseZ
     # collect images and motor positions needed for calibration
@@ -202,41 +211,48 @@ def calibrate_inline(injector, camera, params, *, settle_time=1.0,
 
 
 def calibrate(injector, camera, cspad, wave8, gas_det, params, *, offaxis=False, settle_time=0.1):
-    '''
-    Calibrate the camera and CSPAD and determine parameters needed for
-    jet tracking
-    NEED TO CHECK offaxis calculation sign
+    """
+    Calibrate the camera and CSPAD and determine necessary parameters.
 
-    First set the ROI of the camera to show the proper jet and illumination.
+    TODO: NEED TO CHECK offaxis calculation sign
 
-    Determines the mean, standard deviation, radius, intensity, jet position and
-    tilt, pixel size, camera position and tilt
+    First, set the ROI of the camera to show the proper jet and illumination.
 
-    Params determined if onaxis camera used: mean, std, radius, intensity, pxsize,
-    camX, camY, cam_roll, jet_roll
+    Determines the mean, standard deviation, radius, intensity, jet position
+    and tilt, pixel size, camera position and tilt.
 
-    Params determined if offaxis camera used: mean, std, radius, intensity, pxsize,
-    camY, camZ, cam_pitch, jet_pitch
+    Params determined if onaxis camera used: mean, std, radius, intensity,
+    pxsize, camX, camY, cam_roll, jet_roll
+
+    Params determined if offaxis camera used: mean, std, radius, intensity,
+    pxsize, camY, camZ, cam_pitch, jet_pitch
 
     Parameters
     ----------
     injector : Injector
-        sample injector
+        Sample injector.
+
     camera : JetCamera
-        camera looking at sample jet and x-rays
+        Camera looking at sample jet and x-rays
+
     cspad : CSPAD
-        CSPAD for data
+        CSPAD for data.
+
     wave8 : Wave8
-        Wave8 to normalize data from CSPAD
+        Wave8 to normalize data from CSPAD.
+
     gas_det : float
-        gas detector
+        Gas detector.
+
     params : InlineParams or OffaxisParams
-        EPICS PVs used for recording jet tracking data
+        EPICS PVs used for recording jet tracking data.
+
     settle_time : float, optional
-        Additional settle time after moving the motor
+        Additional settle time after moving the motor.
+
     offaxis : bool, optional
-        Camera is off-axis in y-z plane
-    '''
+        Camera is off-axis in y-z plane.
+    """
 
     # find jet in camera ROI
     ROI_image = cam_utils.get_burst_avg(params.frames_cam.get(), camera.ROI_image)
@@ -262,19 +278,24 @@ def calibrate(injector, camera, cspad, wave8, gas_det, params, *, offaxis=False,
 
 
 def jet_calculate_off_axis(camera, params):
-    '''
-    Detect the sample jet and calculate the distance to the x-ray beam using
-    the off-axis camera
+    """
+    Calculate distance to x-ray beam using off-axis camera.
+
+    First, detect the sample jet. Then, calculate the distance between it and
+    the x-ray beam.
 
     Parameters
     ----------
     camera : JetCamera
-        camera looking at the sample jet and x-ray beam
+        Camera looking at the sample jet and x-ray beam.
+
     params : OffaxisParams
-        EPICS PVs used for recording jet tracking data
+        EPICS PVs used for recording jet tracking data.
+
     offaxis : bool
-        Camera is off-axis in y-z plane
-    '''
+        Camera is off-axis in y-z plane.
+    """
+
     # detect the jet in the camera ROI
     ROI_image = cam_utils.get_burst_avg(params.frames_cam.get(), camera.ROI_image)
     mean, std = cam_utils.image_stats(ROI_image)
@@ -303,19 +324,23 @@ def jet_calculate_off_axis(camera, params):
 
 
 def jet_calculate_inline(camera, params):
-    '''
-    Detect the sample jet and calculate the distance to the x-ray beam using
-    the inline camera
+    """
+    Calculate distance to x-ray beam using inline camera.
+
+    First, detect the sample jet. Then, calculate the distance between it and
+    the x-ray beam.
 
     Parameters
     ----------
     camera : JetCamera
-        camera looking at the sample jet and x-ray beam
+        Camera looking at the sample jet and x-ray beam.
+
     params : InlineParams
-        EPICS PVs used for recording jet tracking data
+        EPICS PVs used for recording jet tracking data.
+
     offaxis : bool
-        Camera is off-axis in y-z plane
-    '''
+        Camera is off-axis in y-z plane.
+    """
 
     # detect the jet in the camera ROI
     ROI_image = cam_utils.get_burst_avg(params.frames_cam.get(), camera.ROI_image)
@@ -345,7 +370,7 @@ def jet_calculate_inline(camera, params):
 
 
 def jet_move_inline(injector, camera, params):
-    'A single step of the infinite-loop jet_move'
+    """A single step of the infinite-loop jet_move."""
     ROIx = camera.ROI.min_xyz.min_x.get()
     # roi_y = camera.ROI.min_xyz.min_y.get()
 

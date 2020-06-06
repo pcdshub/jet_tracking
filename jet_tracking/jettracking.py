@@ -1,8 +1,9 @@
-'''
-Calls the GUI for jet tracking. Ultimately only this file should need to be run, and the GUI will
-control when the jet tracking methods e.g. calibrate(), jet_detect(), etc should be run
-'''
-
+"""
+Script which calls the GUI for jet tracking. Ultimately, this should be the
+only file which needs to be run, and the GUI will control when the jet-tracking
+methods (e.g. `~jet_control.calibrate`, `~jet_control.jet_detect`, etc) should
+be run.
+"""
 from time import sleep
 
 from pydm import Display
@@ -109,24 +110,15 @@ class JetTrack(Display):
         self.ui.stop_btn.setEnabled(False)
 
     def ui_filepath(self):
-        '''
-        File path for ui file for GUI
-        '''
-
+        """File path for ui file for GUI."""
         return '/reg/g/pcds/pyps/apps/hutch-python/cxi/dev/jet_tracking/jet_tracking/jettracking.ui'
 
     def ui_filename(self):
-        '''
-        Load ui file for GUI
-        '''
-
+        """Load ui file for GUI."""
         return 'jettracking.ui'
 
     def calibrate_clicked(self):
-        '''
-        Runs calibration method when calibrate button is clicked
-        '''
-
+        """Runs calibration method when calibrate button is clicked."""
         self.ui.logger.write('Calibrating')
         self.ui.calibrate_btn.setEnabled(False)
         # jet_control.calibrate(injector, camera, cspad, params)
@@ -137,9 +129,9 @@ class JetTrack(Display):
         return
 
     def start_clicked(self):
-        '''
-        Starts new thread to run jet tracking in when start button is clicked
-        '''
+        """
+        Starts new thread to run jet tracking in when start button is clicked.
+        """
 
         self.ui.logger.write('Running jet tracking')
         self.ui.start_btn.setEnabled(False)
@@ -149,10 +141,7 @@ class JetTrack(Display):
         self.track_thread.start()
 
     def stop_clicked(self):
-        '''
-        Stops jet tracking when stop button is clicked
-        '''
-
+        """Stops jet tracking when stop button is clicked."""
         self.track_thread.requestInterruption()
         self.ui.logger.write('Jet tracking stopped')
         self.ui.stop_btn.setEnabled(False)

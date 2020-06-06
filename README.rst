@@ -1,6 +1,5 @@
-===============================
-CXI Jet Tracking
-===============================
+LCLS Jet Tracking
+=================
 
 .. image:: https://img.shields.io/travis/pcdshub/jet_tracking.svg
         :target: https://travis-ci.org/pcdshub/jet_tracking
@@ -10,5 +9,3 @@ CXI Jet Tracking
 
 
 CXI liquid jet positioning feedback and tracking methods and utilities.
-
-* Documentation: https://pcdshub.github.io/jet_tracking/ (http://pswww.slac.stanford.edu/swdoc/releases/jet_tracking/)

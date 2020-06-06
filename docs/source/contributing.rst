@@ -1,6 +1,6 @@
-============
-Contributing
-============
+=================
+How to Contribute
+=================
 
 Contributions are welcome, and they are greatly appreciated! Every
 little bit helps, and credit will always be given.
@@ -42,7 +42,8 @@ or even on the web in blog posts, articles, and such.
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/pcdshub/jet_tracking/issues.
+The best way to send feedback is to file an issue at
+https://github.com/pcdshub/jet_tracking/issues.
 
 If you are proposing a feature:
 
@@ -54,14 +55,17 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `jet_tracking` for local development.
+Ready to contribute? Here's how to set up ``jet_tracking`` for local
+development.
 
-1. Fork the `jet_tracking` repo on GitHub.
+1. Fork the ``jet_tracking`` repo on GitHub.
 2. Clone your fork locally::
 
     $ git clone git@github.com:your_name_here/jet_tracking.git
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Install your local copy into a virtualenv. Assuming you have
+   virtualenvwrapper installed, this is how you set up your fork for local
+   development::
 
     $ mkvirtualenv jet_tracking
     $ cd jet_tracking/
@@ -73,7 +77,8 @@ Ready to contribute? Here's how to set up `jet_tracking` for local development.
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
+5. When you're done making changes, check that your changes pass flake8 and the
+   tests, including testing other Python versions with tox::
 
     $ flake8 jet_tracking tests
     $ python setup.py test
