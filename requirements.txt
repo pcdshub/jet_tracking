@@ -1,9 +1,9 @@
 # List required packages in this file, one per line.
--e git+https://github.com/pcdshub/pcdsdevices.git@v1.0.0#egg=pcdsdevices
--e git+https://github.com/pcdshub/hutch-python.git@v1.0.0#egg=hutch_python
+pcdsdevices>=2.6.0
+hutch-python>=1.2.3
 numpy
-ophyd>=1.2.0
-bluesky>=1.2.0
+ophyd>=1.5.0
+bluesky>=1.6.0
 scikit-image
 scipy
 pandas
