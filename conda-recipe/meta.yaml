@@ -17,12 +17,12 @@ requirements:
 
   run:
     - python {{PY_VER}}*,>=3.6
-    - pcdsdevices >=2.0.0
-    - hutch-python >=1.0.0
+    - pcdsdevices >=2.6.0
+    - hutch-python >=1.2.3
     - matplotlib
     - numpy
-    - ophyd >=1.2.0
-    - bluesky >=1.2.0
+    - ophyd >=1.5.0
+    - bluesky >=1.6.0
     - opencv
     - pandas
     - scikit-image
