@@ -4,26 +4,6 @@ from skimage.feature import canny, peak_local_max, register_translation
 from skimage.transform import hough_line, hough_line_peaks, rotate
 
 
-def image_stats(img):
-    """
-    Find the mean and standard deviation of an image.
-
-    Parameters
-    ----------
-    img : ndarray
-        Image that you would like the mean and std of.
-
-    Returns
-    -------
-    mean : float
-        Mean of given image.
-    std : float
-        Standard deviation of image.
-    """
-
-    return img.mean(), img.std()
-
-
 def jet_detect(img, calibratemean, calibratestd):
     """
     Find the jet using Canny edge detection and Hough line transform.
@@ -59,8 +39,9 @@ def jet_detect(img, calibratemean, calibratestd):
         Angle of the shortest vector from (0,0) to the line in radians.
     """
 
+    # TODO: add std comparison?
     # compare mean & std of current image to mean & std of calibrate image
-    mean, std = image_stats(img)
+    mean = img.mean()
     if (mean < calibratemean * 0.8) or (mean > calibratemean * 1.2):
         raise ValueError('ERROR mean: no jet')
 
