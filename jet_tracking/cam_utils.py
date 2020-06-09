@@ -4,7 +4,7 @@ from skimage.feature import canny, peak_local_max, register_translation
 from skimage.transform import hough_line, hough_line_peaks, rotate
 
 
-def jet_detect(img, calibratemean, calibratestd):
+def jet_detect(img, calibrate_mean, calibrate_std):
     """
     Find the jet using Canny edge detection and Hough line transform.
 
@@ -23,10 +23,10 @@ def jet_detect(img, calibratemean, calibratestd):
     img : ndarray
         ROI of the on-axis image.
 
-    mean : float
+    calibrate_mean : float
         Mean of calibration ROI image with jet (see `~jet_control.calibrate`).
 
-    calibratestd : float
+    calibrate_std : float
         Standard deviation calibration ROI image with jet (see
         `~jet_control.calibrate`).
 
@@ -42,7 +42,7 @@ def jet_detect(img, calibratemean, calibratestd):
     # TODO: add std comparison?
     # compare mean & std of current image to mean & std of calibrate image
     mean = img.mean()
-    if (mean < calibratemean * 0.8) or (mean > calibratemean * 1.2):
+    if (mean < calibrate_mean * 0.8) or (mean > calibrate_mean * 1.2):
         raise ValueError('ERROR mean: no jet')
 
     try:
