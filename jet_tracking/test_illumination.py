@@ -55,15 +55,15 @@ def hough_transform(binary):
     return valid
 
 
-# def jet_detect(img, calibratemean, calibratestd, pxsize):
-def jet_detect(img, calibratemean, calibratestd):
+# def jet_detect(img, calibrate_mean, calibrate_std, pxsize):
+def jet_detect(img, calibrate_mean, calibrate_std):
     """
     Detect the jet.
 
     Canny Parameters:
     img: ROI image to look for jet in
-    mean: mean from calibration ROI image with jet (see calibrate())
-    std: standard deviation from calibration ROI image
+    calibrate_mean: mean from calibration ROI image with jet (see calibrate())
+    calibrate_std: standard deviation from calibration ROI image
          with jet (see calibrate())
     pxsize: pixel size in mm (see calibrate())
     """
@@ -71,7 +71,7 @@ def jet_detect(img, calibratemean, calibratestd):
     # TODO: add std comparison?
     # compare mean & std of current image to mean & std of calibrate image
     mean = img.mean()
-    if (mean < calibratemean * 0.8) or (mean > calibratemean * 1.2):
+    if (mean < calibrate_mean * 0.8) or (mean > calibrate_mean * 1.2):
         raise ValueError('ERROR mean: no jet')
 
     try:
