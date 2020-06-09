@@ -4,10 +4,6 @@ from skimage.feature import canny, peak_local_max
 from skimage.transform import hough_line, hough_line_peaks, rotate
 
 
-def image_stats(img):
-    return img.mean(), img.std()
-
-
 def detect_edge(img):
     """
     Use detect jet edges with Canny edge detection.
@@ -72,8 +68,9 @@ def jet_detect(img, calibratemean, calibratestd):
     pxsize: pixel size in mm (see calibrate())
     """
 
+    # TODO: add std comparison?
     # compare mean & std of current image to mean & std of calibrate image
-    mean, std = image_stats(img)
+    mean = img.mean()
     if (mean < calibratemean * 0.8) or (mean > calibratemean * 1.2):
         raise ValueError('ERROR mean: no jet')
 
@@ -158,9 +155,10 @@ def find_jet(camera, params):
     img = camera.ROI_image.image2
 
     # get mean and std for calibration
-    mean, std = image_stats(img)
+    mean = img.mean()
+    std = img.std()
     params.mean.put(mean)
-    params.std.put(mean)
+    params.std.put(std)
 
     try:
         # m, b = jet_detect(img, params.mean.get(), params.std.get(),

@@ -256,7 +256,9 @@ def calibrate(injector, camera, cspad, wave8, gas_det, params, *, offaxis=False,
 
     # find jet in camera ROI
     ROI_image = cam_utils.get_burst_avg(params.frames_cam.get(), camera.ROI_image)
-    mean, std = cam_utils.image_stats(ROI_image)
+    mean = ROI_image.mean()
+    std = ROI_image.std()
+    # the mean and std are passed to be compared to themselves?
     rho, theta = cam_utils.jet_detect(ROI_image, mean, std)
     params.mean.put(mean)
     params.std.put(std)
@@ -298,7 +300,8 @@ def jet_calculate_off_axis(camera, params):
 
     # detect the jet in the camera ROI
     ROI_image = cam_utils.get_burst_avg(params.frames_cam.get(), camera.ROI_image)
-    mean, std = cam_utils.image_stats(ROI_image)
+    mean = ROI_image.mean()
+    std = ROI_image.std()
     rho, theta = cam_utils.jet_detect(ROI_image, mean, std)
 
     # check x-ray beam position
@@ -344,7 +347,8 @@ def jet_calculate_inline(camera, params):
 
     # detect the jet in the camera ROI
     ROI_image = cam_utils.get_burst_avg(params.frames_cam.get(), camera.ROI_image)
-    mean, std = cam_utils.image_stats(ROI_image)
+    mean = ROI_image.mean()
+    std = ROI_image.std()
     rho, theta = cam_utils.jet_detect(ROI_image, mean, std)
 
     # check x-ray beam position
