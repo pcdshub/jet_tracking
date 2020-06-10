@@ -151,10 +151,10 @@ def calibrate_off_axis(injector, camera, params, *, settle_time=1.0,
     params.cam_y.put(cam_y)
     params.cam_z.put(cam_z)
 
-    jet_pitch = cam_utils.get_jet_pitch(params.theta.get(), cam_pitch=cam_pitch)
+    # Find the jet pitch from its angle in the camera frame
+    jet_pitch = cam_utils.angle_diff(params.theta.get(), cam_pitch)
     params.jet_pitch.put(jet_pitch)
-    return dict(jet_pitch=jet_pitch, pxsize=pxsize,
-                cam_pitch=cam_pitch)
+    return dict(jet_pitch=jet_pitch, pxsize=pxsize, cam_pitch=cam_pitch)
 
 
 def calibrate_inline(injector, camera, params, *, settle_time=1.0,
@@ -203,11 +203,11 @@ def calibrate_inline(injector, camera, params, *, settle_time=1.0,
     params.cam_x.put(cam_x)
     params.cam_y.put(cam_y)
 
-    # jet_roll: rotation of sample jet about z axis in radians
-    jet_roll = cam_utils.get_jet_roll(params.theta.get(), cam_roll=cam_roll)
+    # Find jet_roll, the rotation of sample jet about z axis in radians, from
+    # the jet angle in the camera frame
+    jet_roll = cam_utils.angle_diff(params.theta.get(), cam_roll)
     params.jet_roll.put(jet_roll)
-    return dict(jet_roll=jet_roll, pxsize=pxsize,
-                cam_roll=cam_roll)
+    return dict(jet_roll=jet_roll, pxsize=pxsize, cam_roll=cam_roll)
 
 
 def calibrate(injector, camera, cspad, wave8, gas_det, params, *, offaxis=False, settle_time=0.1):
