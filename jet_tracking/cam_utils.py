@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.signal import peak_widths
-from skimage.feature import canny, peak_local_max, register_translation
+from skimage.feature import canny, peak_local_max
+from skimage.registration import phase_cross_correlation
 from skimage.transform import hough_line, hough_line_peaks, rotate
 
 
@@ -370,7 +371,7 @@ def get_cam_pitch(imgs):
     ztot = 0
     for i in range(len(imgs) - 1):
         im1, im2 = imgs[i], imgs[i + 1]
-        (dy, dz), error, diffphase = register_translation(im1, im2, 100)
+        (dy, dz), _, _ = phase_cross_correlation(im1, im2, upsample_factor=100)
         if dy < 0:
             dy *= -1
             dz *= -1
@@ -396,7 +397,7 @@ def get_cam_roll(imgs):
     xtot = 0
     for i in range(len(imgs) - 1):
         im1, im2 = imgs[i], imgs[i + 1]
-        (dy, dx), error, diffphase = register_translation(im1, im2, 100)
+        (dy, dx), _, _ = phase_cross_correlation(im1, im2, upsample_factor=100)
         if dy < 0:
             dy *= -1
             dx *= -1
@@ -431,7 +432,7 @@ def get_cam_pitch_pxsize(imgs, positions):
     changetot = 0
     for i in range(len(positions) - 1):
         im1, im2 = imgs[i], imgs[i + 1]
-        (dy, dz), error, diffphase = register_translation(im1, im2, 100)
+        (dy, dz), _, _ = phase_cross_correlation(im1, im2, upsample_factor=100)
         if dy < 0:
             dy *= -1
             dz *= -1
@@ -466,7 +467,7 @@ def get_cam_roll_pxsize(imgs, positions):
     changetot = 0
     for i in range(len(positions) - 1):
         im1, im2 = imgs[i], imgs[i + 1]
-        (dy, dx), error, diffphase = register_translation(im1, im2, 100)
+        (dy, dx), _, _ = phase_cross_correlation(im1, im2, upsample_factor=100)
         if dy < 0:
             dy *= -1
             dx *= -1
@@ -506,7 +507,7 @@ def get_nozzle_shift(im1, im2, *, cam_roll, pxsize):
         Distance in x.
     """
 
-    (sy, sx), error, diffphase = register_translation(im1, im2, 100)
+    (sy, sx), _, _ = phase_cross_correlation(im1, im2, upsample_factor=100)
     dx = (sx * np.cos(cam_roll) - sy * np.sin(cam_roll)) * pxsize
     dy = (sy * np.cos(cam_roll) + sx * np.sin(cam_roll)) * pxsize
     return dy, dx
