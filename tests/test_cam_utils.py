@@ -18,12 +18,10 @@ def test_smoke_get_jet_x():
                         cam_x=1, cam_y=1, beam_x=1, beam_y=1, cam_roll=1)
 
 
-def test_smoke_get_jet_pitch():
-    cam_utils.get_jet_pitch(theta=0.0, cam_pitch=1)
-
-
-def test_smoke_get_jet_roll():
-    cam_utils.get_jet_roll(theta=0.0, cam_roll=1)
+def test_smoke_angle_diff():
+    assert np.isclose(cam_utils.angle_diff(np.pi/3, -np.pi/3), -np.pi/3)
+    assert np.isclose(cam_utils.angle_diff(-np.pi/3, np.pi/3), np.pi/3)
+    assert np.isclose(cam_utils.angle_diff(np.pi/3, np.pi/3), 0)
 
 
 def test_smoke_get_jet_width(onaxis_image):

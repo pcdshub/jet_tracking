@@ -227,45 +227,29 @@ def get_jet_x(rho, theta, roi_x, roi_y, *, pxsize, cam_x, cam_y, beam_x,
     return xj
 
 
-def get_jet_pitch(theta, cam_pitch):
+def angle_diff(x, y):
     """
-    Calculate jet angle in the main coordinate system.
+    Find the difference between two angles.
 
-    Result is in radians, from -pi/2 to pi/2.
+    Result is in radians, between -pi/2 and pi/2 due to the equivalence of a
+    line at angle x and a line at angle x+pi*n.
+
+    This is useful for changing from the camera coordinate system to the main
+    coordinate system.
 
     Parameters
     ----------
-    theta : float
-        Angle of the shortest vector from (0,0) to the line in radians.
+    x : float
+        The minuend. For jet tracking, this is often the jet angle in the
+        camera frame, found as the angle of the shortest vector from (0,0) to
+        the line in radians.
 
-    cam_pitch : float
-        Rotation of camera about x axis in radians.
-
-    Returns
-    -------
-    jet_pitch : float
-        Jet angle in radians.
+    y : float
+        The subtrahend. For jet tracking, this is often the rotation of camera
+        about the x axis in radians.
     """
 
-    return (theta - np.pi / 2 - cam_pitch) % np.pi - np.pi / 2
-
-
-def get_jet_roll(theta, cam_roll):
-    '''Calculates jet angle in the main coordinate system (in radians, from -pi/2 to pi/2)
-
-    Parameters
-    ----------
-    theta : float
-        Angle of the shortest vector from (0,0) to the line in radians
-    cam_roll : float
-        rotation of camera about z axis in radians
-
-    Returns
-    -------
-    jet_roll : float
-        Jet angle in radians
-    '''
-    return (theta - np.pi / 2 - cam_roll) % np.pi - np.pi / 2
+    return (x - y - np.pi / 2) % np.pi - np.pi / 2
 
 
 def get_jet_width(im, rho, theta):
