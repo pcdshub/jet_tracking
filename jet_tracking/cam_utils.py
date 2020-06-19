@@ -285,38 +285,13 @@ def get_jet_width(im, rho, theta):
     return peak_widths(s, [s.argmax()])[0]
 
 
-def get_offaxis_coords(cam_beam_y, cam_beam_z, *, cam_pitch, pxsize):
-    '''Finds cam_y and cam_z using the pixel coordinates of the origin
-
-    Parameters
-    ----------
-    cam_beam_y : float
-        y coordinate for the beam (= main coordinate origin) on the camera in pixels
-    cam_beam_z : float
-        z coordinate for the beam (= main coordinate origin) on the camera in pixels
-    cam_pitch : float
-        rotation of camera about x axis in radians
-    pxsize : float
-        size of pixel in mm
-
-    Returns
-    -------
-    cam_y : float
-        Y-coordinate of the origin of the camera in the main coordinate system in millimeters
-    cam_z : float
-        Z-coordinate of the origin of the camera in the main coordinate system in millimeters
-
-    '''
-    cam_y = pxsize * (cam_beam_z * np.sin(cam_pitch) +
-                      cam_beam_y * np.cos(cam_pitch))
-    cam_z = pxsize * (cam_beam_z * np.cos(cam_pitch) -
-                      cam_beam_y * np.sin(cam_pitch))
-    return cam_y, cam_z
-
-
-def get_cam_coords(cam_beam_x, cam_beam_y, *, cam_roll, pxsize):
+def get_cam_coords(cam_beam_x, cam_beam_y, *, cam_angle, pxsize):
     """
-    Find cam_x and cam_y using the pixel coordinates of the origin.
+    Find the camera's coords from the beam's coords in the camera frame.
+
+    The origin of the main coordinate system is defined as the location of the
+    xray beam. This function works through a coordinate system transformation
+    of the beam's location in the camera's coordinate system.
 
     Parameters
     ----------
@@ -328,7 +303,7 @@ def get_cam_coords(cam_beam_x, cam_beam_y, *, cam_roll, pxsize):
         Y coordinate for the beam (= main coordinate origin) on the camera in
         pixels.
 
-    cam_roll : float
+    cam_angle : float
         Rotation of camera about z axis in radians.
 
     pxsize : float
@@ -345,10 +320,10 @@ def get_cam_coords(cam_beam_x, cam_beam_y, *, cam_roll, pxsize):
         in millimeters.
     """
 
-    cam_x = pxsize * (cam_beam_y * np.sin(cam_roll) +
-                      cam_beam_x * np.cos(cam_roll))
-    cam_y = pxsize * (cam_beam_y * np.cos(cam_roll) -
-                      cam_beam_x * np.sin(cam_roll))
+    cam_x = pxsize * (cam_beam_y * np.sin(cam_angle) +
+                      cam_beam_x * np.cos(cam_angle))
+    cam_y = pxsize * (cam_beam_y * np.cos(cam_angle) -
+                      cam_beam_x * np.sin(cam_angle))
     return cam_x, cam_y
 
 
