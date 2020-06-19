@@ -241,9 +241,9 @@ def angle_diff(x, y):
     Parameters
     ----------
     x : float
-        The minuend. For jet tracking, this is often the jet angle in the
-        camera frame, found as the angle of the shortest vector from (0,0) to
-        the line in radians.
+        The minuend. For jet tracking, this is often the angle of the jet in
+        the camera frame, found as the angle of the shortest vector from (0,0)
+        to the line of the jet in radians.
 
     y : float
         The subtrahend. For jet tracking, this is often the rotation of camera
@@ -352,6 +352,7 @@ def get_cam_pitch(imgs):
             dz *= -1
         ytot += dy
         ztot += dz
+    # why is this one not negative?
     return np.arctan(ytot / ztot)
 
 
@@ -372,6 +373,7 @@ def get_cam_roll(imgs):
     xtot = 0
     for i in range(len(imgs) - 1):
         im1, im2 = imgs[i], imgs[i + 1]
+        # Is the order dy, dx correct?
         (dy, dx), _, _ = phase_cross_correlation(im1, im2, upsample_factor=100)
         if dy < 0:
             dy *= -1
@@ -413,6 +415,8 @@ def get_cam_pitch_pxsize(imgs, positions):
             dz *= -1
         ytot += dy
         ztot += dz
+        # Shouldn't changetot equal difference of end from beginning, not total
+        # distance traveled?
         changetot += abs(positions[i + 1] - positions[i])
 
     cam_pitch = np.arctan(ytot / ztot)
@@ -482,6 +486,7 @@ def get_nozzle_shift(im1, im2, *, cam_roll, pxsize):
         Distance in x.
     """
 
+    # Generalize for both cameras?
     (sy, sx), _, _ = phase_cross_correlation(im1, im2, upsample_factor=100)
     dx = (sx * np.cos(cam_roll) - sy * np.sin(cam_roll)) * pxsize
     dy = (sy * np.cos(cam_roll) + sx * np.sin(cam_roll)) * pxsize
@@ -506,6 +511,8 @@ def get_burst_avg(n, image_plugin):
         Average image.
     """
 
+    # Is this just pulling multiple pictures through the beam being faster than
+    # this function?
     imageX, imageY = image_plugin.image.shape
     burst_imgs = np.empty((n, imageX, imageY))
     for x in range(n):
