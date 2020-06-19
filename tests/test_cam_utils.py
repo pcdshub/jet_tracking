@@ -28,14 +28,9 @@ def test_smoke_get_jet_width(onaxis_image):
     cam_utils.get_jet_width(im=onaxis_image, rho=0.0, theta=1.0)
 
 
-def test_smoke_get_offaxis_coords():
-    cam_utils.get_offaxis_coords(cam_beam_y=0.0, cam_beam_z=0.0,
-                                 cam_pitch=1, pxsize=0.001)
-
-
 def test_smoke_get_cam_coords():
     cam_utils.get_cam_coords(cam_beam_x=0.0, cam_beam_y=0.0,
-                             cam_roll=1, pxsize=0.001)
+                             cam_angle=1, pxsize=0.001)
 
 
 # I think all of these random's should be replaced by a second image?

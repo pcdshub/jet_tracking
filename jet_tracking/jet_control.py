@@ -145,9 +145,9 @@ def calibrate_off_axis(injector, camera, params, *, settle_time=1.0,
 
     beam_y_px = params.beam_y_px.get()
     beam_z_px = params.beam_z_px.get()
-    cam_y, cam_z = cam_utils.get_offaxis_coords(beam_y_px, beam_z_px,
-                                                cam_pitch=cam_pitch,
-                                                pxsize=pxsize)
+    cam_y, cam_z = cam_utils.get_cam_coords(beam_y_px, beam_z_px,
+                                            cam_angle=cam_pitch,
+                                            pxsize=pxsize)
     params.cam_y.put(cam_y)
     params.cam_z.put(cam_z)
 
@@ -199,7 +199,7 @@ def calibrate_inline(injector, camera, params, *, settle_time=1.0,
     # cam_x: x-coordinate of camera position in mm
     # cam_y: y-coordinate of camera position in mm
     cam_x, cam_y = cam_utils.get_cam_coords(beam_x_px, beam_y_px,
-                                            cam_roll=cam_roll, pxsize=pxsize)
+                                            cam_angle=cam_roll, pxsize=pxsize)
     params.cam_x.put(cam_x)
     params.cam_y.put(cam_y)
 
@@ -307,9 +307,9 @@ def jet_calculate_off_axis(camera, params):
     # check x-ray beam position
     beam_y_px = params.beam_y_px.get()
     beam_z_px = params.beam_z_px.get()
-    cam_y, cam_z = cam_utils.get_offaxis_coords(
-        beam_y_px, beam_z_px, cam_pitch=params.cam_pitch.get(),
-        pxsize=params.pxsize.get())
+    cam_y, cam_z = cam_utils.get_cam_coords(beam_y_px, beam_z_px,
+                                            cam_angle=params.cam_pitch.get(),
+                                            pxsize=params.pxsize.get())
 
     params.cam_y.put(cam_y)
     params.cam_z.put(cam_z)
@@ -354,9 +354,9 @@ def jet_calculate_inline(camera, params):
     # check x-ray beam position
     beam_x_px = params.beam_x_px.get()
     beam_y_px = params.beam_y_px.get()
-    cam_x, cam_y = cam_utils.get_cam_coords(
-        beam_x_px, beam_y_px, cam_roll=params.cam_roll.get(),
-        pxsize=params.pxsize.get())
+    cam_x, cam_y = cam_utils.get_cam_coords(beam_x_px, beam_y_px,
+                                            cam_angle=params.cam_roll.get(),
+                                            pxsize=params.pxsize.get())
 
     params.cam_x.put(cam_x)
     params.cam_y.put(cam_y)
