@@ -151,6 +151,7 @@ def calibrate_off_axis(injector, camera, params, *, settle_time=1.0,
     params.cam_y.put(cam_y)
     params.cam_z.put(cam_z)
 
+    # Where is theta coming from?
     # Find the jet pitch from its angle in the camera frame
     jet_pitch = cam_utils.angle_diff(params.theta.get(), cam_pitch)
     params.jet_pitch.put(jet_pitch)
