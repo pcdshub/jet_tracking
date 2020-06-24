@@ -26,16 +26,19 @@ The jet tracking devices for the CXI SC2 chamber are implemented in the
 
 .. code-block:: python
 
-    from pcdsdevices.jet import Injector
+    from pcdsdevices.jet import InjectorWithFine
     from cxi.jet_tracking.devices import (Diffract, JetCamera, InlineParams,
                                           OffaxisParams)
     from cxi.jet_tracking.jet_control import JetControl
 
     with safe_load('PI2_injector'):
-        PI2_injector = Injector(name='PI2_injector', coarseX='CXI:PI2:MMS:01',
-                                coarseY='CXI:PI2:MMS:02', coarseZ='CXI:PI2:MMS:03',
-                                fineX='CXI:PI2:MMS:04', fineY='CXI:PI2:MMS:05',
-                                fineZ='CXI:PI2:MMS:06')
+        PI2_injector = InjectorWithFine(name='PI2_injector',
+                                        x_prefix='CXI:PI2:MMS:01',
+                                        y_prefix='CXI:PI2:MMS:02',
+                                        z_prefix='CXI:PI2:MMS:03',
+                                        fine_x_prefix='CXI:PI2:MMS:04',
+                                        fine_y_prefix='CXI:PI2:MMS:05',
+                                        fine_z_prefix='CXI:PI2:MMS:06')
 
     with safe_load('SC2_inline'):
         SC2_inline = JetCamera('CXI:SC2:INLINE', name='SC2_inline',

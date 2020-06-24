@@ -135,7 +135,7 @@ def calibrate_off_axis(injector, camera, params, *, settle_time=1.0,
     """
 
     # TODO: (koglin) check sign for off-axis calculations
-    injector_axis = injector.coarseX
+    injector_axis = injector.x
     positions, imgs = get_calibration_images(injector_axis, camera,
                                              settle_time=settle_time)
 
@@ -181,7 +181,7 @@ def calibrate_inline(injector, camera, params, *, settle_time=1.0,
         Number of burst images to average from the camera.
     """
 
-    injector_axis = injector.coarseZ
+    injector_axis = injector.z
     # collect images and motor positions needed for calibration
     positions, imgs = get_calibration_images(injector_axis, camera,
                                              settle_time=settle_time,
@@ -382,7 +382,7 @@ def jet_move_inline(injector, camera, params):
     if abs(params.jet_x.get()) > 0.01:
         # move jet to x-rays using injector motor
         print(f'Moving {params.jet_x.get()} mm')
-        injector.coarseX.mvr(-params.jet_x.get())
+        injector.x.mvr(-params.jet_x.get())
         # move the ROI to keep looking at the jet
         min_x = ROIx + (params.jet_x.get() / params.pxsize.get())
         camera.ROI.min_xyz.min_x.put(min_x)
@@ -396,11 +396,11 @@ def jet_scan(injector, cspad, gas_det, params):
     best_pos = []
     for i in range(2):
         # move motor to first position
-        injector.coarseX.mv(x_step, wait=True)
+        injector.x.mv(x_step, wait=True)
         intensities = []
         positions = []
         for j in range(steps):
-            positions.append(injector.coarseX.user_readback.get())
+            positions.append(injector.x.user_readback.get())
             # get azav from CSPAD
             # get CSPAD and wave8
             azav, norm = get_azav(cspad)  # call azimuthal average function
@@ -408,7 +408,7 @@ def jet_scan(injector, cspad, gas_det, params):
         hi_intensities.append(max(intensities))
         best_pos.append(positions[intensities.index(max(intensities))])
     # move motor to average of best positions from two sweeps
-    injector.coarseX.mv(np.average(best_pos))
+    injector.x.mv(np.average(best_pos))
     # save CSPAD intensity
     params.intensity.put(np.average(hi_intensities))
 
