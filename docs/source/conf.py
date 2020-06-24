@@ -17,12 +17,9 @@ import datetime
 import os
 import sys
 
-import matplotlib
 import sphinx_rtd_theme
 
 import jet_tracking
-
-matplotlib.use('Agg')
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -46,17 +43,10 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.todo',
               'sphinx.ext.napoleon',
               'sphinx.ext.autosummary',
-              'IPython.sphinxext.ipython_directive',
-              'IPython.sphinxext.ipython_console_highlighting',
-              'matplotlib.sphinxext.mathmpl',
-              'matplotlib.sphinxext.plot_directive',
-#              'sphinx.ext.autosectionlabel'
               'sphinx.ext.viewcode',
-              'sphinx.ext.coverage',
               'sphinx.ext.doctest',
               'sphinx.ext.viewcode',
               'sphinx.ext.githubpages',
-              'sphinx.ext.mathjax',
               'sphinx.ext.intersphinx']
 
 try:
