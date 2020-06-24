@@ -7,7 +7,7 @@ from skimage.color import rgb2gray
 from skimage.transform import resize
 
 from jet_tracking.devices import InlineParams, JetCamera, OffaxisParams
-from pcdsdevices.jet import Injector
+from pcdsdevices.jet import InjectorWithFine
 
 
 def instantiate_fake_device(cls, *args, **kwargs):
@@ -62,15 +62,13 @@ def _patch_user_setpoint(motor):
 
 @pytest.fixture(scope='function')
 def injector():
-    injector = instantiate_fake_device(Injector, name='fake_injector',
-                                       coarseX_prefix='fake_X',
-                                       coarseY_prefix='fake_Y',
-                                       coarseZ_prefix='fake_Z',
-                                       fineX_prefix='fake_x',
-                                       fineY_prefix='fake_y',
-                                       fineZ_prefix='fake_z')
-    for i, attr in enumerate(['coarseX', 'coarseY', 'coarseZ',
-                              'fineX', 'fineY', 'fineZ']):
+    injector = instantiate_fake_device(InjectorWithFine, name='fake_injector',
+                                       x_prefix='fake_X', y_prefix='fake_Y',
+                                       z_prefix='fake_Z',
+                                       fine_x_prefix='fake_x',
+                                       fine_y_prefix='fake_y',
+                                       fine_z_prefix='fake_z')
+    for i, attr in enumerate(['x', 'y', 'z', 'fine_x', 'fine_y', 'fine_z']):
         motor = getattr(injector, attr)
         motor.user_readback.sim_put(0.1 * i)
         motor.user_setpoint.sim_put(0.0)
