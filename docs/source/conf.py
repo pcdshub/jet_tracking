@@ -49,14 +49,6 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.githubpages',
               'sphinx.ext.intersphinx']
 
-try:
-    import matplotlib.sphinxext.only_directives
-except ImportError:
-    ...
-else:
-    extensions.append('matplotlib.sphinxext.only_directives')
-
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
