@@ -52,6 +52,7 @@ class TrackThread(QThread):
                 sleep(2)
                 continue
 
+            # TODO: Fix the bad call of get_cspad()
             # check CSPAD
             if (jt_utils.get_cspad(self.cspad) < self.params.thresh_lo):
                 # if CSPAD is below lower threshold, move jet
@@ -75,12 +76,16 @@ class TrackThread(QThread):
                 # if camera is bypassed or if jet is less than 10 microns away
                 # from x-rays, scan jet across x-rays to find new maximum
                 jet_control.scan(self.injector, self.cspad)
-                intensity = jt_utils.get_cspad(azav, self.params.radius.get(), gas_det)
+                intensity = jt_utils.get_cspad(azav, gas_det,
+                                               self.params.bin_low.get(),
+                                               self.params.bin_high.get())
                 self.params.intensity.put(intensity)
                 sleep(1)  # change to however long it takes for jet to scan
 
                 # if CSPAD is still below upper threshold, stop jet tracking
-                if (jt_utils.get_cspad(azav, self.params.radius.get(), gas_det)
+                if (jt_utils.get_cspad(azav, gas_det,
+                                       self.params.bin_low.get(),
+                                       self.params.bin_high.get())
                         < self.params.thresh_hi):
                     print('CSPAD below threshold - TRACKING STOPPED')
                     self.requestInterruption()
