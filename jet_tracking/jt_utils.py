@@ -111,20 +111,25 @@ def fit_cspad(azav, norm, gas_det):
     return center, intensity
 
 
-def get_cspad(azav, r, gas_det):
+def get_cspad(azav, gas_det, bin_low, bin_high):
     """
     Get the intensity of the diffraction ring on the CSPAD.
+
+    The returned value is normalized to the intensity from the gas detector.
 
     Parameters
     ----------
     azav : ndarray
         Azimuthal average calculated from CSPAD.
 
-    r : int
-        Radius of diffraction ring.
-
     gas_det : float
         Gas detector intensity.
+
+    bin_low : int
+        The bin number of the lower bound of the intensity integration.
+
+    bin_high : int
+        The bin number of the upper bound of the intensity integration.
 
     Returns
     -------
@@ -132,7 +137,7 @@ def get_cspad(azav, r, gas_det):
         Sum of 5 qbins above and below the center, normalized by gas detector.
     """
 
-    intensity = sum(azav[r - 5:r + 5]) / gas_det
+    intensity = sum(azav[bin_low:bin_high]) / gas_det
     return intensity
 
 

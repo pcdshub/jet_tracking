@@ -404,7 +404,9 @@ def jet_scan(injector, cspad, gas_det, params):
             # get azav from CSPAD
             # get CSPAD and wave8
             azav, norm = get_azav(cspad)  # call azimuthal average function
-            intensities.append(jt_utils.get_cspad(azav, params.radius.get(), gas_det))
+            intensities.append(jt_utils.get_cspad(azav, gas_det,
+                                                  params.bin_low,
+                                                  params.bin_high))
         hi_intensities.append(max(intensities))
         best_pos.append(positions[intensities.index(max(intensities))])
     # move motor to average of best positions from two sweeps
