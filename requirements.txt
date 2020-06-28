@@ -1,6 +1,5 @@
 # List required packages in this file, one per line.
 pcdsdevices>=2.6.0
-hutch-python>=1.2.3
 numpy
 ophyd>=1.5.0
 bluesky>=1.6.0
@@ -8,8 +7,6 @@ scikit-image
 scipy
 pandas
 opencv-python
-
-# Dependencies-of-dependencies that need updating:
+matplotlib
 pyyaml
 cf-units
-pyepics
