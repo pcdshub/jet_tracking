@@ -1,55 +1,30 @@
-language: python
-sudo: false
+version: ~> 1.0
 
 env:
   global:
     - OFFICIAL_REPO="pcdshub/jet_tracking"
     # Doctr deploy key for pcdshub/jet_tracking
     - secure: "V2DzajEtsKUl0+J4pziJWuGPQ4q4kUdKs0V7xIdDxnzO6RmuI49tulurfr/HwMa1Euitiuc1SfIpA+rbaPs0xysbZWAG2mpqT7s/RvFZ/+/rTKp/4GZkH8hvS7/8INQTFImwpHUWiG1L+3sv9+3SM0h3CorvWsBnknIkllHu7Qh2dqfW0bK7bgSjn2wGkgoP53QF3BQne08U2n7mMkD0stibzZCODPwUMNNJYDSa/4yjyPO0DOEVFs7iox3ToZ352OFKHsMO+awcMCFN8gP/c7Al+xp4IBGLX0s4U0AQGru+JqKae3zwukq2pDyWWgieH5QpAfm/Ht7KKH4hnzGtj9AL81dC9RkXDLV3iSN0SNPrVlrjJNnQi9gTxsXHd2NwVF0kXgo+7oX/zoEpIn+Z6wfOfseO+KFFFYYz3ASKS1U8UZo5qyAcCFPHl0T0WEcYZVvfre1GQkpRRVnNvfJdEAN2rWMi+ovKcVnH8rhc4uPwxdR5vSAcI1xKJMS7OUI0edAm2LvIOh4+ri2et5WR4ulhpaVm5/iDBxqYaz/vGWy+vu+Q9UzrZuGP4igt+SqMMlXkrAaJhAURaKSnqOiVUZI4JCeQ+0f88N2SkupsYAjIc040tEKsBaLgjBL1BnouR1owGwBqv6yeMail8nW0HBRZMGyH/SI4ZvK/HCWBGMg="
+    # enable the usage of versions menu which allow versioning of the docs
+    # pages and not only the master branch
+    - DOCTR_VERSIONS_MENU="1"
+    # The name of the conda package
+    - CONDA_PACKAGE="jet_tracking"
+    # The folder containing the conda recipe (meta.yaml)
+    - CONDA_RECIPE_FOLDER="conda-recipe"
 
-matrix:
-  include:
-    - python: 3.6
-      env:
-         - PCDS_CHANNEL=pcds-tag
-    - python: 3.6
-      env:
-         - PCDS_CHANNEL=pcds-dev
-         - BUILD_DOCS=1
-
-install:
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda install conda-build anaconda-client
-  - conda update -q conda conda-build
-  - conda config --add channels pcds-tag
-  - conda config --add channels $PCDS_CHANNEL
-  - conda config --append channels conda-forge
-  - conda config --remove channels defaults
-  - conda config --set channel_priority true
-  # Useful for debugging any issues with conda
-  - conda info -a
-  # Test conda build
-  - conda build -q conda-recipe --python $TRAVIS_PYTHON_VERSION --output-folder bld-dir
-  - conda config --add channels "file://`pwd`/bld-dir"
-  # Create test environment
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION jet_tracking --file requirements-dev.txt
-  - source activate test-environment
-
-script:
-  #- coverage run -m pytest -vv tests
-  - make -C docs html  # Build the documentation.
-  #- coverage report -m
-  #- flake8 jet_tracking/ tests/
-  # Build docs
-  - set -e
-  - |
-    if [[ $BUILD_DOCS ]]; then
-      pushd docs
-      make html
-      popd
-      doctr deploy . --built-docs docs/build/html --deploy-branch-name gh-pages
-    fi
+import:
+  # This import enables a set of standard python jobs including:
+  # - Build
+  #   - Anaconda Package Build
+  # - Tests
+  #   - Python Linter
+  #   - Package Linter
+  #   - Documentation
+  #   - Python 3.6 - PIP based
+  #   - Python 3.6, 3.7 & 3.8 - Conda base
+  # - Deploy
+  #   - Documentation using doctr
+  #   - Conda Package - uploaded to pcds-dev and pcds-tag
+  #   - PyPI
+  - pcdshub/pcds-ci-helpers:travis/shared_configs/standard-python-conda.yml
