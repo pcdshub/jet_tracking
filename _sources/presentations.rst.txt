@@ -6,7 +6,8 @@ Presentations and Posters
 2018 Summer Student Posters
 ---------------------------
 
-Matias Arola poster on jet orientation analsysis
+Matias Arola: Jet Orientation Analysis
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. image::  presentations/Matias_Arola_poster2018.pdf
    :target: _images/Matias_Arola_poster2018.pdf
@@ -15,9 +16,10 @@ Matias Arola poster on jet orientation analsysis
 
 
 
-Jeanne Sheen poster on Ophyd python implementation of jet tracking and control
+Jeanna Sheen: Python Implementation of Jet Tracking and Control
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. image:: presentations/Sheen_Jeanna_poster2018.pdf
    :target: _images/Sheen_Jeanna_poster2018.pdf
-   :name: Jeana Sheen 2018 Poster
+   :name: Jeanna Sheen 2018 Poster
    :align:  center

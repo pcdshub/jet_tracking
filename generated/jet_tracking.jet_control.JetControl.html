@@ -1,15 +1,18 @@
 
 
 <!DOCTYPE html>
-<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
-<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<html class="writer-html5" lang="en" >
 <head>
   <meta charset="utf-8">
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>jet_tracking.jet_control.JetControl &mdash; PCDS Jet Tracking  documentation</title>
+  <title>jet_tracking.jet_control.JetControl &mdash; PCDS Jet Tracking 0.0.0.post66+gd96dea5 documentation</title>
   
+
+  
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
 
   
   
@@ -17,7 +20,9 @@
   
 
   
-  <script type="text/javascript" src="../_static/js/modernizr.min.js"></script>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
   
     
       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -29,10 +34,6 @@
     <script type="text/javascript" src="../_static/js/theme.js"></script>
 
     
-
-  
-  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="jet_tracking.jet_control.JetControl.set_beam" href="jet_tracking.jet_control.JetControl.set_beam.html" />
@@ -50,7 +51,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home"> PCDS Jet Tracking
+            <a href="../index.html" class="icon icon-home" alt="Documentation Home"> PCDS Jet Tracking
           
 
           
@@ -58,6 +59,10 @@
 
           
             
+            
+              <div class="version">
+                0.0.0.post66+gd96dea5
+              </div>
             
           
 
@@ -73,6 +78,7 @@
           
         </div>
 
+        
         <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
           
             
@@ -100,17 +106,21 @@
 <p class="caption"><span class="caption-text">Devices</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../devices.html">Jet Tracking Classes</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../sample_delivery.html">Sample Delivery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../sample_delivery.html#api">API</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Presentations and Posters</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../presentations.html">Presentations and Posters</a></li>
 </ul>
+<p class="caption"><span class="caption-text">Contributing</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../contributing.html">How to Contribute</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../authors.html">Credits</a></li>
+</ul>
 
             
           
         </div>
+        
       </div>
     </nav>
 
@@ -149,7 +159,7 @@
 
   <ul class="wy-breadcrumbs">
     
-      <li><a href="../index.html">Docs</a> &raquo;</li>
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
         
           <li><a href="../control.html">Jet Control Overview</a> &raquo;</li>
         
@@ -174,13 +184,13 @@
             
   <div class="section" id="jet-tracking-jet-control-jetcontrol">
 <h1>jet_tracking.jet_control.JetControl<a class="headerlink" href="#jet-tracking-jet-control-jetcontrol" title="Permalink to this headline">¶</a></h1>
-<dl class="class">
+<dl class="py class">
 <dt id="jet_tracking.jet_control.JetControl">
-<em class="property">class </em><code class="sig-prename descclassname">jet_tracking.jet_control.</code><code class="sig-name descname">JetControl</code><span class="sig-paren">(</span><em class="sig-param">name</em>, <em class="sig-param">injector</em>, <em class="sig-param">camera</em>, <em class="sig-param">params</em>, <em class="sig-param">diffract</em>, <em class="sig-param">*</em>, <em class="sig-param">offaxis=False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jet_tracking/jet_control.html#JetControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.jet_control.JetControl" title="Permalink to this definition">¶</a></dt>
-<dd><p>Jet tracking control class using jet_tracking methods</p>
-<dl class="method">
+<em class="property">class </em><code class="sig-prename descclassname">jet_tracking.jet_control.</code><code class="sig-name descname">JetControl</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">injector</span></em>, <em class="sig-param"><span class="n">camera</span></em>, <em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">diffract</span></em>, <em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">offaxis</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jet_tracking/jet_control.html#JetControl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.jet_control.JetControl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Jet tracking control class using jet_tracking methods.</p>
+<dl class="py method">
 <dt id="jet_tracking.jet_control.JetControl.__init__">
-<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param">name</em>, <em class="sig-param">injector</em>, <em class="sig-param">camera</em>, <em class="sig-param">params</em>, <em class="sig-param">diffract</em>, <em class="sig-param">*</em>, <em class="sig-param">offaxis=False</em>, <em class="sig-param">**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jet_tracking/jet_control.html#JetControl.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.jet_control.JetControl.__init__" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">__init__</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">name</span></em>, <em class="sig-param"><span class="n">injector</span></em>, <em class="sig-param"><span class="n">camera</span></em>, <em class="sig-param"><span class="n">params</span></em>, <em class="sig-param"><span class="n">diffract</span></em>, <em class="sig-param"><span class="o">*</span></em>, <em class="sig-param"><span class="n">offaxis</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/jet_tracking/jet_control.html#JetControl.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#jet_tracking.jet_control.JetControl.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initialize self.  See help(type(self)) for accurate signature.</p>
 </dd></dl>
 
@@ -195,16 +205,16 @@
 <td><p>Initialize self.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="jet_tracking.jet_control.JetControl.calibrate.html#jet_tracking.jet_control.JetControl.calibrate" title="jet_tracking.jet_control.JetControl.calibrate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">calibrate</span></code></a>(**kwargs)</p></td>
-<td><p>Calibrate the onaxis camera</p></td>
+<td><p>Calibrate the onaxis camera.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="jet_tracking.jet_control.JetControl.jet_calculate.html#jet_tracking.jet_control.JetControl.jet_calculate" title="jet_tracking.jet_control.JetControl.jet_calculate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jet_calculate</span></code></a>()</p></td>
-<td><p>Track the sample jet and calculate the distance to the x-ray beam</p></td>
+<td><p>Track the sample jet and calculate the distance to the x-ray beam.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="jet_tracking.jet_control.JetControl.jet_move.html#jet_tracking.jet_control.JetControl.jet_move" title="jet_tracking.jet_control.JetControl.jet_move"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jet_move</span></code></a>()</p></td>
-<td><p>Move the sample jet to the x-ray beam</p></td>
+<td><p>Move the sample jet to the x-ray beam.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="jet_tracking.jet_control.JetControl.set_beam.html#jet_tracking.jet_control.JetControl.set_beam" title="jet_tracking.jet_control.JetControl.set_beam"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_beam</span></code></a>(beam_x_px, beam_y_px)</p></td>
-<td><p>Set the coordinates for the x-ray beam</p></td>
+<td><p>Set the coordinates for the x-ray beam.</p></td>
 </tr>
 </tbody>
 </table>
@@ -232,11 +242,19 @@
 
   <div role="contentinfo">
     <p>
+        
         &copy; Copyright 2020, SLAC National Accelerator Laboratory
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+    
+    
+    
+    Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a
+    
+    <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a>
+    
+    provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -247,7 +265,6 @@
 
   </div>
   
-
 
   <script type="text/javascript">
       jQuery(function () {

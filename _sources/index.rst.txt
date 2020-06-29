@@ -1,5 +1,6 @@
-LCLS Jet Tracking Documentation
-===============================
+
+.. include:: ../../README.rst
+
 
 Table of Contents
 -----------------
@@ -10,7 +11,6 @@ Table of Contents
 
    installation.rst
 
-
 .. toctree::
    :maxdepth: 2
    :caption: Control
@@ -19,19 +19,24 @@ Table of Contents
    shared_memory.rst
    pvNotepad.rst
 
-
 .. toctree::
    :maxdepth: 2
    :caption: Devices
 
    devices.rst
-   sample_delivery.rst
 
 .. toctree::
    :maxdepth: 2
    :caption: Presentations and Posters
 
    presentations.rst
+
+.. toctree::
+   :caption: Contributing
+
+   contributing.rst
+   authors.rst
+
 
 Indices and tables
 ==================

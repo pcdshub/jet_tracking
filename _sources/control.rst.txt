@@ -5,13 +5,14 @@ Jet Control Overview
 
 .. currentmodule:: jet_tracking.jet_control
 
-To start ipython for cxi hutch-python3.
+To start IPython for CXI hutch-python3:
 
 .. code-block:: bash
 
     /reg/g/pcds/pyps/apps/hutch-python/cxi/cxipython
 
-There is a soft link in ~cxiopr/bin, so that on cxi machines one can start ipython as follows:
+There is a soft link in ``~cxiopr/bin``, so that on CXI machines, one can start
+IPython as follows:
 
 .. code-block:: bash
 
