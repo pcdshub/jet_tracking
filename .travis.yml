@@ -13,6 +13,13 @@ env:
     # The folder containing the conda recipe (meta.yaml)
     - CONDA_RECIPE_FOLDER="conda-recipe"
 
+jobs:
+ allow_failures:
+   # This makes the PIP based Python 3.6 optional for passing.
+   # Remove this block if passing tests with PIP is mandatory for your
+   # package
+   - name: "Python - PIP"
+
 import:
   # This import enables a set of standard python jobs including:
   # - Build
