@@ -2,7 +2,8 @@ from time import sleep
 
 import numpy as np
 
-from . import cam_utils, jt_utils
+import cam_utils
+import jt_utils
 
 
 class JetControl:

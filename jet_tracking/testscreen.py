@@ -2,7 +2,7 @@ from time import sleep
 
 from pydm import Display
 from qtpy.QtCore import QThread
-
+from os import path
 # from . import jet_control, jt_utils
 
 
@@ -119,14 +119,17 @@ class TrackThread(QThread):
 # class for jet tracking PyDM display
 class JetTrack(Display):
 
-    '''def __init__(self, injector, camera, cspad, stopper, pulse_picker, wave8,
+    def __init__(self, parent=None, args=None, macros=None):
+
+        super(JetTrack, self).__init__(parent=parent,args=args, macros=macros)
+        '''def __init__(self, injector, camera, cspad, stopper, pulse_picker, wave8,
                   params, macros, *args, **kwargs):'''
-    def __init__(self, jt_input, jt_output, jt_fake, macros, *args, **kwargs):
-        super().__init__(macros=macros, *args, **kwargs)
+        '''def __init__(self, jt_input, jt_output, jt_fake, macros, *args, **kwargs):
+        super().__init__(macros=macros, *args, **kwargs)'''
 
         '''self.track_thread = TrackThread(injector, camera, cspad, stoppper,
                                         pulse_picker, wave8, params)'''
-        self.track_thread = TrackThread(jt_input, jt_output, jt_fake)
+        #self.track_thread = TrackThread(jt_input, jt_output, jt_fake)
 
         # connect GUI buttons to appropriate methods
         self.ui.calibrate_btn.clicked.connect(self.calibrate_clicked)
@@ -138,7 +141,7 @@ class JetTrack(Display):
         self.ui.stop_btn.setEnabled(False)
 
     def ui_filepath(self):
-        return '/reg/g/pcds/pyps/apps/hutch-python/cxi/dev/jet_tracking/jet_tracking/jettracking.ui'
+        return(path.join(path.dirname(path.realpath(__file__)), self.ui_filename()))
 
     def ui_filename(self):
         return 'jettracking.ui'
