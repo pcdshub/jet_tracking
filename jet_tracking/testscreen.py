@@ -8,6 +8,7 @@ import os
 import json
 import cv2
 import numpy as np
+import zmq
 
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -18,9 +19,11 @@ from qtpy.QtWidgets import (QVBoxLayout, QHBoxLayout, QGroupBox,
     QLabel, QLineEdit, QPushButton, QScrollArea, QFrame,
     QApplication, QWidget, QGraphicsView, QGraphicsScene, QGraphicsRectItem, 
     QGraphicsItem, QSizePolicy)
+import pyqtgraph as pg
 
 from pydm.widgets import PyDMEmbeddedDisplay
 from pydm.utilities import connection
+from graph_display import graphDisplay
 
 class TrackThread(QThread):
 
@@ -29,13 +32,13 @@ class TrackThread(QThread):
     def __init__(self, jt_input, jt_output, jt_fake):
         super().__init__()
 
-        ''' self.injector = injector
-        self.camera = camera
-        self.cspad = cspad
-        self.stopper = stopper
-        self.pulse_picker = pulse_picker
-        self.wave8 = wave8
-        self.params = params '''
+        # self.injector = injector
+        #self.camera = camera
+        #self.cspad = cspad
+        #self.stopper = stopper
+        #self.pulse_picker = pulse_picker
+        #self.wave8 = wave8
+        #self.params = params
 
         # devices are not connected, use 'fake' PVs instead
         self.jt_input = jt_input
@@ -45,7 +48,7 @@ class TrackThread(QThread):
     def run(self):
         while not self.isInterruptionRequested():
             # check if stopper is in
-            ''' if (jt_utils.get_stopper(self.stopper) == 1): '''
+            #if (jt_utils.get_stopper(self.stopper) == 1):
             if (self.jt_fake.stopper.get() == 1):
                 # if stopper is in, stop jet tracking
                 print('Stopper in - TRACKING STOPPED')
@@ -53,7 +56,7 @@ class TrackThread(QThread):
                 continue
 
             # check if pulse picker is closed
-            ''' if (jt_utils.get_pulse_picker(self.pulse_picker) == 1): '''
+            #if (jt_utils.get_pulse_picker(self.pulse_picker) == 1):
             if (self.jt_fake.pulse_picker.get() == 1):
                 # if pulse picker is closed, stop jet tracking
                 print('Pulse picker closed - TRACKING STOPPED')
@@ -61,11 +64,11 @@ class TrackThread(QThread):
                 continue
 
             # check wave8
-            ''' if (jt_utils.get_wave8(self.wave8) < self.params.thresh_w8):
-            if wave8 is below threshold, continue running jet tracking but do not move
-            print('Wave8 below threshold - NOT TRACKING')
-            sleep(2)
-            continue '''
+            # if (jt_utils.get_wave8(self.wave8) < self.params.thresh_w8):
+            #if wave8 is below threshold, continue running jet tracking but do not move
+            #print('Wave8 below threshold - NOT TRACKING')
+            #sleep(2)
+            #continue
 
             # OR check number of frames passed? used during testing w/ 'fake' PVs
             # get nframes timestamp
@@ -83,22 +86,22 @@ class TrackThread(QThread):
                 # if the timetamps do not match try again
                 continue
 
-            ''' if (jt_utils.get_cspad(self.cspad) < self.params.thresh_lo): '''
+            #if (jt_utils.get_cspad(self.cspad) < self.params.thresh_lo):
             # params IOC is down, hardcode threshold
             if (self.jt_output.det.get()[0] < 0.45):
                 # if CSPAD is below lower threshold, move jet
-                ''' if (not self.params.bypass_camera()): '''
+                #if (not self.params.bypass_camera()):
                 # params IOC is down, hardcode bypass
                 if (not False):
                     # if camera is not bypassed, check if there is a jet and location of jet
                     try:
-                        '''jet_control._jet_calculate_step(self.camera, self.params)
+                        #jet_control._jet_calculate_step(self.camera, self.params)
                         # if jet is more than certain microns away from x-rays, move jet
                         # using camera feedback
-                        if (self.params.jet_x.get() > self.params.thresh_cam):
-                        jet_control._jet_move_step(self.injector, self.camera, self.params)
-                        sleep(1) # change to however long it takes for jet to move
-                        continue '''
+                        #if (self.params.jet_x.get() > self.params.thresh_cam):
+                        #jet_control._jet_move_step(self.injector, self.camera, self.params)
+                        #sleep(1) # change to however long it takes for jet to move
+                        #continue
 
                         # devices are not connected, print status message instead
                         print('Detector below lower threshold - MOVING JET')
@@ -111,16 +114,16 @@ class TrackThread(QThread):
                         continue
             # if camera is bypassed or if jet is less than certain microns away from x-rays,
             # scan jet across x-rays to find new maximum
-            ''' jet_control.scan(self.injector, self.cspad)
-            intensity = jt_utils.get_cspad(azav, self.params.radius.get(), gas_detect)
-            self.params.intensity.put(intensity) '''
+            #jet_control.scan(self.injector, self.cspad)
+            #intensity = jt_utils.get_cspad(azav, self.params.radius.get(), gas_detect)
+            #self.params.intensity.put(intensity)
 
             # devices are not connected, print status message instead
             print('Detector below lower threshold - SCANNING JET')
             sleep(1)  # change to however long it takes for jet to scan
 
             # if CSPAD still below upper threshold, stop jet tracking
-            ''' if (get_cspad(self.cspad) < self.params.thresh_hi): '''
+            # if (get_cspad(self.cspad) < self.params.thresh_hi):
             # params IOC is down, hardcode threshold
             if (self.jt_output.det.get()[0] < 0.5):
                 print('CSPAD below threshold - TRACKING STOPPED')
@@ -130,7 +133,28 @@ class TrackThread(QThread):
             print('Running')
             print(self.jt_output.det.get())
             sleep(2)
+    
+    
 
+
+class thread(QThread):
+    def __init__(self, parent=None):
+        super(QThread, self).__init__(parent)
+        
+        self.context_data = zmq.Context()
+        self.socket_data = self.context_data.socket(zmq.SUB)
+        self.socket_data.connect(''.join(['tcp://localhost:','8123']))
+        self.socket_data.subscribe("")
+        self.getData()
+
+    def getData(self):
+        while True:
+            md = self.socket_data.recv_json(flags=0)
+            msg = self.socket_data.recv(flags=0, copy=False,track=False)
+            buf = memoryview(msg)
+            data = np.frombuffer(buf, dtype=md['dtype'])
+            data = data.reshape(md['shape'])
+            print(data)
 
 class GraphicsView(QGraphicsView):
 
@@ -146,6 +170,7 @@ class GraphicsScene(QGraphicsScene):
     def __init__(self, parent=None):
 
         super(GraphicsScene, self).__init__(parent)
+        #self.thread = thread()
 
 class ComboBox(QComboBox):
 
@@ -248,15 +273,19 @@ class JetTracking(Display):
         #####################################################################
         # make views/scenes to hold pydm graphs
         #####################################################################
-        self.view_graph1 = GraphicsView()
-        self.view_graph2 = GraphicsView()
-        self.view_graph3 = GraphicsView()
-        self.scene_graph1 = GraphicsScene()
-        self.scene_graph2 = GraphicsScene()
-        self.scene_graph3 = GraphicsScene()
-        self.view_graph1.setScene(self.scene_graph1)
-        self.view_graph2.setScene(self.scene_graph2)
-        self.view_graph3.setScene(self.scene_graph3) 
+        
+        self.view_graph1 = pg.PlotWidget()
+        self.view_graph2 = pg.PlotWidget()
+        self.view_graph3 = pg.PlotWidget()
+        #self.view_graph1 = GraphicsView()
+        #self.view_graph2 = GraphicsView()
+        #self.view_graph3 = GraphicsView()
+        #self.scene_graph1 = GraphicsScene()
+        #self.scene_graph2 = GraphicsScene()
+        #self.scene_graph3 = GraphicsScene()
+        #self.view_graph1.setScene(self.scene_graph1)
+        #self.view_graph2.setScene(self.scene_graph2)
+        #self.view_graph3.setScene(self.scene_graph3) 
         
         ######## setup layout ##########
         self.frame_graph = QFrame()
@@ -395,7 +424,9 @@ class JetTracking(Display):
         # add frame widgets to the main layout of the window
         self.layout_main.addWidget(self.frame_graph)
         self.layout_main.addWidget(self.frame_usr_cntrl)
+        
 
+        self.graph_setup()
     
     def setDefaultStyleSheet(self):
 
@@ -414,9 +445,13 @@ class JetTracking(Display):
                 font-size: 14px;\
             }")
 
+    def graph_setup(self):
+
+        graphDisplay(self.view_graph1, self.view_graph2, self.view_graph3)
+
+
 # Jason Reily please stop helping us
 # Arthur Brooks the Conservative heart
-
 
 '''
 class JetTrack(Display):
