@@ -24,6 +24,8 @@ import pyqtgraph as pg
 from pydm.widgets import PyDMEmbeddedDisplay
 from pydm.utilities import connection
 
+x = np.arange(10)
+y = np.arange(10)
 
 class graphDisplay(object):
 
@@ -32,18 +34,29 @@ class graphDisplay(object):
         self.graph1 = graph1
         self.graph2 = graph2
         self.graph3 = graph3
-        
         self.create_plots()
 
     def create_plots(self):
-
+        
         #self.plot1 = pg.plot(title = "data")
-        self.x = np.arange(100)
-        self.y = np.arange(100)
-        self.graph1.plot(title="did it work?")
-        self.graph1.plot(self.x, self.y, pen=3)
-        #self.graph1.plot().setLabels(bottom='time(s)', left='intensity')
-         
+        self.graph1.setAxisItems({'bottom': pg.AxisItem('bottom', text="oh no")})
+        
+        #plot = pg.PlotDataItem(self.x, self.y)
+        #self.graph1.plot(self.x, self.y, pen=3)
+        #plotitem = self.graph1.plot()
+        #plotitem.setLabel(axis = 'bottom', title = 'time(s)')
+        #plotitem.addItem(plot)
+        #viewbox = self.graph1.getViewBox() 
+        #plotitem.addItem(plotitem)
+        
+        #self.graph1.addItem(plotitem)
+        #print(plotitem.listDataItems())
+        #####################################################################
+        # set up user panel layout and give it a title
+        ####################################################################
+        # set up user panel layout and give it a title
         #self.graph1.addItem(self.plot1)
         #print(type(self.plot1))
-
+    def plot_scroll(self, data):
+         
+        self.graph1.plot(data[0], data[1]) 

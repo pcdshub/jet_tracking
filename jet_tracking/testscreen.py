@@ -1,4 +1,4 @@
-from time import sleep
+import time
 
 from pydm import Display
 from qtpy.QtCore import QThread
@@ -134,10 +134,30 @@ class TrackThread(QThread):
             print(self.jt_output.det.get())
             sleep(2)
     
-    
+class Counter(QObject):
+    """
+    Class intended to be used in a separate thread to generate numbers and send
+    them to another thread.
+    """
 
+    params = pyqtSignal(list)
+    stopped = pyqtSignal()
+
+    def start(self):
+        """
+        Count from 0 to 99 and emit each value to the GUI thread to display.
+        """
+        values = [[0],[0]]
+        print(values[0], values[1])
+        for x in range(100):
+            values[0].append(x)
+            values[1].append((2*x))
+            self.params.emit(values)
+            time.sleep(0.5)
+        self.stopped.emit()  
 
 class thread(QThread):
+    thread_data = pyqtSignal(list)
     def __init__(self, parent=None):
         super(QThread, self).__init__(parent)
         
@@ -145,16 +165,15 @@ class thread(QThread):
         self.socket_data = self.context_data.socket(zmq.SUB)
         self.socket_data.connect(''.join(['tcp://localhost:','8123']))
         self.socket_data.subscribe("")
-        self.getData()
 
-    def getData(self):
+    def run(self):
         while True:
             md = self.socket_data.recv_json(flags=0)
             msg = self.socket_data.recv(flags=0, copy=False,track=False)
             buf = memoryview(msg)
             data = np.frombuffer(buf, dtype=md['dtype'])
-            data = data.reshape(md['shape'])
-            print(data)
+            data = np.ndarray.tolist(data.reshape(md['shape']))
+            self.thread_data.emit(data)
 
 class GraphicsView(QGraphicsView):
 
@@ -232,7 +251,8 @@ class JetTracking(Display):
 
         #load data from file
         self.load_data()
-
+        
+        
         #assemble widgets
         self.setup_ui()
 
@@ -425,9 +445,25 @@ class JetTracking(Display):
         self.layout_main.addWidget(self.frame_graph)
         self.layout_main.addWidget(self.frame_usr_cntrl)
         
+        self.graph_setup() 
+        self.counterThread = QThread()
+        self.counter = Counter()
+        self.counter.moveToThread(self.counterThread)
+        
+        self.bttn_start.clicked.connect(self.startCounting)
+        self.counter.params.connect(self.update_data)
+        self.counter.stopped.connect(self.counterThread.quit)
+        self.counterThread.started.connect(self.counter.start)
+        
+        #self.thread = thread()
+        #self.thread.start()
+        #self.graph_setup()
+        #self.thread.thread_data.connect(self.update_data)
 
-        self.graph_setup()
-    
+    def startCounting(self):
+        if not self.counterThread.isRunning():
+            self.counterThread.start()
+
     def setDefaultStyleSheet(self):
 
         ### This should be done with a json file
@@ -447,8 +483,11 @@ class JetTracking(Display):
 
     def graph_setup(self):
 
-        graphDisplay(self.view_graph1, self.view_graph2, self.view_graph3)
-
+        self.gr = graphDisplay(self.view_graph1, self.view_graph2, self.view_graph3)
+    
+    def update_data(self, data):
+        
+        self.gr.plot_scroll(data)
 
 # Jason Reily please stop helping us
 # Arthur Brooks the Conservative heart
