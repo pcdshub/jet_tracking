@@ -29,34 +29,43 @@ y = np.arange(10)
 
 class graphDisplay(object):
 
-    def __init__(self, graph1, graph2, graph3):
-        
-        self.graph1 = graph1
-        self.graph2 = graph2
-        self.graph3 = graph3
-        self.create_plots()
-
-    def create_plots(self):
-        
-        #self.plot1 = pg.plot(title = "data")
-        self.graph1.setAxisItems({'bottom': pg.AxisItem('bottom', text="oh no")})
-        
-        #plot = pg.PlotDataItem(self.x, self.y)
-        #self.graph1.plot(self.x, self.y, pen=3)
-        #plotitem = self.graph1.plot()
-        #plotitem.setLabel(axis = 'bottom', title = 'time(s)')
-        #plotitem.addItem(plot)
-        #viewbox = self.graph1.getViewBox() 
-        #plotitem.addItem(plotitem)
-        
-        #self.graph1.addItem(plotitem)
-        #print(plotitem.listDataItems())
+    def create_plots(self, *args):
         #####################################################################
         # set up user panel layout and give it a title
+        # at this point it is assumed that there will be three graphs
         ####################################################################
-        # set up user panel layout and give it a title
-        #self.graph1.addItem(self.plot1)
-        #print(type(self.plot1))
+        
+        self.graph1 = args[0]
+        self.graph2 = args[1]
+        self.graph3 = args[2]
+
+        p1 = self.graph1.plotItem
+        p1.setLabels(left='Intensity', bottom='Initial Intensity')
+        p1.setTitle(title = 'scattergram')
+        p1.showGrid(x=True, y=True)
+        self.scatter = pg.ScatterPlotItem(pen=pg.mkPen(width=5, color='r'), size = 1)
+        self.graph1.addItem(self.scatter)
+        
+        
+        self.p2 = self.graph2.plotItem
+        self.p2.setLabels(left='Intensity', bottom=('Time', 's'))
+        self.p2.setTitle(title = 'Initial Intensity')
+
+        self.p3 = self.graph3.plotItem
+        self.p3.setLabels(left='Initial Intensity', bottom=('Time', 's'))
+        self.p3.setTitle(title = 'Diffraction Intensity') 
+           
     def plot_scroll(self, data):
+        if len(data[0]) > 125:
+            self.scatter.setData(data[1][-125:], data[0][-125:])
+        else:
+            self.scatter.setData(data[1], data[0]) 
+        #self.graph1.plot(data[0], data[1])
+        if len(data[2]) > 120:
+            self.graph2.setXRange(data[2][-120], data[2][-1])
+    
+        self.graph2.plot(data[2], data[0])
+
+        self.graph3.setXLink(self.graph2)
+        self.graph3.plot(data[2], data[1])
          
-        self.graph1.plot(data[0], data[1]) 

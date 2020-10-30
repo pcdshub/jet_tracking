@@ -20,10 +20,13 @@ from qtpy.QtWidgets import (QVBoxLayout, QHBoxLayout, QGroupBox,
     QApplication, QWidget, QGraphicsView, QGraphicsScene, QGraphicsRectItem, 
     QGraphicsItem, QSizePolicy)
 import pyqtgraph as pg
+from ophyd import EpicsSignalRO
 
 from pydm.widgets import PyDMEmbeddedDisplay
 from pydm.utilities import connection
 from graph_display import graphDisplay
+from signals import Signals
+
 
 class TrackThread(QThread):
 
@@ -133,47 +136,123 @@ class TrackThread(QThread):
             print('Running')
             print(self.jt_output.det.get())
             sleep(2)
-    
-class Counter(QObject):
-    """
-    Class intended to be used in a separate thread to generate numbers and send
-    them to another thread.
-    """
 
-    params = pyqtSignal(list)
-    stopped = pyqtSignal()
+
+#class Counter(QObject):
+#    """
+#    Class intended to be used in a separate thread to generate numbers and send
+#    them to another thread.
+#    """
+#
+#    params = pyqtSignal(list)
+#    stopped = pyqtSignal()
+#
+#    def start(self):
+#        """
+#        Count from 0 to 99 and emit each value to the GUI thread to display.
+#        """
+#        values = [[0],[0]]
+#        print(values[0], values[1])
+#        for x in range(100):
+#            values[0].append(x)
+#            values[1].append((2*x))
+#            self.params.emit(values)
+#            time.sleep(0.5)
+#        self.stopped.emit()  
+
+def getPVs():
+    ### this is where I would want to get PVs from a json file
+    ### but I will hard code it for now
+    return(['CXI:JTRK:REQ:DIFF_INTENSITY', 'CXI:JTRK:REQ:I0'])
+
+
+class Counter(QObject):
+    
+    
+    def __init__(self, signals, parent=None):
+        super(QObject, self).__init__(parent)
+        
+        self.signals = signals
+        self.bttnstatus = 0
+        self.timer = time.time()
+        
+        self.signals.rdbttnStatus.connect(self.changeBttn)
 
     def start(self):
-        """
-        Count from 0 to 99 and emit each value to the GUI thread to display.
-        """
-        values = [[0],[0]]
-        print(values[0], values[1])
-        for x in range(100):
-            values[0].append(x)
-            values[1].append((2*x))
-            self.params.emit(values)
-            time.sleep(0.5)
-        self.stopped.emit()  
-
-class thread(QThread):
-    thread_data = pyqtSignal(list)
-    def __init__(self, parent=None):
-        super(QThread, self).__init__(parent)
         
+        self.checkBttn()
+
+    def checkBttn(self):
+
+        if self.bttnstatus == 0:
+            self.runlive()
+
+        elif self.bttnstatus == 1:
+            self.runsim()
+
+    def changeBttn(self, value):
+
+        self.bttnstatus = value
+        self.signals.stopped.emit()
+
+    def runlive(self):
+        
+        def diff_cb(value, **kwargs):
+            if len(diff_values)>120:
+                diff_values.pop(0)
+            diff_values.append(value)
+        def i0_cb(value, **kwargs):
+            if len(i0_values)>120:
+                i0_values.pop(0)
+            i0_values.append(value)
+
+        diff_values = []
+        i0_values = []
+        c = 0
+        PVs = getPVs()
+        diff_pv = EpicsSignalRO(PVs[0])
+        i0_pv = EpicsSignalRO(PVs[1])        
+        
+        diff_pv.subscribe(diff_cb)
+        i0_pv.subscribe(i0_cb)
+        
+        while True:
+            print(diff_values, i0_values)        
+
+    def runsim(self):
+ 
         self.context_data = zmq.Context()
         self.socket_data = self.context_data.socket(zmq.SUB)
         self.socket_data.connect(''.join(['tcp://localhost:','8123']))
         self.socket_data.subscribe("")
-
-    def run(self):
+ 
+       
+        values = [[],[],[],[]] 
+        c = 0
+        
+        
         while True:
+            cur_time = time.time()-self.timer
+            c+=1
             md = self.socket_data.recv_json(flags=0)
             msg = self.socket_data.recv(flags=0, copy=False,track=False)
             buf = memoryview(msg)
             data = np.frombuffer(buf, dtype=md['dtype'])
             data = np.ndarray.tolist(data.reshape(md['shape']))
-            self.thread_data.emit(data)
+            if len(values[3])>120:
+                values[3] *= 0#values[0][-120:]
+                #values[1] = values[1][-120:]
+                #values[2] = values[2][-120:]    
+                #values[3] = values[3][-120:]
+
+            values[0].append(data[0])
+            values[1].append(data[1])
+            values[2].append(cur_time)
+            values[3].append(c)
+            
+            self.signals.params.emit(values)
+
+        self.signals.stopped.emit()
 
 class GraphicsView(QGraphicsView):
 
@@ -242,8 +321,9 @@ class Label(QLabel):
 
 
 class JetTracking(Display):
+
     def __init__(self, parent=None, args=None, macros=None):
-        super(JetTracking, self).__init__(parent=parent, args=args, macros=macros)
+        super(JetTracking, self).__init__( parent=parent, args=args, macros=macros)
 
         #reference to PyDMApplication - this line is what makes it so that you can avoid 
         #having to define main() and instead pydm handles that for you - it is a subclass of QWidget
@@ -252,6 +332,7 @@ class JetTracking(Display):
         #load data from file
         self.load_data()
         
+        self.signals = Signals()
         
         #assemble widgets
         self.setup_ui()
@@ -294,29 +375,16 @@ class JetTracking(Display):
         # make views/scenes to hold pydm graphs
         #####################################################################
         
-        self.view_graph1 = pg.PlotWidget()
-        self.view_graph2 = pg.PlotWidget()
-        self.view_graph3 = pg.PlotWidget()
-        #self.view_graph1 = GraphicsView()
-        #self.view_graph2 = GraphicsView()
-        #self.view_graph3 = GraphicsView()
-        #self.scene_graph1 = GraphicsScene()
-        #self.scene_graph2 = GraphicsScene()
-        #self.scene_graph3 = GraphicsScene()
-        #self.view_graph1.setScene(self.scene_graph1)
-        #self.view_graph2.setScene(self.scene_graph2)
-        #self.view_graph3.setScene(self.scene_graph3) 
-        
         ######## setup layout ##########
         self.frame_graph = QFrame()
         self.frame_graph.setMinimumHeight(500)
         self.layout_graph = QVBoxLayout()
         self.frame_graph.setLayout(self.layout_graph)
-        self.layout_graph.addWidget(self.view_graph1)
-        self.layout_graph.addWidget(self.view_graph2)
-        self.layout_graph.addWidget(self.view_graph3)
         ################################
-
+        
+        ### default is to use live graphing
+        self.liveGraphing()
+        
         #####################################################################
         # set up user panel layout and give it a title
         #####################################################################
@@ -329,6 +397,27 @@ class JetTracking(Display):
         self.lbl_usr_cntrl.setTitleStylesheet()
         self.lbl_usr_cntrl.setMaximumHeight(35)
         self.layout_usr_cntrl.addWidget(self.lbl_usr_cntrl)
+
+        #####################################################################
+        # make radiobutton for selecting live or simulated data
+        #####################################################################
+        
+        self.bttngrp = QButtonGroup()
+        self.rdbttn_live = QRadioButton("live data")#.setChecked(True)
+        self.rdbttn_sim = QRadioButton("simulated data")#.setChecked(False)
+        self.rdbttn_live.setChecked(True)
+        self.bttngrp.addButton(self.rdbttn_live)
+        self.bttngrp.addButton(self.rdbttn_sim)
+        self.bttngrp.setExclusive(True) ### allows only one button to be selected at a time
+        self.bttngrp.buttonClicked.connect(self.checkBttn)
+
+        #########setup layout##########
+        self.frame_rdbttns = QFrame()
+        self.layout_rdbttns = QHBoxLayout()
+        self.frame_rdbttns.setLayout(self.layout_rdbttns)
+        self.layout_usr_cntrl.addWidget(self.frame_rdbttns)
+        self.layout_rdbttns.addWidget(self.rdbttn_live)
+        self.layout_rdbttns.addWidget(self.rdbttn_sim)
 
         #####################################################################
         # make drop down menu for changing binning for sigma
@@ -378,7 +467,7 @@ class JetTracking(Display):
 
         self.lbl_camera = Label("Camera")
         self.lbl_camera.setSubtitleStyleSheet()
-        self.lbl_camera_status = Label("No Tracing")
+        self.lbl_camera_status = Label("No Tracking")
         self.lbl_camera_status.setCameraStylesheet()
         self.lbl_i0 = Label("Initial intensity (I0) RBV")
         self.lbl_i0.setSubtitleStyleSheet()
@@ -410,6 +499,13 @@ class JetTracking(Display):
         self.layout_usr_cntrl.addWidget(self.frame_i0)
         self.layout_usr_cntrl.addWidget(self.frame_gdet_i0)
         ###############################
+        
+        ########################################################################
+        # text area for giving updates the user can see
+        ########################################################################       
+
+        self.text_area = QTextEdit()
+        self.text_area.setReadOnly(True)
 
         #########################################################################
         # main buttons!!!!
@@ -445,20 +541,26 @@ class JetTracking(Display):
         self.layout_main.addWidget(self.frame_graph)
         self.layout_main.addWidget(self.frame_usr_cntrl)
         
-        self.graph_setup() 
+        
+        self.graph_setup()
+ 
         self.counterThread = QThread()
-        self.counter = Counter()
+        self.counter = Counter(self.signals)
         self.counter.moveToThread(self.counterThread)
         
+        ##############signals and slots####################
         self.bttn_start.clicked.connect(self.startCounting)
-        self.counter.params.connect(self.update_data)
-        self.counter.stopped.connect(self.counterThread.quit)
+        self.bttn_stop.clicked.connect(self.counterThread.quit)
+        
+        self.signals.params.connect(self.update_data)
+        self.signals.stopped.connect(self.counterThread.quit)
         self.counterThread.started.connect(self.counter.start)
         
         #self.thread = thread()
         #self.thread.start()
         #self.graph_setup()
         #self.thread.thread_data.connect(self.update_data)
+        ###################################################
 
     def startCounting(self):
         if not self.counterThread.isRunning():
@@ -483,11 +585,61 @@ class JetTracking(Display):
 
     def graph_setup(self):
 
-        self.gr = graphDisplay(self.view_graph1, self.view_graph2, self.view_graph3)
+        self.gr = graphDisplay()
+        self.gr.create_plots(self.view_graph1, self.view_graph2, self.view_graph3)
     
     def update_data(self, data):
         
         self.gr.plot_scroll(data)
+
+    def checkBttn(self, button):
+        bttn = button.text()
+
+        if bttn == "simulated data":
+            print(bttn)
+            self.pyqtGraphing()
+            self.signals.rdbttnStatus.emit(1)
+
+        if bttn == "live data":
+            print(bttn)
+            self.liveGraphing()
+            self.signals.rdbttnStatus.emit(0)
+
+    def pyqtGraphing(self):
+        
+        self.clearLayout(self.layout_graph)
+        
+        self.view_graph1 = pg.PlotWidget()
+        self.view_graph2 = pg.PlotWidget()
+        self.view_graph3 = pg.PlotWidget()
+
+        self.layout_graph.addWidget(self.view_graph1)
+        self.layout_graph.addWidget(self.view_graph2)
+        self.layout_graph.addWidget(self.view_graph3)
+        
+        self.graph_setup()
+ 
+    def liveGraphing(self):
+
+        self.clearLayout(self.layout_graph)
+
+        self.view_graph1 = pg.PlotWidget()
+        self.view_graph2 = pg.PlotWidget()
+        self.view_graph3 = pg.PlotWidget()
+
+        self.layout_graph.addWidget(self.view_graph1)
+        self.layout_graph.addWidget(self.view_graph2)
+        self.layout_graph.addWidget(self.view_graph3)
+
+        self.graph_setup()
+
+    def clearLayout(self, layout):
+        
+        for i in reversed(range(layout.count())):
+            widgetToRemove = layout.itemAt(i).widget()
+            layout.removeWidget(widgetToRemove)
+            widgetToRemove.setParent(None)
+
 
 # Jason Reily please stop helping us
 # Arthur Brooks the Conservative heart
