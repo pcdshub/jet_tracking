@@ -135,12 +135,6 @@ def peak_lr(array_data, threshold=LR_THRESH, bins=BINS):
     hist: np.histogram
         Histogram from array_data and bins
 
-    edges: ndarray
-        array of floats for edges of histogram fit
-
-    peak_idx: int
-        peak index of histogram
-
     i0_low: float
         lower i0 value of cut on histogram
 
@@ -167,7 +161,7 @@ def peak_lr(array_data, threshold=LR_THRESH, bins=BINS):
     left = peak_idx - np.argmax(left_array[::-1] < threshold * peak_val)
     i0_low = edges[left]
 
-    return hist, peak_idx, i0_low, i0_high, i0_med
+    return hist, i0_low, i0_high, i0_med
 
 def calc_azav_peak(ave_azav):
     """
@@ -254,23 +248,21 @@ def fit_limits(i0_data, peak_vals, i_low, i_high, bins=100):
 
           ###### Bokeh Figures #######
 
-def peak_fig(signal, hist, edges, peak_idx, left, right):
+def peak_fig(signal, hist, med, low, high):
     """General histogram plotter with peak location and 
     left/right limits plotted"""
-    low = round(edges[left], 2)
-    hi = round(edges[right], 2)
     fig = figure(
         title='Used Intensity Distribution for {0}. \
-            Low/Hi: {1}/{2}'.format(signal, low, hi),
+            Low/Hi: {1}/{2}'.format(signal, low, high),
         x_axis_label='Intensity Values',
         y_axis_label='Counts'
     )
     fig.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:])
-    left_line = Span(location=edges[left], dimension='height', \
+    left_line = Span(location=low, dimension='height', \
         line_color='black')
-    right_line = Span(location=edges[right], dimension='height', \
+    right_line = Span(location=high, dimension='height', \
         line_color='black')
-    peak_line = Span(location=edges[peak_idx], dimension='height', \
+    peak_line = Span(location=med, dimension='height', \
         line_color='red')
     fig.renderers.extend([left_line, right_line, peak_line])
 
@@ -356,13 +348,15 @@ def intensity_vs_peak_fig(intensity, peak_vals, x, y, slope, intercept, sigma):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--exp', type=str, default=(os.environ['EXPERIMENT']))
-    parser.add_argument('--run', type=str, default=(os.environ['RUN_NUM']))
+    parser.add_argument('--exp', type=str, default=(os.environ.get('EXPERIMENT', None)))
+    parser.add_argument('--run', type=str, default=(os.environ.get('RUN_NUM', None)))
     parser.add_argument('--cfg', type=str, \
         default=(''.join([JT_LOC, 'mpi_scripts/mpi_configs/default_config.yml'])))
     args = parser.parse_args()
 
-    with open(''.join(['mpi_configs/', args.cfg_file])) as f:
+    # All useful information should come from the config file
+    # This will be source of truth for starting point for each hutch for now
+    with open(args.cfg) as f:
         yml_dict = yaml.load(f, Loader=yaml.FullLoader)
         api_port = yml_dict['api_msg']['port']
         det_map = yml_dict['det_map']
@@ -385,10 +379,11 @@ if __name__ == '__main__':
 
     # Find I0 distribution and filter out unused values
     i0_data = np.array(i0_data)
-    i0_hist, i0_peak_idx, i0_low, i0_high, i0_med = peak_lr(i0_data)
+    i0_hist, i0_low, i0_high, i0_med = peak_lr(i0_data)
     i0_idxs = np.where((i0_data > i0_low) & (i0_data < i0_high))
     i0_data_use = i0_data[i0_idxs]
-    p = peak_fig('gdet', i0_hist, i0_peak_idx, i0_low, i0_high)
+    # Generate figure for i0 params
+    p = peak_fig('i0 Values', i0_hist, i0_med, i0_low, i0_high)
 
     # Get the azav value we'll use
     azav_use = [azav_data[idx] for idx in i0_idxs[0]]
@@ -399,7 +394,6 @@ if __name__ == '__main__':
     # Get the integrated intensity and generate fig
     integrated_intensity = get_integrated_intensity(ave_azav, peak, DELTA_BIN)
     p1 = azav_fig(ave_azav, peak, integrated_intensity, DELTA_BIN)
-
 
     # Go back through indices and find peak values for all the intensities
     low = peak - DELTA_BIN
