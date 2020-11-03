@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # Constants
 # Location of my branch for testing
-JT_LOC = '/cds/home/a/aegger/jet_tracking/jet_tracking/mpi_scripts/'
+JT_LOC = '/cds/home/a/aegger/jet_tracking/jet_tracking/'
 # Number of bins
 BINS = 100
 # Number of events to process
@@ -257,7 +257,7 @@ def peak_fig(signal, hist, med, low, high):
         x_axis_label='Intensity Values',
         y_axis_label='Counts'
     )
-    fig.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:])
+    fig.quad(top=hist, bottom=0, left=low, right=high)
     left_line = Span(location=low, dimension='height', \
         line_color='black')
     right_line = Span(location=high, dimension='height', \
@@ -272,14 +272,19 @@ def azav_fig(ave_azav, peak, intensity, delta_bin):
     """Generate the azav fig for html file"""
     x_vals = np.arange(len(ave_azav))
     fig = figure(
-        title='Average Azimuthal Binned Array: Center - {0}, min/max - {1}/{2}, intensity - {3}'.format(peak, peak-delta_bin, peak+delta_bin, round(intensity, 2)),
+        title='Average Azimuthal Binned Array: Center - {0}, \
+            min/max - {1}/{2}, intensity - {3}'.format(peak, \
+            peak-delta_bin, peak+delta_bin, round(intensity, 2)),
         x_axis_label='Bins',
         y_axis_label='Intensity',
     )
 
-    peak_line = Span(location=peak, dimension='height', line_color='green', line_width=2)
-    lower_line = Span(location=peak-delta_bin, dimension='height', line_color='black')
-    upper_line = Span(location=peak+delta_bin, dimension='height', line_color='black')
+    peak_line = Span(location=peak, dimension='height', \
+        line_color='green', line_width=2)
+    lower_line = Span(location=peak-delta_bin, dimension='height', \
+        line_color='black')
+    upper_line = Span(location=peak+delta_bin, dimension='height', \
+        line_color='black')
     ave_azav_curve = fig.scatter(x_vals, ave_azav)
     fig.renderers.extend([peak_line, lower_line, upper_line])
 
@@ -301,13 +306,15 @@ def intensity_hist(intensity_hist, edges):
 def intensity_vs_peak_fig(intensity, peak_vals, x, y, slope, intercept, sigma):
     """Simple plot of intensity vs peak value"""
     fig = figure(
-        title='Peak value vs Intensity. Slope = {0}, Intercept = {1}'.format(round(slope, 2), round(intercept, 2)),
+        title='Peak value vs Intensity. Slope = {0}, Intercept = {1}'.\
+            format(round(slope, 2), round(intercept, 2)),
         x_axis_label='Intensity Monitor Value',
         y_axis_label='Peak Values'
     )
     fig.x_range.range_padding = fig.y_range.range_padding = 0
     h, y_edge, x_edge = np.histogram2d(peak_vals, intensity, bins=100)
-    fig.image(image=[h], x=x_edge[0], y=y_edge[0], dh=y_edge[-1]-y_edge[0], dw=x_edge[-1]-x_edge[0], palette="Spectral11")
+    fig.image(image=[h], x=x_edge[0], y=y_edge[0], dh=y_edge[-1]-y_edge[0], \
+        dw=x_edge[-1]-x_edge[0], palette="Spectral11")
     color_mapper = LinearColorMapper(palette="Spectral11", low=h.min(), high=h.max())
     color_bar = ColorBar(color_mapper=color_mapper, location=(0,0))
     fig.xaxis.bounds = [i0_low, i0_high]
@@ -348,8 +355,10 @@ def intensity_vs_peak_fig(intensity, peak_vals, x, y, slope, intercept, sigma):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--exp', type=str, default=(os.environ.get('EXPERIMENT', None)))
-    parser.add_argument('--run', type=str, default=(os.environ.get('RUN_NUM', None)))
+    parser.add_argument('--exp', type=str, \
+        default=(os.environ.get('EXPERIMENT', None)))
+    parser.add_argument('--run', type=str, \
+        default=(os.environ.get('RUN_NUM', None)))
     parser.add_argument('--cfg', type=str, \
         default=(''.join([JT_LOC, 'mpi_scripts/mpi_configs/default_config.yml'])))
     args = parser.parse_args()
@@ -376,6 +385,25 @@ if __name__ == '__main__':
     masks = get_r_masks((2203, 2299), BINS)
     i0_data = []
     azav_data=[]
+    ped = detector.pedestals(1)[0]
+    logger.info('starting to evaluate 1000 events')
+    print('starting to evaluate 1000 events')
+    for evt_idx, evt in enumerate(ds.events()):
+        if evt_idx % 100 == 0:
+            logger.info('finished {} events'.format(evt_idx))
+            print('finished {} events'.format(evt_idx))
+        raw = detector.raw_data(evt) - ped
+        image = detector.image(evt, raw)
+        azav = np.array([np.mean(image[mask]) for mask in masks])
+        azav_data.append(azav)
+        try:
+            i0_data.append(ipm.get(evt).f_12_ENRC())
+        except:
+            logger.warning('missing i0 for event {}'.format(evt_idx))
+            i0_data.append(0.0)
+
+        if evt_idx == 100:
+            break
 
     # Find I0 distribution and filter out unused values
     i0_data = np.array(i0_data)
