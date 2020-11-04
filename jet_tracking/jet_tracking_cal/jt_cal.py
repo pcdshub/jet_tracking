@@ -364,7 +364,7 @@ if __name__ == '__main__':
     azav_data=[]
     ped = detector.pedestals(1)[0]
     logger.info('starting to evaluate 1000 events')
-    print('starting to evaluate 1000 events')
+    
     for evt_idx, evt in enumerate(ds.events()):
         if evt_idx % 100 == 0:
             logger.info('finished {} events'.format(evt_idx))
@@ -425,6 +425,8 @@ if __name__ == '__main__':
         'std_ratio': std_ratio
     }
 
+    print(' found results ', results)
+
     # Write results to file
     with open(''.join([results_dir, '/', args.run, '_results']), 'w') as f:
         json.dumps(results, f, sort_keys=True, indent=4)
@@ -435,3 +437,5 @@ if __name__ == '__main__':
     gspec[4:6, 0:3] = p1
     gspec[7:9, 0:3] = p2
     gspec.save(''.join([plots_dir, 'results_', args.run, '.html']))
+
+    print('finished with calibration')
