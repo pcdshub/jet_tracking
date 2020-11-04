@@ -1,5 +1,6 @@
 from time import sleep
 from statistics import mean
+import time
 
 from pydm import Display
 from qtpy.QtCore import QThread
@@ -27,23 +28,44 @@ from pydm.utilities import connection
 
 class Calibration(object):
 
-    def __init__(self, signals):
+    def __init__(self, signals, Parent = None):
         
+        self.parent = Parent
         self.signals = signals
         self.ave_low_i0 = 0
         self.mean_diff = 0
         self.sigma_diff = 0
         self.sigma_i0 = 0        
+        self.mean_ratio = 0
+        values = [[],[],[]]
+
+        self.signals.calibration.connect(self.monitor)
 
     def get_i0(self):
-        self.ave_low_i0 = 78
+        
         return(self.ave_low_i0)
 
-
-    def get_meandiff(self):
-        self.mean_diff = 0.5
-        return(self.mean_diff)
+    def get_diff(self):
         
+        return(self.mean_diff)
+
+    def get_ratio(self):
+        
+        return(self.mean_ratio)
+
     def get_sigma(self):
-        self.sigma_diff = 0.2
-        return(self.sigma_diff)
+        
+        return(self.sigma_i0)
+
+    def monitor(self):
+
+        ### want to make Counter more flexible
+
+        c = Counter(self.signals, 3600)
+        
+        t = time.time()
+
+        c.start()
+        
+                
+                

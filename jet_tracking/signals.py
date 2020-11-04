@@ -14,4 +14,4 @@ class Signals(QtCore.QObject):
 
     #calibration
     ali0 = QtCore.pyqtSignal(float)
-
+    calibration = QtCore.pyqtSignal()

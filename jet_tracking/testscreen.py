@@ -173,10 +173,11 @@ def getPVs():
 class Counter(QObject):
     
     
-    def __init__(self, signals, parent=None):
+    def __init__(self, signals, nsamp, parent=None):
         super(QObject, self).__init__(parent)
         
         self.signals = signals
+        self.nsamp = nsamp
         self.bttnstatus = 0
         self.timer = time.time()
         
@@ -206,16 +207,15 @@ class Counter(QObject):
         c = 0
  
         def diff_cb(value, c):
-            if len(self.diff_values)>120:
+            if len(self.diff_values)>self.nsamp:
                 self.diff_values.pop(0)
-            diff_pv.put(49*0.6*3*np.random.rand()-0.5)
-            value = diff_pv.get()
+            #diff_pv.put(49*0.6*3*np.random.rand()-0.5)
             values[0].append(value)
+
         def i0_cb(value, c):
-            if len(self.i0_values)>120:
+            if len(self.i0_values)>self.nsamp:
                 self.i0__values.pop(0)
-            i0_pv.put(79+2*np.random.rand())#np.sin(c**np.pi/180))
-            value = i0_pv.get()
+            #i0_pv.put(79+2*np.random.rand())
             values[1].append(value)
 
         self.diff_values = []
@@ -224,10 +224,6 @@ class Counter(QObject):
         PVs = getPVs()
         diff_pv = EpicsSignal(PVs[0])
         i0_pv = EpicsSignal(PVs[1])        
-        diff_pv.put(49)
-        i0_pv.put(79)
-        #diff_pv.subscribe(diff_cb)
-        #i0_pv.subscribe(i0_cb)
         
         while True:
 
@@ -237,8 +233,7 @@ class Counter(QObject):
             i0_cb(i0_pv.get(), c)
             values[2].append(cur_time)
             values[3].append(c)
-            #print(values)
-            time.sleep(1/100)
+            
             self.signals.params.emit(values)
 
         self.signals.stopped.emit()      
@@ -357,8 +352,9 @@ class JetTracking(Display):
         self.load_data()
         
         self.signals = Signals()
-        self.calibration = Calibration(self.signals)  
+        self.calibration = Calibration(self.signals, self)  
         #assemble widgets
+        self.mode = 0
         self.setup_ui()
 
     def minimumSizeHint(self):
@@ -433,8 +429,6 @@ class JetTracking(Display):
         self.bttngrp.addButton(self.rdbttn_live)
         self.bttngrp.addButton(self.rdbttn_sim)
         self.bttngrp.setExclusive(True) ### allows only one button to be selected at a time
-        self.bttngrp.buttonClicked.connect(self.checkBttn)
-
         #########setup layout##########
         self.frame_rdbttns = QFrame()
         self.layout_rdbttns = QHBoxLayout()
@@ -453,9 +447,13 @@ class JetTracking(Display):
         self.cbox_sigma = ComboBox()
         self.cbox_sigma.addItems(['1', '1.5', '2', '2.5', '3'])
         
-        self.lbl_cbox_nsamp = Label('number of samples')
-        self.lbl_cbox_nsamp.setSubtitleStyleSheet()
+        self.lbl_tbox_nsamp = Label('number of samples')
+        self.lbl_tbox_nsamp.setSubtitleStyleSheet()
 
+
+        #self.tbox_nsamp = QLineEdit("10")
+        #self.validator = QIntValidator(0, 300)
+        #self.tbox_nsamp.setValidator(self.validator)
         self.cbox_nsamp = ComboBox()
         self.cbox_nsamp.addItems(['10', '20', '50', '120'])
         
@@ -468,12 +466,12 @@ class JetTracking(Display):
         self.layout_cbox_sigma.addWidget(self.lbl_cbox_sigma)
         self.layout_cbox_sigma.addWidget(self.cbox_sigma)
 
-        self.frame_cbox_nsamp = QFrame()
-        self.layout_cbox_nsamp = QHBoxLayout()
-        self.frame_cbox_nsamp.setLayout(self.layout_cbox_nsamp)
-        self.layout_usr_cntrl.addWidget(self.frame_cbox_nsamp)
-        self.layout_cbox_nsamp.addWidget(self.lbl_cbox_nsamp)
-        self.layout_cbox_nsamp.addWidget(self.cbox_nsamp)
+        self.frame_tbox_nsamp = QFrame()
+        self.layout_tbox_nsamp = QHBoxLayout()
+        self.frame_tbox_nsamp.setLayout(self.layout_tbox_nsamp)
+        self.layout_usr_cntrl.addWidget(self.frame_tbox_nsamp)
+        self.layout_tbox_nsamp.addWidget(self.lbl_tbox_nsamp)
+        self.layout_tbox_nsamp.addWidget(self.cbox_nsamp)#self.tbox_nsamp)
         ############################
 
         ####################################################################
@@ -511,10 +509,16 @@ class JetTracking(Display):
         self.lbl_i0 = Label("Initial intensity (I0) RBV")
         self.lbl_i0.setSubtitleStyleSheet()
         self.lbl_i0_status = QLCDNumber(4)
+        
+        self.cali_i0 = self.calibration.get_i0()
+        self.lbl_i0_status.display(self.cali_i0)
 
-        self.lbl_gdet_i0 = Label("I/I0 at detector")
-        self.lbl_gdet_i0.setSubtitleStyleSheet()
-        self.lbl_gdet_i0_status = QLCDNumber(4)
+        self.lbl_diff_i0 = Label("Diffraction at detector")
+        self.lbl_diff_i0.setSubtitleStyleSheet()
+        self.lbl_diff_i0_status = QLCDNumber(4)
+        
+        self.diff_i = self.calibration.get_diff()
+        self.lbl_diff_i0_status.display(self.diff_i)
 
         ########setup layout###########
         self.layout_usr_cntrl.addWidget(self.lbl_status)
@@ -529,22 +533,24 @@ class JetTracking(Display):
         self.frame_i0.layout().addWidget(self.lbl_i0)
         self.frame_i0.layout().addWidget(self.lbl_i0_status)
 
-        self.frame_gdet_i0 = QFrame()
-        self.frame_gdet_i0.setLayout(QHBoxLayout())
-        self.frame_gdet_i0.layout().addWidget(self.lbl_gdet_i0)
-        self.frame_gdet_i0.layout().addWidget(self.lbl_gdet_i0_status)
+        self.frame_diff_i0 = QFrame()
+        self.frame_diff_i0.setLayout(QHBoxLayout())
+        self.frame_diff_i0.layout().addWidget(self.lbl_diff_i0)
+        self.frame_diff_i0.layout().addWidget(self.lbl_diff_i0_status)
 
         self.layout_usr_cntrl.addWidget(self.frame_tracking_status)
         self.layout_usr_cntrl.addWidget(self.frame_i0)
-        self.layout_usr_cntrl.addWidget(self.frame_gdet_i0)
+        self.layout_usr_cntrl.addWidget(self.frame_diff_i0)
         ###############################
         
         ########################################################################
         # text area for giving updates the user can see
         ########################################################################       
 
-        self.text_area = QTextEdit()
+        self.text_area = QTextEdit("~~~read only information for user~~~")
         self.text_area.setReadOnly(True)
+
+        self.layout_usr_cntrl.addWidget(self.text_area)
 
         #########################################################################
         # main buttons!!!!
@@ -584,15 +590,19 @@ class JetTracking(Display):
         self.graph_setup()
  
         self.counterThread = QThread()
-        self.counter = Counter(self.signals)
+        self.counter = Counter(self.signals, 120)
         self.counter.moveToThread(self.counterThread)
         
         ##############signals and slots####################
+        self.bttn_calibrate.clicked.connect(self.startCalibration)
         self.bttn_start.clicked.connect(self.startCounting)
         self.bttn_stop.clicked.connect(self.counterThread.quit)
         self.signals.stopped.connect(self.counterThread.quit)
         self.cbox_sigma.activated.connect(self.update_sigma)
-        self.cbox_nsamp.activated.connect(self.update_nsamp)
+        #self.tbox_nsamp.returnPressed.connect(self.update_nsamp())
+        self.cbox_nsamp.activated.connect(self.update_nsamp)        
+        self.bttngrp.buttonClicked.connect(self.checkBttn)
+
 
         self.signals.params.connect(self.update_data)       
         self.counterThread.started.connect(self.counter.start)
@@ -605,29 +615,47 @@ class JetTracking(Display):
         #self.thread.thread_data.connect(self.update_data)
         ###################################################
 
+    def startCalibration(self):
+        
+        self.signals.calibration.emit()
+        #self.calibration.get
+
     def startCounting(self):
-        self.calibration = Calibration(self.signals) 
+         
         self.signals.status.emit(1)
         if not self.counterThread.isRunning():
             self.counterThread.start()
     
     def update_status(self, value):
+
         if value == 0:
             self.lbl_tracking_status.setText("No Tracking")
+            self.lbl_tracking_status.setStyleSheet("\
+                background-color: red;")
+
         elif value == 1:
             self.lbl_tracking_status.setText("Tracking")
+            self.lbl_tracking_status.setStyleSheet("\
+                background-color: green;")
+
         elif value == 2:
             self.lbl_tracking_status.setText("Warning! Low incoming intensity")
             self.lbl_tracking_status.setStyleSheet("\
                 background-color: yellow;")
  
         elif value == 3:
-            self.lbl_tracking_status.setText("Warning! see jet alignment")
+            self.lbl_tracking_status.setText("Warning! check jet alignment")
+            self.lbl_tracking_status.setStyleSheet("\
+                background-color: orange;")
+ 
+
 
     def update_sigma(self, sigma):
         self.signals.sigma.emit(float(self.cbox_sigma.currentText()))
 
-    def update_nsamp(self, nsamp):
+    def update_nsamp(self):
+        #nsamp = self.tbox_nsamp.text()
+        #print(nsamp, type(nsamp))
         self.signals.nsamp.emit(float(self.cbox_nsamp.currentText()))
 
     def setDefaultStyleSheet(self):
@@ -663,11 +691,13 @@ class JetTracking(Display):
             print(bttn)
             self.pyqtGraphing()
             self.signals.rdbttnStatus.emit(1)
+            self.mode = 1
 
         if bttn == "live data":
             print(bttn)
             self.liveGraphing()
             self.signals.rdbttnStatus.emit(0)
+            self.mode = 0
 
     def pyqtGraphing(self):
         
