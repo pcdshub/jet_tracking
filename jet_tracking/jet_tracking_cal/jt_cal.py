@@ -323,35 +323,6 @@ def intensity_vs_peak_fig(intensity, peak_vals, x, y, slope, intercept, sigma):
     fig.line(x, y - 1 * sigma, color='orange')
     fig.line(x, y + 1 * sigma, color='orange')
     return fig
-    # 2d histogram with limits plotted
-    # gspec[10:12, 0:3] = intensity_vs_peak_fig(i0_data_use, azav_intensity_vals, x, y, m, b, sigma)
-
-    # results_dir = args.results_dir
-    # if not results_dir:
-    #     results_dir = f'{results_path}/results.html'
-
-    # if not os.path.exists(results_dir):
-    #     logger.debug('results directory does not exist, creating')
-    #     os.makedirs(results_dir)
-
-    # logger.debug(f'Saving html file to {results_dir}')
-    # gspec.save(f'{results_path}/results.html')
-
-    # results = {
-    #     'i0_low': i0_low,
-    #     'i0_high': i0_high,
-    #     'peak_azav_bin': peak_azav_bin,
-    #     'left_azav_bin': left_azav_bin,
-    #     'right_azav_bin': right_azav_bin,
-    #     'slope_fit': m,
-    #     'intercept': b,
-    #     'sigma': sigma
-    # }
-    # cal_dir = args.cal_dir
-    # if not cal_dir:
-    #     cal_dir = f'{cal_path}/Run_{run}'
-
-    # write_html(cal_dir, results, run)
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -361,28 +332,34 @@ if __name__ == '__main__':
         default=(os.environ.get('RUN_NUM', None)))
     parser.add_argument('--cfg', type=str, \
         default=(''.join([JT_LOC, 'mpi_scripts/mpi_configs/default_config.yml'])))
+    parser.add_argument('--delta_bin', type=int, \
+        default=(DELTA_BIN))
+    parser.add_argument('--bins', type=int, \
+        default=(BINS))
     args = parser.parse_args()
 
     # All useful information should come from the config file
     # This will be source of truth for starting point for each hutch for now
     with open(args.cfg) as f:
         yml_dict = yaml.load(f, Loader=yaml.FullLoader)
-        api_port = yml_dict['api_msg']['port']
         det_map = yml_dict['det_map']
         ipm_name = yml_dict['ipm']['name']
         ipm_det = yml_dict['ipm']['det']
         hutch = yml_dict['hutch']
 
-    # Setup data source
+    # Setup data source and write directories
     exp_run = ''.join(['exp=', args.exp, ':run=', args.run])
-    exp_dir = ''.join(['/reg/d/psdm/', hutch, '/', args.exp, '/xtc/'])
+    base_dir = ''.join(['/cds/data/psdm/', hutch, '/', args.exp, '/'])
+    exp_dir = ''.join([base_dir, 'xtc/'])
+    plots_dir = ''.join([base_dir, 'stats/summary/'])
+    results_dir = ''.join([base_dir, 'results'])
     dsname = ''.join([exp_run, ':smd:', 'dir=', exp_dir])
     ds = psana.DataSource(dsname)
 
     # Get the detectors from the config
     detector = psana.Detector(det_map['name'])
     ipm = psana.Detector(ipm_name)
-    masks = get_r_masks((2203, 2299), BINS)
+    masks = get_r_masks(det_map['shape'], args.bins)
     i0_data = []
     azav_data=[]
     ped = detector.pedestals(1)[0]
@@ -402,7 +379,7 @@ if __name__ == '__main__':
             logger.warning('missing i0 for event {}'.format(evt_idx))
             i0_data.append(0.0)
 
-        if evt_idx == 100:
+        if evt_idx == 1000:
             break
 
     # Find I0 distribution and filter out unused values
@@ -417,16 +394,44 @@ if __name__ == '__main__':
     azav_use = [azav_data[idx] for idx in i0_idxs[0]]
     ave_azav = np.array((np.sum(azav_use, axis=0)) / len(azav_use))
     # Find the peak bin from average azav values
-    peak = calc_azav_peak(ave_azav)
+    peak_bin = calc_azav_peak(ave_azav)
 
     # Get the integrated intensity and generate fig
-    integrated_intensity = get_integrated_intensity(ave_azav, peak, DELTA_BIN)
-    p1 = azav_fig(ave_azav, peak, integrated_intensity, DELTA_BIN)
+    integrated_intensity = get_integrated_intensity(ave_azav, peak_bin, args.delta_bin)
+    p1 = azav_fig(ave_azav, peak_bin, integrated_intensity, args.delta_bin)
 
     # Go back through indices and find peak values for all the intensities
-    low = peak - DELTA_BIN
-    high = peak + DELTA_BIN
-    peak_vals = [azav[low:high].sum(axis=0) for azav in azav_use]
+    low_bin = peak_bin - args.delta_bin
+    high_bin = peak_bin + args.delta_bin
+    peak_vals = [azav[low_bin:high_bin].sum(axis=0) for azav in azav_use]
     # Now fit I0 vs diffraction intensities
     x, y, slope, intercept, sigma = fit_limits(i0_data_use, peak_vals, i0_low, i0_high)
     p2 = intensity_vs_peak_fig(i0_data_use, peak_vals, x, y, slope, intercept, sigma)
+
+    # Ratio information
+    ratios = peak_vals / i0_data_use
+    mean_ratio = np.mean(ratios)
+    med_ratio = np.median(ratios)
+    std_ratio = np.std(ratios)
+
+    # Accumulate results
+    results = {
+        'i0_low': i0_low,
+        'i0_high': i0_high,
+        'peak_bin': peak_bin,
+        'delta_bin': args.delta_bin,
+        'mean_ratio': mean_ratio,
+        'med_ratio': med_ratio,
+        'std_ratio': std_ratio
+    }
+
+    # Write results to file
+    with open(''.join([results_dir, '/', args.run, '_results']), 'w') as f:
+        json.dumps(results, f, sort_keys=True, indent=4)
+
+    # Accumulate plots and write
+    gspec = pn.GridSpec()
+    gspec[0:3, 0:3] = p
+    gspec[4:6, 0:3] = p1
+    gspec[7:9, 0:3] = p2
+    gspec.save(''.join([plots_dir, 'results_', args.run, '.html']))
