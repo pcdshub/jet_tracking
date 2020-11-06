@@ -1,26 +1,7 @@
-import json
-import os
-from os import path
 from statistics import mean
-from time import sleep
 
-import cv2
-import numpy as np
 import pyqtgraph as pg
-import zmq
-from pydm import Display
-from pydm.utilities import connection
-from pydm.widgets import PyDMEmbeddedDisplay
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from qtpy import QtCore
-from qtpy.QtCore import QThread
-from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsItem,
-                            QGraphicsRectItem, QGraphicsScene, QGraphicsView,
-                            QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                            QPushButton, QScrollArea, QSizePolicy, QVBoxLayout,
-                            QWidget)
+from PyQt5.QtCore import Qt
 
 
 class graphDisplay(object):

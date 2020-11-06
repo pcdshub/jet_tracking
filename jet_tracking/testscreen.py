@@ -1,29 +1,22 @@
-import json
 import logging
-import os
 import time
-from os import path
 
-import cv2
 import numpy as np
 import pyqtgraph as pg
 import zmq
-from calibration import Calibration
-from graph_display import graphDisplay
 from ophyd import EpicsSignal
 from pydm import Display
-from pydm.utilities import connection
-from pydm.widgets import PyDMEmbeddedDisplay
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtCore import QObject
+from PyQt5.QtWidgets import (QButtonGroup, QComboBox, QLCDNumber, QRadioButton,
+                             QTextEdit)
 from qtpy import QtCore
 from qtpy.QtCore import QThread
-from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsItem,
-                            QGraphicsRectItem, QGraphicsScene, QGraphicsView,
-                            QGroupBox, QHBoxLayout, QLabel, QLineEdit,
-                            QPushButton, QScrollArea, QSizePolicy, QVBoxLayout,
-                            QWidget)
+from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
+                            QGraphicsView, QHBoxLayout, QLabel, QPushButton,
+                            QVBoxLayout)
+
+from calibration import Calibration
+from graph_display import graphDisplay
 from signals import Signals
 
 logging = logging.getLogger('ophyd')
@@ -81,7 +74,7 @@ class TrackThread(QThread):
             if (self.jt_output.nframe.get()[0] < self.jt_input.nframe.get() * 0.8):
                 # if too few frames passed, continue running jet tracking but do not move
                 print('Too few frames passed - NOT TRACKING')
-                sleep(2)
+                time.sleep(2)
                 continue
 
             # check CSPAD
@@ -110,12 +103,12 @@ class TrackThread(QThread):
 
                         # devices are not connected, print status message instead
                         print('Detector below lower threshold - MOVING JET')
-                        sleep(1)  # change to however long it takes for jet to move
+                        time.sleep(1)  # change to however long it takes for jet to move
                         continue
                     except Exception:
                         # if jet is not detected, continue running jet tracking but do not move
                         print('Cannot find jet - NOT TRACKING')
-                        sleep(2)
+                        time.sleep(2)
                         continue
             # if camera is bypassed or if jet is less than certain microns away from x-rays,
             # scan jet across x-rays to find new maximum
@@ -125,7 +118,7 @@ class TrackThread(QThread):
 
             # devices are not connected, print status message instead
             print('Detector below lower threshold - SCANNING JET')
-            sleep(1)  # change to however long it takes for jet to scan
+            time.sleep(1)  # change to however long it takes for jet to scan
 
             # if CSPAD still below upper threshold, stop jet tracking
             # if (get_cspad(self.cspad) < self.params.thresh_hi):
@@ -137,7 +130,7 @@ class TrackThread(QThread):
 
             print('Running')
             print(self.jt_output.det.get())
-            sleep(2)
+            time.sleep(2)
 
 
 #class Counter(QObject):
