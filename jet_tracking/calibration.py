@@ -3,16 +3,16 @@ import time
 
 class Calibration(object):
 
-    def __init__(self, signals, Parent = None):
+    def __init__(self, signals, parent=None):
 
-        self.parent = Parent
+        self.parent = parent
         self.signals = signals
         self.ave_low_i0 = 0
         self.mean_diff = 0
         self.sigma_diff = 0
         self.sigma_i0 = 0
         self.mean_ratio = 0
-        values = [[],[],[]]
+        # values = [[], [], []]
 
         self.signals.calibration.connect(self.monitor)
 
@@ -34,10 +34,10 @@ class Calibration(object):
 
     def monitor(self):
 
-        ### want to make Counter more flexible
+        # want to make Counter more flexible
 
         # c = Counter(self.signals, 3600)
 
-        t = time.time()
+        self.t = time.time()
 
         # c.start()

@@ -31,12 +31,12 @@ class TrackThread(QThread):
         super().__init__()
 
         # self.injector = injector
-        #self.camera = camera
-        #self.cspad = cspad
-        #self.stopper = stopper
-        #self.pulse_picker = pulse_picker
-        #self.wave8 = wave8
-        #self.params = params
+        # self.camera = camera
+        # self.cspad = cspad
+        # self.stopper = stopper
+        # self.pulse_picker = pulse_picker
+        # self.wave8 = wave8
+        # self.params = params
 
         # devices are not connected, use 'fake' PVs instead
         self.jt_input = jt_input
@@ -46,7 +46,7 @@ class TrackThread(QThread):
     def run(self):
         while not self.isInterruptionRequested():
             # check if stopper is in
-            #if (jt_utils.get_stopper(self.stopper) == 1):
+            # if (jt_utils.get_stopper(self.stopper) == 1):
             if (self.jt_fake.stopper.get() == 1):
                 # if stopper is in, stop jet tracking
                 print('Stopper in - TRACKING STOPPED')
@@ -54,7 +54,7 @@ class TrackThread(QThread):
                 continue
 
             # check if pulse picker is closed
-            #if (jt_utils.get_pulse_picker(self.pulse_picker) == 1):
+            # if (jt_utils.get_pulse_picker(self.pulse_picker) == 1):
             if (self.jt_fake.pulse_picker.get() == 1):
                 # if pulse picker is closed, stop jet tracking
                 print('Pulse picker closed - TRACKING STOPPED')
@@ -63,10 +63,10 @@ class TrackThread(QThread):
 
             # check wave8
             # if (jt_utils.get_wave8(self.wave8) < self.params.thresh_w8):
-            #if wave8 is below threshold, continue running jet tracking but do not move
-            #print('Wave8 below threshold - NOT TRACKING')
-            #sleep(2)
-            #continue
+            # if wave8 is below threshold, continue running jet tracking but do not move
+            # print('Wave8 below threshold - NOT TRACKING')
+            # sleep(2)
+            # continue
 
             # OR check number of frames passed? used during testing w/ 'fake' PVs
             # get nframes timestamp
@@ -84,22 +84,22 @@ class TrackThread(QThread):
                 # if the timetamps do not match try again
                 continue
 
-            #if (jt_utils.get_cspad(self.cspad) < self.params.thresh_lo):
+            # if (jt_utils.get_cspad(self.cspad) < self.params.thresh_lo):
             # params IOC is down, hardcode threshold
             if (self.jt_output.det.get()[0] < 0.45):
                 # if CSPAD is below lower threshold, move jet
-                #if (not self.params.bypass_camera()):
+                # if (not self.params.bypass_camera()):
                 # params IOC is down, hardcode bypass
                 if (not False):
                     # if camera is not bypassed, check if there is a jet and location of jet
                     try:
-                        #jet_control._jet_calculate_step(self.camera, self.params)
+                        # jet_control._jet_calculate_step(self.camera, self.params)
                         # if jet is more than certain microns away from x-rays, move jet
                         # using camera feedback
-                        #if (self.params.jet_x.get() > self.params.thresh_cam):
-                        #jet_control._jet_move_step(self.injector, self.camera, self.params)
-                        #sleep(1) # change to however long it takes for jet to move
-                        #continue
+                        # if (self.params.jet_x.get() > self.params.thresh_cam):
+                        # jet_control._jet_move_step(self.injector, self.camera, self.params)
+                        # sleep(1) # change to however long it takes for jet to move
+                        # continue
 
                         # devices are not connected, print status message instead
                         print('Detector below lower threshold - MOVING JET')
@@ -112,9 +112,9 @@ class TrackThread(QThread):
                         continue
             # if camera is bypassed or if jet is less than certain microns away from x-rays,
             # scan jet across x-rays to find new maximum
-            #jet_control.scan(self.injector, self.cspad)
-            #intensity = jt_utils.get_cspad(azav, self.params.radius.get(), gas_detect)
-            #self.params.intensity.put(intensity)
+            # jet_control.scan(self.injector, self.cspad)
+            # intensity = jt_utils.get_cspad(azav, self.params.radius.get(), gas_detect)
+            # self.params.intensity.put(intensity)
 
             # devices are not connected, print status message instead
             print('Detector below lower threshold - SCANNING JET')
@@ -133,7 +133,7 @@ class TrackThread(QThread):
             time.sleep(2)
 
 
-#class Counter(QObject):
+# class Counter(QObject):
 #    """
 #    Class intended to be used in a separate thread to generate numbers and send
 #    them to another thread.
@@ -156,13 +156,12 @@ class TrackThread(QThread):
 #        self.stopped.emit()
 
 def getPVs():
-    ### this is where I would want to get PVs from a json file
-    ### but I will hard code it for now
+    # this is where I would want to get PVs from a json file
+    # but I will hard code it for now
     return(['CXI:JTRK:REQ:DIFF_INTENSITY', 'CXI:JTRK:REQ:I0'])
 
 
 class Counter(QObject):
-
 
     def __init__(self, signals, nsamp, parent=None):
         super(QObject, self).__init__(parent)
@@ -193,20 +192,20 @@ class Counter(QObject):
 
     def runlive(self):
 
-        values = [[],[],[],[]]
+        values = [[], [], [], []]
 
         c = 0
 
         def diff_cb(value, c):
-            if len(self.diff_values)>self.nsamp:
+            if len(self.diff_values) > self.nsamp:
                 self.diff_values.pop(0)
-            #diff_pv.put(49*0.6*3*np.random.rand()-0.5)
+            # diff_pv.put(49*0.6*3*np.random.rand()-0.5)
             values[0].append(value)
 
         def i0_cb(value, c):
-            if len(self.i0_values)>self.nsamp:
-                self.i0__values.pop(0)
-            #i0_pv.put(79+2*np.random.rand())
+            if len(self.i0_values) > self.nsamp:
+                self.i0_values.pop(0)
+            # i0_pv.put(79+2*np.random.rand())
             values[1].append(value)
 
         self.diff_values = []
@@ -233,27 +232,25 @@ class Counter(QObject):
 
         self.context_data = zmq.Context()
         self.socket_data = self.context_data.socket(zmq.SUB)
-        self.socket_data.connect(''.join(['tcp://localhost:','8123']))
+        self.socket_data.connect(''.join(['tcp://localhost:', '8123']))
         self.socket_data.subscribe("")
 
-
-        values = [[],[],[],[]]
+        values = [[], [], [], []]
         c = 0
-
 
         while True:
             cur_time = time.time()-self.timer
-            c+=1
+            c += 1
             md = self.socket_data.recv_json(flags=0)
-            msg = self.socket_data.recv(flags=0, copy=False,track=False)
+            msg = self.socket_data.recv(flags=0, copy=False, track=False)
             buf = memoryview(msg)
             data = np.frombuffer(buf, dtype=md['dtype'])
             data = np.ndarray.tolist(data.reshape(md['shape']))
-            if len(values[3])>120:
-                values[3] *= 0#values[0][-120:]
-                #values[1] = values[1][-120:]
-                #values[2] = values[2][-120:]
-                #values[3] = values[3][-120:]
+            if len(values[3]) > 120:
+                values[3] *= 0  # values[0][-120:]
+                # values[1] = values[1][-120:]
+                # values[2] = values[2][-120:]
+                # values[3] = values[3][-120:]
 
             values[0].append(data[0])
             values[1].append(data[1])
@@ -264,37 +261,31 @@ class Counter(QObject):
 
         self.signals.stopped.emit()
 
+
 class GraphicsView(QGraphicsView):
-
     def __init__(self, parent=None):
-
         super(GraphicsView, self).__init__(parent)
-
         self.setMouseTracking(True)
 
 
 class GraphicsScene(QGraphicsScene):
-
     def __init__(self, parent=None):
-
         super(GraphicsScene, self).__init__(parent)
-        #self.thread = thread()
+        # self.thread = thread()
+
 
 class ComboBox(QComboBox):
-
     def __init__(self, parent=None):
-
         super(ComboBox, self).__init__(parent)
 
+
 class PushButton(QPushButton):
-
     def __init__(self, parent=None):
-
         super(PushButton, self).__init__(parent)
+
 
 class Label(QLabel):
     def __init__(self, parent=None):
-
         super(Label, self).__init__(parent)
 
     def setTitleStylesheet(self):
@@ -309,6 +300,7 @@ class Label(QLabel):
                 max-height: 35px;\
                 font-size: 14px;\
             ")
+
     def setSubtitleStyleSheet(self):
         self.setStyleSheet("\
                 qproperty-alignment: AlignCenter;\
@@ -318,8 +310,9 @@ class Label(QLabel):
                 color: rgb(255, 255, 255);\
                 font-size: 12px;\
             ")
+
     def setTrackingStylesheet(self):
-        #this will change based on the status given back
+        # this will change based on the status given back
         self.setStyleSheet("\
                 qproperty-alignment: AlignCenter;\
                 border: 1px solid #FF17365D;\
@@ -333,52 +326,54 @@ class Label(QLabel):
 class JetTracking(Display):
 
     def __init__(self, parent=None, args=None, macros=None):
-        super(JetTracking, self).__init__( parent=parent, args=args, macros=macros)
+        super(JetTracking, self).__init__(parent=parent, args=args, macros=macros)
 
-        #reference to PyDMApplication - this line is what makes it so that you can avoid
-        #having to define main() and instead pydm handles that for you - it is a subclass of QWidget
+        # reference to PyDMApplication - this line is what makes it so that you
+        # #can avoid # having to define main() and instead pydm handles that
+        # for you - it is a subclass of QWidget
         self.app = QApplication.instance()
 
-        #load data from file
+        # load data from file
         self.load_data()
 
         self.signals = Signals()
         self.calibration = Calibration(self.signals, self)
-        #assemble widgets
+        # assemble widgets
         self.mode = 0
         self.setup_ui()
 
     def minimumSizeHint(self):
 
-        return(QtCore.QSize(1000,600))
+        return(QtCore.QSize(1000, 600))
 
     def ui_filepath(self):
 
-        #no Ui file is being used as of now
+        # no Ui file is being used as of now
         return(None)
 
     def load_data(self):
 
-        #this is responsible for opening the database and adding the information to self.data
-        #https://slaclab.github.io/pydm-tutorial/action/python.html
+        # this is responsible for opening the database and adding the information to self.data
+        # https://slaclab.github.io/pydm-tutorial/action/python.html
 
         pass
-    def setup_ui(self):
-        #set default style sheet
-        #self.setDefaultStyleSheet()
 
-        #create layout
+    def setup_ui(self):
+        # set default style sheet
+        # self.setDefaultStyleSheet()
+
+        # create layout
         self._layout = QVBoxLayout()
         self.setLayout(self._layout)
 
-        #give it a title
+        # give it a title
         self.lbl_title = Label("Jet Tracking")
         self.lbl_title.setTitleStylesheet()
         self._layout.addWidget(self.lbl_title)
         self._layout.addStretch(1)
         self.lbl_title.setMaximumHeight(35)
 
-        #add a main layout for under the title which holds graphs and user controls
+        # add a main layout for under the title which holds graphs and user controls
         self.layout_main = QHBoxLayout()
         self._layout.addLayout(self.layout_main)
 
@@ -386,14 +381,15 @@ class JetTracking(Display):
         # make views/scenes to hold pydm graphs
         #####################################################################
 
-        ######## setup layout ##########
+        ################################
+        # setup layout
         self.frame_graph = QFrame()
         self.frame_graph.setMinimumHeight(500)
         self.layout_graph = QVBoxLayout()
         self.frame_graph.setLayout(self.layout_graph)
         ################################
 
-        ### default is to use live graphing
+        # default is to use live graphing
         self.liveGraphing()
 
         #####################################################################
@@ -414,13 +410,15 @@ class JetTracking(Display):
         #####################################################################
 
         self.bttngrp = QButtonGroup()
-        self.rdbttn_live = QRadioButton("live data")#.setChecked(True)
-        self.rdbttn_sim = QRadioButton("simulated data")#.setChecked(False)
+        self.rdbttn_live = QRadioButton("live data")  # .setChecked(True)
+        self.rdbttn_sim = QRadioButton("simulated data")  # .setChecked(False)
         self.rdbttn_live.setChecked(True)
         self.bttngrp.addButton(self.rdbttn_live)
         self.bttngrp.addButton(self.rdbttn_sim)
-        self.bttngrp.setExclusive(True) ### allows only one button to be selected at a time
-        #########setup layout##########
+        self.bttngrp.setExclusive(True)  # allows only one button to be selected at a time
+
+        # setup layout
+        ##############
         self.frame_rdbttns = QFrame()
         self.layout_rdbttns = QHBoxLayout()
         self.frame_rdbttns.setLayout(self.layout_rdbttns)
@@ -441,15 +439,14 @@ class JetTracking(Display):
         self.lbl_tbox_nsamp = Label('number of samples')
         self.lbl_tbox_nsamp.setSubtitleStyleSheet()
 
-
-        #self.tbox_nsamp = QLineEdit("10")
-        #self.validator = QIntValidator(0, 300)
-        #self.tbox_nsamp.setValidator(self.validator)
+        # self.tbox_nsamp = QLineEdit("10")
+        # self.validator = QIntValidator(0, 300)
+        # self.tbox_nsamp.setValidator(self.validator)
         self.cbox_nsamp = ComboBox()
         self.cbox_nsamp.addItems(['10', '20', '50', '120'])
 
-
-        #######setup layout#########
+        # setup layout
+        ##############
         self.frame_cbox_sigma = QFrame()
         self.layout_cbox_sigma = QHBoxLayout()
         self.frame_cbox_sigma.setLayout(self.layout_cbox_sigma)
@@ -462,7 +459,7 @@ class JetTracking(Display):
         self.frame_tbox_nsamp.setLayout(self.layout_tbox_nsamp)
         self.layout_usr_cntrl.addWidget(self.frame_tbox_nsamp)
         self.layout_tbox_nsamp.addWidget(self.lbl_tbox_nsamp)
-        self.layout_tbox_nsamp.addWidget(self.cbox_nsamp)#self.tbox_nsamp)
+        self.layout_tbox_nsamp.addWidget(self.cbox_nsamp)  # self.tbox_nsamp)
         ############################
 
         ####################################################################
@@ -475,7 +472,8 @@ class JetTracking(Display):
         self.bttn_attenuator = PushButton("Gas Attenuator")
         self.bttn_wave8 = PushButton("Wave8")
 
-        ####setup layout####
+        # setup layout
+        ##############
         self.frame_init_initensity = QFrame()
         self.layout_init_initensity = QHBoxLayout()
         self.frame_init_initensity.setLayout(self.layout_init_initensity)
@@ -511,7 +509,8 @@ class JetTracking(Display):
         self.diff_i = self.calibration.get_diff()
         self.lbl_diff_i0_status.display(self.diff_i)
 
-        ########setup layout###########
+        # setup layout
+        ##############
         self.layout_usr_cntrl.addWidget(self.lbl_status)
 
         self.frame_tracking_status = QFrame()
@@ -563,7 +562,8 @@ class JetTracking(Display):
             font-size:12px;\
             ")
 
-        #########setup layout#########
+        # setup layout
+        ##############
         self.frame_jjbttns = QFrame()
         self.frame_jjbttns.setLayout(QHBoxLayout())
         self.frame_jjbttns.layout().addWidget(self.bttn_calibrate)
@@ -577,39 +577,39 @@ class JetTracking(Display):
         self.layout_main.addWidget(self.frame_graph)
         self.layout_main.addWidget(self.frame_usr_cntrl)
 
-
         self.graph_setup()
 
         self.counterThread = QThread()
         self.counter = Counter(self.signals, 120)
         self.counter.moveToThread(self.counterThread)
 
-        ##############signals and slots####################
+        ###################################################
+        # signals and slots
+        ###################################################
         self.bttn_calibrate.clicked.connect(self.startCalibration)
         self.bttn_start.clicked.connect(self.startCounting)
         self.bttn_stop.clicked.connect(self.counterThread.quit)
         self.signals.stopped.connect(self.counterThread.quit)
         self.cbox_sigma.activated.connect(self.update_sigma)
-        #self.tbox_nsamp.returnPressed.connect(self.update_nsamp())
+        # self.tbox_nsamp.returnPressed.connect(self.update_nsamp())
         self.cbox_nsamp.activated.connect(self.update_nsamp)
         self.bttngrp.buttonClicked.connect(self.checkBttn)
-
 
         self.signals.params.connect(self.update_data)
         self.counterThread.started.connect(self.counter.start)
 
         self.signals.status.connect(self.update_status)
 
-        #self.thread = thread()
-        #self.thread.start()
-        #self.graph_setup()
-        #self.thread.thread_data.connect(self.update_data)
+        # self.thread = thread()
+        # self.thread.start()
+        # self.graph_setup()
+        # self.thread.thread_data.connect(self.update_data)
         ###################################################
 
     def startCalibration(self):
 
         self.signals.calibration.emit()
-        #self.calibration.get
+        # self.calibration.get
 
     def startCounting(self):
 
@@ -639,19 +639,17 @@ class JetTracking(Display):
             self.lbl_tracking_status.setStyleSheet("\
                 background-color: orange;")
 
-
-
     def update_sigma(self, sigma):
         self.signals.sigma.emit(float(self.cbox_sigma.currentText()))
 
     def update_nsamp(self):
-        #nsamp = self.tbox_nsamp.text()
-        #print(nsamp, type(nsamp))
+        # nsamp = self.tbox_nsamp.text()
+        # print(nsamp, type(nsamp))
         self.signals.nsamp.emit(float(self.cbox_nsamp.currentText()))
 
     def setDefaultStyleSheet(self):
 
-        ### This should be done with a json file
+        # This should be done with a json file
 
         self.setStyleSheet("\
             Label {\

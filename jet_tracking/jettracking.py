@@ -8,7 +8,7 @@ from os import path
 from time import sleep
 
 import jet_control
-#from . import jet_control, jt_utils
+# from . import jet_control, jt_utils
 import jt_utils
 from pydm import Display
 from qtpy.QtCore import QThread
@@ -98,27 +98,27 @@ class TrackThread(QThread):
 class JetTrack(Display):
 
     def __init__(self, *args, **kwargs):
-        #def __init__(self, injector, camera, cspad, stopper, pulse_picker, wave8, params,
+        # def __init__(self, injector, camera, cspad, stopper, pulse_picker, wave8, params,
         #             *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         # self.track_thread = TrackThread()
-        #self.track_thread = TrackThread(injector, camera, cspad, stopper,
+        # self.track_thread = TrackThread(injector, camera, cspad, stopper,
         #                                pulse_picker, wave8, params)
 
         # connect GUI buttons to appropriate methods
-        #self.ui.calibrate_btn.clicked.connect(self.calibrate_clicked)
-        #self.ui.start_btn.clicked.connect(self.start_clicked)
-        #self.ui.stop_btn.clicked.connect(self.stop_clicked)
+        # self.ui.calibrate_btn.clicked.connect(self.calibrate_clicked)
+        # self.ui.start_btn.clicked.connect(self.start_clicked)
+        # self.ui.stop_btn.clicked.connect(self.stop_clicked)
 
         # set initial availability of buttons
-        #self.ui.calibrate_btn.setEnabled(True)
-        #self.ui.start_btn.setEnabled(False)
-        #self.ui.stop_btn.setEnabled(False)
+        # self.ui.calibrate_btn.setEnabled(True)
+        # self.ui.start_btn.setEnabled(False)
+        # self.ui.stop_btn.setEnabled(False)
 
     def ui_filepath(self):
         """File path for ui file for GUI."""
-        #return 'C:\Users\ajshack\jet_tracking\jettracking.ui'
+        # return 'C:\Users\ajshack\jet_tracking\jettracking.ui'
         return(path.join(path.dirname(path.realpath(__file__)), self.ui_filename()))
 
     def ui_filename(self):
