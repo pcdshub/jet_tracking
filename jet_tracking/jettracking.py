@@ -4,15 +4,15 @@ only file which needs to be run, and the GUI will control when the jet-tracking
 methods (e.g. `~jet_control.calibrate`, `~jet_control.jet_detect`, etc) should
 be run.
 """
-from time import sleep
 from os import path
+from time import sleep
 
+import jet_control
+#from . import jet_control, jt_utils
+import jt_utils
 from pydm import Display
 from qtpy.QtCore import QThread
 
-#from . import jet_control, jt_utils
-import jt_utils
-import jet_control
 
 class TrackThread(QThread):
 
