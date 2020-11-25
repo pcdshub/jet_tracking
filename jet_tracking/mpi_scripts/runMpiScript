@@ -1,0 +1,81 @@
+#!/bin/bash
+
+usage()
+{
+cat << EOF
+$(basename "$0"):
+  Script to launch an mpirun
+
+  OPTIONS:
+    -h|--help
+      Definition of options
+    -e|--exprun
+      Experiment and run name in format exp=xppd7114:run=43
+    -d|--dsname
+      Data source name to gather events from
+    -n|--nevts
+      Number of events for each worker to process
+    -c|--cfgfile
+      Config file to load with damage/vars, and other things to parse for data aquisition
+    -p|--processors
+      Number of cores to use (available workers -1 for master)
+EOF
+}
+
+for arg in "$@"
+do
+  case $arg in
+    -h|--help)
+      usage exit
+      ;;
+    -e|--exprun)
+      EXPRUN="$2"
+      shift
+      shift
+      ;;
+    -d|--dsname)
+      DSNAME="$2"
+      shift
+      shift
+      ;;
+    -n|--nevts)
+      NEVTS="$2"
+      shift
+      shift
+      ;;
+    -c|--cfgfile)
+      CFGFILE="$2"
+      shift
+      shift
+      ;;
+    -p|--processors)
+      PROC="$2"
+      shift
+      shift
+      ;;
+  esac
+done
+
+# Pull out mpi_driver.py args
+ARGS=''
+if [[ -v EXPRUN ]]; then
+  ARGS+=' --exprun '$EXPRUN
+fi
+if [[ -v DSNAME ]]; then
+  ARGS+=' --dsname '$DSNAME
+fi
+if [[ -v NEVTS ]]; then
+  ARGS+=' --nevts '$NEVTS
+fi
+if [[ -v CFGFILE ]]; then
+  ARGS+=' --cfg_file '$CFGFILE
+fi
+
+# If user doesn't specify use minimum required
+PROC=${PROC:='2'}
+
+source /reg/g/pcds/setup/pathmunge.sh
+source /reg/g/psdm/sw/conda1/manage/bin/psconda.sh
+cd /reg/neh/home/aegger/smalldata_tools/mpi_scripts
+pythonpathmunge '/reg/neh/home/aegger/smalldata_tools'
+`which mpirun` -n $PROC python mpi_driver.py $ARGS

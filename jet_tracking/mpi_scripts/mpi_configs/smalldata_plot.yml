@@ -1,0 +1,71 @@
+master:
+  server: daq-cxi-mon05
+  port: 5000
+
+ipm_ttampl:
+  port: 5014
+  var1: ipm2__sum
+  var2: tt__AMPL
+  number_of_events: 1200
+  width: 900
+  height: 600
+  updateRate: 2
+  xRange:
+    - auto
+    - 0.4
+  yRange:
+    - auto
+    - 2000.
+
+ipm_ROI:
+  port: 5015
+  var1: ipm2__sum
+  var2: jungfrau512k__ROI_1
+  number_of_events: 1200
+  width: 900
+  height: 600
+  updateRate: 2
+  xRange:
+    - auto
+    - 0.4
+  yRange:
+    - auto
+    - 2000.
+
+ROI_scan:
+  port: 5016
+  i0var: ipm2__sum
+  sigvar: jungfrau512k__ROI_1
+  binWidth: 100
+  binEntries: 50
+  FilterVar:
+  - lightStatus__xray
+  - ipm2__sum
+  FilterVarMin:
+  - 0.5
+  - 50
+  FilterVarMax:
+  - 1.5
+  - 1000000.
+  width: 900
+  height: 600
+  updateRate: 2
+  xRange:
+    - auto
+    - 0.4
+  yRange:
+    - auto
+    - 2000.
+
+tt_fltpos_time:
+  port: 5015
+  var1: ttall
+  var1_idx: 0
+  number_of_events: 14400
+  width: 900
+  height: 300
+  updateRate: 5
+  yRange:
+    - auto
+    - 2000.
+
