@@ -223,7 +223,7 @@ class Counter(QObject):
             i0_cb(i0_pv.get(), c)
             values[2].append(cur_time)
             values[3].append(c)
-
+            time.sleep(1/10)
             self.signals.params.emit(values)
 
         self.signals.stopped.emit()
