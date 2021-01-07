@@ -6,11 +6,11 @@ import pyqtgraph as pg
 import zmq
 from ophyd import EpicsSignal
 from pydm import Display
-from PyQt5.QtCore import QObject
+from PyQt5.QtCore import *
 from PyQt5.QtWidgets import (QButtonGroup, QComboBox, QLCDNumber, QRadioButton,
                              QTextEdit)
 from qtpy import QtCore
-from qtpy.QtCore import QThread
+from qtpy.QtCore import *
 from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
                             QGraphicsView, QHBoxLayout, QLabel, QPushButton,
                             QVBoxLayout)
@@ -130,63 +130,101 @@ class Counter(QObject):
         self.signals.stopped.emit()
 
 
-class ValueReader(object):
+def skimmer(self, key, oldlist, checklist):
+    skimlist = []
+    for i in range(len(checklist[key])):
+        if checklist[key][i] == 0:
+            skimlist.append(oldlist[i])
+    return(skimlist)
+
+class ValueReader(object): #need to make into a singleton
     def __init__(self):
 
         self.PVs = dict()
         self.PV_signals = list()
         self.live_data = True
-        self.epics_signals()
+        self.data_stream()
+        self.rdbuttonstatus.connect(self.isLive)
 
-    def epics_signals(self):
+    def data_stream(self):
         ### Question: how to account for possible missing PVs in json
         ### where all should I be checking for things like none values
         ### how do I notify the user without breaking the whole program
         ### if they try switching to wave8 or something while it's already running
-
-        self.PVs = getPVs()
-        gatt = self.PVs.get('gatt', None)
-        self.signal_gatt = EpicsSignal(gatt)
-        wave8 = self.PVs.get('wave8', None)
-        self.signal_wave8 = EpicsSignal(wave8)
-        diff = self.PVs.get('diffraction', None)
-        self.signal_diff = EpicsSignal(diff)
-        
+        if self.live_data():
+            self.PVs = getPVs()
+            gatt = self.PVs.get('gatt', None)
+            self.signal_gatt = EpicsSignal(gatt)
+            wave8 = self.PVs.get('wave8', None)
+            self.signal_wave8 = EpicsSignal(wave8)
+            diff = self.PVs.get('diffraction', None)
+            self.signal_diff = EpicsSignal(diff)
+        else:
+            "you are trying to collect data from ValueReader but it's not set up"
         #p = [gatt, wave8, diff]
         #self.PV_signals = [EpicsSignal(i) for i in p if i is not None]
 
-    def read_value(self):
+    def read_value(self): # needs to initialize first maybe using a decorator?
         if self.live_data:
             return({'gatt': self.signal_gatt.get(), 'wave8': self.signal_wave8.get(), 'diffraction': self.signal_diff.get()}
+        else:
+            print("you have simulated data radiobutton selected and you have not done anything with this yet")
+
+    def is_live(self, live):
+        self.live_data = live
 
     #def filter_data():
         # this function is used to remove any keys from the dictionary that have None for the value
         #d = {k, v for k, v in self.signal_dict.items() if v is not None}
         #return
  
-class StatusThread(QThread):
-    def __init__(self, signals, parent=None):
+class StatusThread(QObject):
+    status = pyqtSignal(str, str)
+    buffers = pyqtSignal(list)
+    avevalues = pyqtSignal(dict)
+
+    def __init__(self, parent=None):
         super(StatusThread, self).__init__(parent)
-        self.signals = signals
-        self.mode = None
-        self.buffer_size = 150
+        self.status = None
+        self.buffer_size = 300
         self.count = 0
+        self.calibration_values = {"i0": 0, "diffraction":0, "ratio": 0}
+        self.nsamp = 10
+        self.sigma = 1
+        self.notification_tolerance = 100
+        self.i0_rdbutton_selection = 'gatt'
+        self.interruptedRequested = False
+        self.i0_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
+        self.diff_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
+        self.ratio_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
+        self.averages = {"average i0":collections.deque([0]*self.buffer_size, self.buffer_size), 
+                        "average diffraction": collections.deque([0]*self.buffer_size, self.buffer_size),
+                        "average ratio": collections.deque([0]*self.buffer_size, self.buffer_size)}
+        self.flaggedEvents = {"low Intensity": collections.deque([0]*self.buffer_size, self.buffer_size),
+                            "missed shot": collections.deque([0]*self.buffer_size, self.buffer_size),
+                            "dropped shot", collections.deque([0]*self.buffer_size, self.buffer_size}
+        self.buffers = [self.i0_buffer, self.diff_buffer, self.ratio_buffer]
+
+        self.rdbuttonstatus.connect(self.update_rdbutton)
+        self.modeval.connect(self.update_mode)
+        self.nsampval.connect(self.update_nsamp)
+        self.sigmaval.connect(self.update_sigma)
+
+    def reset_buffers(self, size):
+        self.buffer_size = size
         self.i0_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
         self.diff_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
         self.ratio_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
         self.calibration_value = 0
-        self.i0_rdbutton_selection = 'gatt'
 
-        self.rdbuttonstatus.connect(self.update_rdbutton)
-        self.signals.mode.connect(self.update_mode)
-        self.signals.nsamp.connect(self.update_nsamp)
+    def stop(self):
+        self.interruptedRequested = True
 
-    def reset_buffers(self, size):
-        self.buffer_size = size
-        self._initial_intensity_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
-
-    def update_mode(self, mode):
-        self.mode = mode
+    def update_status(self, status):
+        self.status = status
+    
+    def update_sigma(self, sigma):
+        self.sigma = sigma
 
     def update_nsamp(self, nsamp):
         self.nsamp = nsamp
@@ -194,33 +232,76 @@ class StatusThread(QThread):
     def update_rdbutton(self, rdbutton):
         self.i0_rdbutton_selection = rdbutton
 
+    @pyqtSlot()
     def run(self):
-        while not self.interruptedRequested():
-             new_values = ValueReader().read_value()
-             if self.mode == 'Running':
-                 if self.count < self.buffer_size:
-                     self.count += 1
-                     self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
-                     self.diff_buffer.append(new_values.get('diffraction')
-                     self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
-                 else: 
-                     new_status = self.compare(new_values)
-                     self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
-                     self.diff_buffer.append(new_values.get('diffraction')
-                     self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
-             else:
-                 self.calibrate(new_values)
-             self.signals.values.emit([self.i0_buffer, self.diff_buffer, self.ratio_buffer])
-             self.signals.status.emit(new_status)
-             self.sleep(300)
-         self.count = 0
-              
-    def compare(self, new_values):
-        pass
+        """Long-running task."""
+        self.mode = 'running'
+        while not self.interruptedRequested:
+            new_values = ValueReader().read_value() #### how does this line work? does it initialize ValueReader first?
+            if self.mode == 'Running':
+                if self.count < self.buffer_size:
+                    self.count += 1
+                    self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
+                    self.diff_buffer.append(new_values.get('diffraction'))
+                    self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
+                else: 
+                    self.count += 1 #### do I need to protect from this number getting too big?
+                    self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
+                    self.diff_buffer.append(new_values.get('diffraction'))
+                    self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
+                    self.event_flagging()
+                    if self.count % self.nsamp == 0: # get averages - but don't include dropped shots
+                        avei0 =  mean(skimmer('dropped shot',
+                                      self.i0_buffer, self.flaggedEvents))
+                        self.averages["average i0"].append(avei0)
+                        avediff =  mean(skimmer('dropped shot',
+                                      self.diff_buffer, self.flaggedEvents))
+                        self.averages["average diffraction"].append(avediff)
+                        averatio =  mean(skimmer('dropped shot',
+                                      self.ratio_buffer, self.flaggedEvents))
+                        self.averages["average ratio"].append(averatio)
+                        self.avevalues.emit(self.averages)
+                self.check_status_update()
+            else:
+                self.calibrate(new_values)
+            self.buffers.emit(self.buffers)
+            self.sleep(300)
+            self.count = 0
     
-    def calibration(self, values):
+    def check_status_update(self):
+        if np.count_nonzero(self.flaggedEvents['missed shot']) > self.notification_tolerance:
+            self.status.emit("warning", "red") # a way to clock how long it's in a warning state before it needs recalibration
+
+    def event_flagging(self):
+        if self.ratio_buffer[-1] < (self.calibration_values['ratio'] - self.sigma*self.calibration_values['ratio']):
+            self.flaggedEvents['low intensity'].append(self.buffer_size-1)
+        else:
+            self.flaggedEvents['low intensity'].append(0)
+        if self.i0_buffer[-1] < (self.calibration_values['i0']- self.sigma*self.calibration_values['i0']):
+            self.flaggedEvents['dropped shot'].append(self.i0_buffer[-1])
+        else:
+            self.flaggedEvents['dropped shot'].append(0)
+        if self.diff_buffer[-1] < (self.calibration_values['diffraction']- self.sigma*self.calibration_values['diffraction']):
+            self.flaggedEvents['missed shot'].append(self.i0_buffer[-1])
+        else:
+            self.flaggedEvents['missed shot'].append(0)
         
+    def calibrate(self, values):
+        #the mode should be "calibrating" anytime you are here
+        self.buffer_size = 1000
+        self.count = 0
+        timer = time.timeit()
+        if self.count < self.buffer_size:
+            if time.timit()-timer > 1000: # put a time limit on how long it can try to calibrate for before throwing an error - set status to no tracking
+                print("you are not able to calibrate based on the given intensities")
+            
+            self.count += 1
+            self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
+            self.diff_buffer.append(new_values.get('diffraction'))
+            self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
+    
         self.calibration_value.emit(calibration_value)
+    
                    
 
 class GraphicsView(QGraphicsView):
@@ -232,7 +313,6 @@ class GraphicsView(QGraphicsView):
 class GraphicsScene(QGraphicsScene):
     def __init__(self, parent=None):
         super(GraphicsScene, self).__init__(parent)
-        # self.thread = thread()
 
 
 class ComboBox(QComboBox):
@@ -285,6 +365,7 @@ class Label(QLabel):
 
 
 class JetTracking(Display):
+    rdbuttonstatus = pyqtSignal(int)
 
     def __init__(self, parent=None, args=None, macros=None):
         super(JetTracking, self).__init__(parent=parent, args=args, macros=macros)
@@ -298,7 +379,6 @@ class JetTracking(Display):
         self.load_data()
 
         self.signals = Signals()
-        self.calibration = Calibration(self.signals, self)
         
         self.correction_thread = None
         # assemble widgets
@@ -545,33 +625,96 @@ class JetTracking(Display):
         ###################################################
         # signals and slots
         ###################################################
-        #self.bttn_calibrate.clicked.connect(###)
-        self.bttn_start.clicked.connect(self.handle_start)
-        self.bttn_stop.clicked.connect(self.handle_stop)
-        self.signals.stopped.connect(self.counterThread.quit)
+        
         self.cbox_sigma.activated.connect(self.update_sigma)
         self.cbox_nsamp.activated.connect(self.update_nsamp)
         self.bttngrp.buttonClicked.connect(self.checkBttn)
 
-        self.signals.params.connect(self.update_data)
-        self.counterThread.started.connect(self.counter.start)
+        # 1 - create worker and thread
+        self.obj = StatusThread()
+        self.thread = QThread()
 
-        self.signals.status.connect(self.update_status)
+        # 2 - connect worker's Signals to method slots
+        self.obj.status.connect(self.update_status)
+        self.obj.buffers.connect(self.plot_data)
+        self.obj.avevalues.connect(self.plot_ave_data)
+
+        # 3 - move the worker object to the Thread object
+        self.obj.moveToThread(self.thread)
+
+        # 4 - connect worker signals to the Thread slots
+        self.bttn_start.clicked.connect(self.thread.start)
+        self.bttn_stop.clicked.connect(self.thread.stop)
 
         ###################################################
 
-    def handle_start(self):
-        self.status_thread = StatusThread()
-        ### connect signals and slots on this class
-        self.status_thread.start()
-
     def handle_stop(self):
-        self.status_thread.requestInterrupt()
+        self.obj.stop()
         if self.correction_thread is not None:
             self.correction_thread.requestInterrupt()
+        self.thread.quit()
+        self.thread.wait()
+
+    def liveGraphing(self):
+
+        self.clearLayout(self.layout_graph)
+
+        self.graph1 = pg.PlotWidget()
+        self.graph2 = pg.PlotWidget()
+        self.graph3 = pg.PlotWidget()
+
+        self.layout_graph.addWidget(self.view_graph1)
+        self.layout_graph.addWidget(self.view_graph2)
+        self.layout_graph.addWidget(self.view_graph3)
+
+        self.graph_setup()
+
+    def clearLayout(self, layout):
+        for i in reversed(range(layout.count())):
+            widgetToRemove = layout.itemAt(i).widget()
+            layout.removeWidget(widgetToRemove)
+            widgetToRemove.setParent(None)
+
+    def graph_setup(self):
+        self.graph1.plotItem.setLabels(left="I/I0", bottom="Time", "s")
+        self.graph1.plotItem.setTitles(title="Intensity Ratio")
+        self.graph1.plotItem.showGrid(x=True, y=True)
+        self.graph1.plotItem.setLabels(left="I0", bottom="Time", "s")
+        self.graph1.plotItem.setTitles(title="Initial Intensity")
+        self.graph1.plotItem.showGrid(x=True, y=True)
+        self.graph1.plotItem.setLabels(left="I", bottom="Time", "s")
+        self.graph1.plotItem.setTitles(title="Diffraction Intensity")
+        self.graph1.plotItem.showGrid(x=True, y=True)
+        self.plote1 = pg.ScatterPlotItem(pen=pg.mkPen(width=5, color='r'),
+                                          size=1)
+        self.graph1.addItem(self.plot1)
+        self.plot1ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
+                                           size=1, style=Qt.DashLine)
+        self.graph1.addItem(self.plot1ave)
+        self.plot2 = pg.PlotCurveItem(pen=pg.mkPen(width=2, color='b'), size=1)
+        self.graph2.addItem(self.plot2)
+        self.plot2ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
+                                         size=1, style=Qt.DashLine)
+        self.graph2.addItem(self.plot2ave)
+        
+        self.plot3 = pg.PlotCurveItem(pen=pg.mkPen(width=2, color='g'), size=1)
+        self.graph3.addItem(self.plot3)
+        self.plot3ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
+                                         size=1, style=Qt.DashLine)
+        self.graph3.addItem(self.plot3ave)
+    def plot_data(self, data):
+        print(data)
+    
+    def plot_ave_data(self, data):
+        print(data)
+
+    def update_status(self, status, color):
+        self.lbl_tracking_status.setText(status)
+        self.lbl_tracking_status.setStyleSheet(f"\
+                background-color: {color};")
 
     def receive_values(self, values):
-
+        print(values)
         ## update plots and line edits
 
     def receive_status(self, status):
@@ -586,7 +729,17 @@ class JetTracking(Display):
        self.correction_thread = None
 
     def combo_samples_change(self, value):
-       self.status_thread.reset_buffers(value)
+       self.thread.reset_buffers(value)
+
+    
+    def checkBttn(self, button):
+        bttn = button.text()
+        if bttn == "simulated data":
+            self.pyqtGraphing()
+            self.rdbttnStatus.emit(1)
+        if bttn == "live data":
+            self.liveGraphing()
+            self.rdbttnStatus.emit(0)
 
     def setDefaultStyleSheet(self):
 
