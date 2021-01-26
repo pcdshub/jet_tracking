@@ -4,14 +4,15 @@ from PyQt5 import QtCore
 class Signals(QtCore.QObject):
 
     # emitted in thread
-    params = QtCore.pyqtSignal(list)
-    stopped = QtCore.pyqtSignal()
+    status = QtCore.pyqtSignal(str, str)
+    buffers = QtCore.pyqtSignal(list)
+    avevalues = QtCore.pyqtSignal(dict)
+    calibration_values = QtCore.pyqtSignal(dict)
 
     # emitted in main window
-    rdbttnStatus = QtCore.pyqtSignal(int)
-    status = QtCore.pyqtSignal(int)  # NOQA 0 - no tracking, 1 - tracking, 2 - warning, low incoming beam intensity, 3 - warning, may have lost jet
-    sigma = QtCore.pyqtSignal(float)
-    nsamp = QtCore.pyqtSignal(float)
+    rdbttn_status = QtCore.pyqtSignal(int)
+    sigmaval = QtCore.pyqtSignal(float)
+    nsampval = QtCore.pyqtSignal(float)
 
     # calibration
     ali0 = QtCore.pyqtSignal(float)

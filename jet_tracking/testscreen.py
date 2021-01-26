@@ -26,7 +26,7 @@ logging.setLevel('CRITICAL')
 def getPVs():
     # this is where I would want to get PVs from a json file
     # but I will hard code it for now
-    return({'diffraction': 'CXI:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'CXI:JTRK:REQ:I0'])
+    return({'diffraction': 'CXI:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'CXI:JTRK:REQ:I0'})
 
 
 class Counter(QObject):
@@ -166,7 +166,7 @@ class ValueReader(object): #need to make into a singleton
 
     def read_value(self): # needs to initialize first maybe using a decorator?
         if self.live_data:
-            return({'gatt': self.signal_gatt.get(), 'wave8': self.signal_wave8.get(), 'diffraction': self.signal_diff.get()}
+            return({'gatt': self.signal_gatt.get(), 'wave8': self.signal_wave8.get(), 'diffraction': self.signal_diff.get()})
         else:
             print("you have simulated data radiobutton selected and you have not done anything with this yet")
 
@@ -179,12 +179,10 @@ class ValueReader(object): #need to make into a singleton
         #return
  
 class StatusThread(QObject):
-    status = pyqtSignal(str, str)
-    buffers = pyqtSignal(list)
-    avevalues = pyqtSignal(dict)
 
-    def __init__(self, parent=None):
+    def __init__(self, signals, parent=None):
         super(StatusThread, self).__init__(parent)
+        self.signals = signals
         self.status = None
         self.buffer_size = 300
         self.count = 0
@@ -202,13 +200,12 @@ class StatusThread(QObject):
                         "average ratio": collections.deque([0]*self.buffer_size, self.buffer_size)}
         self.flaggedEvents = {"low Intensity": collections.deque([0]*self.buffer_size, self.buffer_size),
                             "missed shot": collections.deque([0]*self.buffer_size, self.buffer_size),
-                            "dropped shot", collections.deque([0]*self.buffer_size, self.buffer_size}
+                            "dropped shot": collections.deque([0]*self.buffer_size, self.buffer_size)}
         self.buffers = [self.i0_buffer, self.diff_buffer, self.ratio_buffer]
 
-        self.rdbuttonstatus.connect(self.update_rdbutton)
-        self.modeval.connect(self.update_mode)
-        self.nsampval.connect(self.update_nsamp)
-        self.sigmaval.connect(self.update_sigma)
+        self.signals.rdbttn_status.connect(self.update_rdbutton)
+        self.signals.nsampval.connect(self.update_nsamp)
+        self.signals.sigmaval.connect(self.update_sigma)
 
     def reset_buffers(self, size):
         self.buffer_size = size
@@ -264,13 +261,13 @@ class StatusThread(QObject):
                 self.check_status_update()
             else:
                 self.calibrate(new_values)
-            self.buffers.emit(self.buffers)
+            self.signals.buffers.emit(self.buffers)
             self.sleep(300)
             self.count = 0
     
     def check_status_update(self):
         if np.count_nonzero(self.flaggedEvents['missed shot']) > self.notification_tolerance:
-            self.status.emit("warning", "red") # a way to clock how long it's in a warning state before it needs recalibration
+            self.signals.status.emit("warning", "red") # a way to clock how long it's in a warning state before it needs recalibration
 
     def event_flagging(self):
         if self.ratio_buffer[-1] < (self.calibration_values['ratio'] - self.sigma*self.calibration_values['ratio']):
@@ -300,7 +297,7 @@ class StatusThread(QObject):
             self.diff_buffer.append(new_values.get('diffraction'))
             self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
     
-        self.calibration_value.emit(calibration_value)
+        self.signals.calibration_value.emit(calibration_value)
     
                    
 
@@ -366,6 +363,8 @@ class Label(QLabel):
 
 class JetTracking(Display):
     rdbuttonstatus = pyqtSignal(int)
+    sigmaval = pyqtSignal(int)
+    nsampval = pyqtSignal(int)
 
     def __init__(self, parent=None, args=None, macros=None):
         super(JetTracking, self).__init__(parent=parent, args=args, macros=macros)
@@ -374,7 +373,7 @@ class JetTracking(Display):
         # #can avoid having to define main() and instead pydm handles that
         # for you - it is a subclass of QWidget
         self.app = QApplication.instance()
-        
+        self.signals = Signals()
         # load data from file
         self.load_data()
 
@@ -541,15 +540,9 @@ class JetTracking(Display):
         self.lbl_i0.setSubtitleStyleSheet()
         self.lbl_i0_status = QLCDNumber(4)
 
-        self.cali_i0 = self.calibration.get_i0()
-        self.lbl_i0_status.display(self.cali_i0)
-
         self.lbl_diff_i0 = Label("Diffraction at detector")
         self.lbl_diff_i0.setSubtitleStyleSheet()
         self.lbl_diff_i0_status = QLCDNumber(4)
-
-        self.diff_i = self.calibration.get_diff()
-        self.lbl_diff_i0_status.display(self.diff_i)
 
         # setup layout
         ##############
@@ -631,20 +624,20 @@ class JetTracking(Display):
         self.bttngrp.buttonClicked.connect(self.checkBttn)
 
         # 1 - create worker and thread
-        self.obj = StatusThread()
+        self.obj = StatusThread(self.signals)
         self.thread = QThread()
 
         # 2 - connect worker's Signals to method slots
-        self.obj.status.connect(self.update_status)
-        self.obj.buffers.connect(self.plot_data)
-        self.obj.avevalues.connect(self.plot_ave_data)
+        self.signals.status.connect(self.update_status)
+        self.signals.buffers.connect(self.plot_data)
+        self.signals.avevalues.connect(self.plot_ave_data)
 
         # 3 - move the worker object to the Thread object
         self.obj.moveToThread(self.thread)
 
         # 4 - connect worker signals to the Thread slots
         self.bttn_start.clicked.connect(self.thread.start)
-        self.bttn_stop.clicked.connect(self.thread.stop)
+        self.bttn_stop.clicked.connect(self.thread.quit)
 
         ###################################################
 
@@ -663,9 +656,9 @@ class JetTracking(Display):
         self.graph2 = pg.PlotWidget()
         self.graph3 = pg.PlotWidget()
 
-        self.layout_graph.addWidget(self.view_graph1)
-        self.layout_graph.addWidget(self.view_graph2)
-        self.layout_graph.addWidget(self.view_graph3)
+        self.layout_graph.addWidget(self.graph1)
+        self.layout_graph.addWidget(self.graph2)
+        self.layout_graph.addWidget(self.graph3)
 
         self.graph_setup()
 
@@ -676,16 +669,17 @@ class JetTracking(Display):
             widgetToRemove.setParent(None)
 
     def graph_setup(self):
-        self.graph1.plotItem.setLabels(left="I/I0", bottom="Time", "s")
-        self.graph1.plotItem.setTitles(title="Intensity Ratio")
+        styles = {'color':'b','font-size': '20px'}
+        self.graph1.setLabels(left="I/I0", bottom="Time")
+        self.graph1.setTitle(title="Intensity Ratio")
         self.graph1.plotItem.showGrid(x=True, y=True)
-        self.graph1.plotItem.setLabels(left="I0", bottom="Time", "s")
-        self.graph1.plotItem.setTitles(title="Initial Intensity")
-        self.graph1.plotItem.showGrid(x=True, y=True)
-        self.graph1.plotItem.setLabels(left="I", bottom="Time", "s")
-        self.graph1.plotItem.setTitles(title="Diffraction Intensity")
-        self.graph1.plotItem.showGrid(x=True, y=True)
-        self.plote1 = pg.ScatterPlotItem(pen=pg.mkPen(width=5, color='r'),
+        self.graph2.setLabels(left="I0", bottom=("Time", "s"))
+        self.graph2.setTitle(title="Initial Intensity")
+        self.graph2.showGrid(x=True, y=True)
+        self.graph3.setLabels(left="I", bottom=("Time", "s"))
+        self.graph3.setTitle(title="Diffraction Intensity")
+        self.graph3.showGrid(x=True, y=True)
+        self.plot1 = pg.ScatterPlotItem(pen=pg.mkPen(width=5, color='r'),
                                           size=1)
         self.graph1.addItem(self.plot1)
         self.plot1ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
@@ -702,6 +696,7 @@ class JetTracking(Display):
         self.plot3ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
                                          size=1, style=Qt.DashLine)
         self.graph3.addItem(self.plot3ave)
+ 
     def plot_data(self, data):
         print(data)
     
@@ -724,9 +719,15 @@ class JetTracking(Display):
                self.correction_thread = correctionThread()
                self.correction_thread.finished.connect(self.cleanup_correction)
                self.correction_thread.start()
-    
+ 
+    def update_sigma(self, sigma):
+        self.signals.sigmaval.emit(sigma)
+
+    def update_nsamp(self, nsamp):
+        self.signals.nsampval.emit(nsamp)
+   
     def cleanup_correction(self):
-       self.correction_thread = None
+       self.signals.correction_thread = None
 
     def combo_samples_change(self, value):
        self.thread.reset_buffers(value)
@@ -736,10 +737,10 @@ class JetTracking(Display):
         bttn = button.text()
         if bttn == "simulated data":
             self.pyqtGraphing()
-            self.rdbttnStatus.emit(1)
+            self.signals.rdbttn_status.emit(1)
         if bttn == "live data":
             self.liveGraphing()
-            self.rdbttnStatus.emit(0)
+            self.signals.rdbttn_status.emit(0)
 
     def setDefaultStyleSheet(self):
 
