@@ -144,19 +144,18 @@ class ValueReader(object): #need to make into a singleton
         self.PV_signals = list()
         self.live_data = True
         self.data_stream()
-        self.rdbuttonstatus.connect(self.isLive)
 
     def data_stream(self):
         ### Question: how to account for possible missing PVs in json
         ### where all should I be checking for things like none values
         ### how do I notify the user without breaking the whole program
         ### if they try switching to wave8 or something while it's already running
-        if self.live_data():
+        if self.live_data:
             self.PVs = getPVs()
             gatt = self.PVs.get('gatt', None)
             self.signal_gatt = EpicsSignal(gatt)
-            wave8 = self.PVs.get('wave8', None)
-            self.signal_wave8 = EpicsSignal(wave8)
+            #wave8 = self.PVs.get('wave8', None)
+            #self.signal_wave8 = EpicsSignal(wave8)
             diff = self.PVs.get('diffraction', None)
             self.signal_diff = EpicsSignal(diff)
         else:
@@ -166,12 +165,9 @@ class ValueReader(object): #need to make into a singleton
 
     def read_value(self): # needs to initialize first maybe using a decorator?
         if self.live_data:
-            return({'gatt': self.signal_gatt.get(), 'wave8': self.signal_wave8.get(), 'diffraction': self.signal_diff.get()})
+            return({'gatt': self.signal_gatt.get(), 'diffraction': self.signal_diff.get()})
         else:
             print("you have simulated data radiobutton selected and you have not done anything with this yet")
-
-    def is_live(self, live):
-        self.live_data = live
 
     #def filter_data():
         # this function is used to remove any keys from the dictionary that have None for the value
@@ -182,6 +178,8 @@ class StatusThread(QObject):
 
     def __init__(self, signals, parent=None):
         super(StatusThread, self).__init__(parent)
+
+        ## initial values
         self.signals = signals
         self.status = None
         self.buffer_size = 300
@@ -191,7 +189,8 @@ class StatusThread(QObject):
         self.sigma = 1
         self.notification_tolerance = 100
         self.i0_rdbutton_selection = 'gatt'
-        self.interruptedRequested = False
+
+        ## buffers and data collection 
         self.i0_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
         self.diff_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
         self.ratio_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
@@ -202,7 +201,8 @@ class StatusThread(QObject):
                             "missed shot": collections.deque([0]*self.buffer_size, self.buffer_size),
                             "dropped shot": collections.deque([0]*self.buffer_size, self.buffer_size)}
         self.buffers = [self.i0_buffer, self.diff_buffer, self.ratio_buffer]
-
+        
+        ## signals
         self.signals.rdbttn_status.connect(self.update_rdbutton)
         self.signals.nsampval.connect(self.update_nsamp)
         self.signals.sigmaval.connect(self.update_sigma)
@@ -213,9 +213,6 @@ class StatusThread(QObject):
         self.diff_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
         self.ratio_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
         self.calibration_value = 0
-
-    def stop(self):
-        self.interruptedRequested = True
 
     def update_status(self, status):
         self.status = status
@@ -230,40 +227,44 @@ class StatusThread(QObject):
         self.i0_rdbutton_selection = rdbutton
 
     @pyqtSlot()
-    def run(self):
+    def initiate_loop(self):
         """Long-running task."""
-        self.mode = 'running'
-        while not self.interruptedRequested:
+        
+        while not QtCore.QThread.currentThread().isInterruptionRequested():
+            print("you are inside the while loop and about to try to read the values")
             new_values = ValueReader().read_value() #### how does this line work? does it initialize ValueReader first?
-            if self.mode == 'Running':
-                if self.count < self.buffer_size:
-                    self.count += 1
-                    self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
-                    self.diff_buffer.append(new_values.get('diffraction'))
-                    self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
-                else: 
-                    self.count += 1 #### do I need to protect from this number getting too big?
-                    self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
-                    self.diff_buffer.append(new_values.get('diffraction'))
-                    self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
-                    self.event_flagging()
-                    if self.count % self.nsamp == 0: # get averages - but don't include dropped shots
-                        avei0 =  mean(skimmer('dropped shot',
+            print("new values ", new_values)
+            if self.count < self.buffer_size:
+                self.count += 1
+                self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
+                self.diff_buffer.append(new_values.get('diffraction'))
+                self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
+                print('i0 ', self.i0_buffer, ' diff ', self.diff_buffer, ' ratio ', self.ratio_buffer)
+            else: 
+                self.count += 1 #### do I need to protect from this number getting too big?
+                self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
+                self.diff_buffer.append(new_values.get('diffraction'))
+                self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
+                self.event_flagging()
+                if self.count % self.nsamp == 0: # get averages - but don't include dropped shots
+                    avei0 =  mean(skimmer('dropped shot',
                                       self.i0_buffer, self.flaggedEvents))
-                        self.averages["average i0"].append(avei0)
-                        avediff =  mean(skimmer('dropped shot',
+                    self.averages["average i0"].append(avei0)
+                    avediff =  mean(skimmer('dropped shot',
                                       self.diff_buffer, self.flaggedEvents))
-                        self.averages["average diffraction"].append(avediff)
-                        averatio =  mean(skimmer('dropped shot',
+                    self.averages["average diffraction"].append(avediff)
+                    averatio =  mean(skimmer('dropped shot',
                                       self.ratio_buffer, self.flaggedEvents))
-                        self.averages["average ratio"].append(averatio)
-                        self.avevalues.emit(self.averages)
-                self.check_status_update()
-            else:
-                self.calibrate(new_values)
+                    self.averages["average ratio"].append(averatio)
+                    self.signals.avevalues.emit(self.averages)
+            #self.check_status_update()
+            #else:
+            #    self.calibrate(new_values)
             self.signals.buffers.emit(self.buffers)
-            self.sleep(300)
+            time.sleep(3)
             self.count = 0
+        print("outside while")
+            
     
     def check_status_update(self):
         if np.count_nonzero(self.flaggedEvents['missed shot']) > self.notification_tolerance:
@@ -624,29 +625,35 @@ class JetTracking(Display):
         self.bttngrp.buttonClicked.connect(self.checkBttn)
 
         # 1 - create worker and thread
-        self.obj = StatusThread(self.signals)
-        self.thread = QThread()
+        self.worker = StatusThread(self.signals)
+        self.workerthread = QThread()
 
-        # 2 - connect worker's Signals to method slots
+        # 2 - connect worker's signals to method slots
         self.signals.status.connect(self.update_status)
         self.signals.buffers.connect(self.plot_data)
         self.signals.avevalues.connect(self.plot_ave_data)
 
-        # 3 - move the worker object to the Thread object
-        self.obj.moveToThread(self.thread)
+        # 3 - connect worker signals to the Thread slots
+        self.bttn_start.clicked.connect(self.handle_start)
+        self.bttn_stop.clicked.connect(self.handle_stop)
 
-        # 4 - connect worker signals to the Thread slots
-        self.bttn_start.clicked.connect(self.thread.start)
-        self.bttn_stop.clicked.connect(self.thread.quit)
+        self.worker.moveToThread(self.workerthread)
+        self.workerthread.start()
 
         ###################################################
 
+    def handle_start(self):
+        self.worker.initiate_loop()
+
     def handle_stop(self):
-        self.obj.stop()
-        if self.correction_thread is not None:
-            self.correction_thread.requestInterrupt()
-        self.thread.quit()
-        self.thread.wait()
+        if self.workerthread.isRunning():    
+            self.workerthread.requestInterruption()
+            #if self.correction_thread is not None:
+            #    self.correction_thread.requestInterrupt()
+            self.workerthread.quit()
+            self.workerthread.wait()
+        else:
+            print("there's no thread running")
 
     def liveGraphing(self):
 
