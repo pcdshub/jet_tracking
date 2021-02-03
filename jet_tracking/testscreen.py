@@ -637,9 +637,9 @@ class JetTracking(Display):
         self.bttn_start.clicked.connect(self.handle_start)
         self.bttn_stop.clicked.connect(self.handle_stop)
 
-        self.worker.moveToThread(self.workerthread)
         self.workerthread.start()
-
+        self.worker.moveToThread(self.workerthread)
+        
         ###################################################
 
     def handle_start(self):
