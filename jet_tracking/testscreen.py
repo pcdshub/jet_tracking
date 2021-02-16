@@ -1,5 +1,6 @@
 import logging
 import time
+import threading
 
 import numpy as np
 import pyqtgraph as pg
@@ -138,36 +139,55 @@ def skimmer(self, key, oldlist, checklist):
     return(skimlist)
 
 class ValueReader(object): #need to make into a singleton
-    def __init__(self):
-
+    def __init__(self, signals):
+        self.signals = signals
         self.PVs = dict()
         self.PV_signals = list()
         self.live_data = True
-        self.data_stream()
+        
+        self.signals.run_live.connect(self.run_live_data)
 
-    def data_stream(self):
+    def run_live_data(self, live):
+        self.live_data = live
+
+    def live_data_stream(self):
         ### Question: how to account for possible missing PVs in json
         ### where all should I be checking for things like none values
         ### how do I notify the user without breaking the whole program
         ### if they try switching to wave8 or something while it's already running
-        if self.live_data:
-            self.PVs = getPVs()
-            gatt = self.PVs.get('gatt', None)
-            self.signal_gatt = EpicsSignal(gatt)
-            #wave8 = self.PVs.get('wave8', None)
-            #self.signal_wave8 = EpicsSignal(wave8)
-            diff = self.PVs.get('diffraction', None)
-            self.signal_diff = EpicsSignal(diff)
-        else:
-            "you are trying to collect data from ValueReader but it's not set up"
-        #p = [gatt, wave8, diff]
+        self.PVs = getPVs()
+        gatt = self.PVs.get('gatt', None)
+        self.signal_gatt = EpicsSignal(gatt)
+        #wave8 = self.PVs.get('wave8', None)
+        #self.signal_wave8 = EpicsSignal(wave8)
+        diff = self.PVs.get('diffraction', None)
+        self.signal_diff = EpicsSignal(diff)
         #self.PV_signals = [EpicsSignal(i) for i in p if i is not None]
+        self.gatt = self.signal_gatt.get()
+        self.diff = self.signal_diff.get()
+
+    def sim_data_stream(self):
+        context_data = zmq.Context()
+        socket_data = context_data.socket(zmq.SUB)
+        socket_data.connect(".join(['tcp://localhost:', '8123'])")
+        socket_data.subscribe("")
+        while True:
+            md = socket_data.rev_json(flags=0)
+            msg = socket.recv(flags=0,copy=false, track=false)
+            buf = memoryview(msg)
+            data = np.frombuffer(buf, dtype=md['dtype'])
+            data = np.ndarray.tolist(data.reshape(md['shape']))
+            self.gatt = data[0]
+            self.diff = data[1]
 
     def read_value(self): # needs to initialize first maybe using a decorator?
         if self.live_data:
-            return({'gatt': self.signal_gatt.get(), 'diffraction': self.signal_diff.get()})
+            self.live_data_stream()
+            return({'gatt': self.gatt, 'diffraction': self.diff})
         else:
-            print("you have simulated data radiobutton selected and you have not done anything with this yet")
+            self.sim_data_stream()
+            return({'gatt': self.gatt, 'diffraction': self.diff})
+
 
     #def filter_data():
         # this function is used to remove any keys from the dictionary that have None for the value
@@ -181,6 +201,7 @@ class StatusThread(QObject):
 
         ## initial values
         self.signals = signals
+        self.reader = ValueReader(signals)
         self.status = None
         self.buffer_size = 300
         self.count = 0
@@ -229,11 +250,16 @@ class StatusThread(QObject):
     @pyqtSlot()
     def initiate_loop(self):
         """Long-running task."""
-        
-        while not QtCore.QThread.currentThread().isInterruptionRequested():
+        count = 0
+        while not self.thread().isInterruptionRequested() and count < 3:
+            count += 1
+            time.sleep(4)
+            print(count)
+
+        """
+        while not self.thread().isInterruptionRequested():
             print("you are inside the while loop and about to try to read the values")
-            new_values = ValueReader().read_value() #### how does this line work? does it initialize ValueReader first?
-            print("new values ", new_values)
+            new_values = self.reader.read_value() #### how does this line work? does it initialize ValueReader first?
             if self.count < self.buffer_size:
                 self.count += 1
                 self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
@@ -264,7 +290,7 @@ class StatusThread(QObject):
             time.sleep(3)
             self.count = 0
         print("outside while")
-            
+        """    
     
     def check_status_update(self):
         if np.count_nonzero(self.flaggedEvents['missed shot']) > self.notification_tolerance:
@@ -627,33 +653,43 @@ class JetTracking(Display):
         # 1 - create worker and thread
         self.worker = StatusThread(self.signals)
         self.workerthread = QThread()
+        print(self.thread(), self.workerthread, self.workerthread.currentThread())
 
         # 2 - connect worker's signals to method slots
         self.signals.status.connect(self.update_status)
         self.signals.buffers.connect(self.plot_data)
         self.signals.avevalues.connect(self.plot_ave_data)
 
+        self.worker.moveToThread(self.workerthread) 
+        self.workerthread.start()
+
         # 3 - connect worker signals to the Thread slots
-        self.bttn_start.clicked.connect(self.handle_start)
+        self.bttn_start.clicked.connect(self.worker.initiate_loop)
         self.bttn_stop.clicked.connect(self.handle_stop)
 
-        self.workerthread.start()
-        self.worker.moveToThread(self.workerthread)
-        
+        #self.worker.moveToThread(self.workerthread)
+        #self.workerthread.start()
+        #self.worker.initiate_loop()
+
         ###################################################
 
     def handle_start(self):
+        self.workerthread.start()
         self.worker.initiate_loop()
 
     def handle_stop(self):
-        if self.workerthread.isRunning():    
-            self.workerthread.requestInterruption()
-            #if self.correction_thread is not None:
-            #    self.correction_thread.requestInterrupt()
-            self.workerthread.quit()
-            self.workerthread.wait()
-        else:
-            print("there's no thread running")
+        self.workerthread.requestInterruption()
+        #self.workerthread.quit()
+        #self.workerthread.start()
+        #self.workerthread.wait()
+        #if self.workerthread.isRunning():    
+        #    self.workerthread.requestInterruption()
+        #    #if self.correction_thread is not None:
+        #    #    self.correction_thread.requestInterrupt()
+        #    self.workerthread.quit()
+        #    self.workerthread.wait()
+        #else:
+        #    print("there's no thread running")
 
     def liveGraphing(self):
 
@@ -743,11 +779,9 @@ class JetTracking(Display):
     def checkBttn(self, button):
         bttn = button.text()
         if bttn == "simulated data":
-            self.pyqtGraphing()
-            self.signals.rdbttn_status.emit(1)
-        if bttn == "live data":
-            self.liveGraphing()
-            self.signals.rdbttn_status.emit(0)
+            self.signals.run_live.emit(0)
+        elif bttn == "live data":
+            self.signals.run_live.emit(1)        
 
     def setDefaultStyleSheet(self):
 

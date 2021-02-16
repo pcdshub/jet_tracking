@@ -8,6 +8,7 @@ class Signals(QtCore.QObject):
     buffers = QtCore.pyqtSignal(list)
     avevalues = QtCore.pyqtSignal(dict)
     calibration_values = QtCore.pyqtSignal(dict)
+    run_live = QtCore.pyqtSignal(int)
 
     # emitted in main window
     rdbttn_status = QtCore.pyqtSignal(int)
