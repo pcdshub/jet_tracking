@@ -5,10 +5,11 @@ class Signals(QtCore.QObject):
 
     # emitted in thread
     status = QtCore.pyqtSignal(str, str)
-    buffers = QtCore.pyqtSignal(list)
+    buffers = QtCore.pyqtSignal(dict)
     avevalues = QtCore.pyqtSignal(dict)
-    calibration_values = QtCore.pyqtSignal(dict)
+    calibration_value = QtCore.pyqtSignal(dict)
     run_live = QtCore.pyqtSignal(int)
+    mode = QtCore.pyqtSignal(str)
 
     # emitted in main window
     rdbttn_status = QtCore.pyqtSignal(int)

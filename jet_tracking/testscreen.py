@@ -1,6 +1,7 @@
 import logging
 import time
 import threading
+from statistics import mean
 
 import numpy as np
 import pyqtgraph as pg
@@ -8,6 +9,7 @@ import zmq
 from ophyd import EpicsSignal
 from pydm import Display
 from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
 from PyQt5.QtWidgets import (QButtonGroup, QComboBox, QLCDNumber, QRadioButton,
                              QTextEdit)
 from qtpy import QtCore
@@ -27,7 +29,7 @@ logging.setLevel('CRITICAL')
 def getPVs():
     # this is where I would want to get PVs from a json file
     # but I will hard code it for now
-    return({'diffraction': 'CXI:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'CXI:JTRK:REQ:I0'})
+    return({'diff': 'CXI:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'CXI:JTRK:REQ:I0'})
 
 
 class Counter(QObject):
@@ -131,7 +133,7 @@ class Counter(QObject):
         self.signals.stopped.emit()
 
 
-def skimmer(self, key, oldlist, checklist):
+def skimmer(key, oldlist, checklist):
     skimlist = []
     for i in range(len(checklist[key])):
         if checklist[key][i] == 0:
@@ -151,18 +153,13 @@ class ValueReader(object): #need to make into a singleton
         self.live_data = live
 
     def live_data_stream(self):
-        ### Question: how to account for possible missing PVs in json
-        ### where all should I be checking for things like none values
-        ### how do I notify the user without breaking the whole program
-        ### if they try switching to wave8 or something while it's already running
         self.PVs = getPVs()
         gatt = self.PVs.get('gatt', None)
         self.signal_gatt = EpicsSignal(gatt)
         #wave8 = self.PVs.get('wave8', None)
         #self.signal_wave8 = EpicsSignal(wave8)
-        diff = self.PVs.get('diffraction', None)
+        diff = self.PVs.get('diff', None)
         self.signal_diff = EpicsSignal(diff)
-        #self.PV_signals = [EpicsSignal(i) for i in p if i is not None]
         self.gatt = self.signal_gatt.get()
         self.diff = self.signal_diff.get()
 
@@ -183,10 +180,10 @@ class ValueReader(object): #need to make into a singleton
     def read_value(self): # needs to initialize first maybe using a decorator?
         if self.live_data:
             self.live_data_stream()
-            return({'gatt': self.gatt, 'diffraction': self.diff})
+            return({'gatt': self.gatt, 'diff': self.diff})
         else:
             self.sim_data_stream()
-            return({'gatt': self.gatt, 'diffraction': self.diff})
+            return({'gatt': self.gatt, 'diff': self.diff})
 
 
     #def filter_data():
@@ -194,46 +191,51 @@ class ValueReader(object): #need to make into a singleton
         #d = {k, v for k, v in self.signal_dict.items() if v is not None}
         #return
  
-class StatusThread(QObject):
+class StatusThread(QThread):
 
     def __init__(self, signals, parent=None):
         super(StatusThread, self).__init__(parent)
+        """ Constructor
 
-        ## initial values
+        :param 
+        """
+
         self.signals = signals
         self.reader = ValueReader(signals)
-        self.status = None
+        self.status = True
+        self.mode = "running" #can either be running or calibrating
+        self.timer = time.time()
         self.buffer_size = 300
         self.count = 0
-        self.calibration_values = {"i0": 0, "diffraction":0, "ratio": 0}
+        self.calibrated = 0
+        self.calibration_time = 100
+        self.calibration_values = {"i0": 0, "diff":0, "ratio": 0}
         self.nsamp = 10
         self.sigma = 1
         self.notification_tolerance = 100
         self.i0_rdbutton_selection = 'gatt'
 
         ## buffers and data collection 
-        self.i0_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
-        self.diff_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
-        self.ratio_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
         self.averages = {"average i0":collections.deque([0]*self.buffer_size, self.buffer_size), 
-                        "average diffraction": collections.deque([0]*self.buffer_size, self.buffer_size),
-                        "average ratio": collections.deque([0]*self.buffer_size, self.buffer_size)}
-        self.flaggedEvents = {"low Intensity": collections.deque([0]*self.buffer_size, self.buffer_size),
+                         "average diff": collections.deque([0]*self.buffer_size, self.buffer_size),
+                         "average ratio": collections.deque([0]*self.buffer_size, self.buffer_size),
+                         "time": collections.deque([0]*self.buffer_size, self.buffer_size)}
+        self.flaggedEvents = {"low intensity": collections.deque([0]*self.buffer_size, self.buffer_size),
                             "missed shot": collections.deque([0]*self.buffer_size, self.buffer_size),
                             "dropped shot": collections.deque([0]*self.buffer_size, self.buffer_size)}
-        self.buffers = [self.i0_buffer, self.diff_buffer, self.ratio_buffer]
+        self.buffers = {"i0":collections.deque([0]*self.buffer_size, self.buffer_size),
+                        "diff":collections.deque([0]*self.buffer_size, self.buffer_size), 
+                        "ratio": collections.deque([0]*self.buffer_size, self.buffer_size), 
+                        "time": collections.deque([0]*self.buffer_size, self.buffer_size)}
         
         ## signals
         self.signals.rdbttn_status.connect(self.update_rdbutton)
         self.signals.nsampval.connect(self.update_nsamp)
         self.signals.sigmaval.connect(self.update_sigma)
+        self.signals.mode.connect(self.update_mode)
 
-    def reset_buffers(self, size):
-        self.buffer_size = size
-        self.i0_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
-        self.diff_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
-        self.ratio_buffer = collections.deque([0]*self.buffer_size, self.buffer_size)
-        self.calibration_value = 0
+    def update_mode(self, mode):
+        self.mode = mode
 
     def update_status(self, status):
         self.status = status
@@ -247,83 +249,85 @@ class StatusThread(QObject):
     def update_rdbutton(self, rdbutton):
         self.i0_rdbutton_selection = rdbutton
 
-    @pyqtSlot()
-    def initiate_loop(self):
+    def run(self):
         """Long-running task."""
-        count = 0
-        while not self.thread().isInterruptionRequested() and count < 3:
-            count += 1
-            time.sleep(4)
-            print(count)
 
-        """
-        while not self.thread().isInterruptionRequested():
-            print("you are inside the while loop and about to try to read the values")
+        while not self.isInterruptionRequested():
             new_values = self.reader.read_value() #### how does this line work? does it initialize ValueReader first?
-            if self.count < self.buffer_size:
-                self.count += 1
-                self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
-                self.diff_buffer.append(new_values.get('diffraction'))
-                self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
-                print('i0 ', self.i0_buffer, ' diff ', self.diff_buffer, ' ratio ', self.ratio_buffer)
-            else: 
-                self.count += 1 #### do I need to protect from this number getting too big?
-                self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
-                self.diff_buffer.append(new_values.get('diffraction'))
-                self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
-                self.event_flagging()
-                if self.count % self.nsamp == 0: # get averages - but don't include dropped shots
+            if self.mode == "running":
+                if self.count < self.buffer_size:
+                    self.count += 1
+                    self.buffers['i0'].append(new_values.get(self.i0_rdbutton_selection))
+                    self.buffers['diff'].append(new_values.get('diff'))
+                    self.buffers['ratio'].append(self.buffers['i0'][-1]/self.buffers['diff'][-1])
+                    self.buffers['time'].append(time.time()-self.timer)
+                else: 
+                    self.count += 1 #### do I need to protect from this number getting too big?
+                    self.buffers['i0'].append(new_values.get(self.i0_rdbutton_selection))
+                    self.buffers['diff'].append(new_values.get('diff'))
+                    self.buffers['ratio'].append(self.buffers['i0'][-1]/self.buffers['diff'][-1])
+                    self.buffers['time'].append(time.time()-self.timer)
+                    self.event_flagging()
+                if self.count % self.nsamp == 0:
                     avei0 =  mean(skimmer('dropped shot',
-                                      self.i0_buffer, self.flaggedEvents))
+                                           list(self.buffers['i0']), self.flaggedEvents))
                     self.averages["average i0"].append(avei0)
                     avediff =  mean(skimmer('dropped shot',
-                                      self.diff_buffer, self.flaggedEvents))
-                    self.averages["average diffraction"].append(avediff)
+                                           list(self.buffers['diff']), self.flaggedEvents))
+                    self.averages["average diff"].append(avediff)
                     averatio =  mean(skimmer('dropped shot',
-                                      self.ratio_buffer, self.flaggedEvents))
+                                     list(self.buffers['ratio']), self.flaggedEvents))
                     self.averages["average ratio"].append(averatio)
+                    self.averages["time"].append(time.time()-self.timer)
                     self.signals.avevalues.emit(self.averages)
-            #self.check_status_update()
-            #else:
-            #    self.calibrate(new_values)
-            self.signals.buffers.emit(self.buffers)
-            time.sleep(3)
-            self.count = 0
-        print("outside while")
-        """    
-    
+                    self.check_status_update()
+                #else:
+                #    self.calibrate(new_values)
+                self.signals.buffers.emit(self.buffers)
+                time.sleep(1/300)
+            elif self.mode == "calibration":
+                self.calibrate()
+
     def check_status_update(self):
-        if np.count_nonzero(self.flaggedEvents['missed shot']) > self.notification_tolerance:
-            self.signals.status.emit("warning", "red") # a way to clock how long it's in a warning state before it needs recalibration
+        if self.calibrated:
+            if np.count_nonzero(self.flaggedEvents['missed shot']) > self.notification_tolerance:
+                self.signals.status.emit("warning, missed shots, realigning in **", "red") # a way to clock how long it's in a warning state before it needs recalibration
+            elif np.count_nonzero(self.flaggedEvents['dropped shot'])> self.notification_tolerance:
+                self.signals.status.emit("lots of dropped shots", "yellow")
+            elif np.count_nonzero(self.flaggedEvents['low intensity']) > self.notification_tolerance:
+                self.signals.status.emit("low intensity, realigning in ***", "orange")
+            else:
+                self.signals.status.emit("everything is good", "green")
+        else:
+            self.signals.status.emit("not calibrated", "orange")
 
     def event_flagging(self):
-        if self.ratio_buffer[-1] < (self.calibration_values['ratio'] - self.sigma*self.calibration_values['ratio']):
-            self.flaggedEvents['low intensity'].append(self.buffer_size-1)
+        if self.buffers['ratio'][-1] < (self.calibration_values['ratio'] - self.sigma*self.calibration_values['ratio']):
+            self.flaggedEvents['low intensity'].append(self.buffers['ratio'][-1])
         else:
             self.flaggedEvents['low intensity'].append(0)
-        if self.i0_buffer[-1] < (self.calibration_values['i0']- self.sigma*self.calibration_values['i0']):
-            self.flaggedEvents['dropped shot'].append(self.i0_buffer[-1])
+        if self.buffers['i0'][-1] < (self.calibration_values['i0']- self.sigma*self.calibration_values['i0']):
+            self.flaggedEvents['dropped shot'].append(self.buffers['i0'][-1])
         else:
             self.flaggedEvents['dropped shot'].append(0)
-        if self.diff_buffer[-1] < (self.calibration_values['diffraction']- self.sigma*self.calibration_values['diffraction']):
-            self.flaggedEvents['missed shot'].append(self.i0_buffer[-1])
+        if self.buffers['diff'][-1] < (self.calibration_values['diff']- self.sigma*self.calibration_values['diff']):
+            self.flaggedEvents['missed shot'].append(self.buffers['i0'][-1])
         else:
             self.flaggedEvents['missed shot'].append(0)
         
-    def calibrate(self, values):
-        #the mode should be "calibrating" anytime you are here
-        self.buffer_size = 1000
-        self.count = 0
-        timer = time.timeit()
-        if self.count < self.buffer_size:
-            if time.timit()-timer > 1000: # put a time limit on how long it can try to calibrate for before throwing an error - set status to no tracking
-                print("you are not able to calibrate based on the given intensities")
-            
-            self.count += 1
-            self.i0_buffer.append(new_values.get(self.i0_rdbutton_selection))
-            self.diff_buffer.append(new_values.get('diffraction'))
-            self.ratio_buffer.append(self.i0_buffer[-1]/self.diff_buffer[-1])
-    
+    def calibrate(self):
+        timer = time.time()
+        cal_values = [[],[],[]]
+        if time.time()-timer < self.calibration_time: # put a time limit on how long it can try to calibrate for before throwing an error - set status to no tracking
+            new_values = self.reader.read_value()
+            cal_values[0].append(new_values.get('i0'))
+            cal_values[1].append(new_values.get('diff'))
+            cal_values[2].append(new_values.get('diff')/new_values.get('i0'))
+        else:
+            self.calibration_values['i0'] = mean(cal_values[0])
+            self.calibration_values['diff'] = mean(cal_values[1])
+            self.calibration_values['ratio'] = mean(cal_values[2])
+        self.calibrated = 1
         self.signals.calibration_value.emit(calibration_value)
     
                    
@@ -405,7 +409,7 @@ class JetTracking(Display):
         self.load_data()
 
         self.signals = Signals()
-        
+        self.buffer_size = 300 
         self.correction_thread = None
         # assemble widgets
         self.setup_ui()
@@ -477,22 +481,32 @@ class JetTracking(Display):
         # make radiobutton for selecting live or simulated data
         #####################################################################
 
-        self.bttngrp = QButtonGroup()
+        self.bttngrp1 = QButtonGroup()
         self.rdbttn_live = QRadioButton("live data")  # .setChecked(True)
         self.rdbttn_sim = QRadioButton("simulated data")  # .setChecked(False)
         self.rdbttn_live.setChecked(True)
-        self.bttngrp.addButton(self.rdbttn_live)
-        self.bttngrp.addButton(self.rdbttn_sim)
-        self.bttngrp.setExclusive(True)  # allows only one button to be selected at a time
+        self.bttngrp1.addButton(self.rdbttn_live)
+        self.bttngrp1.addButton(self.rdbttn_sim)
+        self.bttngrp1.setExclusive(True)  # allows only one button to be selected at a time
+
+        self.bttngrp2 = QButtonGroup()
+        self.rdbttn_manual = QRadioButton("manual motor moving")  # .setChecked(True)
+        self.rdbttn_auto = QRadioButton("automated motor moving")  # .setChecked(False)
+        self.rdbttn_manual.setChecked(True)
+        self.bttngrp2.addButton(self.rdbttn_manual)
+        self.bttngrp2.addButton(self.rdbttn_auto)
+        self.bttngrp2.setExclusive(True)  # allows only one button to be selected at a time
 
         # setup layout
         ##############
         self.frame_rdbttns = QFrame()
-        self.layout_rdbttns = QHBoxLayout()
-        self.frame_rdbttns.setLayout(self.layout_rdbttns)
+        self.layout_allrdbttns = QGridLayout()
+        self.frame_rdbttns.setLayout(self.layout_allrdbttns)
         self.layout_usr_cntrl.addWidget(self.frame_rdbttns)
-        self.layout_rdbttns.addWidget(self.rdbttn_live)
-        self.layout_rdbttns.addWidget(self.rdbttn_sim)
+        self.layout_allrdbttns.addWidget(self.rdbttn_live, 0, 0)
+        self.layout_allrdbttns.addWidget(self.rdbttn_sim, 0, 1)
+        self.layout_allrdbttns.addWidget(self.rdbttn_manual, 1, 0)
+        self.layout_allrdbttns.addWidget(self.rdbttn_auto, 1, 1)
 
         #####################################################################
         # make drop down menu for changing nsampning for sigma
@@ -569,7 +583,7 @@ class JetTracking(Display):
 
         self.lbl_diff_i0 = Label("Diffraction at detector")
         self.lbl_diff_i0.setSubtitleStyleSheet()
-        self.lbl_diff_i0_status = QLCDNumber(4)
+        self.lbl_diff_status = QLCDNumber(4)
 
         # setup layout
         ##############
@@ -588,7 +602,7 @@ class JetTracking(Display):
         self.frame_diff_i0 = QFrame()
         self.frame_diff_i0.setLayout(QHBoxLayout())
         self.frame_diff_i0.layout().addWidget(self.lbl_diff_i0)
-        self.frame_diff_i0.layout().addWidget(self.lbl_diff_i0_status)
+        self.frame_diff_i0.layout().addWidget(self.lbl_diff_status)
 
         self.layout_usr_cntrl.addWidget(self.frame_tracking_status)
         self.layout_usr_cntrl.addWidget(self.frame_i0)
@@ -648,48 +662,46 @@ class JetTracking(Display):
         
         self.cbox_sigma.activated.connect(self.update_sigma)
         self.cbox_nsamp.activated.connect(self.update_nsamp)
-        self.bttngrp.buttonClicked.connect(self.checkBttn)
+        self.bttngrp1.buttonClicked.connect(self.checkBttn)
+        self.bttngrp2.buttonClicked.connect(self.checkBttn)        
+ 
+        self.bttn_start.clicked.connect(self._start)
+        self.bttn_stop.clicked.connect(self._stop)
+        self.bttn_calibrate.clicked.connect(self._calibrate)
+        self.signals.status.connect(self.update_status)
+        self.signals.calibration_value.connect(self.update_calibration)
+        ###################################################
 
-        # 1 - create worker and thread
+    def _start(self):
+        self.signals.mode.emit("running")
         self.worker = StatusThread(self.signals)
-        self.workerthread = QThread()
-        print(self.thread(), self.workerthread, self.workerthread.currentThread())
-
-        # 2 - connect worker's signals to method slots
         self.signals.status.connect(self.update_status)
         self.signals.buffers.connect(self.plot_data)
         self.signals.avevalues.connect(self.plot_ave_data)
+        self.worker.start()
 
-        self.worker.moveToThread(self.workerthread) 
-        self.workerthread.start()
+    def _stop(self):
+        self.worker.requestInterruption()
+        self.worker.wait()
 
-        # 3 - connect worker signals to the Thread slots
-        self.bttn_start.clicked.connect(self.worker.initiate_loop)
-        self.bttn_stop.clicked.connect(self.handle_stop)
-
-        #self.worker.moveToThread(self.workerthread)
-        #self.workerthread.start()
-        #self.worker.initiate_loop()
-
-        ###################################################
-
-    def handle_start(self):
-        self.workerthread.start()
-        self.worker.initiate_loop()
-
-    def handle_stop(self):
-        self.workerthread.requestInterruption()
-        #self.workerthread.quit()
-        #self.workerthread.start()
-        #self.workerthread.wait()
-        #if self.workerthread.isRunning():    
-        #    self.workerthread.requestInterruption()
-        #    #if self.correction_thread is not None:
-        #    #    self.correction_thread.requestInterrupt()
-        #    self.workerthread.quit()
-        #    self.workerthread.wait()
-        #else:
-        #    print("there's no thread running")
+    def _calibrate(self):
+        self.signals.mode.emit("calibration")
+        try:
+            self.worker.requestInterruption()
+            self.worker.wait()
+        except NameError:
+            print("There was no worker already running")
+        else:
+            self.worker = StatusThread(self.signals)
+            self.worker.start()
+    def update_calibration(self, cal):
+        try:
+            self.worker.requestInterruption()
+            self.worker.wait()
+        except NameError:
+            print("tried to end worker when there wasn't one when updating calibration")
+        self.lbl_i0_status.display(cal['i0'])
+        self.lbl_diff_status.display(cal['diff'])
 
     def liveGraphing(self):
 
@@ -739,21 +751,24 @@ class JetTracking(Display):
         self.plot3ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
                                          size=1, style=Qt.DashLine)
         self.graph3.addItem(self.plot3ave)
+
+        self.graph2.setXLink(self.graph1)
+        self.graph3.setXLink(self.graph1)
  
     def plot_data(self, data):
-        print(data)
+        self.plot1.setData(list(data['time']), list(data['ratio']))
+        self.plot2.setData(list(data['time']), list(data['i0']))
+        self.plot3.setData(list(data['time']), list(data['diff']))
     
     def plot_ave_data(self, data):
-        print(data)
+        self.plot1ave.setData(list(data['time']), list(data['average ratio']))
+        self.plot2ave.setData(list(data['time']), list(data['average i0']))
+        self.plot3ave.setData(list(data['time']), list(data['average diff']))
 
     def update_status(self, status, color):
         self.lbl_tracking_status.setText(status)
         self.lbl_tracking_status.setStyleSheet(f"\
                 background-color: {color};")
-
-    def receive_values(self, values):
-        print(values)
-        ## update plots and line edits
 
     def receive_status(self, status):
         if status == 'outside':
@@ -771,17 +786,18 @@ class JetTracking(Display):
    
     def cleanup_correction(self):
        self.signals.correction_thread = None
-
-    def combo_samples_change(self, value):
        self.thread.reset_buffers(value)
-
     
     def checkBttn(self, button):
         bttn = button.text()
         if bttn == "simulated data":
             self.signals.run_live.emit(0)
         elif bttn == "live data":
-            self.signals.run_live.emit(1)        
+            self.signals.run_live.emit(1)
+        elif bttn == "manual motor moving":
+            self.signals.motormove.emit(0)
+        elif bttn == "automatic motor moving":
+            self.signals.motormove.emit(1)
 
     def setDefaultStyleSheet(self):
 
@@ -802,111 +818,3 @@ class JetTracking(Display):
 
 
 
-'''
-
-    def update_status(self, value):
-
-        if value == 0:
-            self.lbl_tracking_status.setText("No Tracking")
-            self.lbl_tracking_status.setStyleSheet("\
-                background-color: red;")
-
-        elif value == 1:
-            self.lbl_tracking_status.setText("Tracking")
-            self.lbl_tracking_status.setStyleSheet("\
-                background-color: green;")
-
-        elif value == 2:
-            self.lbl_tracking_status.setText("Warning! Low incoming intensity")
-            self.lbl_tracking_status.setStyleSheet("\
-                background-color: yellow;")
-
-        elif value == 3:
-            self.lbl_tracking_status.setText("Warning! check jet alignment")
-            self.lbl_tracking_status.setStyleSheet("\
-                background-color: orange;")
-
-    def update_sigma(self, sigma):
-        self.signals.sigma.emit(float(self.cbox_sigma.currentText()))
-
-    def update_nsamp(self):
-        # nsamp = self.tbox_nsamp.text()
-        # print(nsamp, type(nsamp))
-        self.signals.nsamp.emit(float(self.cbox_nsamp.currentText()))
-
-    def setDefaultStyleSheet(self):
-
-        # This should be done with a json file
-
-        self.setStyleSheet("\
-            Label {\
-                qproperty-alignment: AlignCenter;\
-                border: 1px solid #FF17365D;\
-                border-top-left-radius: 15px;\
-                border-top-right-radius: 15px;\
-                background-color: #FF17365D;\
-                padding: 5px 0px;\
-                color: rgb(255, 255, 255);\
-                max-height: 35px;\
-                font-size: 14px;\
-            }")
-
-    def graph_setup(self):
-
-        self.gr = graphDisplay(self.signals, self.calibration)
-        self.gr.create_plots(self.view_graph1, self.view_graph2, self.view_graph3)
-
-    def update_data(self, data):
-
-        self.gr.plot_scroll(data)
-
-    def checkBttn(self, button):
-        bttn = button.text()
-
-        if bttn == "simulated data":
-            print(bttn)
-            self.pyqtGraphing()
-            self.signals.rdbttnStatus.emit(1)
-            self.mode = 1
-
-        if bttn == "live data":
-            print(bttn)
-            self.liveGraphing()
-            self.signals.rdbttnStatus.emit(0)
-            self.mode = 0
-
-    def pyqtGraphing(self):
-
-        self.clearLayout(self.layout_graph)
-
-        self.view_graph1 = pg.PlotWidget()
-        self.view_graph2 = pg.PlotWidget()
-        self.view_graph3 = pg.PlotWidget()
-
-        self.layout_graph.addWidget(self.view_graph1)
-        self.layout_graph.addWidget(self.view_graph2)
-        self.layout_graph.addWidget(self.view_graph3)
-
-        self.graph_setup()
-
-    def liveGraphing(self):
-
-        self.clearLayout(self.layout_graph)
-
-        self.view_graph1 = pg.PlotWidget()
-        self.view_graph2 = pg.PlotWidget()
-        self.view_graph3 = pg.PlotWidget()
-
-        self.layout_graph.addWidget(self.view_graph1)
-        self.layout_graph.addWidget(self.view_graph2)
-        self.layout_graph.addWidget(self.view_graph3)
-
-        self.graph_setup()
-
-    def clearLayout(self, layout):
-
-        for i in reversed(range(layout.count())):
-            widgetToRemove = layout.itemAt(i).widget()
-            layout.removeWidget(widgetToRemove)
-            widgetToRemove.setParent(None)
-'''
