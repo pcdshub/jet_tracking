@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
                             QGraphicsView, QHBoxLayout, QLabel, QPushButton,
                             QVBoxLayout)
 
+from num_gen import *
 from calibration import Calibration
 from graph_display import graphDisplay
 from signals import Signals
@@ -25,6 +26,8 @@ import collections
 
 logging = logging.getLogger('ophyd')
 logging.setLevel('CRITICAL')
+
+lock = threading.Lock()
 
 def getPVs():
     # this is where I would want to get PVs from a json file
@@ -100,7 +103,7 @@ class Counter(QObject):
         self.signals.stopped.emit()
 
     def runsim(self):
-
+        
         self.context_data = zmq.Context()
         self.socket_data = self.context_data.socket(zmq.SUB)
         self.socket_data.connect(''.join(['tcp://localhost:', '8123']))
@@ -131,7 +134,8 @@ class Counter(QObject):
             self.signals.params.emit(values)
 
         self.signals.stopped.emit()
-
+        
+        
 
 def skimmer(key, oldlist, checklist):
     skimlist = []
@@ -140,7 +144,24 @@ def skimmer(key, oldlist, checklist):
             skimlist.append(oldlist[i])
     return(skimlist)
 
-class ValueReader(object): #need to make into a singleton
+def div_with_try(v1, v2):
+    try:
+        a = v1/v2
+    except (TypeError, ZeroDivisionError) as e:
+        a = 0
+    return(a)
+        
+
+class Singleton(type): #need to make into a singleton
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            with lock:
+                if cls not in cls._instances:
+                    cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return(cls._instances[cls])
+
+class ValueReader(metaclass=Singleton):
     def __init__(self, signals):
         self.signals = signals
         self.PVs = dict()
@@ -164,6 +185,7 @@ class ValueReader(object): #need to make into a singleton
         self.diff = self.signal_diff.get()
 
     def sim_data_stream(self):
+        """
         context_data = zmq.Context()
         socket_data = context_data.socket(zmq.SUB)
         socket_data.connect(".join(['tcp://localhost:', '8123'])")
@@ -176,6 +198,11 @@ class ValueReader(object): #need to make into a singleton
             data = np.ndarray.tolist(data.reshape(md['shape']))
             self.gatt = data[0]
             self.diff = data[1]
+        """
+        x = 0.8
+        y = 0.4
+        self.gatt = sinwv(x)
+        self.diff = sinwv(y)
 
     def read_value(self): # needs to initialize first maybe using a decorator?
         if self.live_data:
@@ -199,7 +226,6 @@ class StatusThread(QThread):
 
         :param 
         """
-
         self.signals = signals
         self.reader = ValueReader(signals)
         self.status = True
@@ -207,8 +233,8 @@ class StatusThread(QThread):
         self.timer = time.time()
         self.buffer_size = 300
         self.count = 0
-        self.calibrated = 0
-        self.calibration_time = 100
+        self.calibrated = False
+        self.calibration_time = 10
         self.calibration_values = {"i0": 0, "diff":0, "ratio": 0}
         self.nsamp = 10
         self.sigma = 1
@@ -284,11 +310,12 @@ class StatusThread(QThread):
                 #else:
                 #    self.calibrate(new_values)
                 self.signals.buffers.emit(self.buffers)
-                time.sleep(1/300)
+                time.sleep(1/10)
             elif self.mode == "calibration":
-                self.calibrate()
+                self.calibrate(new_values)
 
     def check_status_update(self):
+
         if self.calibrated:
             if np.count_nonzero(self.flaggedEvents['missed shot']) > self.notification_tolerance:
                 self.signals.status.emit("warning, missed shots, realigning in **", "red") # a way to clock how long it's in a warning state before it needs recalibration
@@ -302,6 +329,7 @@ class StatusThread(QThread):
             self.signals.status.emit("not calibrated", "orange")
 
     def event_flagging(self):
+
         if self.buffers['ratio'][-1] < (self.calibration_values['ratio'] - self.sigma*self.calibration_values['ratio']):
             self.flaggedEvents['low intensity'].append(self.buffers['ratio'][-1])
         else:
@@ -315,20 +343,20 @@ class StatusThread(QThread):
         else:
             self.flaggedEvents['missed shot'].append(0)
         
-    def calibrate(self):
+    def calibrate(self, v):
+
         timer = time.time()
         cal_values = [[],[],[]]
-        if time.time()-timer < self.calibration_time: # put a time limit on how long it can try to calibrate for before throwing an error - set status to no tracking
-            new_values = self.reader.read_value()
-            cal_values[0].append(new_values.get('i0'))
-            cal_values[1].append(new_values.get('diff'))
-            cal_values[2].append(new_values.get('diff')/new_values.get('i0'))
-        else:
-            self.calibration_values['i0'] = mean(cal_values[0])
-            self.calibration_values['diff'] = mean(cal_values[1])
-            self.calibration_values['ratio'] = mean(cal_values[2])
-        self.calibrated = 1
-        self.signals.calibration_value.emit(calibration_value)
+        while time.time()-timer < 3:#self.calibration_time: # put a time limit on how long it can try to calibrate for before throwing an error - set status to no tracking
+            cal_values[0].append(v.get(self.i0_rdbutton_selection))
+            cal_values[1].append(v.get('diff'))
+            cal_values[2].append(div_with_try(v.get('diff'), v.get('i0')))
+        self.calibration_values['i0'] = mean(cal_values[0])
+        self.calibration_values['diff'] = mean(cal_values[1])
+        self.calibration_values['ratio'] = mean(cal_values[2])
+        self.calibrated = True
+        self.mode = "running"
+        self.signals.calibration_value.emit(self.calibration_values)
     
                    
 
@@ -404,11 +432,13 @@ class JetTracking(Display):
         # #can avoid having to define main() and instead pydm handles that
         # for you - it is a subclass of QWidget
         self.app = QApplication.instance()
-        self.signals = Signals()
         # load data from file
         self.load_data()
 
         self.signals = Signals()
+        self.vreader = ValueReader(self.signals)
+        self.worker = StatusThread(self.signals)
+        print(self.worker.isRunning())
         self.buffer_size = 300 
         self.correction_thread = None
         # assemble widgets
@@ -442,7 +472,6 @@ class JetTracking(Display):
         self.lbl_title = Label("Jet Tracking")
         self.lbl_title.setTitleStylesheet()
         self._layout.addWidget(self.lbl_title)
-        self._layout.addStretch(1)
         self.lbl_title.setMaximumHeight(35)
 
         # add a main layout for under the title which holds graphs and user controls
@@ -650,8 +679,8 @@ class JetTracking(Display):
         ##############################
 
         # add frame widgets to the main layout of the window
-        self.layout_main.addWidget(self.frame_graph)
-        self.layout_main.addWidget(self.frame_usr_cntrl)
+        self.layout_main.addWidget(self.frame_graph, 75)
+        self.layout_main.addWidget(self.frame_usr_cntrl, 25)
 
         self.graph_setup()
         
@@ -670,14 +699,19 @@ class JetTracking(Display):
         self.bttn_calibrate.clicked.connect(self._calibrate)
         self.signals.status.connect(self.update_status)
         self.signals.calibration_value.connect(self.update_calibration)
-        ###################################################
 
-    def _start(self):
-        self.signals.mode.emit("running")
-        self.worker = StatusThread(self.signals)
+
         self.signals.status.connect(self.update_status)
         self.signals.buffers.connect(self.plot_data)
         self.signals.avevalues.connect(self.plot_ave_data)
+ 
+        ###################################################
+
+    def _start(self):
+        ## check if thread is running
+        ## if it is we don't want to restart it! we might want to change the mode though
+        ## if not start the thread
+        ## if thread is running start is pressed do nothing
         self.worker.start()
 
     def _stop(self):
@@ -686,14 +720,8 @@ class JetTracking(Display):
 
     def _calibrate(self):
         self.signals.mode.emit("calibration")
-        try:
-            self.worker.requestInterruption()
-            self.worker.wait()
-        except NameError:
-            print("There was no worker already running")
-        else:
-            self.worker = StatusThread(self.signals)
-            self.worker.start()
+        self._start()
+
     def update_calibration(self, cal):
         try:
             self.worker.requestInterruption()
@@ -757,6 +785,7 @@ class JetTracking(Display):
  
     def plot_data(self, data):
         self.plot1.setData(list(data['time']), list(data['ratio']))
+        self.graph1.setXRange(list(data['time'])[0], list(data['time'])[-1])
         self.plot2.setData(list(data['time']), list(data['i0']))
         self.plot3.setData(list(data['time']), list(data['diff']))
     

@@ -15,6 +15,7 @@ class Signals(QtCore.QObject):
     rdbttn_status = QtCore.pyqtSignal(int)
     sigmaval = QtCore.pyqtSignal(float)
     nsampval = QtCore.pyqtSignal(float)
+    motormove = QtCore.pyqtSignal(int)
 
     # calibration
     ali0 = QtCore.pyqtSignal(float)
