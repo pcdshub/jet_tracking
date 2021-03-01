@@ -10,8 +10,8 @@ from ophyd import EpicsSignal
 from pydm import Display
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
-from PyQt5.QtWidgets import (QButtonGroup, QComboBox, QLCDNumber, QRadioButton,
-                             QTextEdit)
+from PyQt5.QtGui import *
+
 from qtpy import QtCore
 from qtpy.QtCore import *
 from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
@@ -380,6 +380,34 @@ class PushButton(QPushButton):
     def __init__(self, parent=None):
         super(PushButton, self).__init__(parent)
 
+class LineEdit(QLineEdit):
+    def __init__(self, text, parent=None):
+        super(LineEdit, self).__init__(parent)
+        self.text = text
+        self.bottom = 0
+        self.top = 100
+        self.textChanged.connect(self.new_text)
+        self.returnPressed.connect(self.check_validator)
+        
+    def new_text(self, text):
+        self.ntext = text
+
+    def check_validator(self):
+        try:
+            if float(self.ntext) > self.top:
+                self.text = str(self.top)
+            elif float(self.ntext) < self.bottom:
+                self.text = str(self.bottom)
+            else:self.text = self.ntext
+            self.setText(self.text)
+        except:
+            mssg = QMessageBox.about(self, "Error", "Input can only be a number")
+            self.clear()
+            self.setText(self.text)
+
+    def valRange(self, x1, x2):
+        self.bottom = x1
+        self.top = x2
 
 class Label(QLabel):
     def __init__(self, parent=None):
@@ -446,7 +474,7 @@ class JetTracking(Display):
 
     def minimumSizeHint(self):
 
-        return(QtCore.QSize(1000, 600))
+        return(QtCore.QSize(1200, 800))
 
     def ui_filepath(self):
 
@@ -541,36 +569,46 @@ class JetTracking(Display):
         # make drop down menu for changing nsampning for sigma
         #####################################################################
 
-        self.lbl_cbox_sigma = Label("Sigma")
-        self.lbl_cbox_sigma.setSubtitleStyleSheet()
+        self.lbl_sigma = Label("Sigma (.5 - 5)")
+        self.lbl_sigma.setSubtitleStyleSheet()
 
-        self.cbox_sigma = ComboBox()
-        self.cbox_sigma.addItems(['1', '1.5', '2', '2.5', '3'])
+        self.le_sigma = LineEdit("1")
+        self.le_sigma.valRange(0.5, 5.0)
 
-        self.lbl_tbox_nsamp = Label('number of samples')
-        self.lbl_tbox_nsamp.setSubtitleStyleSheet()
+        self.lbl_nsamp = Label('number of samples (50 - 1000)')
+        self.lbl_nsamp.setSubtitleStyleSheet()
 
-        # self.tbox_nsamp = QLineEdit("10")
-        # self.validator = QIntValidator(0, 300)
-        # self.tbox_nsamp.setValidator(self.validator)
-        self.cbox_nsamp = ComboBox()
-        self.cbox_nsamp.addItems(['10', '20', '50', '120'])
+        self.lbl_samprate = Label('sampling rate (10 - 400)')
+        self.lbl_samprate.setSubtitleStyleSheet()
+
+        self.le_nsamp = LineEdit("50")
+        self.le_nsamp.valRange(50, 1000)
+        self.le_samprate = LineEdit("50")
+        self.le_samprate.valRange(10, 400)
 
         # setup layout
         ##############
-        self.frame_cbox_sigma = QFrame()
-        self.layout_cbox_sigma = QHBoxLayout()
-        self.frame_cbox_sigma.setLayout(self.layout_cbox_sigma)
-        self.layout_usr_cntrl.addWidget(self.frame_cbox_sigma)
-        self.layout_cbox_sigma.addWidget(self.lbl_cbox_sigma)
-        self.layout_cbox_sigma.addWidget(self.cbox_sigma)
+        self.frame_sigma = QFrame()
+        self.layout_sigma = QHBoxLayout()
+        self.frame_sigma.setLayout(self.layout_sigma)
+        self.layout_usr_cntrl.addWidget(self.frame_sigma)
+        self.layout_sigma.addWidget(self.lbl_sigma)
+        self.layout_sigma.addWidget(self.le_sigma)
 
-        self.frame_tbox_nsamp = QFrame()
-        self.layout_tbox_nsamp = QHBoxLayout()
-        self.frame_tbox_nsamp.setLayout(self.layout_tbox_nsamp)
-        self.layout_usr_cntrl.addWidget(self.frame_tbox_nsamp)
-        self.layout_tbox_nsamp.addWidget(self.lbl_tbox_nsamp)
-        self.layout_tbox_nsamp.addWidget(self.cbox_nsamp)  # self.tbox_nsamp)
+        self.frame_nsamp = QFrame()
+        self.layout_nsamp = QHBoxLayout()
+        self.frame_nsamp.setLayout(self.layout_nsamp)
+        self.layout_usr_cntrl.addWidget(self.frame_nsamp)
+        self.layout_nsamp.addWidget(self.lbl_nsamp)
+        self.layout_nsamp.addWidget(self.le_nsamp)
+
+        self.frame_samprate = QFrame()
+        self.layout_samprate = QHBoxLayout()
+        self.frame_samprate.setLayout(self.layout_samprate)
+        self.layout_usr_cntrl.addWidget(self.frame_samprate)
+        self.layout_samprate.addWidget(self.lbl_samprate)
+        self.layout_samprate.addWidget(self.le_samprate)
+ 
         ############################
 
         ####################################################################
@@ -689,8 +727,8 @@ class JetTracking(Display):
         # signals and slots
         ###################################################
         
-        self.cbox_sigma.activated.connect(self.update_sigma)
-        self.cbox_nsamp.activated.connect(self.update_nsamp)
+        #self.le_sigma.activated.connect(self.update_sigma)
+        #self.le_nsamp.activated.connect(self.update_nsamp)
         self.bttngrp1.buttonClicked.connect(self.checkBttn)
         self.bttngrp2.buttonClicked.connect(self.checkBttn)        
  
