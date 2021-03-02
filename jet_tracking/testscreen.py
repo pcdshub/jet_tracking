@@ -236,8 +236,9 @@ class StatusThread(QThread):
         self.calibrated = False
         self.calibration_time = 10
         self.calibration_values = {"i0": 0, "diff":0, "ratio": 0}
-        self.nsamp = 10
+        self.nsamp = 50
         self.sigma = 1
+        self.samprate = 50
         self.notification_tolerance = 100
         self.i0_rdbutton_selection = 'gatt'
 
@@ -258,6 +259,7 @@ class StatusThread(QThread):
         self.signals.rdbttn_status.connect(self.update_rdbutton)
         self.signals.nsampval.connect(self.update_nsamp)
         self.signals.sigmaval.connect(self.update_sigma)
+        self.signals.samprate.connect(self.update_samprate)
         self.signals.mode.connect(self.update_mode)
 
     def update_mode(self, mode):
@@ -271,7 +273,10 @@ class StatusThread(QThread):
 
     def update_nsamp(self, nsamp):
         self.nsamp = nsamp
-
+        
+    def update_samprate(self, samprate):
+        self.samprate = samprate
+        
     def update_rdbutton(self, rdbutton):
         self.i0_rdbutton_selection = rdbutton
 
@@ -307,10 +312,8 @@ class StatusThread(QThread):
                     self.averages["time"].append(time.time()-self.timer)
                     self.signals.avevalues.emit(self.averages)
                     self.check_status_update()
-                #else:
-                #    self.calibrate(new_values)
                 self.signals.buffers.emit(self.buffers)
-                time.sleep(1/10)
+                time.sleep(1/self.samprate)
             elif self.mode == "calibration":
                 self.calibrate(new_values)
 
@@ -381,33 +384,39 @@ class PushButton(QPushButton):
         super(PushButton, self).__init__(parent)
 
 class LineEdit(QLineEdit):
-    def __init__(self, text, parent=None):
-        super(LineEdit, self).__init__(parent)
-        self.text = text
-        self.bottom = 0
-        self.top = 100
+    checkVal = pyqtSignal(float)
+    def __init__(self, *args, **kwargs):
+        super(LineEdit, self).__init__(*args, **kwargs)
+        self.validator = QDoubleValidator()
+        self.setValidator(self.validator)
         self.textChanged.connect(self.new_text)
         self.returnPressed.connect(self.check_validator)
+        self.ntext = self.text()
         
     def new_text(self, text):
-        self.ntext = text
+        if self.hasAcceptableInput():
+            self.ntext = text
+
+    def keyPressEvent(self, event):
+        super().keyPressEvent(event)
+        if event.key() == Qt.Key_Return and not self.hasAcceptableInput():
+            self.check_validator()
 
     def check_validator(self):
         try:
-            if float(self.ntext) > self.top:
-                self.text = str(self.top)
-            elif float(self.ntext) < self.bottom:
-                self.text = str(self.bottom)
-            else:self.text = self.ntext
-            self.setText(self.text)
+            if float(self.text()) > self.validator.top():
+                self.setText(str(self.validator.top()))
+            elif float(self.text()) < self.validator.bottom():
+                self.setText(str(self.validator.bottom()))
         except:
             mssg = QMessageBox.about(self, "Error", "Input can only be a number")
-            self.clear()
-            self.setText(self.text)
+            self.setText(self.ntext)
+        self.checkVal.emit(float(self.ntext))
 
     def valRange(self, x1, x2):
-        self.bottom = x1
-        self.top = x2
+        self.validator.setRange(x1, x2)
+        self.validator.setDecimals(6)
+        self.validator.setNotation(QDoubleValidator.StandardNotation)
 
 class Label(QLabel):
     def __init__(self, parent=None):
@@ -466,7 +475,6 @@ class JetTracking(Display):
         self.signals = Signals()
         self.vreader = ValueReader(self.signals)
         self.worker = StatusThread(self.signals)
-        print(self.worker.isRunning())
         self.buffer_size = 300 
         self.correction_thread = None
         # assemble widgets
@@ -569,22 +577,22 @@ class JetTracking(Display):
         # make drop down menu for changing nsampning for sigma
         #####################################################################
 
-        self.lbl_sigma = Label("Sigma (.5 - 5)")
+        self.lbl_sigma = Label("Sigma (0.1 - 5)")
         self.lbl_sigma.setSubtitleStyleSheet()
 
         self.le_sigma = LineEdit("1")
-        self.le_sigma.valRange(0.5, 5.0)
+        self.le_sigma.valRange(0.1, 5.0)
 
-        self.lbl_nsamp = Label('number of samples (50 - 1000)')
+        self.lbl_nsamp = Label('number of samples (5 - 300)')
         self.lbl_nsamp.setSubtitleStyleSheet()
 
-        self.lbl_samprate = Label('sampling rate (10 - 400)')
+        self.lbl_samprate = Label('sampling rate (2 - 300)')
         self.lbl_samprate.setSubtitleStyleSheet()
 
         self.le_nsamp = LineEdit("50")
-        self.le_nsamp.valRange(50, 1000)
+        self.le_nsamp.valRange(5, 300)
         self.le_samprate = LineEdit("50")
-        self.le_samprate.valRange(10, 400)
+        self.le_samprate.valRange(2, 300)
 
         # setup layout
         ##############
@@ -726,9 +734,10 @@ class JetTracking(Display):
         ###################################################
         # signals and slots
         ###################################################
-        
-        #self.le_sigma.activated.connect(self.update_sigma)
-        #self.le_nsamp.activated.connect(self.update_nsamp)
+        self.le_sigma.checkVal.connect(self.update_sigma)
+       
+        self.le_samprate.checkVal.connect(self.update_samprate)
+        self.le_nsamp.checkVal.connect(self.update_nsamp)
         self.bttngrp1.buttonClicked.connect(self.checkBttn)
         self.bttngrp2.buttonClicked.connect(self.checkBttn)        
  
@@ -790,6 +799,7 @@ class JetTracking(Display):
             widgetToRemove.setParent(None)
 
     def graph_setup(self):
+        self.xRange = 300
         styles = {'color':'b','font-size': '20px'}
         self.graph1.setLabels(left="I/I0", bottom="Time")
         self.graph1.setTitle(title="Intensity Ratio")
@@ -847,9 +857,12 @@ class JetTracking(Display):
  
     def update_sigma(self, sigma):
         self.signals.sigmaval.emit(sigma)
-
+        
     def update_nsamp(self, nsamp):
         self.signals.nsampval.emit(nsamp)
+
+    def update_samprate(self, samprate):
+        self.signals.samprate.emit(samprate)
    
     def cleanup_correction(self):
        self.signals.correction_thread = None
