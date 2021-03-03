@@ -1,7 +1,7 @@
 import logging
 import time
 import threading
-from statistics import mean
+from statistics import mean, stdev
 
 import numpy as np
 import pyqtgraph as pg
@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
                             QVBoxLayout)
 
 from num_gen import *
-from calibration import Calibration
+from datastream import *
 from graph_display import graphDisplay
 from signals import Signals
 import collections
@@ -28,113 +28,11 @@ logging = logging.getLogger('ophyd')
 logging.setLevel('CRITICAL')
 
 lock = threading.Lock()
-
+"""
 def getPVs():
     # this is where I would want to get PVs from a json file
     # but I will hard code it for now
     return({'diff': 'CXI:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'CXI:JTRK:REQ:I0'})
-
-
-class Counter(QObject):
-
-    def __init__(self, signals, nsamp, parent=None):
-        super(QObject, self).__init__(parent)
-
-        self.signals = signals
-        self.nsamp = nsamp
-        self.bttnstatus = 0
-        self.timer = time.time()
-
-        self.signals.rdbttnStatus.connect(self.changeBttn)
-
-    def start(self):
-
-        self.checkBttn()
-
-    def checkBttn(self):
-
-        if self.bttnstatus == 0:
-            self.runlive()
-
-        elif self.bttnstatus == 1:
-            self.runsim()
-
-    def changeBttn(self, value):
-
-        self.bttnstatus = value
-        self.signals.stopped.emit()
-
-    def runlive(self):
-
-        values = [[], [], [], []]
-
-        c = 0
-
-        def diff_cb(value, c):
-            if len(self.diff_values) > self.nsamp:
-                self.diff_values.pop(0)
-            # diff_pv.put(49*0.6*3*np.random.rand()-0.5)
-            values[0].append(value)
-
-        def i0_cb(value, c):
-            if len(self.i0_values) > self.nsamp:
-                self.i0_values.pop(0)
-            # i0_pv.put(79+2*np.random.rand())
-            values[1].append(value)
-
-        self.diff_values = []
-        self.i0_values = []
-        c = 0
-        PVs = getPVs()
-        diff_pv = EpicsSignal(PVs[0])
-        i0_pv = EpicsSignal(PVs[1])
-
-        while True:
-
-            cur_time = time.time()-self.timer
-            c += 1
-            diff_cb(diff_pv.get(), c)
-            i0_cb(i0_pv.get(), c)
-            values[2].append(cur_time)
-            values[3].append(c)
-            time.sleep(1/10)
-            self.signals.params.emit(values)
-
-        self.signals.stopped.emit()
-
-    def runsim(self):
-        
-        self.context_data = zmq.Context()
-        self.socket_data = self.context_data.socket(zmq.SUB)
-        self.socket_data.connect(''.join(['tcp://localhost:', '8123']))
-        self.socket_data.subscribe("")
-
-        values = [[], [], [], []]
-        c = 0
-
-        while True:
-            cur_time = time.time()-self.timer
-            c += 1
-            md = self.socket_data.recv_json(flags=0)
-            msg = self.socket_data.recv(flags=0, copy=False, track=False)
-            buf = memoryview(msg)
-            data = np.frombuffer(buf, dtype=md['dtype'])
-            data = np.ndarray.tolist(data.reshape(md['shape']))
-            if len(values[3]) > 120:
-                values[3] *= 0  # values[0][-120:]
-                # values[1] = values[1][-120:]
-                # values[2] = values[2][-120:]
-                # values[3] = values[3][-120:]
-
-            values[0].append(data[0])
-            values[1].append(data[1])
-            values[2].append(cur_time)
-            values[3].append(c)
-
-            self.signals.params.emit(values)
-
-        self.signals.stopped.emit()
-        
         
 
 def skimmer(key, oldlist, checklist):
@@ -185,7 +83,7 @@ class ValueReader(metaclass=Singleton):
         self.diff = self.signal_diff.get()
 
     def sim_data_stream(self):
-        """
+        """"""
         context_data = zmq.Context()
         socket_data = context_data.socket(zmq.SUB)
         socket_data.connect(".join(['tcp://localhost:', '8123'])")
@@ -198,7 +96,7 @@ class ValueReader(metaclass=Singleton):
             data = np.ndarray.tolist(data.reshape(md['shape']))
             self.gatt = data[0]
             self.diff = data[1]
-        """
+        """"""
         x = 0.8
         y = 0.4
         self.gatt = sinwv(x)
@@ -222,10 +120,10 @@ class StatusThread(QThread):
 
     def __init__(self, signals, parent=None):
         super(StatusThread, self).__init__(parent)
-        """ Constructor
+        """""" Constructor
 
         :param 
-        """
+        """"""
         self.signals = signals
         self.reader = ValueReader(signals)
         self.status = True
@@ -235,7 +133,7 @@ class StatusThread(QThread):
         self.count = 0
         self.calibrated = False
         self.calibration_time = 10
-        self.calibration_values = {"i0": 0, "diff":0, "ratio": 0}
+        self.calibration_values = {"i0": {'mean': 0, 'stdev': 0}, "diff": {'mean': 0, 'stdev': 0}, "ratio": {'mean': 0, 'stdev': 0}}
         self.nsamp = 50
         self.sigma = 1
         self.samprate = 50
@@ -281,10 +179,10 @@ class StatusThread(QThread):
         self.i0_rdbutton_selection = rdbutton
 
     def run(self):
-        """Long-running task."""
+        """"""Long-running task.""""""
 
         while not self.isInterruptionRequested():
-            new_values = self.reader.read_value() #### how does this line work? does it initialize ValueReader first?
+            new_values = self.reader.read_value() 
             if self.mode == "running":
                 if self.count < self.buffer_size:
                     self.count += 1
@@ -333,15 +231,15 @@ class StatusThread(QThread):
 
     def event_flagging(self):
 
-        if self.buffers['ratio'][-1] < (self.calibration_values['ratio'] - self.sigma*self.calibration_values['ratio']):
+        if self.buffers['ratio'][-1] < (self.calibration_values['ratio']['mean'] - self.sigma*self.calibration_values['ratio']['stdev']):
             self.flaggedEvents['low intensity'].append(self.buffers['ratio'][-1])
         else:
             self.flaggedEvents['low intensity'].append(0)
-        if self.buffers['i0'][-1] < (self.calibration_values['i0']- self.sigma*self.calibration_values['i0']):
+        if self.buffers['i0'][-1] < (self.calibration_values['i0']['mean'] - self.sigma*self.calibration_values['i0']['stdev']):
             self.flaggedEvents['dropped shot'].append(self.buffers['i0'][-1])
         else:
             self.flaggedEvents['dropped shot'].append(0)
-        if self.buffers['diff'][-1] < (self.calibration_values['diff']- self.sigma*self.calibration_values['diff']):
+        if self.buffers['diff'][-1] < (self.calibration_values['diff']['mean']- self.sigma*self.calibration_values['diff']['stdev']):
             self.flaggedEvents['missed shot'].append(self.buffers['i0'][-1])
         else:
             self.flaggedEvents['missed shot'].append(0)
@@ -350,18 +248,38 @@ class StatusThread(QThread):
 
         timer = time.time()
         cal_values = [[],[],[]]
-        while time.time()-timer < 3:#self.calibration_time: # put a time limit on how long it can try to calibrate for before throwing an error - set status to no tracking
+        while time.time()-timer < 2:
             cal_values[0].append(v.get(self.i0_rdbutton_selection))
             cal_values[1].append(v.get('diff'))
-            cal_values[2].append(div_with_try(v.get('diff'), v.get('i0')))
-        self.calibration_values['i0'] = mean(cal_values[0])
-        self.calibration_values['diff'] = mean(cal_values[1])
-        self.calibration_values['ratio'] = mean(cal_values[2])
+            cal_values[2].append(div_with_try(v.get('diff'), v.get(self.i0_rdbutton_selection)))
+            time.sleep(1/2)
+        self.calibration_values['i0']['mean'] = mean(cal_values[0])
+        self.calibration_values['i0']['stdev'] = stdev(cal_values[0])
+        self.calibration_values['diff']['mean'] = mean(cal_values[1])
+        self.calibration_values['diff']['stdev'] = stdev(cal_values[1])
+        self.calibration_values['ratio']['mean'] = mean(cal_values[2])
+        self.calibration_values['ratio']['stdev'] = stdev(cal_values[2])
+        print(cal_values)
+        cal_values = [[], [], []] 
+        while time.time()-timer < 3:#self.calibration_time: # put a time limit on how long it can try to calibrate for before throwing an error - set status to no tracking
+            if v.get(self.i0_rdbutton_selection) >= (self.calibration_values['i0']['mean'] - 2*self.calibration_values['i0']['stdev']):
+                cal_values[0].append(v.get(self.i0_rdbutton_selection))
+            if v.get('diff') >= (self.calibration_values['diff']['mean'] - 2*self.calibration_values['diff']['stdev']):
+                cal_values[1].append(v.get('diff'))
+            if v.get('ratio') >= (self.calibration_values['ratio']['mean'] - 2*self.calibration_values['ratio']['stdev']):
+                cal_values[2].append(div_with_try(v.get('diff'), v.get(self.i0_rdbutton_selection)))
+            time.sleep(1/2)
+        self.calibration_values['i0']['mean'] = mean(cal_values[0])
+        self.calibration_values['i0']['stdev'] = stdev(cal_values[0])
+        self.calibration_values['diff']['mean'] = mean(cal_values[1])
+        self.calibration_values['diff']['stdev'] = stdev(cal_values[1])
+        self.calibration_values['ratio']['mean'] = mean(cal_values[2])
+        self.calibration_values['ratio']['stdev'] = stdev(cal_values[2])
         self.calibrated = True
         self.mode = "running"
-        self.signals.calibration_value.emit(self.calibration_values)
-    
-                   
+        self.signals.calibration_value.emit(self.calibration_values)"""
+
+
 
 class GraphicsView(QGraphicsView):
     def __init__(self, parent=None):
@@ -770,13 +688,8 @@ class JetTracking(Display):
         self._start()
 
     def update_calibration(self, cal):
-        try:
-            self.worker.requestInterruption()
-            self.worker.wait()
-        except NameError:
-            print("tried to end worker when there wasn't one when updating calibration")
-        self.lbl_i0_status.display(cal['i0'])
-        self.lbl_diff_status.display(cal['diff'])
+        self.lbl_i0_status.display(cal['i0']['mean'])
+        self.lbl_diff_status.display(cal['diff']['mean'])
 
     def liveGraphing(self):
 
