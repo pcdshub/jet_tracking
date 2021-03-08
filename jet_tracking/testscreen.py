@@ -1,285 +1,32 @@
+import collections
 import logging
-import time
 import threading
+import time
 from statistics import mean, stdev
 
 import numpy as np
 import pyqtgraph as pg
 import zmq
+from datastream import StatusThread, ValueReader
+from num_gen import *
 from ophyd import EpicsSignal
 from pydm import Display
 from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-
+from PyQt5.QtWidgets import *
 from qtpy import QtCore
 from qtpy.QtCore import *
 from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
                             QGraphicsView, QHBoxLayout, QLabel, QPushButton,
                             QVBoxLayout)
 
-from num_gen import *
-from datastream import *
 from graph_display import graphDisplay
 from signals import Signals
-import collections
 
 logging = logging.getLogger('ophyd')
 logging.setLevel('CRITICAL')
 
 lock = threading.Lock()
-"""
-def getPVs():
-    # this is where I would want to get PVs from a json file
-    # but I will hard code it for now
-    return({'diff': 'CXI:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'CXI:JTRK:REQ:I0'})
-        
-
-def skimmer(key, oldlist, checklist):
-    skimlist = []
-    for i in range(len(checklist[key])):
-        if checklist[key][i] == 0:
-            skimlist.append(oldlist[i])
-    return(skimlist)
-
-def div_with_try(v1, v2):
-    try:
-        a = v1/v2
-    except (TypeError, ZeroDivisionError) as e:
-        a = 0
-    return(a)
-        
-
-class Singleton(type): #need to make into a singleton
-    _instances = {}
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            with lock:
-                if cls not in cls._instances:
-                    cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return(cls._instances[cls])
-
-class ValueReader(metaclass=Singleton):
-    def __init__(self, signals):
-        self.signals = signals
-        self.PVs = dict()
-        self.PV_signals = list()
-        self.live_data = True
-        
-        self.signals.run_live.connect(self.run_live_data)
-
-    def run_live_data(self, live):
-        self.live_data = live
-
-    def live_data_stream(self):
-        self.PVs = getPVs()
-        gatt = self.PVs.get('gatt', None)
-        self.signal_gatt = EpicsSignal(gatt)
-        #wave8 = self.PVs.get('wave8', None)
-        #self.signal_wave8 = EpicsSignal(wave8)
-        diff = self.PVs.get('diff', None)
-        self.signal_diff = EpicsSignal(diff)
-        self.gatt = self.signal_gatt.get()
-        self.diff = self.signal_diff.get()
-
-    def sim_data_stream(self):
-        """"""
-        context_data = zmq.Context()
-        socket_data = context_data.socket(zmq.SUB)
-        socket_data.connect(".join(['tcp://localhost:', '8123'])")
-        socket_data.subscribe("")
-        while True:
-            md = socket_data.rev_json(flags=0)
-            msg = socket.recv(flags=0,copy=false, track=false)
-            buf = memoryview(msg)
-            data = np.frombuffer(buf, dtype=md['dtype'])
-            data = np.ndarray.tolist(data.reshape(md['shape']))
-            self.gatt = data[0]
-            self.diff = data[1]
-        """"""
-        x = 0.8
-        y = 0.4
-        self.gatt = sinwv(x)
-        self.diff = sinwv(y)
-
-    def read_value(self): # needs to initialize first maybe using a decorator?
-        if self.live_data:
-            self.live_data_stream()
-            return({'gatt': self.gatt, 'diff': self.diff})
-        else:
-            self.sim_data_stream()
-            return({'gatt': self.gatt, 'diff': self.diff})
-
-
-    #def filter_data():
-        # this function is used to remove any keys from the dictionary that have None for the value
-        #d = {k, v for k, v in self.signal_dict.items() if v is not None}
-        #return
- 
-class StatusThread(QThread):
-
-    def __init__(self, signals, parent=None):
-        super(StatusThread, self).__init__(parent)
-        """""" Constructor
-
-        :param 
-        """"""
-        self.signals = signals
-        self.reader = ValueReader(signals)
-        self.status = True
-        self.mode = "running" #can either be running or calibrating
-        self.timer = time.time()
-        self.buffer_size = 300
-        self.count = 0
-        self.calibrated = False
-        self.calibration_time = 10
-        self.calibration_values = {"i0": {'mean': 0, 'stdev': 0}, "diff": {'mean': 0, 'stdev': 0}, "ratio": {'mean': 0, 'stdev': 0}}
-        self.nsamp = 50
-        self.sigma = 1
-        self.samprate = 50
-        self.notification_tolerance = 100
-        self.i0_rdbutton_selection = 'gatt'
-
-        ## buffers and data collection 
-        self.averages = {"average i0":collections.deque([0]*self.buffer_size, self.buffer_size), 
-                         "average diff": collections.deque([0]*self.buffer_size, self.buffer_size),
-                         "average ratio": collections.deque([0]*self.buffer_size, self.buffer_size),
-                         "time": collections.deque([0]*self.buffer_size, self.buffer_size)}
-        self.flaggedEvents = {"low intensity": collections.deque([0]*self.buffer_size, self.buffer_size),
-                            "missed shot": collections.deque([0]*self.buffer_size, self.buffer_size),
-                            "dropped shot": collections.deque([0]*self.buffer_size, self.buffer_size)}
-        self.buffers = {"i0":collections.deque([0]*self.buffer_size, self.buffer_size),
-                        "diff":collections.deque([0]*self.buffer_size, self.buffer_size), 
-                        "ratio": collections.deque([0]*self.buffer_size, self.buffer_size), 
-                        "time": collections.deque([0]*self.buffer_size, self.buffer_size)}
-        
-        ## signals
-        self.signals.rdbttn_status.connect(self.update_rdbutton)
-        self.signals.nsampval.connect(self.update_nsamp)
-        self.signals.sigmaval.connect(self.update_sigma)
-        self.signals.samprate.connect(self.update_samprate)
-        self.signals.mode.connect(self.update_mode)
-
-    def update_mode(self, mode):
-        self.mode = mode
-
-    def update_status(self, status):
-        self.status = status
-    
-    def update_sigma(self, sigma):
-        self.sigma = sigma
-
-    def update_nsamp(self, nsamp):
-        self.nsamp = nsamp
-        
-    def update_samprate(self, samprate):
-        self.samprate = samprate
-        
-    def update_rdbutton(self, rdbutton):
-        self.i0_rdbutton_selection = rdbutton
-
-    def run(self):
-        """"""Long-running task.""""""
-
-        while not self.isInterruptionRequested():
-            new_values = self.reader.read_value() 
-            if self.mode == "running":
-                if self.count < self.buffer_size:
-                    self.count += 1
-                    self.buffers['i0'].append(new_values.get(self.i0_rdbutton_selection))
-                    self.buffers['diff'].append(new_values.get('diff'))
-                    self.buffers['ratio'].append(self.buffers['i0'][-1]/self.buffers['diff'][-1])
-                    self.buffers['time'].append(time.time()-self.timer)
-                else: 
-                    self.count += 1 #### do I need to protect from this number getting too big?
-                    self.buffers['i0'].append(new_values.get(self.i0_rdbutton_selection))
-                    self.buffers['diff'].append(new_values.get('diff'))
-                    self.buffers['ratio'].append(self.buffers['i0'][-1]/self.buffers['diff'][-1])
-                    self.buffers['time'].append(time.time()-self.timer)
-                    self.event_flagging()
-                if self.count % self.nsamp == 0:
-                    avei0 =  mean(skimmer('dropped shot',
-                                           list(self.buffers['i0']), self.flaggedEvents))
-                    self.averages["average i0"].append(avei0)
-                    avediff =  mean(skimmer('dropped shot',
-                                           list(self.buffers['diff']), self.flaggedEvents))
-                    self.averages["average diff"].append(avediff)
-                    averatio =  mean(skimmer('dropped shot',
-                                     list(self.buffers['ratio']), self.flaggedEvents))
-                    self.averages["average ratio"].append(averatio)
-                    self.averages["time"].append(time.time()-self.timer)
-                    self.signals.avevalues.emit(self.averages)
-                    self.check_status_update()
-                self.signals.buffers.emit(self.buffers)
-                time.sleep(1/self.samprate)
-            elif self.mode == "calibration":
-                self.calibrate(new_values)
-
-    def check_status_update(self):
-
-        if self.calibrated:
-            if np.count_nonzero(self.flaggedEvents['missed shot']) > self.notification_tolerance:
-                self.signals.status.emit("warning, missed shots, realigning in **", "red") # a way to clock how long it's in a warning state before it needs recalibration
-            elif np.count_nonzero(self.flaggedEvents['dropped shot'])> self.notification_tolerance:
-                self.signals.status.emit("lots of dropped shots", "yellow")
-            elif np.count_nonzero(self.flaggedEvents['low intensity']) > self.notification_tolerance:
-                self.signals.status.emit("low intensity, realigning in ***", "orange")
-            else:
-                self.signals.status.emit("everything is good", "green")
-        else:
-            self.signals.status.emit("not calibrated", "orange")
-
-    def event_flagging(self):
-
-        if self.buffers['ratio'][-1] < (self.calibration_values['ratio']['mean'] - self.sigma*self.calibration_values['ratio']['stdev']):
-            self.flaggedEvents['low intensity'].append(self.buffers['ratio'][-1])
-        else:
-            self.flaggedEvents['low intensity'].append(0)
-        if self.buffers['i0'][-1] < (self.calibration_values['i0']['mean'] - self.sigma*self.calibration_values['i0']['stdev']):
-            self.flaggedEvents['dropped shot'].append(self.buffers['i0'][-1])
-        else:
-            self.flaggedEvents['dropped shot'].append(0)
-        if self.buffers['diff'][-1] < (self.calibration_values['diff']['mean']- self.sigma*self.calibration_values['diff']['stdev']):
-            self.flaggedEvents['missed shot'].append(self.buffers['i0'][-1])
-        else:
-            self.flaggedEvents['missed shot'].append(0)
-        
-    def calibrate(self, v):
-
-        timer = time.time()
-        cal_values = [[],[],[]]
-        while time.time()-timer < 2:
-            cal_values[0].append(v.get(self.i0_rdbutton_selection))
-            cal_values[1].append(v.get('diff'))
-            cal_values[2].append(div_with_try(v.get('diff'), v.get(self.i0_rdbutton_selection)))
-            time.sleep(1/2)
-        self.calibration_values['i0']['mean'] = mean(cal_values[0])
-        self.calibration_values['i0']['stdev'] = stdev(cal_values[0])
-        self.calibration_values['diff']['mean'] = mean(cal_values[1])
-        self.calibration_values['diff']['stdev'] = stdev(cal_values[1])
-        self.calibration_values['ratio']['mean'] = mean(cal_values[2])
-        self.calibration_values['ratio']['stdev'] = stdev(cal_values[2])
-        print(cal_values)
-        cal_values = [[], [], []] 
-        while time.time()-timer < 3:#self.calibration_time: # put a time limit on how long it can try to calibrate for before throwing an error - set status to no tracking
-            if v.get(self.i0_rdbutton_selection) >= (self.calibration_values['i0']['mean'] - 2*self.calibration_values['i0']['stdev']):
-                cal_values[0].append(v.get(self.i0_rdbutton_selection))
-            if v.get('diff') >= (self.calibration_values['diff']['mean'] - 2*self.calibration_values['diff']['stdev']):
-                cal_values[1].append(v.get('diff'))
-            if v.get('ratio') >= (self.calibration_values['ratio']['mean'] - 2*self.calibration_values['ratio']['stdev']):
-                cal_values[2].append(div_with_try(v.get('diff'), v.get(self.i0_rdbutton_selection)))
-            time.sleep(1/2)
-        self.calibration_values['i0']['mean'] = mean(cal_values[0])
-        self.calibration_values['i0']['stdev'] = stdev(cal_values[0])
-        self.calibration_values['diff']['mean'] = mean(cal_values[1])
-        self.calibration_values['diff']['stdev'] = stdev(cal_values[1])
-        self.calibration_values['ratio']['mean'] = mean(cal_values[2])
-        self.calibration_values['ratio']['stdev'] = stdev(cal_values[2])
-        self.calibrated = True
-        self.mode = "running"
-        self.signals.calibration_value.emit(self.calibration_values)"""
-
-
 
 class GraphicsView(QGraphicsView):
     def __init__(self, parent=None):
@@ -310,7 +57,7 @@ class LineEdit(QLineEdit):
         self.textChanged.connect(self.new_text)
         self.returnPressed.connect(self.check_validator)
         self.ntext = self.text()
-        
+
     def new_text(self, text):
         if self.hasAcceptableInput():
             self.ntext = text
@@ -393,7 +140,7 @@ class JetTracking(Display):
         self.signals = Signals()
         self.vreader = ValueReader(self.signals)
         self.worker = StatusThread(self.signals)
-        self.buffer_size = 300 
+        self.buffer_size = 300
         self.correction_thread = None
         # assemble widgets
         self.setup_ui()
@@ -534,7 +281,7 @@ class JetTracking(Display):
         self.layout_usr_cntrl.addWidget(self.frame_samprate)
         self.layout_samprate.addWidget(self.lbl_samprate)
         self.layout_samprate.addWidget(self.le_samprate)
- 
+
         ############################
 
         ####################################################################
@@ -647,18 +394,18 @@ class JetTracking(Display):
         self.layout_main.addWidget(self.frame_usr_cntrl, 25)
 
         self.graph_setup()
-        
+
 
         ###################################################
         # signals and slots
         ###################################################
         self.le_sigma.checkVal.connect(self.update_sigma)
-       
+
         self.le_samprate.checkVal.connect(self.update_samprate)
         self.le_nsamp.checkVal.connect(self.update_nsamp)
         self.bttngrp1.buttonClicked.connect(self.checkBttn)
-        self.bttngrp2.buttonClicked.connect(self.checkBttn)        
- 
+        self.bttngrp2.buttonClicked.connect(self.checkBttn)
+
         self.bttn_start.clicked.connect(self._start)
         self.bttn_stop.clicked.connect(self._stop)
         self.bttn_calibrate.clicked.connect(self._calibrate)
@@ -669,7 +416,7 @@ class JetTracking(Display):
         self.signals.status.connect(self.update_status)
         self.signals.buffers.connect(self.plot_data)
         self.signals.avevalues.connect(self.plot_ave_data)
- 
+
         ###################################################
 
     def _start(self):
@@ -734,7 +481,7 @@ class JetTracking(Display):
         self.plot2ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
                                          size=1, style=Qt.DashLine)
         self.graph2.addItem(self.plot2ave)
-        
+
         self.plot3 = pg.PlotCurveItem(pen=pg.mkPen(width=2, color='g'), size=1)
         self.graph3.addItem(self.plot3)
         self.plot3ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
@@ -743,13 +490,13 @@ class JetTracking(Display):
 
         self.graph2.setXLink(self.graph1)
         self.graph3.setXLink(self.graph1)
- 
+
     def plot_data(self, data):
         self.plot1.setData(list(data['time']), list(data['ratio']))
         self.graph1.setXRange(list(data['time'])[0], list(data['time'])[-1])
         self.plot2.setData(list(data['time']), list(data['i0']))
         self.plot3.setData(list(data['time']), list(data['diff']))
-    
+
     def plot_ave_data(self, data):
         self.plot1ave.setData(list(data['time']), list(data['average ratio']))
         self.plot2ave.setData(list(data['time']), list(data['average i0']))
@@ -767,20 +514,20 @@ class JetTracking(Display):
                self.correction_thread = correctionThread()
                self.correction_thread.finished.connect(self.cleanup_correction)
                self.correction_thread.start()
- 
+
     def update_sigma(self, sigma):
         self.signals.sigmaval.emit(sigma)
-        
+
     def update_nsamp(self, nsamp):
         self.signals.nsampval.emit(nsamp)
 
     def update_samprate(self, samprate):
         self.signals.samprate.emit(samprate)
-   
+
     def cleanup_correction(self):
        self.signals.correction_thread = None
        self.thread.reset_buffers(value)
-    
+
     def checkBttn(self, button):
         bttn = button.text()
         if bttn == "simulated data":
@@ -808,6 +555,3 @@ class JetTracking(Display):
                 max-height: 35px;\
                 font-size: 14px;\
             }")
-
-
-

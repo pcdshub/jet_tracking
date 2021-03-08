@@ -2,54 +2,45 @@ import logging
 import time
 import threading
 from statistics import mean, stdev
-
 import numpy as np
-import pyqtgraph as pg
-import zmq
 from ophyd import EpicsSignal
-from pydm import Display
-from PyQt5.QtCore import *
+from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-
-from qtpy import QtCore
-from qtpy.QtCore import *
-from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
-                            QGraphicsView, QHBoxLayout, QLabel, QPushButton,
-                            QVBoxLayout)
-
-from num_gen import *
-from calibration import Calibration
-from graph_display import graphDisplay
-from signals import Signals
+from num_gen import sinwv
 import collections
-
+import zmq
 logging = logging.getLogger('ophyd')
 logging.setLevel('CRITICAL')
 
+lock = threading.Lock()
 
-def getPVs():
+def GetPVs():
     # this is where I would want to get PVs from a json file
     # but I will hard code it for now
     return({'diff': 'CXI:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'CXI:JTRK:REQ:I0'})        
 
-def skimmer(key, oldlist, checklist):
+
+def Skimmer(key, oldlist, checklist):
     skimlist = []
     for i in range(len(checklist[key])):
         if checklist[key][i] == 0:
             skimlist.append(oldlist[i])
     return(skimlist)
 
-def div_with_try(v1, v2):
+
+def DivWithTry(v1, v2):
     try:
         a = v1/v2
     except (TypeError, ZeroDivisionError) as e:
+        print(f"got error [e]")
         a = 0
     return(a)
         
 
-class Singleton(type): #need to make into a singleton
+class Singleton(type):
     _instances = {}
+
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
             with lock:
@@ -59,6 +50,7 @@ class Singleton(type): #need to make into a singleton
 
 
 class ValueReader(metaclass=Singleton):
+
     def __init__(self, signals):
         self.signals = signals
         self.PVs = dict()
@@ -71,7 +63,7 @@ class ValueReader(metaclass=Singleton):
         self.live_data = live
 
     def live_data_stream(self):
-        self.PVs = getPVs()
+        self.PVs = GetPVs()
         gatt = self.PVs.get('gatt', None)
         self.signal_gatt = EpicsSignal(gatt)
         #wave8 = self.PVs.get('wave8', None)
@@ -82,26 +74,27 @@ class ValueReader(metaclass=Singleton):
         self.diff = self.signal_diff.get()
 
     def sim_data_stream(self):
-        """
+         
         context_data = zmq.Context()
         socket_data = context_data.socket(zmq.SUB)
-        socket_data.connect(".join(['tcp://localhost:', '8123'])")
+        socket_data.connect("".join(['tcp://localhost:', '8123']))
         socket_data.subscribe("")
-        while True:
-            md = socket_data.rev_json(flags=0)
-            msg = socket.recv(flags=0,copy=false, track=false)
-            buf = memoryview(msg)
-            data = np.frombuffer(buf, dtype=md['dtype'])
-            data = np.ndarray.tolist(data.reshape(md['shape']))
-            self.gatt = data[0]
-            self.diff = data[1]
+        #while True:
+        md = socket_data.recv_json(flags=0)
+        msg = socket_data.recv(flags=0,copy=False, track=False)
+        buf = memoryview(msg)
+        data = np.frombuffer(buf, dtype=md['dtype'])
+        data = np.ndarray.tolist(data.reshape(md['shape']))
+        self.gatt = data[0]
+        self.diff = data[1]
         """
         x = 0.8
         y = 0.4
         self.gatt = sinwv(x)
         self.diff = sinwv(y)
+        """
 
-    def read_value(self): # needs to initialize first maybe using a decorator?
+    def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.live_data:
             self.live_data_stream()
             return({'gatt': self.gatt, 'diff': self.diff})
@@ -131,7 +124,7 @@ class StatusThread(QThread):
         self.signals = signals
         self.reader = ValueReader(signals)
         self.status = True
-        self.mode = "running" #can either be running or calibrating
+        self.mode = "running"  #can either be running or calibrating
         self.timer = time.time()
         self.buffer_size = 300
         self.count = 0
@@ -202,13 +195,13 @@ class StatusThread(QThread):
                     self.buffers['time'].append(time.time()-self.timer)
                     self.event_flagging()
                 if self.count % self.nsamp == 0:
-                    avei0 =  mean(skimmer('dropped shot',
+                    avei0 =  mean(Skimmer('dropped shot',
                                            list(self.buffers['i0']), self.flaggedEvents))
                     self.averages["average i0"].append(avei0)
-                    avediff =  mean(skimmer('dropped shot',
+                    avediff =  mean(Skimmer('dropped shot',
                                            list(self.buffers['diff']), self.flaggedEvents))
                     self.averages["average diff"].append(avediff)
-                    averatio =  mean(skimmer('dropped shot',
+                    averatio =  mean(Skimmer('dropped shot',
                                      list(self.buffers['ratio']), self.flaggedEvents))
                     self.averages["average ratio"].append(averatio)
                     self.averages["time"].append(time.time()-self.timer)
@@ -255,7 +248,7 @@ class StatusThread(QThread):
         while time.time()-timer < 2:
             cal_values[0].append(v.get(self.i0_rdbutton_selection))
             cal_values[1].append(v.get('diff'))
-            cal_values[2].append(div_with_try(v.get('diff'), v.get(self.i0_rdbutton_selection)))
+            cal_values[2].append(DivWithTry(v.get('diff'), v.get(self.i0_rdbutton_selection)))
             time.sleep(1/2)
         self.calibration_values['i0']['mean'] = mean(cal_values[0])
         self.calibration_values['i0']['stdev'] = stdev(cal_values[0])
@@ -271,7 +264,7 @@ class StatusThread(QThread):
             if v.get('diff') >= (self.calibration_values['diff']['mean'] - 2*self.calibration_values['diff']['stdev']):
                 cal_values[1].append(v.get('diff'))
             if v.get('ratio') >= (self.calibration_values['ratio']['mean'] - 2*self.calibration_values['ratio']['stdev']):
-                cal_values[2].append(div_with_try(v.get('diff'), v.get(self.i0_rdbutton_selection)))
+                cal_values[2].append(DivWithTry(v.get('diff'), v.get(self.i0_rdbutton_selection)))
             time.sleep(1/2)
         self.calibration_values['i0']['mean'] = mean(cal_values[0])
         self.calibration_values['i0']['stdev'] = stdev(cal_values[0])
