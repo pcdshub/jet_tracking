@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from num_gen import sinwv
 import collections
-import zmq
+
 logging = logging.getLogger('ophyd')
 logging.setLevel('CRITICAL')
 
@@ -74,25 +74,24 @@ class ValueReader(metaclass=Singleton):
         self.diff = self.signal_diff.get()
 
     def sim_data_stream(self):
-         
+        """
         context_data = zmq.Context()
         socket_data = context_data.socket(zmq.SUB)
-        socket_data.connect("".join(['tcp://localhost:', '8123']))
+        socket_data.connect(".join(['tcp://localhost:', '8123'])")
         socket_data.subscribe("")
-        #while True:
-        md = socket_data.recv_json(flags=0)
-        msg = socket_data.recv(flags=0,copy=False, track=False)
-        buf = memoryview(msg)
-        data = np.frombuffer(buf, dtype=md['dtype'])
-        data = np.ndarray.tolist(data.reshape(md['shape']))
-        self.gatt = data[0]
-        self.diff = data[1]
+        while True:
+            md = socket_data.rev_json(flags=0)
+            msg = socket.recv(flags=0,copy=false, track=false)
+            buf = memoryview(msg)
+            data = np.frombuffer(buf, dtype=md['dtype'])
+            data = np.ndarray.tolist(data.reshape(md['shape']))
+            self.gatt = data[0]
+            self.diff = data[1]
         """
         x = 0.8
         y = 0.4
         self.gatt = sinwv(x)
         self.diff = sinwv(y)
-        """
 
     def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.live_data:
@@ -242,7 +241,9 @@ class StatusThread(QThread):
             self.flaggedEvents['missed shot'].append(0)
         
     def calibrate(self, v):
-
+        for key in self.calibration_values:
+            self.calibration_values[key]['mean'] = 0
+            self.calibration_values[key]['stdev'] = 0
         timer = time.time()
         cal_values = [[],[],[]]
         while time.time()-timer < 2:
@@ -256,14 +257,13 @@ class StatusThread(QThread):
         self.calibration_values['diff']['stdev'] = stdev(cal_values[1])
         self.calibration_values['ratio']['mean'] = mean(cal_values[2])
         self.calibration_values['ratio']['stdev'] = stdev(cal_values[2])
-        print(cal_values)
         cal_values = [[], [], []] 
         while time.time()-timer < 3:#self.calibration_time: # put a time limit on how long it can try to calibrate for before throwing an error - set status to no tracking
             if v.get(self.i0_rdbutton_selection) >= (self.calibration_values['i0']['mean'] - 2*self.calibration_values['i0']['stdev']):
                 cal_values[0].append(v.get(self.i0_rdbutton_selection))
             if v.get('diff') >= (self.calibration_values['diff']['mean'] - 2*self.calibration_values['diff']['stdev']):
                 cal_values[1].append(v.get('diff'))
-            if v.get('ratio') >= (self.calibration_values['ratio']['mean'] - 2*self.calibration_values['ratio']['stdev']):
+            if DivWithTry(v.get('diff'), v.get(self.i0_rdbutton_selection)) >= (self.calibration_values['ratio']['mean'] - 2*self.calibration_values['ratio']['stdev']):
                 cal_values[2].append(DivWithTry(v.get('diff'), v.get(self.i0_rdbutton_selection)))
             time.sleep(1/2)
         self.calibration_values['i0']['mean'] = mean(cal_values[0])

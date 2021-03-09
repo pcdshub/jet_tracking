@@ -43,7 +43,7 @@ script:
   - coverage run -m pytest -vv tests
   - make -C docs html  # Build the documentation.
   - coverage report -m
-  - flake8 jet_tracking/ tests/
+  #- flake8 jet_tracking/ tests/
   # Build docs
   - set -e
   - |

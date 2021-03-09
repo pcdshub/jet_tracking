@@ -20,7 +20,6 @@ from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
                             QGraphicsView, QHBoxLayout, QLabel, QPushButton,
                             QVBoxLayout)
 
-from graph_display import graphDisplay
 from signals import Signals
 
 logging = logging.getLogger('ophyd')
