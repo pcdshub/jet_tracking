@@ -1,4 +1,4 @@
-jet\_tracking.psana.output\_cspad\_sum
+﻿jet\_tracking.psana.output\_cspad\_sum
 ======================================
 
 .. currentmodule:: jet_tracking.psana
