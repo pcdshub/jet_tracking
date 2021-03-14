@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 # Constants
 # Location of my branch for testing
-JT_LOC = '/cds/home/a/aegger/jet_tracking/jet_tracking/'
+JT_LOC = '/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/'
 # Number of bins
 BINS = 100
 # Number of events to process
@@ -331,7 +331,7 @@ if __name__ == '__main__':
     parser.add_argument('--run', type=str, \
         default=(os.environ.get('RUN_NUM', None)))
     parser.add_argument('--cfg', type=str, \
-        default=(''.join([JT_LOC, 'mpi_scripts/mpi_configs/default_config.yml'])))
+        default=(''.join([JT_LOC, 'mpi_scripts/mpi_configs/xcs_config.yml'])))
     parser.add_argument('--delta_bin', type=int, \
         default=(DELTA_BIN))
     parser.add_argument('--bins', type=int, \
@@ -362,7 +362,7 @@ if __name__ == '__main__':
     masks = get_r_masks(det_map['shape'], args.bins)
     i0_data = []
     azav_data=[]
-    ped = detector.pedestals(1)[0]
+    ped = detector.pedestals(int(args.run))[0]
     logger.info('starting to evaluate 1000 events')
     
     for evt_idx, evt in enumerate(ds.events()):
@@ -374,7 +374,8 @@ if __name__ == '__main__':
         azav = np.array([np.mean(image[mask]) for mask in masks])
         azav_data.append(azav)
         try:
-            i0_data.append(ipm.get(evt).f_12_ENRC())
+            #i0_data.append(ipm.get(evt).f_12_ENRC())
+            i0_data.append(getattr(ipm.get(evt), ipm_det)())
         except:
             logger.warning('missing i0 for event {}'.format(evt_idx))
             i0_data.append(0.0)

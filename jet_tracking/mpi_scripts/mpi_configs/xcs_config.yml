@@ -1,0 +1,23 @@
+api_msg:
+  port: 5000
+
+hutch: 'xcs'
+
+det_map:
+  name: 'epix10k2M'
+  shape:
+    - 1667
+    - 1668
+  dtype: float32
+  bins: 100
+
+pv_map:
+  1: 'CXI:JTRK:REQ:DIFF_INTENSITY'
+  2: 'CXI:JTRK:REQ:I0'
+
+ipm: 
+  name: 'XCS-SB2-BMMON'
+  det: 'TotalIntensity'
+#ipm:
+#  name: 'CXI-DG2-BMMON'
+#  det: None
