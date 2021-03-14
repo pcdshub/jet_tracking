@@ -14,8 +14,6 @@ import time
 import inspect
 from mpi4py import MPI
 
-from smalldata_tools.SmallDataUtils import detData
-
 f = '%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=f)
 logger = logging.getLogger(__name__)
