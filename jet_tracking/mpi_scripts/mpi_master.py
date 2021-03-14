@@ -137,9 +137,9 @@ class MpiMaster(object):
                 #print('caputing data ', data)
                 #for k, v in self._pv_map:
                 #caput(v, data[k])
-                ratio = data[1] / data[0]
-                caput('CXI:JTRK:REQ:DIFF_INTENSITY', data[1])
-                caput('CXI:JTRK:REQ:I0', data[0])
-                caput('CXI:JTRK:REQ:RATIO', ratio)
+                #ratio = data[1] / data[0]
+                caput('XCS:JTRK:REQ:DIFF_INTENSITY', data[1])
+                caput('XCS:JTRK:REQ:I0', data[0])
+                #caput('CXI:JTRK:REQ:RATIO', ratio)
         else:
             pass

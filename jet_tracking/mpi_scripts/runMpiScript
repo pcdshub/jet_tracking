@@ -76,6 +76,6 @@ PROC=${PROC:='2'}
 
 source /reg/g/pcds/setup/pathmunge.sh
 source /reg/g/psdm/sw/conda1/manage/bin/psconda.sh
-cd /reg/neh/home/aegger/smalldata_tools/mpi_scripts
-pythonpathmunge '/reg/neh/home/aegger/smalldata_tools'
+cd /cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/mpi_scripts
+pythonpathmunge '/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking'
 `which mpirun` -n $PROC python mpi_driver.py $ARGS

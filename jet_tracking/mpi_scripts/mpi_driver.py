@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--exprun', help='psana experiment/run string (e.g. exp=xppd7114:run=43)', type=str, default='')
 #parser.add_argument('--dsname', help='data source name', type=str, default='')
 parser.add_argument('--nevts', help='number of events', default=50, type=int)
-parser.add_argument('--cfg_file', help='if specified, has information about what metadata to use', type=str, default='default_config.yml')
+parser.add_argument('--cfg_file', help='if specified, has information about what metadata to use', type=str, default='xcs_config.yml')
 args = parser.parse_args()
 
 # Two options for now, offline data or shared memory
@@ -29,7 +29,7 @@ if args.exprun:
     dsname = ''.join([args.exprun, ':smd:', 'dir=', exp_dir]) 
 else:
     dsname = 'shmem=psana.0:stop=no'
-    psana.setOption('psana.calib-dir', '/reg/d/psdm/cxi/cxilv9518/calib/')
+    psana.setOption('psana.calib-dir', '/reg/d/psdm/xcs/xcsx39718/calib/')
 
 # Parse config file to hand to workers
 with open(''.join(['mpi_configs/', args.cfg_file])) as f:
