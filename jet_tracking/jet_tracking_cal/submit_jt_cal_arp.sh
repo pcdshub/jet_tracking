@@ -63,9 +63,9 @@ done
 set -- "${POSITIONAL[@]}"
 
 # Need to setup for FFB
-QUEUE=${QUEUE:='psanaq'}
+QUEUE=${QUEUE:='psfehhiprioq'}
 TASKS=${TASKS:=10}
 SCRIPT=${SCRIPT:=/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/jet_tracking_cal/jt_cal.py}
 CONFIG=${CONFIG:=/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/jt_configs/xcs_config.yml}
 
-sbatch -p $QUEUE --ntasks $TASKS --wrap="mpirun python -u $SCRIPT $CONFIG"
+sbatch -p $QUEUE --ntasks $TASKS --wrap="mpirun python -u $SCRIPT --cfg $CONFIG"
