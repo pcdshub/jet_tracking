@@ -2,6 +2,7 @@ api_msg:
   port: 5000
 
 hutch: 'xcs'
+experiment: 'xcsx39718'
 
 det_map:
   name: 'epix10k2M'
@@ -12,8 +13,8 @@ det_map:
   bins: 100
 
 pv_map:
-  1: 'CXI:JTRK:REQ:DIFF_INTENSITY'
-  2: 'CXI:JTRK:REQ:I0'
+  1: 'XCS:JTRK:REQ:DIFF_INTENSITY'
+  2: 'XCS:JTRK:REQ:I0'
 
 ipm: 
   name: 'XCS-SB2-BMMON'

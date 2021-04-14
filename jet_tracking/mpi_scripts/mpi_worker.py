@@ -113,7 +113,7 @@ class MpiWorker(object):
     def start_run(self):
         """Worker should handle any calculations"""
         #mask_det = det.mask(188, unbond=True, unbondnbrs=True, status=True,  edges=True, central=True)
-        ped = self.detector.pedestals(48)[0]
+        ped = self.detector.pedestals(218)[0]
         for evt_idx, evt in enumerate(self.ds.events()):
             if self.event_code not in self.evr.eventCodes(evt):
                  continue
