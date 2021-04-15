@@ -53,6 +53,3 @@ script:
       popd
       doctr deploy . --built-docs docs/build/html --deploy-branch-name gh-pages
     fi
-
-after_success:
-  - codecov
