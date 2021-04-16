@@ -13,6 +13,7 @@ from bokeh.plotting import figure, show, output_file
 from bokeh.models import Span, Legend, LegendItem, ColorBar, LinearColorMapper
 from bokeh.io import output_notebook
 import panel as pn
+import matplotlib.pyplot as plt
 
 # Need to go to stdout for arp/sbatch
 logger = logging.getLogger(__name__)
@@ -22,7 +23,7 @@ handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
 JT_LOC = '/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/'
-SD_LOC = '/reg/data/ana15/'
+SD_LOC = '/reg/d/psdm/'
 
 def get_r_masks(shape, bins=100):
     """Function to generate radial masks for pixels to include in azav"""
@@ -102,7 +103,7 @@ def fit_line(ave_azav, fit_points=5):
 
     return m, b
 
-def peak_lr(array_data, threshold=0.1, bins=20):
+def peak_lr(array_data, threshold=0.1, bins=50):
     """Find max of normal distribution from histogram, 
     search right and left until population falls below threshold, 
     will run into problems with bimodal distribution.  This is naive,
@@ -150,7 +151,7 @@ def peak_lr(array_data, threshold=0.1, bins=20):
     left = peak_idx - np.argmax(left_array[::-1] < threshold * peak_val)
     i0_low = edges[left]
 
-    return hist, i0_low, i0_high, i0_med
+    return hist, edges, i0_low, i0_high, i0_med
 
 def calc_azav_peak(ave_azav):
     """
@@ -237,7 +238,7 @@ def fit_limits(i0_data, peak_vals, i_low, i_high, bins=100):
 
           ###### Bokeh Figures #######
 
-def peak_fig(signal, hist, med, low, high):
+def peak_fig(signal, hist, edges, med, low, high):
     """General histogram plotter with peak location and 
     left/right limits plotted"""
     fig = figure(
@@ -246,7 +247,7 @@ def peak_fig(signal, hist, med, low, high):
         x_axis_label='Intensity Values',
         y_axis_label='Counts'
     )
-    fig.quad(top=hist, bottom=0, left=low, right=high)
+    fig.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:])
     left_line = Span(location=low, dimension='height', \
         line_color='black')
     right_line = Span(location=high, dimension='height', \
@@ -354,6 +355,9 @@ if __name__ == '__main__':
         logger.info('Will save small data to {}'.format(jt_file_path))
     smd = ds.small_data(jt_file, gather_interval=100)
 
+    # Set report directory
+    results_dir = ''.join(['/reg/d/psdm/', hutch, '/', exp, '/stats/summary/JT_Cal_Run', run])
+
     # Get the detectors from the config
     try:
         detector = psana.Detector(det_map['name'])
@@ -377,11 +381,13 @@ if __name__ == '__main__':
             
             # Get i0 Data
             i0_data = getattr(ipm.get(evt), ipm_det)()
+            if evt_idx == 5:
+                print('i0 data ', i0_data)
             
             # Get jet projection and location
             jet_proj = jet_cam.image(evt).sum(axis=jet_cam_axis)
             max_jet_val = np.amax(jet_proj)
-            max_jet_idx = np.where(max_jet_val == max_jet_val)[0]
+            max_jet_idx = np.where(max_jet_val==max_jet_val)[0]
             smd.event(azav=azav, i0=i0_data, jet_peak=max_jet_val, jet_loc=max_jet_idx)
         except Exception as e:
             logger.info('Unable to process event {}: {}'.format(evt_idx, e))
@@ -403,12 +409,19 @@ if __name__ == '__main__':
     
         # Find I0 distribution and filter out unused values
         i0_data = np.array(i0_data)
-        i0_hist, i0_low, i0_high, i0_med = peak_lr(i0_data)
+        i0_hist, edges, i0_low, i0_high, i0_med = peak_lr(i0_data)
         i0_idxs = np.where((i0_data > i0_low) & (i0_data < i0_high))
         i0_data_use = i0_data[i0_idxs]
-    
+   
+        jet_loc_use = jet_loc[i0_idxs]
+        jet_loc_mean = np.mean(jet_loc_use)
+        jet_loc_std = np.std(jet_loc_use)
+        jet_peak_use = jet_peak[i0_idxs]
+        jet_peak_mean = np.mean(jet_peak_use)
+        jet_peak_std = np.std(jet_peak_use)
+ 
         # Generate figure for i0 params
-        p = peak_fig('i0 Values', i0_hist, i0_med, i0_low, i0_high)
+        p = peak_fig('{}'.format(ipm_name), i0_hist, edges, i0_med, i0_low, i0_high)
 
         # Get the azav value we'll use
         azav_use = [azav_data[idx] for idx in i0_idxs[0]]
@@ -438,24 +451,36 @@ if __name__ == '__main__':
         results = {
             'i0_low': i0_low,
             'i0_high': i0_high,
+            'i0_median': i0_med,
             'peak_bin': peak_bin,
             'delta_bin': cal_params['delta_bin'],
             'mean_ratio': mean_ratio,
             'med_ratio': med_ratio,
-            'std_ratio': std_ratio
+            'std_ratio': std_ratio,
+            'jet_location_mean': jet_loc_mean,
+            'jet_location_std': jet_loc_std,
+            'jet_peak_mean': jet_peak_mean,
+            'jet_peak_std': jet_peak_std
         }
 
-        print(' found results ', results)
+        logger.info('Results: {}'.format(results))
 
     # Write results to file
     #with open(''.join([results_dir, '/', args.run, '_results']), 'w') as f:
     #    json.dumps(results, f, sort_keys=True, indent=4)
 
     # Accumulate plots and write
-    #gspec = pn.GridSpec()
-    #gspec[0:3, 0:3] = p
-    #gspec[4:6, 0:3] = p1
-    #gspec[7:9, 0:3] = p2
-    #gspec.save(''.join([plots_dir, 'results_', args.run, '.html']))
+        gspec = pn.GridSpec(sizing_mode='stretch_both', name='JT Cal Results: Run {}'.format(run))
+        gspec[0:3, 0:3] = p
+        gspec[4:6, 0:3] = p1
+        gspec[7:12, 0:3] = p2
+        tabs = pn.Tabs(gspec)
+        if not os.path.isdir(results_dir):
+            logger.info('Creating Path {}'.format(results_dir))
+            os.makedirs(results_dir)
+
+        results_file = ''.join([results_dir, '/report.html'])
+        logger.info('Saving results to {}'.format(results_file))
+        tabs.save(results_file)
 
         print('finished with calibration')

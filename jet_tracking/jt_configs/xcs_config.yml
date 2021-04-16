@@ -20,6 +20,8 @@ pv_map:
 ipm: 
   name: 'XCS-SB2-BMMON'
   det: 'TotalIntensity'
+  #name: 'XCS-IPM-03'
+  #det: 'sum'
 
 jet_cam:
   name: 'opal_1'
