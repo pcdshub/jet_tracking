@@ -472,8 +472,9 @@ if __name__ == '__main__':
             os.makedirs(results_dir)
 
         # Write metadata to file
-        with open(''.join([results_dir_dir, '/jt_cal_', run, '_results']), 'w') as f:
-            json.dumps(results, f, sort_keys=True, indent=4)
+        with open(''.join([results_dir, '/jt_cal_', run, '_results']), 'w') as f:
+            results = {k: str(v) for k, v in results.items()}
+            json.dump(results, f)
 
         # Accumulate plots and write report
         gspec = pn.GridSpec(sizing_mode='stretch_both', name='JT Cal Results: Run {}'.format(run))
