@@ -29,11 +29,8 @@ jet_cam:
 
 cal_params:
   azav_bins: 100
-  events: 50
+  events: 500
   i0_bins: 20  # Number of bins for i0 hist cuts
   i0_reject: 0.1  # Percent below peak pin to make cut
   fit_points: 5  # Number of points at start and end of azav array to do line fit
   delta_bin: 3  # Number of azav bins around peak used for integration
-#ipm:
-#  name: 'CXI-DG2-BMMON'
-#  det: None

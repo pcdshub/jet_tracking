@@ -340,6 +340,9 @@ if __name__ == '__main__':
         run = os.environ.get('RUN_NUM', yml_dict['run'])
         cal_params = yml_dict['cal_params']
 
+    # Get Events for each worker
+    num_events = int(cal_params['events'] / size)
+
     # Setup MPI data source
     ds_name = ''.join(['exp=', exp, ':run=', run, ':smd'])
     try:
@@ -356,7 +359,7 @@ if __name__ == '__main__':
     smd = ds.small_data(jt_file, gather_interval=100)
 
     # Set report directory
-    results_dir = ''.join(['/reg/d/psdm/', hutch, '/', exp, '/stats/summary/JT_Cal_Run', run])
+    results_dir = ''.join([SD_LOC, hutch, '/', exp, '/stats/summary/JT_Cal_Run', run])
 
     # Get the detectors from the config
     try:
@@ -379,20 +382,19 @@ if __name__ == '__main__':
             det_image = detector.image(evt, calib)
             azav = np.array([np.mean(det_image[mask]) for mask in masks])
             
-            # Get i0 Data
+            # Get i0 Data this is different for differe ipm detectors
+            # Be nice not to waste cycles on getattr at some point
             i0_data = getattr(ipm.get(evt), ipm_det)()
-            if evt_idx == 5:
-                print('i0 data ', i0_data)
             
             # Get jet projection and location
             jet_proj = jet_cam.image(evt).sum(axis=jet_cam_axis)
             max_jet_val = np.amax(jet_proj)
-            max_jet_idx = np.where(max_jet_val==max_jet_val)[0]
+            max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
             smd.event(azav=azav, i0=i0_data, jet_peak=max_jet_val, jet_loc=max_jet_idx)
         except Exception as e:
             logger.info('Unable to process event {}: {}'.format(evt_idx, e))
 
-        if evt_idx == cal_params['events']:
+        if evt_idx == num_events:
             break
     
     smd.save()
@@ -465,22 +467,23 @@ if __name__ == '__main__':
 
         logger.info('Results: {}'.format(results))
 
-    # Write results to file
-    #with open(''.join([results_dir, '/', args.run, '_results']), 'w') as f:
-    #    json.dumps(results, f, sort_keys=True, indent=4)
+        if not os.path.isdir(results_dir):
+            logger.info('Creating Path {}'.format(results_dir))
+            os.makedirs(results_dir)
 
-    # Accumulate plots and write
+        # Write metadata to file
+        with open(''.join([results_dir_dir, '/jt_cal_', run, '_results']), 'w') as f:
+            json.dumps(results, f, sort_keys=True, indent=4)
+
+        # Accumulate plots and write report
         gspec = pn.GridSpec(sizing_mode='stretch_both', name='JT Cal Results: Run {}'.format(run))
         gspec[0:3, 0:3] = p
         gspec[4:6, 0:3] = p1
         gspec[7:12, 0:3] = p2
         tabs = pn.Tabs(gspec)
-        if not os.path.isdir(results_dir):
-            logger.info('Creating Path {}'.format(results_dir))
-            os.makedirs(results_dir)
 
-        results_file = ''.join([results_dir, '/report.html'])
-        logger.info('Saving results to {}'.format(results_file))
-        tabs.save(results_file)
+        report_file = ''.join([results_dir, '/report.html'])
+        logger.info('Saving report to {}'.format(report_file))
+        tabs.save(report_file)
 
-        print('finished with calibration')
+        logger.info('finished with jet tracking calibration')
