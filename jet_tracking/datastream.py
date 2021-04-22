@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from num_gen import sinwv
 import collections
+import zmq
 
 logging = logging.getLogger('ophyd')
 logging.setLevel('CRITICAL')
@@ -74,24 +75,24 @@ class ValueReader(metaclass=Singleton):
         self.diff = self.signal_diff.get()
 
     def sim_data_stream(self):
-        """
+        """Run with offline data"""
         context_data = zmq.Context()
         socket_data = context_data.socket(zmq.SUB)
-        socket_data.connect(".join(['tcp://localhost:', '8123'])")
+        socket_data.connect(''.join(['tcp://localhost:', '8123']))
         socket_data.subscribe("")
-        while True:
-            md = socket_data.rev_json(flags=0)
-            msg = socket.recv(flags=0,copy=false, track=false)
-            buf = memoryview(msg)
-            data = np.frombuffer(buf, dtype=md['dtype'])
-            data = np.ndarray.tolist(data.reshape(md['shape']))
-            self.gatt = data[0]
-            self.diff = data[1]
-        """
-        x = 0.8
-        y = 0.4
-        self.gatt = sinwv(x)
-        self.diff = sinwv(y)
+        #while True:
+        md = socket_data.recv_json(flags=0)
+        msg = socket_data.recv(flags=0, copy=False, track=False)
+        buf = memoryview(msg)
+        data = np.frombuffer(buf, dtype=md['dtype'])
+        data = np.ndarray.tolist(data.reshape(md['shape']))
+        self.gatt = data[0]
+        self.diff = data[1]
+        #time.sleep(0.1)
+        #x = 0.8
+        #y = 0.4
+        #self.gatt = sinwv(x)
+        #self.diff = sinwv(y)
 
     def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.live_data:

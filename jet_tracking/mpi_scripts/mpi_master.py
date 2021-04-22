@@ -125,7 +125,8 @@ class MpiMaster(object):
             value = message['value']
             if cmd == 'abort':
                 self._pub_socket.send_pyobj(message)
-                socket.send('aborted')
+                socket.send(b'aborted')
+                print('received abort')
             else:
                 print('Received Message with no definition ', message)
 
