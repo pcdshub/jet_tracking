@@ -26,6 +26,7 @@ class MpiMaster(object):
         self._abort = False
         self._queue = deque()
         self._data_socket = self.get_data_socket()
+        self._pub_socket = self.get_pub_socket()
         self._msg_thread = Thread(target=self.start_msg_thread, args=(api_port,))
         self._msg_thread.start()
 
@@ -80,6 +81,13 @@ class MpiMaster(object):
 
         return None 
 
+    def get_pub_socket(self, data_port=1234):
+        """Socket for publishing API calls to workers"""
+        context = zmq.Context()
+        socket = context.socket(zmq.PUB)
+        socket.bind(''.join(['tcp://*:', str(data_port)]))
+        return socket
+
     def start_run(self):
         """Main process loop, we can probably get more async
         but for now it's a one to one recive/send
@@ -112,9 +120,11 @@ class MpiMaster(object):
         # TODO: make IP available arg
         socket.bind(''.join(['tcp://*:', str(api_port)]))
         while True:
-            message = socket.recv()
-            if message == 'abort':
-                self.abort = True
+            message = socket.recv_pyobj()
+            cmd = message['cmd']
+            value = message['value']
+            if cmd == 'abort':
+                self._pub_socket.send_pyobj(message)
                 socket.send('aborted')
             else:
                 print('Received Message with no definition ', message)

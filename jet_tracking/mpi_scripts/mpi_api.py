@@ -3,10 +3,10 @@ import zmq
 import numpy as np
 import argparse
 parser = argparse.ArgumentParser()
-parser.add_argument('--cfg_file', help='if specified, has information about what metadata to use', type=str, default='default_config.yml')
+parser.add_argument('--cfg_file', help='if specified, has information about what metadata to use', type=str, default='xcs_config.yml')
 args = parser.parse_args()
 
-with open(''.join(['mpi_configs/', args.cfg_file])) as f:
+with open(''.join(['../jt_configs/', args.cfg_file])) as f:
     yml_dict = yaml.load(f, Loader=yaml.FullLoader)
     api_port = yml_dict['api_msg']['port']
 
@@ -28,8 +28,11 @@ socket.connect(''.join(['tcp://localhost:', str(api_port)]))
 
 def abort():
     """Abort MPI run"""
-    socket.send('abort')
+    socket.send_pyobj({'cmd': 'abort', 'value': True})
 
-def pause():
+def set_peak_bin(peak_bin):
     """Pause MPI run"""
-    socket.send('pause')
+    socket.send_pyobj({'cmd': 'peak_bin', 'value': peak_bin})
+
+def set_delta_bin(delta_bin):
+    socket.send_pyobj({'cmd': 'delta_bin', 'value': delta_bin})
