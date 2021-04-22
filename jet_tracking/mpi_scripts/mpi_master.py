@@ -15,11 +15,11 @@ logger = logging.getLogger(__name__)
 
 
 class MpiMaster(object):
-    def __init__(self, rank, api_port, det_map, pv_map, psana=False, data_port=8123):
+    def __init__(self, rank, api_port, det_map, pv_map, sim=True, data_port=8123):
         self._rank = rank
         self._det_map = det_map
         self._pv_map = pv_map
-        self._psana = psana
+        self._sim = sim
         self._comm = MPI.COMM_WORLD
         self._workers = range(self._comm.Get_size())[1:]
         self._running = False
@@ -72,7 +72,7 @@ class MpiMaster(object):
 
     def get_data_socket(self, data_port=8123):
         """Setup the socket we'll use for client data messaging"""
-        if self._psana:
+        if self._sim:
             context = zmq.Context()
             socket = context.socket(zmq.PUB)
             socket.bind(''.join(['tcp://*:', str(data_port)]))
@@ -86,8 +86,7 @@ class MpiMaster(object):
         """
         while not self.abort:
             start = time.time()
-            # TODO: Generalize data length
-            data = np.empty(2, dtype=np.dtype(self.det_map['dtype']))
+            data = np.empty(len(self._pv_map), dtype=np.dtype(self.det_map['dtype']))
             req = self.comm.Irecv(data, source=MPI.ANY_SOURCE)
             self.send_from_queue()
             req.Wait()
@@ -123,7 +122,7 @@ class MpiMaster(object):
     def send_from_queue(self):
         if len(self.queue) > 0:
             data = self.queue.popleft()
-            if self._psana:
+            if self._sim:
                 # Could need this if sending large arrays,
                 # Could end up getting md info from config file
                 md = dict(
@@ -134,12 +133,9 @@ class MpiMaster(object):
                 self._data_socket.send(data, 0, copy=False, track=False)
             else:
                 # consider caput_many with lots, ok for now
-                #print('caputing data ', data)
-                #for k, v in self._pv_map:
-                #caput(v, data[k])
-                #ratio = data[1] / data[0]
-                caput('XCS:JTRK:REQ:DIFF_INTENSITY', data[1])
-                caput('XCS:JTRK:REQ:I0', data[0])
-                #caput('CXI:JTRK:REQ:RATIO', ratio)
+                for k, v in self._pv_map.items():
+                    caput(v, data[k])
+                #caput('XCS:JTRK:REQ:DIFF_INTENSITY', data[1])
+                #caput('XCS:JTRK:REQ:I0', data[0])
         else:
             pass

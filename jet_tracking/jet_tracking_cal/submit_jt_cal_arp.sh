@@ -22,7 +22,6 @@ EOF
 }
 
 source /reg/g/psdm/etc/psconda.sh -py3
-#conda activate ana-4.0.15-py3
 
 # Use getopts when we get a chance
 POSITIONAL=()

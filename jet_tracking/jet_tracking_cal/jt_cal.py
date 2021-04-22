@@ -358,9 +358,6 @@ if __name__ == '__main__':
         logger.info('Will save small data to {}'.format(jt_file_path))
     smd = ds.small_data(jt_file, gather_interval=100)
 
-    # Set report directory
-    results_dir = ''.join([SD_LOC, hutch, '/', exp, '/stats/summary/JT_Cal_Run', run])
-
     # Get the detectors from the config
     try:
         detector = psana.Detector(det_map['name'])
@@ -369,6 +366,7 @@ if __name__ == '__main__':
         masks = get_r_masks(det_map['shape'], cal_params['azav_bins'])
     except Exception as e:
         logger.warning('Unable to create psana detectors: {}'.format(e))
+        sys.exit()
 
     if rank == 0:
         logger.info('Gathering small data for exp: {}, run: {}, events: {}'.format(exp, run, cal_params['events']))
@@ -467,12 +465,22 @@ if __name__ == '__main__':
 
         logger.info('Results: {}'.format(results))
 
+        # Set report directory
+        results_dir = ''.join([SD_LOC, hutch, '/', exp, '/stats/summary/jt_cal_run_', run])
+
+        # Get calib dir for meta data saving
+        calib_dir = ''.join([SD_LOC, hutch, '/', exp, '/calib/jt_results/'])
+
         if not os.path.isdir(results_dir):
             logger.info('Creating Path {}'.format(results_dir))
             os.makedirs(results_dir)
 
+        if not os.path.isdir(calib_dir):
+            logger.info('Creating Path {}'.format(calib_dir))
+            os.makedirs(calib_dir)
+
         # Write metadata to file
-        with open(''.join([results_dir, '/jt_cal_', run, '_results']), 'w') as f:
+        with open(''.join([calib_dir, '/jt_cal_', run, '_results']), 'w') as f:
             results = {k: str(v) for k, v in results.items()}
             json.dump(results, f)
 

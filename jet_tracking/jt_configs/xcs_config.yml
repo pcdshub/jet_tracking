@@ -4,6 +4,7 @@ api_msg:
 hutch: 'xcs'
 experiment: 'xcsx39718'
 run: '10'
+sim: true
 
 det_map:
   name: 'epix10k2M'
@@ -16,6 +17,8 @@ det_map:
 pv_map:
   1: 'XCS:JTRK:REQ:DIFF_INTENSITY'
   2: 'XCS:JTRK:REQ:I0'
+  3: 'XCS:JTRK:REQ:JET_PEAK'
+  4: 'XCS:JTRK:REQ:JET_LOC'
 
 ipm: 
   name: 'XCS-SB2-BMMON'

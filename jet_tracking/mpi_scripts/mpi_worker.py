@@ -22,17 +22,17 @@ logger = logging.getLogger(__name__)
 class MpiWorker(object):
     """This worker will collect events and do whatever
     necessary processing, then send to master"""
-    def __init__(self, ds, evnt_lim, detector, ipm, evr, r_mask, latency=0.5, event_code=40, plot=False, peak_bin=25, delta_bin=5):
+    def __init__(self, ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask, event_code=40, plot=False, peak_bin=25, delta_bin=5):
         self._ds = ds  # We probably need to use kwargs to make this general
-        self._evnt_lim = evnt_lim
         self._detector = detector
         self._ipm = ipm
+        self._jet_cam = jet_cam
+        self._jet_cam_axis = jet_cam_axis
         self._evr = evr
         self._comm = MPI.COMM_WORLD
         self._rank = self._comm.Get_rank()
         self._r_mask = r_mask
         self._plot = plot
-        self._latency = latency
         self._event_code = event_code
         self._peak_bin = peak_bin
         self._delta_bin = delta_bin
@@ -42,11 +42,6 @@ class MpiWorker(object):
     def rank(self):
         """Worker ID"""
         return self._rank
-
-    @property
-    def evnt_lim(self):
-        """Number of events for worker to process"""
-        return self._evnt_lim
 
     @property
     def ds(self):
@@ -79,11 +74,6 @@ class MpiWorker(object):
         return self._plot
 
     @property
-    def latency(self):
-        """Max latency allowed between event and results"""
-        return self._latency
-
-    @property
     def event_code(self):
         """Event Code to trigger data collection on"""
         return self._event_code
@@ -110,26 +100,42 @@ class MpiWorker(object):
         except:
             logger.warning('You must provide int for delta bin')
 
+    @property
+    def jet_cam(self):
+        return self._jet_cam
+
+    @property
+    def jet_cam_axis(self):
+        return self._jet_cam_axis
+
     def start_run(self):
         """Worker should handle any calculations"""
         #mask_det = det.mask(188, unbond=True, unbondnbrs=True, status=True,  edges=True, central=True)
         ped = self.detector.pedestals(218)[0]
         for evt_idx, evt in enumerate(self.ds.events()):
-            if self.event_code not in self.evr.eventCodes(evt):
-                 continue
-            low_bin = self.peak_bin - self.delta_bin
-            hi_bin = self.peak_bin + self.delta_bin
-            raw = (self.detector.raw_data(evt) - ped)
-            data = self.detector.image(evt, raw)
-            az_bins = np.array([np.mean(data[mask]) for mask in self._r_mask[low_bin:hi_bin]])
-            intensity = np.sum(az_bins)
+            # Definitely not a fan of wrapping the world in a try/except
+            # but too many possible failure modes from the data
             try:
-                i0 = self.ipm[0].get(evt)
-                if self.ipm[1]:
-                    det = getattr(i0, self.ipm[1])
-                    i0 = det()
-            except:
-                i0 = 0.0
-            
-            packet = np.array([i0, intensity], dtype='float32')
-            self.comm.Isend(packet, dest=0, tag=self.rank)
+                if self.event_code not in self.evr.eventCodes(evt):
+                    continue
+
+                low_bin = self.peak_bin - self.delta_bin
+                hi_bin = self.peak_bin + self.delta_bin
+                calib = self.detector.calib(evt)
+                det_image = self.detector.image(evt, calib)
+                az_bins = np.array([np.mean(det_image[mask]) for mask in self._r_mask[low_bin:hi_bin]])
+                intensity = np.sum(az_bins)
+
+                # Get i0 Data this is different for differe ipm detectors
+                i0 = getattr(self.ipm[0].get(evt), self.ipm[1])()
+
+                # Get jet projection peak and location
+                jet_proj = self.jet_cam.image(evt).sum(axis=self.jet_cam_axis)
+                max_jet_val = np.amax(jet_proj)
+                max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
+
+                packet = np.array([i0, intensity, max_jet_val, max_jet_idx], dtype='float32')
+                self.comm.Isend(packet, dest=0, tag=self.rank)
+            except Exception as e:
+                logger.warning('Unable to Process Event: {}'.format(e))
+                continue
