@@ -12,6 +12,8 @@ import argparse
 import sys
 import time
 import inspect
+from threading import Thread, Lock
+import zmq
 from mpi4py import MPI
 
 f = '%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s'
@@ -22,7 +24,7 @@ logger = logging.getLogger(__name__)
 class MpiWorker(object):
     """This worker will collect events and do whatever
     necessary processing, then send to master"""
-    def __init__(self, ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask, event_code=40, plot=False, peak_bin=25, delta_bin=5):
+    def __init__(self, ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask, event_code=40, plot=False, peak_bin=25, delta_bin=5, data_port=1235):
         self._ds = ds  # We probably need to use kwargs to make this general
         self._detector = detector
         self._ipm = ipm
@@ -37,6 +39,8 @@ class MpiWorker(object):
         self._peak_bin = peak_bin
         self._delta_bin = delta_bin
         self._state = None
+        self._msg_thread = Thread(target=self.start_msg_thread, args=(data_port,))
+        self._msg_thread.start()
 
     @property
     def rank(self):
@@ -139,3 +143,35 @@ class MpiWorker(object):
             except Exception as e:
                 logger.warning('Unable to Process Event: {}'.format(e))
                 continue
+
+    def start_msg_thread(self, data_port=1235):
+        """The thread runs a PAIR communication and acts as server side,
+        this allows for control of the parameters during data aquisition 
+        from some client (probably an API for user). Might do subpub if
+        we want messages to be handled by workers as well, or master can
+        broadcast information
+        """
+        context = zmq.Context()
+        socket = context.socket(zmq.SUB)
+        # TODO: make IP available arg
+        socket.connect(''.join(['tcp://localhost:', str(data_port)]))
+        socket.subscribe('')
+        print('running worker message thread')
+        while True:
+            message = socket.recv_pyobj()
+            cmd = message['cmd']
+            value = message['value']
+            print('worker got message ', message)
+            if cmd == 'abort':
+                self.abort = True
+                logger.info('aborting jet tracking data analysis process')
+            elif cmd == 'peak_bin':
+                print('got message peak bin ', value)
+                msg_string = 'Worker {} changing peak bin to {}'.format(self.rank, value)
+                logger.info(msg_string)
+            elif cmd == 'delta_bin':
+                msg_string = 'Worker {} changing delta bin to {}'.format(self.rank, value)
+                logger.info(msg_string)
+            else:
+                logger.warning('Worker {} received message with no definition {}'.format(self.rank, message))
+

@@ -28,7 +28,7 @@ ipm:
 
 jet_cam:
   name: 'opal_1'
-  axis: 0
+  axis: 1
 
 cal_params:
   azav_bins: 100

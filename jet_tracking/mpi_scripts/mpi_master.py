@@ -5,7 +5,7 @@ import numpy as np
 import zmq
 import time
 from epics import caput
-from threading import Thread
+from threading import Thread, Lock
 from enum import Enum
 from collections import deque
 
@@ -27,8 +27,11 @@ class MpiMaster(object):
         self._queue = deque()
         self._data_socket = self.get_data_socket()
         self._pub_socket = self.get_pub_socket()
+        self._msg_lock = Lock()
         self._msg_thread = Thread(target=self.start_msg_thread, args=(api_port,))
         self._msg_thread.start()
+        self.pair_ctx = None
+        self.msg_ctx = None
 
     @property
     def rank(self):
@@ -69,22 +72,23 @@ class MpiMaster(object):
     def abort(self, val):
         """Set the abort flag"""
         if isinstance(val, bool):
-            self._abort = val
+            with self._msg_lock:
+                self._abort = val
 
-    def get_data_socket(self, data_port=8123):
+    def get_data_socket(self, data_port=8124):
         """Setup the socket we'll use for client data messaging"""
         if self._sim:
-            context = zmq.Context()
-            socket = context.socket(zmq.PUB)
+            self.msg_ctx = zmq.Context()
+            socket = self.msg_ctx.socket(zmq.PUB)
             socket.bind(''.join(['tcp://*:', str(data_port)]))
             return socket
 
         return None 
 
-    def get_pub_socket(self, data_port=1234):
+    def get_pub_socket(self, data_port=1235):
         """Socket for publishing API calls to workers"""
-        context = zmq.Context()
-        socket = context.socket(zmq.PUB)
+        self.msg_ctx = zmq.Context()
+        socket = self.msg_ctx.socket(zmq.PUB)
         socket.bind(''.join(['tcp://*:', str(data_port)]))
         return socket
 
@@ -100,13 +104,9 @@ class MpiMaster(object):
             req.Wait()
             self.queue.append(data)
             print(time.time() - start)
+        self.pair_ctx.close()
+        self.msg_ctx.close()
         MPI.Finalize()
-
-# status = MPI.Status()
-# ready = self.comm.Iprobe(source=MPI.ANY_SOURCE, tag=MPI.ANY_TAG, status=status)
-# if ready:
-# data = np.empty(2, dtype=np.dtype(self.det_map['dtype']))
-# self.comm.Recv(data, source=status.Get_source(), tag=MPI.ANY_TAG, status=status)
 
     def start_msg_thread(self, api_port):
         """The thread runs a PAIR communication and acts as server side,
@@ -115,18 +115,29 @@ class MpiMaster(object):
         we want messages to be handled by workers as well, or master can
         broadcast information
         """
-        context = zmq.Context()
-        socket = context.socket(zmq.PAIR)
+        self.pair_ctx = zmq.Context()
+        socket = self.pair_ctx.socket(zmq.PAIR)
         # TODO: make IP available arg
         socket.bind(''.join(['tcp://*:', str(api_port)]))
         while True:
             message = socket.recv_pyobj()
+            print('got message ', message)
             cmd = message['cmd']
             value = message['value']
             if cmd == 'abort':
                 self._pub_socket.send_pyobj(message)
-                socket.send(b'aborted')
-                print('received abort')
+                self.abort = True
+                logger.info('aborting jet tracking data analysis process')
+            elif cmd == 'peak_bin':
+                self._pub_socket.send_pyobj(message)
+                print('setting peak bin on master')
+                msg_string = 'Changing peak bin to {}'.format(value)
+                logger.info(msg_string)
+            elif cmd == 'delta_bin':
+                self._pub_socket.send_pyobj(message)
+                print('setting delta bin on master')
+                msg_string = 'Changing delta bin to {}'.format(value)
+                logger.info(msg_string)
             else:
                 print('Received Message with no definition ', message)
 

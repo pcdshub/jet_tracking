@@ -10,11 +10,44 @@ from PyQt5.QtGui import *
 from num_gen import sinwv
 import collections
 import zmq
+import yaml
 
 logging = logging.getLogger('ophyd')
 logging.setLevel('CRITICAL')
 
 lock = threading.Lock()
+
+# Constants
+CFG_FILE = 'jt_configs/xcs_config.yml'
+
+def parse_config(cfg_file=CFG_FILE):
+    with open(args.cfg_file) as f:
+        yml_dict = yaml.load(f, Loader=yaml.FullLoader)
+    return yml_dict
+        #api_port = yml_dict['api_msg']['port']
+        #det_map = yml_dict['det_map']
+        #ipm_name = yml_dict['ipm']['name']
+        #ipm_det = yml_dict['ipm']['det']
+        #pv_map = yml_dict['pv_map']
+        #jet_cam_name = yml_dict['jet_cam']['name']
+        #jet_cam_axis = yml_dict['jet_cam']['axis']
+        #sim = yml_dict['sim']
+        #hutch = yml_dict['hutch']
+        #exp = yml_dict['experiment']
+        #run = yml_dict['run']
+
+def get_cal_results(hutch, exp):
+    """This goes through the results directory and gets the lates one"""
+    results_dir = f'/cds/data/psdm/{hutch}/{exp}/calib/jt_results/'
+    cal_files = sorted(os.listdir(jt_dir))
+    if cal_files:
+        cal_file = cal_files[-1]
+        cal_file_path = f'{results_dir}{cal_file}'
+        with open(cal_file_path) as f:
+            cal_results = json.load(f)
+        return cal_results
+    else:
+        return None
 
 def GetPVs():
     # this is where I would want to get PVs from a json file
@@ -56,8 +89,7 @@ class ValueReader(metaclass=Singleton):
         self.signals = signals
         self.PVs = dict()
         self.PV_signals = list()
-        self.live_data = True
-        
+        self.live_data = True 
         self.signals.run_live.connect(self.run_live_data)
 
     def run_live_data(self, live):

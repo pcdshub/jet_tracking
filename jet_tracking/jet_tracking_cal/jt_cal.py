@@ -385,6 +385,11 @@ if __name__ == '__main__':
             i0_data = getattr(ipm.get(evt), ipm_det)()
             
             # Get jet projection and location
+            if evt_idx == 5:
+                plt.imshow(jet_cam.image(evt))
+                plt.show()
+                plt.plot(jet_cam.image(evt).sum(axis=jet_cam_axis))
+                plt.show()
             jet_proj = jet_cam.image(evt).sum(axis=jet_cam_axis)
             max_jet_val = np.amax(jet_proj)
             max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
