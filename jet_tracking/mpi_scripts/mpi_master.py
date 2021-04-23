@@ -121,7 +121,6 @@ class MpiMaster(object):
         socket.bind(''.join(['tcp://*:', str(api_port)]))
         while True:
             message = socket.recv_pyobj()
-            print('got message ', message)
             cmd = message['cmd']
             value = message['value']
             if cmd == 'abort':
@@ -130,12 +129,10 @@ class MpiMaster(object):
                 logger.info('aborting jet tracking data analysis process')
             elif cmd == 'peak_bin':
                 self._pub_socket.send_pyobj(message)
-                print('setting peak bin on master')
                 msg_string = 'Changing peak bin to {}'.format(value)
                 logger.info(msg_string)
             elif cmd == 'delta_bin':
                 self._pub_socket.send_pyobj(message)
-                print('setting delta bin on master')
                 msg_string = 'Changing delta bin to {}'.format(value)
                 logger.info(msg_string)
             else:

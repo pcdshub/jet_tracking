@@ -38,8 +38,22 @@ Saving report to /reg/d/psdm/xcs/xcsx39718/stats/summary/jt_cal_run_10/report.ht
 finished with jet tracking calibration
 Closing remaining open files:run10_jt_cal.h5...done
 ```
-## Running the shared memory process
+##Running the shared memory process
 Once we have the needed calibration data, you can run the shared memory process
 
+###Sim Mode
+If you set the sim variable to true in the config file, you will run in sim mode.  This means you will read offline data.  This is only setup to use one worker and a master so it's somewhat slow, but very good for debugging.
 
+```
+$ ssh psana
+$ cd <base_path>/jet_tracking/jet_tracking/mpi_scripts
+$ ./run_mpi_script
+```
+###Shared Memory
+To run in shared memory you need to ssh to the mon node that has shared memory running.
 
+```
+$ ssh daq-cxi-mon01
+$ cd <base_path>/jet_tracking/jet_tracking/mpi_scripts
+$ ./run_mpi_script -p 8  # -p tells number of cores to use 1 Master, the reset workers
+```

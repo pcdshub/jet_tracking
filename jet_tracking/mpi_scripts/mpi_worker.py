@@ -41,6 +41,7 @@ class MpiWorker(object):
         self._state = None
         self._msg_thread = Thread(target=self.start_msg_thread, args=(data_port,))
         self._msg_thread.start()
+        self._attr_lock = Lock()
 
     @property
     def rank(self):
@@ -88,10 +89,11 @@ class MpiWorker(object):
 
     @peak_bin.setter
     def peak_bin(self, peak_bin):
-        try:
-            self._peak_bin = int(peak_bin)
-        except:
-            logger.warning('You must provide int for peak bin')
+        with self._attr_lock:
+            try:
+                self._peak_bin = int(peak_bin)
+            except:
+                logger.warning('You must provide int for peak bin')
 
     @property
     def delta_bin(self):
@@ -99,10 +101,11 @@ class MpiWorker(object):
 
     @delta_bin.setter
     def delta_bin(self, delta_bin):
-        try:
-            self._delta_bin = int(delta_bin)
-        except:
-            logger.warning('You must provide int for delta bin')
+        with self._attr_lock:
+            try:
+                self._delta_bin = int(delta_bin)
+            except:
+                logger.warning('You must provide int for delta bin')
 
     @property
     def jet_cam(self):
@@ -123,8 +126,9 @@ class MpiWorker(object):
                 if self.event_code not in self.evr.eventCodes(evt):
                     continue
 
-                low_bin = self.peak_bin - self.delta_bin
-                hi_bin = self.peak_bin + self.delta_bin
+                with self._attr_lock:
+                    low_bin = self.peak_bin - self.delta_bin
+                    hi_bin = self.peak_bin + self.delta_bin
                 calib = self.detector.calib(evt)
                 det_image = self.detector.image(evt, calib)
                 az_bins = np.array([np.mean(det_image[mask]) for mask in self._r_mask[low_bin:hi_bin]])
@@ -161,17 +165,17 @@ class MpiWorker(object):
             message = socket.recv_pyobj()
             cmd = message['cmd']
             value = message['value']
-            print('worker got message ', message)
             if cmd == 'abort':
                 self.abort = True
                 logger.info('aborting jet tracking data analysis process')
             elif cmd == 'peak_bin':
-                print('got message peak bin ', value)
                 msg_string = 'Worker {} changing peak bin to {}'.format(self.rank, value)
                 logger.info(msg_string)
+                self.peak_bin = int(value)
             elif cmd == 'delta_bin':
                 msg_string = 'Worker {} changing delta bin to {}'.format(self.rank, value)
                 logger.info(msg_string)
+                self.delta_bin = int(value)
             else:
                 logger.warning('Worker {} received message with no definition {}'.format(self.rank, message))
 
