@@ -1,0 +1,49 @@
+#!/bin/bash
+
+usage()
+{
+cat << EOF
+$(basename "$0"):
+  Script to launch an mpirun
+
+  OPTIONS:
+    -h|--help
+      Definition of options
+    -c|--cfgfile
+      Config file to load with damage/vars, and other things to parse for data aquisition
+    -p|--processors
+      Number of cores to use (available workers -1 for master)
+EOF
+}
+
+for arg in "$@"
+do
+  case $arg in
+    -h|--help)
+      usage exit
+      ;;
+    -c|--cfgfile)
+      CFGFILE="$2"
+      shift
+      shift
+      ;;
+    -p|--processors)
+      PROC="$2"
+      shift
+      shift
+      ;;
+  esac
+done
+
+source /reg/g/psdm/etc/psconda.sh -py3
+
+# If user doesn't specify use minimum required
+PROC=${PROC:='2'}
+
+#source /reg/g/pcds/setup/pathmunge.sh
+#source /reg/g/psdm/sw/conda1/manage/bin/psconda.sh
+#cd /cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/mpi_scripts
+#pythonpathmunge '/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking'
+CONFIG=${CONFIG:=/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/jt_configs/xcs_config.yml}
+
+`which mpirun` -n $PROC python mpi_driver.py --cfg_file $CONFIG

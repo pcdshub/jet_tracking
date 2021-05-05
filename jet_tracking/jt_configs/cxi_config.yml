@@ -1,0 +1,21 @@
+api_msg:
+  port: 5000
+
+det_map:
+  name: 'jungfrau4M'
+  shape:
+    - 2203
+    - 2299
+  dtype: float32
+  bins: 50
+
+pv_map:
+  1: 'CXI:JTRK:REQ:DIFF_INTENSITY'
+  2: 'CXI:JTRK:REQ:I0'
+
+ipm: 
+  name: 'FEEGasDetEnergy'
+  det: 'f_12_ENRC' 
+#ipm:
+#  name: 'CXI-DG2-BMMON'
+#  det: None
