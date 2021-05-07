@@ -2,12 +2,13 @@ import collections
 import logging
 import threading
 import time
+import argparse
 from statistics import mean, stdev
 
 import numpy as np
 import pyqtgraph as pg
 import zmq
-from datastream import StatusThread, ValueReader
+from datastream import StatusThread, ValueReader, MotorThread
 from num_gen import *
 from ophyd import EpicsSignal
 from pydm import Display
@@ -23,9 +24,12 @@ from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
 from signals import Signals
 
 logging = logging.getLogger('ophyd')
-logging.setLevel('CRITICAL')
+#logging.setLevel('CRITICAL')
 
 lock = threading.Lock()
+
+JT_LOC = '/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/'
+SD_LOC = '/reg/d/psdm/'
 
 class GraphicsView(QGraphicsView):
     def __init__(self, parent=None):
@@ -135,12 +139,28 @@ class JetTracking(Display):
         self.app = QApplication.instance()
         # load data from file
         self.load_data()
+        #parsed_args, unparsed_args = self.read_args()
 
+        #  calibration values
+        self.hutch = ' ' #default is CXI
+        self.i0_low = 0
+        self.i0_high = 0
+        self.i0_med = 0
+        self.peak_bin = 0
+        self.delta_bin = 0
+        self.mean_ratio = 0
+        self.med_ratio = 0
+        self.std_ratio = 0
+        self.jet_loc_mean = 0
+        self.jet_loc_std = 0
+        self.jet_peak_mean = 0
+        self.jet_peak_std = 0
+        
         self.signals = Signals()
-        self.vreader = ValueReader(self.signals)
         self.worker = StatusThread(self.signals)
+        self.worker_motor = None
         self.buffer_size = 300
-        self.correction_thread = None
+
         # assemble widgets
         self.setup_ui()
 
@@ -151,7 +171,39 @@ class JetTracking(Display):
     def ui_filepath(self):
 
         # no Ui file is being used as of now
-        return(None)
+        pass
+
+    def read_args(self):
+        pass
+        
+
+        """ 
+        print("hi")
+        parser = argparse.ArgumentParser(description = "Description for my parser")
+        parser.add_argument("-H", "--Help", help = "Example: Help argument", required = False, default = "")
+        parser.add_argument("-s", "--save", help = "Example: Save argument", required = False, default = "")
+        parser.add_argument("-p", "--print", help = "Example: Print argument", required = False, default = "")
+        parser.add_argument("-o", "--output", help = "Example: Output argument", required = False, default = "")
+
+        parsed_args, unparsed_args = parser.parse_known_args()
+        status = False
+        print(parsed_args)
+        if parsed_args.Help:
+            print("You have used '-H' or '--Help' with argument: {0}".format(argument.Help))
+            status = True
+        if parsed_args.save:
+            print("You have used '-s' or '--save' with argument: {0}".format(argument.save))
+            status = True
+        if parsed_args.print:
+            print("You have used '-p' or '--print' with argument: {0}".format(argument.print))
+            status = True
+        if parsed_args.output:
+            print("You have used '-o' or '--output' with argument: {0}".format(argument.output))
+            status = True
+        if not status:
+            print("Maybe you want to use -H or -s or -p or -p as arguments ?")
+        return(parsed_args, unparsed_args)
+        """
 
     def load_data(self):
 
@@ -211,6 +263,7 @@ class JetTracking(Display):
         #####################################################################
 
         self.bttngrp1 = QButtonGroup()
+
         self.rdbttn_live = QRadioButton("live data")  # .setChecked(True)
         self.rdbttn_sim = QRadioButton("simulated data")  # .setChecked(False)
         self.rdbttn_live.setChecked(True)
@@ -226,16 +279,45 @@ class JetTracking(Display):
         self.bttngrp2.addButton(self.rdbttn_auto)
         self.bttngrp2.setExclusive(True)  # allows only one button to be selected at a time
 
+        self.bttn_search = QPushButton()
+        self.bttn_search.setText("Search")
+        self.bttn_search.setEnabled(False) 
+
+        self.bttn_tracking = QPushButton()
+        self.bttn_tracking.setText("Track")
+        self.bttn_tracking.setEnabled(False)
+
+        self.bttn_stop_tracking = QPushButton()
+        self.bttn_stop_tracking.setText("Stop Tracking")
+        self.bttn_stop_tracking.setEnabled(False)
+
+        self.bttngrp3 = QButtonGroup()
+
+        self.rdbttn_cali_live = QRadioButton("Calibration in GUI")
+        self.rdbttn_cali = QRadioButton("Calibration from Results")
+        self.rdbttn_cali.setChecked(True)
+        self.bttngrp3.addButton(self.rdbttn_cali)
+        self.bttngrp3.addButton(self.rdbttn_cali_live)
+        self.bttngrp3.setExclusive(True)        
+
         # setup layout
         ##############
         self.frame_rdbttns = QFrame()
         self.layout_allrdbttns = QGridLayout()
+        self.layout_allrdbttns.setColumnStretch(0, 1)
+        self.layout_allrdbttns.setColumnStretch(1, 1)
+        self.layout_allrdbttns.setColumnStretch(2, 1)
         self.frame_rdbttns.setLayout(self.layout_allrdbttns)
         self.layout_usr_cntrl.addWidget(self.frame_rdbttns)
         self.layout_allrdbttns.addWidget(self.rdbttn_live, 0, 0)
         self.layout_allrdbttns.addWidget(self.rdbttn_sim, 0, 1)
         self.layout_allrdbttns.addWidget(self.rdbttn_manual, 1, 0)
         self.layout_allrdbttns.addWidget(self.rdbttn_auto, 1, 1)
+        self.layout_allrdbttns.addWidget(self.bttn_search, 2, 0)
+        self.layout_allrdbttns.addWidget(self.bttn_tracking, 2, 1)
+        self.layout_allrdbttns.addWidget(self.bttn_stop_tracking, 2, 2)
+        self.layout_allrdbttns.addWidget(self.rdbttn_cali, 3, 0)
+        self.layout_allrdbttns.addWidget(self.rdbttn_cali_live,3, 1) 
 
         #####################################################################
         # make drop down menu for changing nsampning for sigma
@@ -316,7 +398,7 @@ class JetTracking(Display):
         self.lbl_tracking.setSubtitleStyleSheet()
         self.lbl_tracking_status = Label("No Tracking")
         self.lbl_tracking_status.setTrackingStylesheet()
-        self.lbl_i0 = Label("Initial intensity (I0) RBV")
+        self.lbl_i0 = Label("Initial intensity (I0)")
         self.lbl_i0.setSubtitleStyleSheet()
         self.lbl_i0_status = QLCDNumber(4)
 
@@ -353,6 +435,7 @@ class JetTracking(Display):
         ########################################################################
 
         self.text_area = QTextEdit("~~~read only information for user~~~")
+        #self.text_area.append("To run in live mode, please select the hutch this program is currently being used in")
         self.text_area.setReadOnly(True)
 
         self.layout_usr_cntrl.addWidget(self.text_area)
@@ -404,6 +487,7 @@ class JetTracking(Display):
         self.le_nsamp.checkVal.connect(self.update_nsamp)
         self.bttngrp1.buttonClicked.connect(self.checkBttn)
         self.bttngrp2.buttonClicked.connect(self.checkBttn)
+        self.bttngrp3.buttonClicked.connect(self.checkBttn)
 
         self.bttn_start.clicked.connect(self._start)
         self.bttn_stop.clicked.connect(self._stop)
@@ -411,6 +495,9 @@ class JetTracking(Display):
         self.signals.status.connect(self.update_status)
         self.signals.calibration_value.connect(self.update_calibration)
 
+        self.bttn_search.clicked.connect(self._start_search)
+        self.bttn_tracking.clicked.connect(self._start_tracking)
+        self.bttn_stop_tracking.clicked.connect(self._stop_tracking)
 
         self.signals.status.connect(self.update_status)
         self.signals.buffers.connect(self.plot_data)
@@ -430,8 +517,25 @@ class JetTracking(Display):
         self.worker.wait()
 
     def _calibrate(self):
-        self.signals.mode.emit("calibration")
+        if self.bttngrp3.checkedButton().text() == "Calibration from Results":
+            self.signals.mode.emit("get calibration")
+        elif self.bttngrp3.checkedButton().text() == "Calibration from GUI":
+            self.signals.mode.emit("calibration")
+        self.text_area.append("obtaining calibration values... ")
         self._start()
+
+    def _start_search(self):
+        if self.worker.isRunning():
+            self.worker_motor = MotorThread(self.signals, "search")
+            self.worker_motor.start()
+        else:
+            self.text_area.append("there's nothing to scan!")
+
+    def _start_tracking(self):
+        self.signals.motormove.emit(1)
+
+    def _stop_tracking(self):
+        self.signals.motormove.emit(2)
 
     def update_calibration(self, cal):
         self.lbl_i0_status.display(cal['i0']['mean'])
@@ -530,14 +634,21 @@ class JetTracking(Display):
     def checkBttn(self, button):
         bttn = button.text()
         if bttn == "simulated data":
+            self.rdbttn_manual.click()
+            self.rdbttn_auto.setEnabled(False)
             self.signals.run_live.emit(0)
         elif bttn == "live data":
+            self.rdbttn_auto.setEnabled(True)
             self.signals.run_live.emit(1)
         elif bttn == "manual motor moving":
-            self.signals.motormove.emit(0)
-        elif bttn == "automatic motor moving":
-            self.signals.motormove.emit(1)
-
+            self.bttn_search.setEnabled(False)
+            self.bttn_tracking.setEnabled(False)
+            self.bttn_stop_tracking.setEnabled(False)
+        elif bttn == "automated motor moving":
+            self.bttn_search.setEnabled(True)
+            self.bttn_tracking.setEnabled(True)
+            self.bttn_stop_tracking.setEnabled(True)
+    
     def setDefaultStyleSheet(self):
 
         # This should be done with a json file
@@ -554,3 +665,4 @@ class JetTracking(Display):
                 max-height: 35px;\
                 font-size: 14px;\
             }")
+

@@ -17,6 +17,11 @@ class Signals(QtCore.QObject):
     nsampval = QtCore.pyqtSignal(float)
     motormove = QtCore.pyqtSignal(int)
     samprate = QtCore.pyqtSignal(float)
+    
     # calibration
     ali0 = QtCore.pyqtSignal(float)
     calibration = QtCore.pyqtSignal()
+
+    # motor
+    motorPV =QtCore.pyqtSignal(str)
+

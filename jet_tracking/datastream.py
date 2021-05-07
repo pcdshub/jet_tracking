@@ -3,23 +3,53 @@ import time
 import threading
 from statistics import mean, stdev
 import numpy as np
-from ophyd import EpicsSignal
+from ophyd import EpicsSignal, EpicsMotor
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from num_gen import sinwv
 import collections
+import matplotlib.pyplot as plt
 
 logging = logging.getLogger('ophyd')
 logging.setLevel('CRITICAL')
 
 lock = threading.Lock()
 
-def GetPVs():
-    # this is where I would want to get PVs from a json file
-    # but I will hard code it for now
-    return({'diff': 'CXI:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'CXI:JTRK:REQ:I0'})        
+# constants
+JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
+SD_LOC = '/reg/d/psdm/'
+PV_DICT = {'diff': 'XCS:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'XCS:JTRK:REQ:I0'}
+CFG_FILE = 'jt_configs/xcs_config.yml'
 
+def parse_config(cfg_file=CFG_FILE):
+    with open(args.cfg_file) as f:
+        yml_dict = yaml.load(f, Loader=yaml.FullLoader)
+    return yml_dict
+        #api_port = yml_dict['api_msg']['port']
+        #det_map = yml_dict['det_map']
+        #ipm_name = yml_dict['ipm']['name']
+        #ipm_det = yml_dict['ipm']['det']
+        #pv_map = yml_dict['pv_map']
+        #jet_cam_name = yml_dict['jet_cam']['name']
+        #jet_cam_axis = yml_dict['jet_cam']['axis']
+        #sim = yml_dict['sim']
+        #hutch = yml_dict['hutch']
+        #exp = yml_dict['experiment']
+        #run = yml_dict['run']
+
+def get_cal_results(hutch, exp):
+    """This goes through the results directory and gets the lates one"""
+    results_dir = f'/cds/data/psdm/{hutch}/{exp}/calib/jt_results/'
+    cal_files = sorted(os.listdir(jt_dir))
+    if cal_files:
+        cal_file = cal_files[-1]
+        cal_file_path = f'{results_dir}{cal_file}'
+        with open(cal_file_path) as f:
+            cal_results = json.load(f)
+        return cal_results
+    else:
+        return None
 
 def Skimmer(key, oldlist, checklist):
     skimlist = []
@@ -53,45 +83,41 @@ class ValueReader(metaclass=Singleton):
 
     def __init__(self, signals):
         self.signals = signals
-        self.PVs = dict()
-        self.PV_signals = list()
         self.live_data = True
-        
         self.signals.run_live.connect(self.run_live_data)
 
     def run_live_data(self, live):
         self.live_data = live
 
     def live_data_stream(self):
-        self.PVs = GetPVs()
-        gatt = self.PVs.get('gatt', None)
+        gatt = PV_DICT.get('gatt', None)
         self.signal_gatt = EpicsSignal(gatt)
         #wave8 = self.PVs.get('wave8', None)
         #self.signal_wave8 = EpicsSignal(wave8)
-        diff = self.PVs.get('diff', None)
+        diff = PV_DICT.get('diff', None)
         self.signal_diff = EpicsSignal(diff)
         self.gatt = self.signal_gatt.get()
         self.diff = self.signal_diff.get()
 
     def sim_data_stream(self):
-        """
+        """Run with offline data"""
         context_data = zmq.Context()
         socket_data = context_data.socket(zmq.SUB)
-        socket_data.connect(".join(['tcp://localhost:', '8123'])")
+        socket_data.connect(''.join(['tcp://localhost:', '8123']))
         socket_data.subscribe("")
-        while True:
-            md = socket_data.rev_json(flags=0)
-            msg = socket.recv(flags=0,copy=false, track=false)
-            buf = memoryview(msg)
-            data = np.frombuffer(buf, dtype=md['dtype'])
-            data = np.ndarray.tolist(data.reshape(md['shape']))
-            self.gatt = data[0]
-            self.diff = data[1]
-        """
-        x = 0.8
-        y = 0.4
-        self.gatt = sinwv(x)
-        self.diff = sinwv(y)
+        #while True:
+        md = socket_data.recv_json(flags=0)
+        msg = socket_data.recv(flags=0, copy=False, track=False)
+        buf = memoryview(msg)
+        data = np.frombuffer(buf, dtype=md['dtype'])
+        data = np.ndarray.tolist(data.reshape(md['shape']))
+        self.gatt = data[0]
+        self.diff = data[1]
+	
+        #x = 0.8
+        #y = 0.4
+        #self.gatt = sinwv(x)
+        #self.diff = sinwv(y)
 
     def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.live_data:
@@ -155,6 +181,7 @@ class StatusThread(QThread):
         self.signals.sigmaval.connect(self.update_sigma)
         self.signals.samprate.connect(self.update_samprate)
         self.signals.mode.connect(self.update_mode)
+        self.signals.motormove.connect(self.motor_interface)
 
     def update_mode(self, mode):
         self.mode = mode
@@ -184,13 +211,13 @@ class StatusThread(QThread):
                     self.count += 1
                     self.buffers['i0'].append(new_values.get(self.i0_rdbutton_selection))
                     self.buffers['diff'].append(new_values.get('diff'))
-                    self.buffers['ratio'].append(self.buffers['i0'][-1]/self.buffers['diff'][-1])
-                    self.buffers['time'].append(time.time()-self.timer)
+                    self.buffers['ratio'].append(self.buffers['diff'][-1]/self.buffers['i0'][-1])
+                    self.buffers['time'].append(time.time()-self.timer) ### time should be the clock time instead of runtime
                 else: 
                     self.count += 1 #### do I need to protect from this number getting too big?
                     self.buffers['i0'].append(new_values.get(self.i0_rdbutton_selection))
                     self.buffers['diff'].append(new_values.get('diff'))
-                    self.buffers['ratio'].append(self.buffers['i0'][-1]/self.buffers['diff'][-1])
+                    self.buffers['ratio'].append(self.buffers['diff'][-1]/self.buffers['i0'][-1])
                     self.buffers['time'].append(time.time()-self.timer)
                     self.event_flagging()
                 if self.count % self.nsamp == 0:
@@ -210,6 +237,8 @@ class StatusThread(QThread):
                 time.sleep(1/self.samprate)
             elif self.mode == "calibration":
                 self.calibrate(new_values)
+            elif self.mode == "get calibration":
+                self.get_calibration_vals() 
 
     def check_status_update(self):
 
@@ -226,20 +255,34 @@ class StatusThread(QThread):
             self.signals.status.emit("not calibrated", "orange")
 
     def event_flagging(self):
-
-        if self.buffers['ratio'][-1] < (self.calibration_values['ratio']['mean'] - self.sigma*self.calibration_values['ratio']['stdev']):
+        ###  better way to do this??
+        if (self.buffers['ratio'][-1] <  
+                (self.calibration_values['ratio']['mean'] - 
+                self.sigma*self.calibration_values['ratio']['stdev'])):
             self.flaggedEvents['low intensity'].append(self.buffers['ratio'][-1])
         else:
             self.flaggedEvents['low intensity'].append(0)
-        if self.buffers['i0'][-1] < (self.calibration_values['i0']['mean'] - self.sigma*self.calibration_values['i0']['stdev']):
+        if (self.buffers['i0'][-1] < 
+                (self.calibration_values['i0']['mean'] - 
+                self.sigma*self.calibration_values['i0']['stdev'])):
             self.flaggedEvents['dropped shot'].append(self.buffers['i0'][-1])
         else:
             self.flaggedEvents['dropped shot'].append(0)
-        if self.buffers['diff'][-1] < (self.calibration_values['diff']['mean']- self.sigma*self.calibration_values['diff']['stdev']):
+        if (self.buffers['ratio'][-1] < 
+                (self.calibration_values['ratio']['mean'] - 
+                2*self.sigma*self.calibration_values['ratio']['stdev'])):
             self.flaggedEvents['missed shot'].append(self.buffers['i0'][-1])
         else:
             self.flaggedEvents['missed shot'].append(0)
-        
+
+    def get_calibration_vals(self):
+        results = get_cal_results('xcs', 'xcs') ### change the experiment
+        self.calibration_values['i0']['mean'] =  results['i0_median']
+        self.calibration_values['i0']['stdev'] = results['i0_low']
+        self.calibration_values['ratio']['mean'] = results['mean_ratio']
+        self.calibration_values['ratio']['stdev'] = results['std_ratio']
+        self.calibrated = True
+    
     def calibrate(self, v):
         for key in self.calibration_values:
             self.calibration_values[key]['mean'] = 0
@@ -276,3 +319,115 @@ class StatusThread(QThread):
         self.mode = "running"
         self.signals.calibration_value.emit(self.calibration_values)
  
+    def motor_interface(self, val):
+        if val == 0:
+            # scan
+            print("scanning..")
+        if val == 1:
+            print("tracking..")
+            # tracking
+        if val == 2:
+            print("stop tracking..")
+            # stop tracking
+
+class MotorThread(QThread):
+    def __init__(self, signals, move_type):
+        super(StatusThread, self).__init__()
+        self.move_type = move_type
+        self.moves = []
+        self.signals = signals
+        self.motor_position = 0
+        self.motor_ll = 0
+        self.motor_hl = 0
+        self.diff_pv = PV_DICT.get('diff', None)
+        self.diff = EpicsSignal(self.diff_pv)
+        self.diff_intensity = 0
+        self.motor = EpicsMotor('')
+        self.set_motor_params()
+
+    def set_motor_params(self):
+        self.motor_ll = self.motor.get_lim(-1)
+        self.motor_hl =self.motor.get_lim(1)
+        self.motor_position = self.motor.position()
+
+    def run(self):
+        if self.move_type == "search":
+            m1 = self.motor_ll + (self.motor_hl-self.motor_ll)/3
+            m2 = self.motor_hl - (self.motor_hl-self.motor.hl)/3
+            self.motor_position = self._search(m1, m2)
+            self.diff_intensity = self.diff.get()
+            fig = plt.figure()
+            plt.xlabel('motor position')
+            plt.ylabel('intensity')
+            plt.plot(self.motor_position, self.diff_intensity, 'ro')
+            plt.scatter(*zip(*self.moves))
+            plt.show()
+        elif self.move_type == "track":
+            pass
+            #### look up how to exit safely here
+        elif self.move_type == "stop tracking":
+            pass
+            #### again, exit safely  
+
+    def _search(self, left, right, tol=5):
+        if abs(m2 - m1) < tol:
+            self.motor.move((left+right)/2)
+            return((left+right)/2)
+        left_third = (2*left + right) / 3
+        right_third = (left + 2*right) / 3
+        m1 = self.motor.move(left_third, wait=True)
+        i1 = self.diff.get()
+        m2 = self.motor.move(right_third, wait=True)        
+        i2 = self.diff.get()
+        self.moves.extend([(m1, i1), (m2, 12)])
+
+        if i1 < i2:
+            return(self._search(left_third, right))
+        else:
+            return(self._search(right_third, left)) 
+        """
+        diff2 = self.signal_diff.get()
+        self.moves.extend([diff1, diff2])
+        if diff1 < diff2:
+            while diff1 < diff2:
+                diff1 = self.signal_diff.get()
+                #caput motor move to the left course move
+                diff2 = self.signal_diff.get()
+                self.moves.append(diff2)
+                self.course_position_left = 0 #caget motor position left (diff2)
+                self.course_position_right = 0 #caget motor position right (diff1)
+            i = 0
+            for i in range(5):
+                i+=1
+                # caput course move left
+                self.moves.append(self.signal_diff.get())
+            #CAPUT move back to left position
+
+        else: #go back and move right
+            #caput 2 motor moves right course move
+            diff2 = self.signal_diff.get()
+            while diff1 < diff2:
+                diff1 = self.signal_diff.get()
+                #caput motor move right course move
+                diff2 = self.signal_diff.get()
+                self.moves.append(diff2)
+                self.course_position_left = 0 #caget motor position left (diff1)
+                self.course_position_right = 0 #caget motor position right (diff2)
+            i = 0
+            for i in range(5):
+                i+=1
+                # caput course move right
+                self.moves.append(self.signal_diff.get())
+            #CAPUT move back to left position
+         """
+         
+             
+#class MotorEdit(QUndoCommand):
+#    def __init__(self, motor, position):
+#       super(MotorEdit, self).__init__()
+#       self.motor = motor
+#       self.position = position
+#
+#    def redo(self):
+#       self.motor.mo
+
