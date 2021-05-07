@@ -10,6 +10,7 @@ class Signals(QtCore.QObject):
     calibration_value = QtCore.pyqtSignal(dict)
     run_live = QtCore.pyqtSignal(int)
     mode = QtCore.pyqtSignal(str)
+    message = QtCore.pyqtSignal(str)
 
     # emitted in main window
     rdbttn_status = QtCore.pyqtSignal(int)
@@ -23,5 +24,6 @@ class Signals(QtCore.QObject):
     calibration = QtCore.pyqtSignal()
 
     # motor
-    motorPV =QtCore.pyqtSignal(str)
-
+    motorPV = QtCore.pyqtSignal(str)
+    finished = QtCore.pyqtSignal(dict)
+    update_calibration = QtCore.pyqtSignal(str, float)

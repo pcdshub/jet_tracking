@@ -1,9 +1,11 @@
 import logging
+import os
 import time
 import threading
 from statistics import mean, stdev
 import numpy as np
-from ophyd import EpicsSignal, EpicsMotor
+from pcdsdevices.device_types import IMS
+from ophyd import EpicsSignal
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -19,7 +21,7 @@ lock = threading.Lock()
 # constants
 JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
 SD_LOC = '/reg/d/psdm/'
-PV_DICT = {'diff': 'XCS:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'XCS:JTRK:REQ:I0'}
+PV_DICT = {'diff': 'XCS:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'XCS:JTRK:REQ:I0', 'ratio': 'XCS:JTRK:REQ:RATIO'}
 CFG_FILE = 'jt_configs/xcs_config.yml'
 
 def parse_config(cfg_file=CFG_FILE):
@@ -39,9 +41,8 @@ def parse_config(cfg_file=CFG_FILE):
         #run = yml_dict['run']
 
 def get_cal_results(hutch, exp):
-    """This goes through the results directory and gets the lates one"""
     results_dir = f'/cds/data/psdm/{hutch}/{exp}/calib/jt_results/'
-    cal_files = sorted(os.listdir(jt_dir))
+    cal_files = sorted(os.listdir(results_dir))
     if cal_files:
         cal_file = cal_files[-1]
         cal_file_path = f'{results_dir}{cal_file}'
@@ -96,8 +97,11 @@ class ValueReader(metaclass=Singleton):
         #self.signal_wave8 = EpicsSignal(wave8)
         diff = PV_DICT.get('diff', None)
         self.signal_diff = EpicsSignal(diff)
+        ratio = PV_DICT.get('ratio', None)
+        self.signal_ratio = EpicsSignal(ratio)
         self.gatt = self.signal_gatt.get()
         self.diff = self.signal_diff.get()
+        self.ratio = self.signal_ratio.get()
 
     def sim_data_stream(self):
         """Run with offline data"""
@@ -122,10 +126,10 @@ class ValueReader(metaclass=Singleton):
     def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.live_data:
             self.live_data_stream()
-            return({'gatt': self.gatt, 'diff': self.diff})
+            return({'gatt': self.gatt, 'diff': self.diff, 'ratio': self.ratio})
         else:
             self.sim_data_stream()
-            return({'gatt': self.gatt, 'diff': self.diff})
+            return({'gatt': self.gatt, 'diff': self.diff, 'ratio': self.ratio})
 
  
 class StatusThread(QThread):
@@ -151,7 +155,7 @@ class StatusThread(QThread):
         self.status = True
         self.mode = "running"  #can either be running or calibrating
         self.timer = time.time()
-        self.buffer_size = 300
+        self.buffer_size = 400
         self.count = 0
         self.calibrated = False
         self.calibration_time = 10
@@ -159,7 +163,7 @@ class StatusThread(QThread):
         self.nsamp = 50
         self.sigma = 1
         self.samprate = 50
-        self.notification_tolerance = 100
+        self.notification_tolerance = 200
         self.i0_rdbutton_selection = 'gatt'
 
         ## buffers and data collection 
@@ -182,9 +186,14 @@ class StatusThread(QThread):
         self.signals.samprate.connect(self.update_samprate)
         self.signals.mode.connect(self.update_mode)
         self.signals.motormove.connect(self.motor_interface)
+        self.signals.update_calibration.connect(self.update_cali)
 
     def update_mode(self, mode):
         self.mode = mode
+
+    def update_cali(self, name, val):
+        self.calibration_values[name] = val
+        self.signals.calibration_value.emit(self.calibration_values)
 
     def update_status(self, status):
         self.status = status
@@ -211,13 +220,13 @@ class StatusThread(QThread):
                     self.count += 1
                     self.buffers['i0'].append(new_values.get(self.i0_rdbutton_selection))
                     self.buffers['diff'].append(new_values.get('diff'))
-                    self.buffers['ratio'].append(self.buffers['diff'][-1]/self.buffers['i0'][-1])
+                    self.buffers['ratio'].append(new_values.get('ratio'))
                     self.buffers['time'].append(time.time()-self.timer) ### time should be the clock time instead of runtime
                 else: 
                     self.count += 1 #### do I need to protect from this number getting too big?
                     self.buffers['i0'].append(new_values.get(self.i0_rdbutton_selection))
                     self.buffers['diff'].append(new_values.get('diff'))
-                    self.buffers['ratio'].append(self.buffers['diff'][-1]/self.buffers['i0'][-1])
+                    self.buffers['ratio'].append(new_values.get('ratio'))
                     self.buffers['time'].append(time.time()-self.timer)
                     self.event_flagging()
                 if self.count % self.nsamp == 0:
@@ -244,11 +253,11 @@ class StatusThread(QThread):
 
         if self.calibrated:
             if np.count_nonzero(self.flaggedEvents['missed shot']) > self.notification_tolerance:
-                self.signals.status.emit("warning, missed shots, realigning in **", "red") # a way to clock how long it's in a warning state before it needs recalibration
+                self.signals.status.emit("warning, missed shots", "red") # a way to clock how long it's in a warning state before it needs recalibration
             elif np.count_nonzero(self.flaggedEvents['dropped shot'])> self.notification_tolerance:
                 self.signals.status.emit("lots of dropped shots", "yellow")
             elif np.count_nonzero(self.flaggedEvents['low intensity']) > self.notification_tolerance:
-                self.signals.status.emit("low intensity, realigning in ***", "orange")
+                self.signals.status.emit("low intensity", "orange")
             else:
                 self.signals.status.emit("everything is good", "green")
         else:
@@ -276,11 +285,15 @@ class StatusThread(QThread):
             self.flaggedEvents['missed shot'].append(0)
 
     def get_calibration_vals(self):
-        results = get_cal_results('xcs', 'xcs') ### change the experiment
+        results = get_cal_results('xcs', 'xcsx475') ### change the experiment
+        if results == None:
+            self.signals.message.emit("no calibration file there")
+            pass
         self.calibration_values['i0']['mean'] =  results['i0_median']
         self.calibration_values['i0']['stdev'] = results['i0_low']
         self.calibration_values['ratio']['mean'] = results['mean_ratio']
         self.calibration_values['ratio']['stdev'] = results['std_ratio']
+        self.calibration_values.emit(self.calibration_values)
         self.calibrated = True
     
     def calibrate(self, v):
@@ -292,7 +305,7 @@ class StatusThread(QThread):
         while time.time()-timer < 2:
             cal_values[0].append(v.get(self.i0_rdbutton_selection))
             cal_values[1].append(v.get('diff'))
-            cal_values[2].append(DivWithTry(v.get('diff'), v.get(self.i0_rdbutton_selection)))
+            cal_values[2].append(v.get('ratio'))
             time.sleep(1/2)
         self.calibration_values['i0']['mean'] = mean(cal_values[0])
         self.calibration_values['i0']['stdev'] = stdev(cal_values[0])
@@ -302,12 +315,18 @@ class StatusThread(QThread):
         self.calibration_values['ratio']['stdev'] = stdev(cal_values[2])
         cal_values = [[], [], []] 
         while time.time()-timer < 3:#self.calibration_time: # put a time limit on how long it can try to calibrate for before throwing an error - set status to no tracking
-            if v.get(self.i0_rdbutton_selection) >= (self.calibration_values['i0']['mean'] - 2*self.calibration_values['i0']['stdev']):
+            if (v.get(self.i0_rdbutton_selection) >= 
+                    (self.calibration_values['i0']['mean'] - 
+                    2*self.calibration_values['i0']['stdev'])):
                 cal_values[0].append(v.get(self.i0_rdbutton_selection))
-            if v.get('diff') >= (self.calibration_values['diff']['mean'] - 2*self.calibration_values['diff']['stdev']):
+            if (v.get('diff') >= 
+                    (self.calibration_values['diff']['mean'] - 
+                    2*self.calibration_values['diff']['stdev'])):
                 cal_values[1].append(v.get('diff'))
-            if DivWithTry(v.get('diff'), v.get(self.i0_rdbutton_selection)) >= (self.calibration_values['ratio']['mean'] - 2*self.calibration_values['ratio']['stdev']):
-                cal_values[2].append(DivWithTry(v.get('diff'), v.get(self.i0_rdbutton_selection)))
+            if (v.get('ratio') >= 
+                    (self.calibration_values['ratio']['mean'] - 
+                    2*self.calibration_values['ratio']['stdev'])):
+                cal_values[2].append(v.get('ratio'))
             time.sleep(1/2)
         self.calibration_values['i0']['mean'] = mean(cal_values[0])
         self.calibration_values['i0']['stdev'] = stdev(cal_values[0])
@@ -332,22 +351,23 @@ class StatusThread(QThread):
 
 class MotorThread(QThread):
     def __init__(self, signals, move_type):
-        super(StatusThread, self).__init__()
+        super(MotorThread, self).__init__()
         self.move_type = move_type
         self.moves = []
         self.signals = signals
         self.motor_position = 0
         self.motor_ll = 0
         self.motor_hl = 0
-        self.diff_pv = PV_DICT.get('diff', None)
-        self.diff = EpicsSignal(self.diff_pv)
-        self.diff_intensity = 0
-        self.motor = EpicsMotor('')
+        self.ratio_pv = PV_DICT.get('ratio', None)
+        self.ratio = EpicsSignal(self.ratio_pv)
+        self.ratio_intensity = 0
+        self.motor = IMS('XCS:USR:MMS:39', name='jet_x')
+        self.motor.log.setLevel(level='CRITICAL')
         self.set_motor_params()
 
     def set_motor_params(self):
-        self.motor_ll = self.motor.get_lim(-1)
-        self.motor_hl =self.motor.get_lim(1)
+        self.motor_ll = self.motor.low_limit_travel()
+        self.motor_hl =self.motor.high_limit_travel()
         self.motor_position = self.motor.position()
 
     def run(self):
@@ -355,18 +375,20 @@ class MotorThread(QThread):
             m1 = self.motor_ll + (self.motor_hl-self.motor_ll)/3
             m2 = self.motor_hl - (self.motor_hl-self.motor.hl)/3
             self.motor_position = self._search(m1, m2)
-            self.diff_intensity = self.diff.get()
+            self.ratio_intensity = self.ratio.get()
             fig = plt.figure()
             plt.xlabel('motor position')
-            plt.ylabel('intensity')
-            plt.plot(self.motor_position, self.diff_intensity, 'ro')
+            plt.ylabel('I/I0 intensity')
+            plt.plot(self.motor_position, self.ratio_intensity, 'ro')
             plt.scatter(*zip(*self.moves))
             plt.show()
+            self.signals.update_calibration.emit('ratio', self.ratio_intensity)
+            self.signals.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
         elif self.move_type == "track":
-            pass
+            self.signals.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
             #### look up how to exit safely here
         elif self.move_type == "stop tracking":
-            pass
+            self.signals.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
             #### again, exit safely  
 
     def _search(self, left, right, tol=5):
@@ -376,9 +398,9 @@ class MotorThread(QThread):
         left_third = (2*left + right) / 3
         right_third = (left + 2*right) / 3
         m1 = self.motor.move(left_third, wait=True)
-        i1 = self.diff.get()
+        i1 = self.ratio.get()
         m2 = self.motor.move(right_third, wait=True)        
-        i2 = self.diff.get()
+        i2 = self.ratio.get()
         self.moves.extend([(m1, i1), (m2, 12)])
 
         if i1 < i2:

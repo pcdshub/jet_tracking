@@ -23,8 +23,8 @@ from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
 
 from signals import Signals
 
-logging = logging.getLogger('ophyd')
-#logging.setLevel('CRITICAL')
+logging = logging.getLogger('pydm')
+logging.setLevel('CRITICAL')
 
 lock = threading.Lock()
 
@@ -166,7 +166,7 @@ class JetTracking(Display):
 
     def minimumSizeHint(self):
 
-        return(QtCore.QSize(1200, 800))
+        return(QtCore.QSize(1400, 800))
 
     def ui_filepath(self):
 
@@ -398,11 +398,11 @@ class JetTracking(Display):
         self.lbl_tracking.setSubtitleStyleSheet()
         self.lbl_tracking_status = Label("No Tracking")
         self.lbl_tracking_status.setTrackingStylesheet()
-        self.lbl_i0 = Label("Initial intensity (I0)")
+        self.lbl_i0 = Label("Mean Initial intensity (I0)")
         self.lbl_i0.setSubtitleStyleSheet()
         self.lbl_i0_status = QLCDNumber(4)
 
-        self.lbl_diff_i0 = Label("Diffraction at detector")
+        self.lbl_diff_i0 = Label("Mean I/I0")
         self.lbl_diff_i0.setSubtitleStyleSheet()
         self.lbl_diff_status = QLCDNumber(4)
 
@@ -503,6 +503,8 @@ class JetTracking(Display):
         self.signals.buffers.connect(self.plot_data)
         self.signals.avevalues.connect(self.plot_ave_data)
 
+        self.signals.finished.connect(self._motor_stop)
+        self.signals.message.connect(self.receive_message)
         ###################################################
 
     def _start(self):
@@ -515,6 +517,12 @@ class JetTracking(Display):
     def _stop(self):
         self.worker.requestInterruption()
         self.worker.wait()
+
+    def _motor_stop(self, vals):
+        self.text_area.append("motor position: " + vals['position'])
+        self.text_area.append("peak intensity: " + vals['ratio'])
+        self.worker_motor.requestInterruption()
+        self.worker_motor.wait()
 
     def _calibrate(self):
         if self.bttngrp3.checkedButton().text() == "Calibration from Results":
@@ -539,7 +547,7 @@ class JetTracking(Display):
 
     def update_calibration(self, cal):
         self.lbl_i0_status.display(cal['i0']['mean'])
-        self.lbl_diff_status.display(cal['diff']['mean'])
+        self.lbl_diff_status.display(cal['ratio']['mean'])
 
     def liveGraphing(self):
 
@@ -626,6 +634,9 @@ class JetTracking(Display):
 
     def update_samprate(self, samprate):
         self.signals.samprate.emit(samprate)
+
+    def receive_message(self, message):
+        self.text_area.append(message)
 
     def cleanup_correction(self):
        self.signals.correction_thread = None
