@@ -245,6 +245,7 @@ class StatusThread(QThread):
                 self.signals.buffers.emit(self.buffers)
                 time.sleep(1/self.samprate)
             elif self.mode == "calibration":
+                print("calibrating...")
                 self.calibrate(new_values)
             elif self.mode == "get calibration":
                 self.get_calibration_vals() 
@@ -285,7 +286,7 @@ class StatusThread(QThread):
             self.flaggedEvents['missed shot'].append(0)
 
     def get_calibration_vals(self):
-        results = get_cal_results('xcs', 'xcsx475') ### change the experiment
+        results = get_cal_results('xcs', 'xcsx47519') ### change the experiment
         if results == None:
             self.signals.message.emit("no calibration file there")
             pass

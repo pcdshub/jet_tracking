@@ -526,8 +526,10 @@ class JetTracking(Display):
 
     def _calibrate(self):
         if self.bttngrp3.checkedButton().text() == "Calibration from Results":
+            print("I am calibrating from results")
             self.signals.mode.emit("get calibration")
         elif self.bttngrp3.checkedButton().text() == "Calibration from GUI":
+            print("I am calibrating from the GUI")
             self.signals.mode.emit("calibration")
         self.text_area.append("obtaining calibration values... ")
         self._start()
