@@ -11,6 +11,8 @@ class Signals(QtCore.QObject):
     run_live = QtCore.pyqtSignal(int)
     mode = QtCore.pyqtSignal(str)
     message = QtCore.pyqtSignal(str)
+    tol = QtCore.pyqtSignal(float)
+    limits = QtCore.pyqtSignal(float, float)
 
     # emitted in main window
     rdbttn_status = QtCore.pyqtSignal(int)

@@ -323,18 +323,12 @@ class JetTracking(Display):
         # make drop down menu for changing nsampning for sigma
         #####################################################################
 
-        self.lbl_sigma = Label("Sigma (0.1 - 5)")
-        self.lbl_sigma.setSubtitleStyleSheet()
-
+        self.lbl_sigma = Label("Sigma \n(0.1 - 5)")
         self.le_sigma = LineEdit("1")
         self.le_sigma.valRange(0.1, 5.0)
 
-        self.lbl_nsamp = Label('number of samples (5 - 300)')
-        self.lbl_nsamp.setSubtitleStyleSheet()
-
-        self.lbl_samprate = Label('sampling rate (2 - 300)')
-        self.lbl_samprate.setSubtitleStyleSheet()
-
+        self.lbl_nsamp = Label('number of samples \n(5 - 300)')
+        self.lbl_samprate = Label('sampling rate \n(2 - 300)')
         self.le_nsamp = LineEdit("50")
         self.le_nsamp.valRange(5, 300)
         self.le_samprate = LineEdit("50")
@@ -342,49 +336,61 @@ class JetTracking(Display):
 
         # setup layout
         ##############
-        self.frame_sigma = QFrame()
-        self.layout_sigma = QHBoxLayout()
-        self.frame_sigma.setLayout(self.layout_sigma)
-        self.layout_usr_cntrl.addWidget(self.frame_sigma)
-        self.layout_sigma.addWidget(self.lbl_sigma)
-        self.layout_sigma.addWidget(self.le_sigma)
-
-        self.frame_nsamp = QFrame()
-        self.layout_nsamp = QHBoxLayout()
-        self.frame_nsamp.setLayout(self.layout_nsamp)
-        self.layout_usr_cntrl.addWidget(self.frame_nsamp)
-        self.layout_nsamp.addWidget(self.lbl_nsamp)
-        self.layout_nsamp.addWidget(self.le_nsamp)
-
-        self.frame_samprate = QFrame()
-        self.layout_samprate = QHBoxLayout()
-        self.frame_samprate.setLayout(self.layout_samprate)
-        self.layout_usr_cntrl.addWidget(self.frame_samprate)
-        self.layout_samprate.addWidget(self.lbl_samprate)
-        self.layout_samprate.addWidget(self.le_samprate)
+        self.frame_samp = QFrame()
+        self.layout_samp = QHBoxLayout()
+        self.frame_samp.setLayout(self.layout_samp)
+        self.layout_usr_cntrl.addWidget(self.frame_samp)
+        self.layout_samp.addWidget(self.lbl_sigma)
+        self.layout_samp.addWidget(self.le_sigma)
+        self.layout_samp.addWidget(self.lbl_nsamp)
+        self.layout_samp.addWidget(self.le_nsamp)
+        self.layout_samp.addWidget(self.lbl_samprate)
+        self.layout_samp.addWidget(self.le_samprate)
 
         ############################
 
-        ####################################################################
-        # make buttons to choose between devices for checking if we have beam
-        # currently either gas attenuator in the FEE or the Wave8
-        ####################################################################
+        self.lbl_motor = Label("Motor Parameters (microns)")
+        self.lbl_motor.setTitleStylesheet()
+        self.layout_usr_cntrl.addWidget(self.lbl_motor)
 
-        self.lbl_init_initensity = Label("Initial beam Intensity RBV")
-        self.lbl_init_initensity.setSubtitleStyleSheet()
-        self.bttn_attenuator = PushButton("Gas Attenuator")
-        self.bttn_wave8 = PushButton("Wave8")
+        self.lbl_motor_hl = Label("High Limit")
+        self.lbl_motor_ll = Label("Low Limit")
+        self.lbl_motor_size = Label("Step Size")
+        
+        self.le_motor_hl = LineEdit("50")
+        self.le_motor_hl.valRange(-100, 100)
 
-        # setup layout
-        ##############
-        self.frame_init_initensity = QFrame()
-        self.layout_init_initensity = QHBoxLayout()
-        self.frame_init_initensity.setLayout(self.layout_init_initensity)
-        self.layout_usr_cntrl.addWidget(self.frame_init_initensity)
-        self.layout_init_initensity.addWidget(self.lbl_init_initensity)
-        self.layout_init_initensity.addWidget(self.bttn_attenuator)
-        self.layout_init_initensity.addWidget(self.bttn_wave8)
-        ####################
+        self.le_motor_ll = LineEdit("-50")
+        self.le_motor_ll.valRange(-100, 100)
+
+        self.le_size = LineEdit(".5")
+        self.le_size.valRange(0, 100)
+
+        self.frame_motor = QFrame()
+        self.layout_motor = QHBoxLayout()
+        self.frame_motor.setLayout(self.layout_motor)
+        self.layout_usr_cntrl.addWidget(self.frame_motor)
+        self.layout_motor.addWidget(self.lbl_motor_ll)
+        self.layout_motor.addWidget(self.le_motor_ll)
+        self.layout_motor.addWidget(self.lbl_motor_hl)
+        self.layout_motor.addWidget(self.le_motor_hl)
+        self.layout_motor.addWidget(self.lbl_motor_size)
+        self.layout_motor.addWidget(self.le_size)
+
+        #self.frame_nsamp = QFrame()
+        #self.layout_nsamp = QHBoxLayout()
+        #self.frame_nsamp.setLayout(self.layout_nsamp)
+        #self.layout_usr_cntrl.addWidget(self.frame_nsamp)
+        #self.layout_nsamp.addWidget(self.lbl_nsamp)
+        #self.layout_nsamp.addWidget(self.le_nsamp)
+
+        #self.frame_samprate = QFrame()
+        #self.layout_samprate = QHBoxLayout()
+        #self.frame_samprate.setLayout(self.layout_samprate)
+        #self.layout_usr_cntrl.addWidget(self.frame_samprate)
+        #self.layout_samprate.addWidget(self.lbl_samprate)
+        #self.layout_samprate.addWidget(self.le_samprate)
+
 
         #####################################################################
         # give a status area that displays values and current tracking
@@ -400,11 +406,11 @@ class JetTracking(Display):
         self.lbl_tracking_status.setTrackingStylesheet()
         self.lbl_i0 = Label("Mean Initial intensity (I0)")
         self.lbl_i0.setSubtitleStyleSheet()
-        self.lbl_i0_status = QLCDNumber(4)
+        self.lbl_i0_status = QLCDNumber(7)
 
         self.lbl_diff_i0 = Label("Mean I/I0")
         self.lbl_diff_i0.setSubtitleStyleSheet()
-        self.lbl_diff_status = QLCDNumber(4)
+        self.lbl_diff_status = QLCDNumber(7)
 
         # setup layout
         ##############
@@ -482,9 +488,11 @@ class JetTracking(Display):
         # signals and slots
         ###################################################
         self.le_sigma.checkVal.connect(self.update_sigma)
-
         self.le_samprate.checkVal.connect(self.update_samprate)
         self.le_nsamp.checkVal.connect(self.update_nsamp)
+        self.le_motor_ll.checkVal.connect(self.update_limits)
+        self.le_motor_hl.checkVal.connect(self.update_limits)
+        self.le_size.checkVal.connect(self.update_tol)
         self.bttngrp1.buttonClicked.connect(self.checkBttn)
         self.bttngrp2.buttonClicked.connect(self.checkBttn)
         self.bttngrp3.buttonClicked.connect(self.checkBttn)
@@ -525,10 +533,13 @@ class JetTracking(Display):
         self.worker_motor.wait()
 
     def _calibrate(self):
+        button = self.bttngrp3.checkedButton()
+        button_text = button.text()
+        print(button_text)
         if self.bttngrp3.checkedButton().text() == "Calibration from Results":
             print("I am calibrating from results")
             self.signals.mode.emit("get calibration")
-        elif self.bttngrp3.checkedButton().text() == "Calibration from GUI":
+        elif self.bttngrp3.checkedButton().text() == "Calibration in GUI":
             print("I am calibrating from the GUI")
             self.signals.mode.emit("calibration")
         self.text_area.append("obtaining calibration values... ")
@@ -548,8 +559,10 @@ class JetTracking(Display):
         self.signals.motormove.emit(2)
 
     def update_calibration(self, cal):
+        print(cal)
         self.lbl_i0_status.display(cal['i0']['mean'])
         self.lbl_diff_status.display(cal['ratio']['mean'])
+        
 
     def liveGraphing(self):
 
@@ -587,8 +600,19 @@ class JetTracking(Display):
                                           size=1)
         self.graph1.addItem(self.plot1)
         self.plot1ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
+                                           size=1)
+        self.plot1cali = pg.PlotCurveItem(pen=pg.mkPen(width=1, color=(255, 255, 0)),
+                                           size=1, style=Qt.DashLine)
+        self.plot1sigmalow = pg.PlotCurveItem(pen=pg.mkPen(width=1, color=(255, 255, 0)),
+                                           size=1, style=Qt.DashLine)
+        self.plot1sigmahigh = pg.PlotCurveItem(pen=pg.mkPen(width=1, color=(255, 255, 0)),
                                            size=1, style=Qt.DashLine)
         self.graph1.addItem(self.plot1ave)
+        self.graph1.addItem(self.plot1cali)
+        self.graph1.addItem(self.plot1sigmalow)
+        self.graph1.addItem(self.plot1sigmahigh)
+        self.cali = []
+        self.sigma = []
         self.plot2 = pg.PlotCurveItem(pen=pg.mkPen(width=2, color='b'), size=1)
         self.graph2.addItem(self.plot2)
         self.plot2ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
@@ -605,6 +629,7 @@ class JetTracking(Display):
         self.graph3.setXLink(self.graph1)
 
     def plot_data(self, data):
+        #self.cali.append(
         self.plot1.setData(list(data['time']), list(data['ratio']))
         self.graph1.setXRange(list(data['time'])[0], list(data['time'])[-1])
         self.plot2.setData(list(data['time']), list(data['i0']))
@@ -636,6 +661,13 @@ class JetTracking(Display):
 
     def update_samprate(self, samprate):
         self.signals.samprate.emit(samprate)
+
+    def update_limits(self, limit):
+        self.signals.limits.emit(float(self.le_motor_ll.text()), float(self.le_motor_hl.text()))
+
+    def update_tol(self, tol):
+        print(tol)
+        self.signals.tol.emit(tol)
 
     def receive_message(self, message):
         self.text_area.append(message)
