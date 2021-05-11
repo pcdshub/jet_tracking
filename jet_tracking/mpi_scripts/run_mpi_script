@@ -44,6 +44,6 @@ PROC=${PROC:='2'}
 #source /reg/g/psdm/sw/conda1/manage/bin/psconda.sh
 #cd /cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/mpi_scripts
 #pythonpathmunge '/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking'
-CONFIG=${CONFIG:=/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/jt_configs/xcs_config.yml}
+CONFIG=${CONFIG:=/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/jt_configs/xcs_config.yml}
 
-`which mpirun` -n $PROC python mpi_driver.py --cfg_file $CONFIG
+`which mpirun` -n $PROC python -u mpi_driver.py --cfg_file $CONFIG

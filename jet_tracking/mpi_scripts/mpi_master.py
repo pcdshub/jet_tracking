@@ -153,7 +153,7 @@ class MpiMaster(object):
             else:
                 # consider caput_many with lots, ok for now
                 for k, v in self._pv_map.items():
-                    caput(v, data[k])
+                    caput(v, data[k-1])
                 #caput('XCS:JTRK:REQ:DIFF_INTENSITY', data[1])
                 #caput('XCS:JTRK:REQ:I0', data[0])
         else:

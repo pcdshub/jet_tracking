@@ -1,7 +1,7 @@
 import numpy as np
 import psana
 
-def get_r_masks(shape, bins=50):
+def get_r_masks(shape, bins=100):
     """Function to generate radial masks for pixels to include in azav"""
     center = (shape[1] / 2, shape[0] / 2)
     x, y = np.meshgrid(np.arange(shape[1]) - center[0], np.arange(shape[0]) - center[1])

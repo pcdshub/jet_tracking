@@ -9,11 +9,15 @@ from argparse import ArgumentParser
 import json
 import os
 import sys
+import time
 from bokeh.plotting import figure, show, output_file
 from bokeh.models import Span, Legend, LegendItem, ColorBar, LinearColorMapper
 from bokeh.io import output_notebook
 import panel as pn
 import matplotlib.pyplot as plt
+from pathlib import Path
+sys.path.append('../mpi_scripts/')
+from utils import get_evr_w_codes, get_r_masks
 
 # Need to go to stdout for arp/sbatch
 logger = logging.getLogger(__name__)
@@ -22,25 +26,27 @@ handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
-JT_LOC = '/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/'
+#JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
+JT_LOC = str(Path(__file__).resolve().parent.parent)
 SD_LOC = '/reg/d/psdm/'
+FFB_LOC = '/cds/data/drpsrcf/'
 
-def get_r_masks(shape, bins=100):
-    """Function to generate radial masks for pixels to include in azav"""
-    center = (shape[1] / 2, shape[0] / 2)
-    x, y = np.meshgrid(np.arange(shape[1]) - center[0], \
-        np.arange(shape[0]) - center[1])
-    r = np.sqrt(x**2 + y**2)
-    max_r = np.max(r)
-    min_r = np.min(r)
-    bin_size = (max_r - min_r) / bins
-    radii = np.arange(1, max_r, bin_size)
-    masks = []
-    for i in radii:
-        mask = (np.greater(r, i - bin_size) & np.less(r, i + bin_size))
-        masks.append(mask)
-
-    return masks
+#def get_r_masks(shape, bins=100):
+#    """Function to generate radial masks for pixels to include in azav"""
+#    center = (shape[1] / 2, shape[0] / 2)
+#    x, y = np.meshgrid(np.arange(shape[1]) - center[0], \
+#        np.arange(shape[0]) - center[1])
+#    r = np.sqrt(x**2 + y**2)
+#    max_r = np.max(r)
+#    min_r = np.min(r)
+#    bin_size = (max_r - min_r) / bins
+#    radii = np.arange(1, max_r, bin_size)
+#    masks = []
+#    for i in radii:
+#        mask = (np.greater(r, i - bin_size) & np.less(r, i + bin_size))
+#        masks.append(mask)
+#
+#    return masks
 
 def gaussian(x, a, mean, std, m, b):
     """
@@ -134,7 +140,10 @@ def peak_lr(array_data, threshold=0.1, bins=50):
     i0_med: float
         median i0 value
     """
-    hist, edges = np.histogram(array_data, bins=bins)
+    hist_all, edges_all = np.histogram(array_data, bins=bins)
+    # avoid cases where there are a lot of 0 intensity shots (peak at 0)
+    hist = hist_all[1:]
+    edges = edges_all[1:]
 
     # Find peak information
     peak_val = hist.max()
@@ -149,9 +158,14 @@ def peak_lr(array_data, threshold=0.1, bins=50):
     # search left
     left_array = hist[:peak_idx]
     left = peak_idx - np.argmax(left_array[::-1] < threshold * peak_val)
+    # ugly way to capture cases where the i0 does not drop to the threshold value on the left
+    if left==peak_idx:
+        print('New threshold: i0_med/2')
+        threshold = peak_val/2
+        left = peak_idx - np.argmax(left_array[::-1] < threshold)
     i0_low = edges[left]
 
-    return hist, edges, i0_low, i0_high, i0_med
+    return hist_all, edges_all, i0_low, i0_high, i0_med
 
 def calc_azav_peak(ave_azav):
     """
@@ -318,6 +332,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--cfg', type=str, \
         default=(''.join([JT_LOC, 'jt_configs/xcs_config.yml'])))
+    parser.add_argument('--run', type=int)
     args = parser.parse_args()
 
     # Start spinning up processes
@@ -337,15 +352,21 @@ if __name__ == '__main__':
         jet_cam_axis = yml_dict['jet_cam']['axis']
         hutch = yml_dict['hutch']
         exp = os.environ.get('EXPERIMENT', yml_dict['experiment'])
-        run = os.environ.get('RUN_NUM', yml_dict['run'])
+        #run = os.environ.get('RUN_NUM', yml_dict['run'])
+        run = os.environ.get('RUN_NUM', str(args.run))
         cal_params = yml_dict['cal_params']
+        ffb = yml_dict['ffb']
+        event_code = yml_dict['event_code']
 
     # Get Events for each worker
     num_events = int(cal_params['events'] / size)
 
     # Setup MPI data source
     ds_name = ''.join(['exp=', exp, ':run=', run, ':smd'])
+    if ffb:
+        ds_name += ':dir=/cds/data/drpsrcf/{}/{}/xtc'.format(hutch, exp)
     try:
+        print('Make datasource with {}'.format(ds_name))
         ds = psana.MPIDataSource(ds_name)
     except Exception as e:
         logger.warning('Could not use MPI Data Source: {}'.format(e))
@@ -353,16 +374,20 @@ if __name__ == '__main__':
 
     # Setup smd saver
     jt_file = 'run{}_jt_cal.h5'.format(run)
-    jt_file_path = ''.join([SD_LOC, hutch, '/', exp, '/scratch/', jt_file])
+    if ffb:
+        jt_file_path = ''.join([FFB_LOC, hutch, '/', exp, '/scratch/', jt_file])
+    else:
+        jt_file_path = ''.join([SD_LOC, hutch, '/', exp, '/scratch/', jt_file])
     if rank == 0:
         logger.info('Will save small data to {}'.format(jt_file_path))
-    smd = ds.small_data(jt_file, gather_interval=100)
+    smd = ds.small_data(jt_file_path, gather_interval=100)
 
     # Get the detectors from the config
     try:
         detector = psana.Detector(det_map['name'])
         ipm = psana.Detector(ipm_name)
         jet_cam = psana.Detector(jet_cam_name)
+        evr = get_evr_w_codes(psana.DetNames())
         masks = get_r_masks(det_map['shape'], cal_params['azav_bins'])
     except Exception as e:
         logger.warning('Unable to create psana detectors: {}'.format(e))
@@ -375,6 +400,8 @@ if __name__ == '__main__':
     # Iterate through and pull out small data
     for evt_idx, evt in enumerate(ds.events()):
         try:
+            if event_code not in evr.eventCodes(evt):
+                    continue
             # Get image and azav
             calib = detector.calib(evt)
             det_image = detector.image(evt, calib)
@@ -385,11 +412,12 @@ if __name__ == '__main__':
             i0_data = getattr(ipm.get(evt), ipm_det)()
             
             # Get jet projection and location
-            if evt_idx == 5:
-                plt.imshow(jet_cam.image(evt))
-                plt.show()
-                plt.plot(jet_cam.image(evt).sum(axis=jet_cam_axis))
-                plt.show()
+            if not plt.get_backend()=='agg':
+                if evt_idx == 5:
+                    plt.imshow(jet_cam.image(evt))
+                    plt.show()
+                    plt.plot(jet_cam.image(evt).sum(axis=jet_cam_axis))
+                    plt.show()
             jet_proj = jet_cam.image(evt).sum(axis=jet_cam_axis)
             max_jet_val = np.amax(jet_proj)
             max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
@@ -402,9 +430,9 @@ if __name__ == '__main__':
     
     smd.save()
     if rank == 0:
-        logger.info('Saved Small Data, Processing...')
         while not os.path.exists(jt_file_path):
             time.sleep(0.1)
+        logger.info('Saved Small Data, Processing...')
 
         f = h5py.File(jt_file_path, 'r')
         i0_data = np.array(f['i0'])
@@ -485,9 +513,25 @@ if __name__ == '__main__':
             os.makedirs(calib_dir)
 
         # Write metadata to file
-        with open(''.join([calib_dir, '/jt_cal_', run, '_results']), 'w') as f:
+        res_file = ''.join([calib_dir, '/jt_cal_', run, '_results'])
+        with open(res_file, 'w') as f:
             results = {k: str(v) for k, v in results.items()}
             json.dump(results, f)
+        logger.info('Saved calibration to {}'.format(res_file))
+        
+        # try to also save calib results to exp directory in hutch opr home 
+        # (only works if ran as hutchopr)
+        hopr_dir = '/cds/home/opr/{}opr/experiments/{}/jt_calib'.format(hutch, exp)
+        try:
+            if not os.path.exists(hopr_dir):
+                os.mkdir(hopr_dir)
+            res_file = ''.join([hopr_dir, '/jt_cal_', run, '_results'])
+            with open(res_file, 'w') as f:
+                results = {k: str(v) for k, v in results.items()}
+                json.dump(results, f)
+            logger.info('Saved calibration to {}'.format(res_file))
+        except Exception as e:
+            logger.warning('Unable to write to {}opr experiment directory: {}'.format(e))
 
         # Accumulate plots and write report
         gspec = pn.GridSpec(sizing_mode='stretch_both', name='JT Cal Results: Run {}'.format(run))

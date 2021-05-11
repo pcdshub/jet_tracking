@@ -17,6 +17,8 @@ $(basename "$0"):
             Script to run with full path
         -c|--config
             Configuration file you want to use for jt cal
+        -r|--run
+            Run to use for calibration
 EOF
 
 }
@@ -54,6 +56,11 @@ do
             shift
             shift
             ;;
+        -r|--run)
+            RUN="$2"
+            shift
+            shift
+            ;;
         *)
             POSITIONAL+=("$1")
 			shift
@@ -64,8 +71,9 @@ set -- "${POSITIONAL[@]}"
 
 # Need to setup for FFB
 QUEUE=${QUEUE:='psanaq'}
+#QUEUE=${QUEUE:='psfehhiprioq'}
 TASKS=${TASKS:=10}
-SCRIPT=${SCRIPT:=/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/jet_tracking_cal/jt_cal.py}
-CONFIG=${CONFIG:=/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/jt_configs/xcs_config.yml}
+SCRIPT=${SCRIPT:=/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/jet_tracking_cal/jt_cal.py}
+CONFIG=${CONFIG:=/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/jt_configs/xcs_config.yml}
 
-sbatch -p $QUEUE --ntasks $TASKS --job-name="jet track cal" --wrap="mpirun python -u $SCRIPT --cfg $CONFIG"
+sbatch -p $QUEUE --ntasks-per-node 10 --ntasks $TASKS --job-name="jet track cal" --wrap="mpirun python -u $SCRIPT --cfg $CONFIG --run $RUN"

@@ -10,6 +10,7 @@ import argparse
 import os
 import sys
 import logging
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -36,15 +37,19 @@ with open(args.cfg_file) as f:
     hutch = yml_dict['hutch']
     exp = yml_dict['experiment']
     run = yml_dict['run']
+    event_code = yml_dict['event_code']
 
 # Get calibration results
-calib_dir = ''.join(['/cds/data/psdm/', hutch, '/', exp, '/calib/'])
-jt_dir = ''.join([calib_dir, 'jt_results/'])
+calib_dir = Path(''.join(['/cds/data/psdm/', hutch, '/', exp, '/calib/']))
+jt_dir = Path(''.join([str(calib_dir), '/jt_results/']))
 
-cal_files = sorted(os.listdir(jt_dir))
+#cal_files = sorted(os.listdir(jt_dir))
+cal_files = list(jt_dir.glob('jt_cal*'))
+cal_files.sort(key=os.path.getmtime)
 if cal_files:
-    cal_file = cal_files[-1]
-    cal_file_path = ''.join([jt_dir, cal_file])
+    cal_file_path = cal_files[-1]
+    #cal_file_path = ''.join([jt_dir, cal_file])
+    print('Calibration file: {}'.format(cal_file_path))
     with open(cal_file_path) as f:
         cal_results = json.load(f)
 else:
@@ -65,6 +70,7 @@ detector = psana.Detector(det_map['name'])
 ipm = (psana.Detector(ipm_name), ipm_det)
 jet_cam = psana.Detector(jet_cam_name)
 evr = get_evr_w_codes(psana.DetNames())
+print(evr.name)
 r_mask = get_r_masks(det_map['shape'])
 
 if rank == 0:
@@ -73,5 +79,6 @@ if rank == 0:
 else:
     peak_bin = int(cal_results['peak_bin'])
     delta_bin = int(cal_results['delta_bin'])
-    worker = MpiWorker(ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask, peak_bin=peak_bin, delta_bin=delta_bin)
+    worker = MpiWorker(ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask, cal_results, event_code=event_code)
+    print('Worker')
     worker.start_run()
