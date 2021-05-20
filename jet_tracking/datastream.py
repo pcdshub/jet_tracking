@@ -414,16 +414,15 @@ class MotorThread(QThread):
 
     def run(self):
         if self.move_type == "search":
-            #m1 = self.motor_ll + (self.motor_hl-self.motor_ll)/3
-            #m2 = self.motor_hl - (self.motor_hl-self.motor_hl)/3
-            self.motor_position = self._search(self.motor_hl, self.motor_ll, self.tol, 100)
-            self.ratio_intensity = self.ratio.get()
+            self.motor_position = self.motor.position
+            self.motor_position, self.ratio_intensity = self._search(self.motor_position, -.01, .01, .0005, 60)
             fig = plt.figure()
             plt.xlabel('motor position')
             plt.ylabel('I/I0 intensity')
             plt.plot(self.motor_position, self.ratio_intensity, 'ro')
             x = [a[0] for a in self.moves]
-            y = [b[0] for b in self.moves]
+            y = [b[1] for b in self.moves]
+            print(self.moves, x, y)
             plt.scatter(x, y)
             plt.show()
             self.signals.update_calibration.emit('ratio', self.ratio_intensity)
@@ -431,13 +430,13 @@ class MotorThread(QThread):
         elif self.move_type == "scan":
             print("scanning :", self.tol, self.motor_ll, self.motor_hl)
             self.motor_position = self._scan(self.motor_ll, self.motor_hl, self.tol, self.nsamp)
-            self.ratio_intensity = self.ratio.get()
+            self.ratio_intensity = self.moves[-1][1]
             fig = plt.figure()
             plt.xlabel('motor position')
             plt.ylabel('I/I0 intensity')
             plt.plot(self.motor_position, self.ratio_intensity, 'ro')
             x = [a[0] for a in self.moves]
-            y = [b[0] for b in self.moves]
+            y = [b[1] for b in self.moves]
             plt.scatter(x, y)
             plt.show()
             self.signals.update_calibration.emit('ratio', self.ratio_intensity)
@@ -453,27 +452,29 @@ class MotorThread(QThread):
        i0 = []
        for i in range(nsamp):
           i0.append(self.ratio.get())
-          time.sleep(1/50)
+          time.sleep(1/15)
        return(mean(i0))
 
-    def _search(self, left, right, tol, nsamp):
+    def _search(self, absolute, left, right, tol, nsamp):
         if abs(right - left) < tol:
-            self.motor.move((left+right)/2)
-            return((left+right)/2)
+            self.motor.move(((left+absolute)+(right+absolute))/2)
+            return(self.motor.position, self.average_int(nsamp))
         left_third = (2*left + right) / 3
         right_third = (left + 2*right) / 3
-        self.motor.move(left_third, wait=True)
-        left = self.motor.position
+        self.motor.move(left_third+absolute, wait=True)
+        left_p = self.motor.position
         i1 = self.average_int(nsamp)
-        self.motor.move(right_third, wait=True)
-        right = self.motor.position        
+        self.motor.move(right_third+absolute, wait=True)
+        right_p = self.motor.position        
         i2 = self.average_int(nsamp)
-        self.moves.extend([(left, i1), (right, i2)])
-
+        self.moves.extend([(left_p, i1), (right_p, i2)])
         if i1 < i2:
-            return(self._search(left_third, right, tol/2))
+            
+            self.signals.message.emit("i1<i2" + "left position: " + str(left_p) + " \n" + str(i1) + "right position: " + str(right_p) + " \n" + str(i2))
+            return(self._search(right_p, left_third, right, tol, nsamp))
         else:
-            return(self._search(right_third, left, tol/2)) 
+            self.signals.message.emit("i1>i2" + "left position: " + str(left_p) + " \n" + str(i1) + "right position: " + str(right_p) + " \n" + str(i2))
+            return(self._search(left_p, right_third, left, tol, nsamp)) 
 
 
     def _scan(self, left, right, tol, nsamp):

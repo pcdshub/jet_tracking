@@ -156,10 +156,14 @@ class JetTracking(Display):
         self.jet_peak_mean = 0
         self.jet_peak_std = 0
         
+        self.calibration_values = {}
+
         self.signals = Signals()
         self.worker = StatusThread(self.signals)
+        self.thread_options = {}
+
         self.worker_motor = None
-        self.buffer_size = 300
+        self.motor_options = {}
 
         # assemble widgets
         self.setup_ui()
@@ -253,7 +257,7 @@ class JetTracking(Display):
         self.layout_usr_cntrl = QVBoxLayout()
         self.frame_usr_cntrl.setLayout(self.layout_usr_cntrl)
 
-        self.lbl_usr_cntrl = Label("User Controls")
+        self.lbl_usr_cntrl = Label("Graphing/Data Controls")
         self.lbl_usr_cntrl.setTitleStylesheet()
         self.lbl_usr_cntrl.setMaximumHeight(35)
         self.layout_usr_cntrl.addWidget(self.lbl_usr_cntrl)
@@ -267,17 +271,111 @@ class JetTracking(Display):
         self.rdbttn_live = QRadioButton("live data")  # .setChecked(True)
         self.rdbttn_sim = QRadioButton("simulated data")  # .setChecked(False)
         self.rdbttn_live.setChecked(True)
-        self.bttngrp1.addButton(self.rdbttn_live)
-        self.bttngrp1.addButton(self.rdbttn_sim)
+        self.bttngrp1.addButton(self.rdbttn_live, id=1)
+        self.bttngrp1.addButton(self.rdbttn_sim, id=0)
         self.bttngrp1.setExclusive(True)  # allows only one button to be selected at a time
+ 
+        self.bttngrp3 = QButtonGroup()
+        self.rdbttn_cali_live = QRadioButton("Calibration in GUI")
+        self.rdbttn_cali = QRadioButton("Calibration from Results")
+        self.rdbttn_cali.setChecked(True)
+        self.bttngrp3.addButton(self.rdbttn_cali, id=0)
+        self.bttngrp3.addButton(self.rdbttn_cali_live, id=1)
+        self.bttngrp3.setExclusive(True)
+
+        self.thread_options['calibration source'] = self.bttngrp3.checkedId()        
+
+        # setup layout
+        ##############
+        self.frame_rdbttns = QFrame()
+        self.layout_allrdbttns = QGridLayout()
+        self.layout_allrdbttns.setColumnStretch(0, 1)
+        self.layout_allrdbttns.setColumnStretch(1, 1)
+        self.layout_allrdbttns.setColumnStretch(2, 1)
+        self.frame_rdbttns.setLayout(self.layout_allrdbttns)
+        self.layout_usr_cntrl.addWidget(self.frame_rdbttns)
+        self.layout_allrdbttns.addWidget(self.rdbttn_live, 0, 0)
+        self.layout_allrdbttns.addWidget(self.rdbttn_sim, 0, 1)
+        self.layout_allrdbttns.addWidget(self.rdbttn_cali, 1, 0)
+        self.layout_allrdbttns.addWidget(self.rdbttn_cali_live, 1, 1) 
+
+        #####################################################################
+        # make input box for changing nsampning for sigma
+        #####################################################################
+
+        self.lbl_sigma = Label("Sigma \n(0.1 - 5)")
+        self.le_sigma = LineEdit("2")
+        self.le_sigma.valRange(0.1, 5.0)
+
+        self.lbl_ave_graph = Label('averaging (graph) \n(5 - 300)')
+        self.lbl_samprate = Label('sampling rate \n(2 - 300)')
+        self.le_ave_graph = LineEdit("50")
+        self.le_ave_graph.valRange(5, 300)
+        self.le_samprate = LineEdit("50")
+        self.le_samprate.valRange(2, 300)
+
+        self.thread_options['sigma'] = float(self.le_sigma.text())
+        self.thread_options['averaging'] = float(self.le_ave_graph.text())
+        self.thread_options['sampling rate'] = float(self.le_samprate.text())
+
+        # setup layout
+        ##############
+        self.frame_samp = QFrame()
+        self.layout_samp = QHBoxLayout()
+        self.frame_samp.setLayout(self.layout_samp)
+        self.layout_usr_cntrl.addWidget(self.frame_samp)
+        self.layout_samp.addWidget(self.lbl_sigma)
+        self.layout_samp.addWidget(self.le_sigma)
+        self.layout_samp.addWidget(self.lbl_ave_graph)
+        self.layout_samp.addWidget(self.le_ave_graph)
+        self.layout_samp.addWidget(self.lbl_samprate)
+        self.layout_samp.addWidget(self.le_samprate)
+
+        ###################################################################
+        #  make section for editing motor parameters
+        ###################################################################
+
+        self.lbl_motor = Label("Motor Parameters (microns)")
+        self.lbl_motor.setTitleStylesheet()
+        self.layout_usr_cntrl.addWidget(self.lbl_motor)
 
         self.bttngrp2 = QButtonGroup()
         self.rdbttn_manual = QRadioButton("manual motor moving")  # .setChecked(True)
         self.rdbttn_auto = QRadioButton("automated motor moving")  # .setChecked(False)
         self.rdbttn_manual.setChecked(True)
-        self.bttngrp2.addButton(self.rdbttn_manual)
-        self.bttngrp2.addButton(self.rdbttn_auto)
+        self.bttngrp2.addButton(self.rdbttn_manual, id= 1)
+        self.bttngrp2.addButton(self.rdbttn_auto, id = 0)
         self.bttngrp2.setExclusive(True)  # allows only one button to be selected at a time
+
+        self.thread_options['manual motor'] = self.bttngrp2.checkedId()
+
+        self.lbl_motor_hl = Label("High Limit")
+        self.lbl_motor_ll = Label("Low Limit")
+        self.lbl_motor_size = Label("Step Size")
+        self.lbl_motor_average = Label("Average Intensity")
+        self.lbl_algorithm = Label("Algorithm")        
+
+        self.le_motor_hl = LineEdit("50")
+        self.le_motor_hl.valRange(-100, 100)
+
+        self.le_motor_ll = LineEdit("-50")
+        self.le_motor_ll.valRange(-100, 100)
+
+        self.le_size = LineEdit(".5")
+        self.le_size.valRange(0, 100)
+
+        self.le_ave_motor = LineEdit("10")
+        self.le_ave_motor.valRange(1, 300)
+
+        self.cbox_algorithm = ComboBox()
+        self.cbox_algorithm.addItem("Ternary Search")
+        self.cbox_algorithm.addItem("Full Scan")
+
+        self.motor_options['high limit'] = float(self.le_motor_hl.text())
+        self.motor_options['low limit'] = float(self.le_motor_ll.text())
+        self.motor_options['step size'] = float(self.le_size.text())
+        self.motor_options['averaging'] = float(self.le_ave_motor.text())
+        self.motor_options['scanning algorithm'] = self.cbox_algorithm.currentIndex()
 
         self.bttn_search = QPushButton()
         self.bttn_search.setText("Search")
@@ -291,106 +389,32 @@ class JetTracking(Display):
         self.bttn_stop_tracking.setText("Stop Tracking")
         self.bttn_stop_tracking.setEnabled(False)
 
-        self.bttngrp3 = QButtonGroup()
-
-        self.rdbttn_cali_live = QRadioButton("Calibration in GUI")
-        self.rdbttn_cali = QRadioButton("Calibration from Results")
-        self.rdbttn_cali.setChecked(True)
-        self.bttngrp3.addButton(self.rdbttn_cali)
-        self.bttngrp3.addButton(self.rdbttn_cali_live)
-        self.bttngrp3.setExclusive(True)        
-
-        # setup layout
-        ##############
-        self.frame_rdbttns = QFrame()
-        self.layout_allrdbttns = QGridLayout()
-        self.layout_allrdbttns.setColumnStretch(0, 1)
-        self.layout_allrdbttns.setColumnStretch(1, 1)
-        self.layout_allrdbttns.setColumnStretch(2, 1)
-        self.frame_rdbttns.setLayout(self.layout_allrdbttns)
-        self.layout_usr_cntrl.addWidget(self.frame_rdbttns)
-        self.layout_allrdbttns.addWidget(self.rdbttn_live, 0, 0)
-        self.layout_allrdbttns.addWidget(self.rdbttn_sim, 0, 1)
-        self.layout_allrdbttns.addWidget(self.rdbttn_manual, 1, 0)
-        self.layout_allrdbttns.addWidget(self.rdbttn_auto, 1, 1)
-        self.layout_allrdbttns.addWidget(self.bttn_search, 2, 0)
-        self.layout_allrdbttns.addWidget(self.bttn_tracking, 2, 1)
-        self.layout_allrdbttns.addWidget(self.bttn_stop_tracking, 2, 2)
-        self.layout_allrdbttns.addWidget(self.rdbttn_cali, 3, 0)
-        self.layout_allrdbttns.addWidget(self.rdbttn_cali_live,3, 1) 
-
-        #####################################################################
-        # make drop down menu for changing nsampning for sigma
-        #####################################################################
-
-        self.lbl_sigma = Label("Sigma \n(0.1 - 5)")
-        self.le_sigma = LineEdit("1")
-        self.le_sigma.valRange(0.1, 5.0)
-
-        self.lbl_nsamp = Label('number of samples \n(5 - 300)')
-        self.lbl_samprate = Label('sampling rate \n(2 - 300)')
-        self.le_nsamp = LineEdit("50")
-        self.le_nsamp.valRange(5, 300)
-        self.le_samprate = LineEdit("50")
-        self.le_samprate.valRange(2, 300)
-
-        # setup layout
-        ##############
-        self.frame_samp = QFrame()
-        self.layout_samp = QHBoxLayout()
-        self.frame_samp.setLayout(self.layout_samp)
-        self.layout_usr_cntrl.addWidget(self.frame_samp)
-        self.layout_samp.addWidget(self.lbl_sigma)
-        self.layout_samp.addWidget(self.le_sigma)
-        self.layout_samp.addWidget(self.lbl_nsamp)
-        self.layout_samp.addWidget(self.le_nsamp)
-        self.layout_samp.addWidget(self.lbl_samprate)
-        self.layout_samp.addWidget(self.le_samprate)
-
-        ############################
-
-        self.lbl_motor = Label("Motor Parameters (microns)")
-        self.lbl_motor.setTitleStylesheet()
-        self.layout_usr_cntrl.addWidget(self.lbl_motor)
-
-        self.lbl_motor_hl = Label("High Limit")
-        self.lbl_motor_ll = Label("Low Limit")
-        self.lbl_motor_size = Label("Step Size")
-        
-        self.le_motor_hl = LineEdit("50")
-        self.le_motor_hl.valRange(-100, 100)
-
-        self.le_motor_ll = LineEdit("-50")
-        self.le_motor_ll.valRange(-100, 100)
-
-        self.le_size = LineEdit(".5")
-        self.le_size.valRange(0, 100)
-
         self.frame_motor = QFrame()
-        self.layout_motor = QHBoxLayout()
+        self.layout_motor = QVBoxLayout()
+        self.layout_motor_manual = QHBoxLayout()
+        self.layout_motor_input = QGridLayout()
+        self.layout_motor_bttns = QHBoxLayout()
+        self.layout_motor.addLayout(self.layout_motor_manual)
+        self.layout_motor.addLayout(self.layout_motor_input)
+        self.layout_motor.addLayout(self.layout_motor_bttns)
         self.frame_motor.setLayout(self.layout_motor)
         self.layout_usr_cntrl.addWidget(self.frame_motor)
-        self.layout_motor.addWidget(self.lbl_motor_ll)
-        self.layout_motor.addWidget(self.le_motor_ll)
-        self.layout_motor.addWidget(self.lbl_motor_hl)
-        self.layout_motor.addWidget(self.le_motor_hl)
-        self.layout_motor.addWidget(self.lbl_motor_size)
-        self.layout_motor.addWidget(self.le_size)
-
-        #self.frame_nsamp = QFrame()
-        #self.layout_nsamp = QHBoxLayout()
-        #self.frame_nsamp.setLayout(self.layout_nsamp)
-        #self.layout_usr_cntrl.addWidget(self.frame_nsamp)
-        #self.layout_nsamp.addWidget(self.lbl_nsamp)
-        #self.layout_nsamp.addWidget(self.le_nsamp)
-
-        #self.frame_samprate = QFrame()
-        #self.layout_samprate = QHBoxLayout()
-        #self.frame_samprate.setLayout(self.layout_samprate)
-        #self.layout_usr_cntrl.addWidget(self.frame_samprate)
-        #self.layout_samprate.addWidget(self.lbl_samprate)
-        #self.layout_samprate.addWidget(self.le_samprate)
-
+        self.layout_motor_manual.addWidget(self.rdbttn_manual)
+        self.layout_motor_manual.addWidget(self.rdbttn_auto)
+        self.layout_motor_input.addWidget(self.lbl_motor_ll, 0, 0)
+        self.layout_motor_input.addWidget(self.le_motor_ll, 0, 1)
+        self.layout_motor_input.addWidget(self.lbl_motor_hl, 0, 2)
+        self.layout_motor_input.addWidget(self.le_motor_hl, 0, 3)
+        self.layout_motor_input.addWidget(self.lbl_motor_size, 1, 0)
+        self.layout_motor_input.addWidget(self.le_size, 1, 1)
+        self.layout_motor_input.addWidget(self.lbl_motor_average, 1, 2)
+        self.layout_motor_input.addWidget(self.le_ave_motor, 1, 3)
+        self.layout_motor_input.addWidget(self.lbl_algorithm, 2, 0)
+        self.layout_motor_input.addWidget(self.cbox_algorithm, 2, 1)
+        self.layout_motor_bttns.addWidget(self.bttn_search)
+        self.layout_motor_bttns.addWidget(self.bttn_tracking)
+        self.layout_motor_bttns.addWidget(self.bttn_stop_tracking)
+        
 
         #####################################################################
         # give a status area that displays values and current tracking
@@ -403,13 +427,11 @@ class JetTracking(Display):
         self.lbl_tracking = Label("Tracking")
         self.lbl_tracking.setSubtitleStyleSheet()
         self.lbl_tracking_status = Label("No Tracking")
-        self.lbl_tracking_status.setTrackingStylesheet()
+
         self.lbl_i0 = Label("Mean Initial intensity (I0)")
-        self.lbl_i0.setSubtitleStyleSheet()
         self.lbl_i0_status = QLCDNumber(7)
 
         self.lbl_diff_i0 = Label("Mean I/I0")
-        self.lbl_diff_i0.setSubtitleStyleSheet()
         self.lbl_diff_status = QLCDNumber(7)
 
         # setup layout
@@ -489,7 +511,7 @@ class JetTracking(Display):
         ###################################################
         self.le_sigma.checkVal.connect(self.update_sigma)
         self.le_samprate.checkVal.connect(self.update_samprate)
-        self.le_nsamp.checkVal.connect(self.update_nsamp)
+        self.le_ave_graph.checkVal.connect(self.update_nsamp)
         self.le_motor_ll.checkVal.connect(self.update_limits)
         self.le_motor_hl.checkVal.connect(self.update_limits)
         self.le_size.checkVal.connect(self.update_tol)
@@ -654,7 +676,7 @@ class JetTracking(Display):
                self.correction_thread.start()
 
     def update_sigma(self, sigma):
-        self.signals.sigmaval.emit(sigma)
+        self.signals.sigma.emit(sigma)
 
     def update_nsamp(self, nsamp):
         self.signals.nsampval.emit(nsamp)
