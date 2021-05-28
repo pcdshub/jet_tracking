@@ -1,6 +1,5 @@
 from mpi_worker import MpiWorker
 from mpi_master import MpiMaster
-from utils import get_r_masks, get_evr_w_codes
 from mpi4py import MPI
 import psana
 import yaml
@@ -11,6 +10,8 @@ import os
 import sys
 import logging
 from pathlib import Path
+sys.path.append('../')
+from utils import get_r_masks, get_evr_w_codes
 
 logger = logging.getLogger(__name__)
 

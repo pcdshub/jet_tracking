@@ -2,12 +2,10 @@ api_msg:
   port: 5000
 
 hutch: 'xcs'
-#experiment: 'xcsx39718'
-#run: '10'
 experiment: 'xcsx47519'
 run: '10'
 sim: false
-ffb: true
+ffb: false
 event_code: 137
 
 det_map:

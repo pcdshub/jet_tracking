@@ -1,5 +1,5 @@
 # Custom
-*.out # slurm log files
+*.out # slurm log
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

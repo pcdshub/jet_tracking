@@ -16,7 +16,7 @@ from bokeh.io import output_notebook
 import panel as pn
 import matplotlib.pyplot as plt
 from pathlib import Path
-sys.path.append('../mpi_scripts/')
+sys.path.append('../')
 from utils import get_evr_w_codes, get_r_masks
 
 # Need to go to stdout for arp/sbatch
@@ -464,6 +464,7 @@ if __name__ == '__main__':
 
         # Get the integrated intensity and generate fig
         integrated_intensity = get_integrated_intensity(ave_azav, peak_bin, cal_params['delta_bin'])
+        int_hist, int_edges, int_low, int_high, int_med = peak_lr(integrated_intensity)
         p1 = azav_fig(ave_azav, peak_bin, integrated_intensity, cal_params['delta_bin'])
 
         # Go back through indices and find peak values for all the intensities
@@ -485,6 +486,9 @@ if __name__ == '__main__':
             'i0_low': i0_low,
             'i0_high': i0_high,
             'i0_median': i0_med,
+            'int_low': int_low,
+            'int_high': int_high,
+            'int_median': int_med,
             'peak_bin': peak_bin,
             'delta_bin': cal_params['delta_bin'],
             'mean_ratio': mean_ratio,
@@ -531,7 +535,7 @@ if __name__ == '__main__':
                 json.dump(results, f)
             logger.info('Saved calibration to {}'.format(res_file))
         except Exception as e:
-            logger.warning('Unable to write to {}opr experiment directory: {}'.format(e))
+            logger.warning('Unable to write to {}opr experiment directory: {}'.format(hutch, e))
 
         # Accumulate plots and write report
         gspec = pn.GridSpec(sizing_mode='stretch_both', name='JT Cal Results: Run {}'.format(run))
