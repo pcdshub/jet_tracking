@@ -39,6 +39,7 @@ with open(args.cfg_file) as f:
     exp = yml_dict['experiment']
     run = yml_dict['run']
     event_code = yml_dict['event_code']
+    #wf_length = yml_dict['wf_length']
 
 # Get calibration results
 calib_dir = Path(''.join(['/cds/data/psdm/', hutch, '/', exp, '/calib/']))
