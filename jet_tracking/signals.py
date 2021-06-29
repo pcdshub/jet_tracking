@@ -13,13 +13,13 @@ class Signals(QtCore.QObject):
     message = QtCore.pyqtSignal(str)
     tol = QtCore.pyqtSignal(float)
     limits = QtCore.pyqtSignal(float, float)
-
+    getThreadOptions = QtCore.pyqtSignal()
+    
     # emitted in main window
     rdbttn_status = QtCore.pyqtSignal(int)
-    sigmaval = QtCore.pyqtSignal(float)
-    nsampval = QtCore.pyqtSignal(float)
     motormove = QtCore.pyqtSignal(int)
-    samprate = QtCore.pyqtSignal(float)
+    threadOp = QtCore.pyqtSignal(dict)
+    motorOp = QtCore.pyqtSignal(dict)
     
     # calibration
     ali0 = QtCore.pyqtSignal(float)
@@ -29,3 +29,4 @@ class Signals(QtCore.QObject):
     motorPV = QtCore.pyqtSignal(str)
     finished = QtCore.pyqtSignal(dict)
     update_calibration = QtCore.pyqtSignal(str, float)
+    getMotorOptions = QtCore.pyqtSignal()

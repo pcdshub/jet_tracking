@@ -22,6 +22,7 @@ from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
                             QVBoxLayout)
 
 from signals import Signals
+from jetgraphing import ScrollingTimeWidget, graph_setup
 
 logging = logging.getLogger('pydm')
 logging.setLevel('CRITICAL')
@@ -140,30 +141,42 @@ class JetTracking(Display):
         # load data from file
         self.load_data()
         #parsed_args, unparsed_args = self.read_args()
+       
+        self.hutch = ' '
+        self.calibration_values = {
+                   "i0_low" : 0, 
+                   "i0_high" : 0,
+                   "i0_median" : 0,
+                   "peak_bin" : 0,
+                   "delta_bin" : 0,
+                   "mean_ratio" : 0,
+                   "med_ratio" : 0,
+                   "std_ratio" : 0,
+                   "jet_loc_mean" : 0,
+                   "jet_loc_std" : 0,
+                   "jet_peak_mean" : 0,
+                   "jet_peak_std" : 0,
+                   }
 
-        #  calibration values
-        self.hutch = ' ' #default is CXI
-        self.i0_low = 0
-        self.i0_high = 0
-        self.i0_med = 0
-        self.peak_bin = 0
-        self.delta_bin = 0
-        self.mean_ratio = 0
-        self.med_ratio = 0
-        self.std_ratio = 0
-        self.jet_loc_mean = 0
-        self.jet_loc_std = 0
-        self.jet_peak_mean = 0
-        self.jet_peak_std = 0
-        
-        self.calibration_values = {}
-
-        self.signals = Signals()
-        self.worker = StatusThread(self.signals)
+        self.SIGNALS = Signals()
+        self.worker = StatusThread(self.SIGNALS)
         self.thread_options = {}
+        #  keys:
+        #  live graphing
+        #  calibration source
+        #  sigma
+        #  averaging
+        #  sampling rate
+        #  manual motor
 
         self.worker_motor = None
         self.motor_options = {}
+        #  keys:
+        #  high limit
+        #  low limit
+        #  step size
+        #  averaging
+        #  scanning algorithm
 
         # assemble widgets
         self.setup_ui()
@@ -247,7 +260,7 @@ class JetTracking(Display):
         ################################
 
         # default is to use live graphing
-        self.liveGraphing()
+        self.live_graphing()
 
         #####################################################################
         # set up user panel layout and give it a title
@@ -276,14 +289,12 @@ class JetTracking(Display):
         self.bttngrp1.setExclusive(True)  # allows only one button to be selected at a time
  
         self.bttngrp3 = QButtonGroup()
-        self.rdbttn_cali_live = QRadioButton("Calibration in GUI")
-        self.rdbttn_cali = QRadioButton("Calibration from Results")
+        self.rdbttn_cali_live = QRadioButton("calibration in GUI")
+        self.rdbttn_cali = QRadioButton("calibration from results")
         self.rdbttn_cali.setChecked(True)
         self.bttngrp3.addButton(self.rdbttn_cali, id=0)
         self.bttngrp3.addButton(self.rdbttn_cali_live, id=1)
         self.bttngrp3.setExclusive(True)
-
-        self.thread_options['calibration source'] = self.bttngrp3.checkedId()        
 
         # setup layout
         ##############
@@ -306,17 +317,13 @@ class JetTracking(Display):
         self.lbl_sigma = Label("Sigma \n(0.1 - 5)")
         self.le_sigma = LineEdit("2")
         self.le_sigma.valRange(0.1, 5.0)
-
+        
         self.lbl_ave_graph = Label('averaging (graph) \n(5 - 300)')
         self.lbl_samprate = Label('sampling rate \n(2 - 300)')
         self.le_ave_graph = LineEdit("50")
         self.le_ave_graph.valRange(5, 300)
         self.le_samprate = LineEdit("50")
         self.le_samprate.valRange(2, 300)
-
-        self.thread_options['sigma'] = float(self.le_sigma.text())
-        self.thread_options['averaging'] = float(self.le_ave_graph.text())
-        self.thread_options['sampling rate'] = float(self.le_samprate.text())
 
         # setup layout
         ##############
@@ -347,8 +354,6 @@ class JetTracking(Display):
         self.bttngrp2.addButton(self.rdbttn_auto, id = 0)
         self.bttngrp2.setExclusive(True)  # allows only one button to be selected at a time
 
-        self.thread_options['manual motor'] = self.bttngrp2.checkedId()
-
         self.lbl_motor_hl = Label("High Limit")
         self.lbl_motor_ll = Label("Low Limit")
         self.lbl_motor_size = Label("Step Size")
@@ -370,12 +375,6 @@ class JetTracking(Display):
         self.cbox_algorithm = ComboBox()
         self.cbox_algorithm.addItem("Ternary Search")
         self.cbox_algorithm.addItem("Full Scan")
-
-        self.motor_options['high limit'] = float(self.le_motor_hl.text())
-        self.motor_options['low limit'] = float(self.le_motor_ll.text())
-        self.motor_options['step size'] = float(self.le_size.text())
-        self.motor_options['averaging'] = float(self.le_ave_motor.text())
-        self.motor_options['scanning algorithm'] = self.cbox_algorithm.currentIndex()
 
         self.bttn_search = QPushButton()
         self.bttn_search.setText("Search")
@@ -503,11 +502,25 @@ class JetTracking(Display):
         self.layout_main.addWidget(self.frame_graph, 75)
         self.layout_main.addWidget(self.frame_usr_cntrl, 25)
 
-        self.graph_setup()
+        ##################################################
+        #  tracking values
+        ##################################################
 
+        self.thread_options['live graphing'] = self.bttngrp1.checkedId()
+        self.thread_options['calibration source'] = self.bttngrp3.checkedId()
+        self.thread_options['sigma'] = float(self.le_sigma.text())
+        self.thread_options['averaging'] = float(self.le_ave_graph.text())
+        self.thread_options['sampling rate'] = float(self.le_samprate.text())
+        self.thread_options['manual motor'] = self.bttngrp2.checkedId()
+
+        self.motor_options['high limit'] = float(self.le_motor_hl.text())
+        self.motor_options['low limit'] = float(self.le_motor_ll.text())
+        self.motor_options['step size'] = float(self.le_size.text())
+        self.motor_options['averaging'] = float(self.le_ave_motor.text())
+        self.motor_options['scanning algorithm'] = self.cbox_algorithm.currentIndex()
 
         ###################################################
-        # signals and slots
+        # SIGNALS and slots
         ###################################################
         self.le_sigma.checkVal.connect(self.update_sigma)
         self.le_samprate.checkVal.connect(self.update_samprate)
@@ -518,23 +531,24 @@ class JetTracking(Display):
         self.bttngrp1.buttonClicked.connect(self.checkBttn)
         self.bttngrp2.buttonClicked.connect(self.checkBttn)
         self.bttngrp3.buttonClicked.connect(self.checkBttn)
+        self.SIGNALS.getThreadOptions.connect(self.get_thread_options)
+        self.SIGNALS.getMotorOptions.connect(self.get_motor_options)
 
         self.bttn_start.clicked.connect(self._start)
         self.bttn_stop.clicked.connect(self._stop)
         self.bttn_calibrate.clicked.connect(self._calibrate)
-        self.signals.status.connect(self.update_status)
-        self.signals.calibration_value.connect(self.update_calibration)
+        self.SIGNALS.status.connect(self.update_status)
+        self.SIGNALS.calibration_value.connect(self.update_calibration)
 
         self.bttn_search.clicked.connect(self._start_search)
         self.bttn_tracking.clicked.connect(self._start_tracking)
         self.bttn_stop_tracking.clicked.connect(self._stop_tracking)
 
-        self.signals.status.connect(self.update_status)
-        self.signals.buffers.connect(self.plot_data)
-        self.signals.avevalues.connect(self.plot_ave_data)
-
-        self.signals.finished.connect(self._motor_stop)
-        self.signals.message.connect(self.receive_message)
+        self.SIGNALS.status.connect(self.update_status)
+        self.SIGNALS.buffers.connect(self.plot_data)
+        self.SIGNALS.avevalues.connect(self.plot_ave_data)
+        self.SIGNALS.finished.connect(self._motor_stop)
+        self.SIGNALS.message.connect(self.receive_message)
         ###################################################
 
     def _start(self):
@@ -542,6 +556,7 @@ class JetTracking(Display):
         ## if it is we don't want to restart it! we might want to change the mode though
         ## if not start the thread
         ## if thread is running start is pressed do nothing
+        self.SIGNALS.threadOp.emit(self.thread_options)
         self.worker.start()
 
     def _stop(self):
@@ -555,50 +570,61 @@ class JetTracking(Display):
         self.worker_motor.wait()
 
     def _calibrate(self):
-        button = self.bttngrp3.checkedButton()
-        button_text = button.text()
-        print(button_text)
-        if self.bttngrp3.checkedButton().text() == "Calibration from Results":
-            print("I am calibrating from results")
-            self.signals.mode.emit("get calibration")
-        elif self.bttngrp3.checkedButton().text() == "Calibration in GUI":
-            print("I am calibrating from the GUI")
-            self.signals.mode.emit("calibration")
-        self.text_area.append("obtaining calibration values... ")
         self._start()
+        if not self.worker.isRunning():
+            self.text_area.append("You are not running so there's \
+                  nothing to calibrate.. hit start first")
+        else:
+            self.SIGNALS.threadOp.emit(self.thread_options)
+            self.SIGNALS.mode.emit("calibrate")
 
     def _start_search(self):
         if self.worker.isRunning():
-            self.worker_motor = MotorThread(self.signals, "search")
+            self.worker_motor = MotorThread(self.SIGNALS, "search")
             self.worker_motor.start()
         else:
             self.text_area.append("there's nothing to scan!")
 
     def _start_tracking(self):
-        self.signals.motormove.emit(1)
+        self.SIGNALS.motormove.emit(1)
 
     def _stop_tracking(self):
-        self.signals.motormove.emit(2)
+        self.SIGNALS.motormove.emit(2)
 
     def update_calibration(self, cal):
-        print(cal)
-        self.lbl_i0_status.display(cal['i0']['mean'])
-        self.lbl_diff_status.display(cal['ratio']['mean'])
+        if self.thread_options['calibration source'] == 'calibration in GUI':
+            self.calibration_values['i0_median'] = cal['i0']['mean']
+            self.calibration_values['i0_low'] = (cal['i0']['mean']-cal['i0']['stdev'])
+            self.calibration_values['i0_high'] = (cal['i0']['mean']+cal['i0']['stdev'])
+            self.calibration_values['mean_ratio'] = cal['ratio']['mean']
+            self.calibration_values['std_ratio'] = cal['ratio']['stdev']
+        elif self.thread_options['calibration source'] == 'calibration from results':
+            self.calibration_values = cal
+        else:
+            self.text_area.append('there is something wrong with the calibration')
+        self.lbl_i0_status.display(self.calibration_values['i0_median'])
+        self.lbl_diff_status.display(self.calibration_values['mean_ratio'])
         
 
-    def liveGraphing(self):
+    def live_graphing(self):
 
         self.clearLayout(self.layout_graph)
 
-        self.graph1 = pg.PlotWidget()
-        self.graph2 = pg.PlotWidget()
-        self.graph3 = pg.PlotWidget()
+        self.ratio_graph = ScrollingTimeWidget(self.SIGNALS)
+        self.i0_graph = ScrollingTimeWidget(self.SIGNALS)
+        self.diff_graph = ScrollingTimeWidget(self.SIGNALS)
 
-        self.layout_graph.addWidget(self.graph1)
-        self.layout_graph.addWidget(self.graph2)
-        self.layout_graph.addWidget(self.graph3)
-
-        self.graph_setup()
+        graph_setup(self.ratio_graph, "Intensity Ratio", f"I/I\N{SUBSCRIPT ZERO}", \
+                        pg.mkPen(width=5, color='r'))
+        graph_setup(self.i0_graph, "Initial Intensity", f"I\N{SUBSCRIPT ZERO}", \
+                        pg.mkPen(width=5, color='b'))
+        graph_setup(self.diff_graph, "Intensity at the Detector", "Diffraction Intensity", \
+                        pg.mkPen(width=5, color='g'))  
+        self.i0_graph.setXLink(self.ratio_graph)
+        self.diff_graph.setXLink(self.ratio_graph)
+        self.layout_graph.addWidget(self.ratio_graph)
+        self.layout_graph.addWidget(self.i0_graph)
+        self.layout_graph.addWidget(self.diff_graph)
 
     def clearLayout(self, layout):
         for i in reversed(range(layout.count())):
@@ -606,61 +632,29 @@ class JetTracking(Display):
             layout.removeWidget(widgetToRemove)
             widgetToRemove.setParent(None)
 
-    def graph_setup(self):
-        self.xRange = 300
-        styles = {'color':'b','font-size': '20px'}
-        self.graph1.setLabels(left="I/I0", bottom="Time")
-        self.graph1.setTitle(title="Intensity Ratio")
-        self.graph1.plotItem.showGrid(x=True, y=True)
-        self.graph2.setLabels(left="I0", bottom=("Time", "s"))
-        self.graph2.setTitle(title="Initial Intensity")
-        self.graph2.showGrid(x=True, y=True)
-        self.graph3.setLabels(left="I", bottom=("Time", "s"))
-        self.graph3.setTitle(title="Diffraction Intensity")
-        self.graph3.showGrid(x=True, y=True)
-        self.plot1 = pg.ScatterPlotItem(pen=pg.mkPen(width=5, color='r'),
-                                          size=1)
-        self.graph1.addItem(self.plot1)
-        self.plot1ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
-                                           size=1)
-        self.plot1cali = pg.PlotCurveItem(pen=pg.mkPen(width=1, color=(255, 255, 0)),
-                                           size=1, style=Qt.DashLine)
-        self.plot1sigmalow = pg.PlotCurveItem(pen=pg.mkPen(width=1, color=(255, 255, 0)),
-                                           size=1, style=Qt.DashLine)
-        self.plot1sigmahigh = pg.PlotCurveItem(pen=pg.mkPen(width=1, color=(255, 255, 0)),
-                                           size=1, style=Qt.DashLine)
-        self.graph1.addItem(self.plot1ave)
-        self.graph1.addItem(self.plot1cali)
-        self.graph1.addItem(self.plot1sigmalow)
-        self.graph1.addItem(self.plot1sigmahigh)
-        self.cali = []
-        self.sigma = []
-        self.plot2 = pg.PlotCurveItem(pen=pg.mkPen(width=2, color='b'), size=1)
-        self.graph2.addItem(self.plot2)
-        self.plot2ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
-                                         size=1, style=Qt.DashLine)
-        self.graph2.addItem(self.plot2ave)
-
-        self.plot3 = pg.PlotCurveItem(pen=pg.mkPen(width=2, color='g'), size=1)
-        self.graph3.addItem(self.plot3)
-        self.plot3ave = pg.PlotCurveItem(pen=pg.mkPen(width=1, color='w'),
-                                         size=1, style=Qt.DashLine)
-        self.graph3.addItem(self.plot3ave)
-
-        self.graph2.setXLink(self.graph1)
-        self.graph3.setXLink(self.graph1)
-
     def plot_data(self, data):
-        #self.cali.append(
-        self.plot1.setData(list(data['time']), list(data['ratio']))
-        self.graph1.setXRange(list(data['time'])[0], list(data['time'])[-1])
-        self.plot2.setData(list(data['time']), list(data['i0']))
-        self.plot3.setData(list(data['time']), list(data['diff']))
+        self.ratio_graph.plt.setData(list(data['time']), list(data['ratio']))
+        self.ratio_graph.sigma_low.setData(list(data['time']), list(collections.deque(\
+                  [(self.calibration_values['mean_ratio'] - \
+                  self.calibration_values['std_ratio'])]*300, 300)))
+        self.ratio_graph.sigma_high.setData(list(data['time']), list(collections.deque(\
+                  [(self.calibration_values['mean_ratio'] + \
+                  self.calibration_values['std_ratio'])]*300, 300)))
+        self.ratio_graph.setXRange(list(data['time'])[0], list(data['time'])[-1])
+
+        self.i0_graph.plt.setData(list(data['time']), list(data['i0']))
+        self.i0_graph.sigma_low.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['i0_low']]*300, 300)))
+        self.i0_graph.sigma_high.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['i0_high']]*300, 300)))
+        self.diff_graph.plt.setData(list(data['time']), list(data['diff']))
+        self.diff_graph.sigma_high.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['i0_high']]*300, 300)))
 
     def plot_ave_data(self, data):
-        self.plot1ave.setData(list(data['time']), list(data['average ratio']))
-        self.plot2ave.setData(list(data['time']), list(data['average i0']))
-        self.plot3ave.setData(list(data['time']), list(data['average diff']))
+        self.ratio_graph.avePlt.setData(list(data['time']), list(data['average ratio']))
+        self.i0_graph.avePlt.setData(list(data['time']), list(data['average i0']))
+        self.diff_graph.avePlt.setData(list(data['time']), list(data['average diff']))
 
     def update_status(self, status, color):
         self.lbl_tracking_status.setText(status)
@@ -676,26 +670,49 @@ class JetTracking(Display):
                self.correction_thread.start()
 
     def update_sigma(self, sigma):
-        self.signals.sigma.emit(sigma)
+        self.thread_options['sigma'] = sigma
+        self.SIGNALS.threadOp.emit(self.thread_options)
 
     def update_nsamp(self, nsamp):
-        self.signals.nsampval.emit(nsamp)
+        self.thread_options['average'] = nsamp
+        self.SIGNALS.threadOp.emit(self.thread_options)
 
     def update_samprate(self, samprate):
-        self.signals.samprate.emit(samprate)
+        self.thread_options['sampling rate'] = samprate
+        self.SIGNALS.threadOp.emit(self.thread_options)
 
     def update_limits(self, limit):
-        self.signals.limits.emit(float(self.le_motor_ll.text()), float(self.le_motor_hl.text()))
+        self.motor_options['high limit'] = float(self.le_motor_hl.text())
+        self.motor_options['low limit'] = float(self.le_motor_ll.text())
+        self.SIGNALS.motorOp.emit(self.motor_options)
 
     def update_tol(self, tol):
-        print(tol)
-        self.signals.tol.emit(tol)
+        self.motor_options['step size'] = float(tol)
+        self.SIGNALS.motorOp.emit(self.motor_options)
+
+    def update_motor_avg(self, avg):
+        self.motor_options['averaging'] = float(avg)
+        self.SIGNALS.motorOp.emit(self.motor_options)
+
+    def update_algorithm(self, alg):
+        #  index:
+        #  0 - 
+        #  1 -
+        #  2 - 
+        self.motor_options['scanning algorithm'] = self.cbox_algorithm.currentIndex()
+        self.SIGNALS.motorOp.emit(self.motor_options)
+
+    def get_thread_options(self):
+        self.SIGNALS.threadOp.emit(self.thread_options)
+
+    def get_motor_options(self):
+        self.SIGNALS.motorOp.emit(self.motor_options)
 
     def receive_message(self, message):
         self.text_area.append(message)
 
     def cleanup_correction(self):
-       self.signals.correction_thread = None
+       self.SIGNALS.correction_thread = None
        self.thread.reset_buffers(value)
 
     def checkBttn(self, button):
@@ -703,10 +720,10 @@ class JetTracking(Display):
         if bttn == "simulated data":
             self.rdbttn_manual.click()
             self.rdbttn_auto.setEnabled(False)
-            self.signals.run_live.emit(0)
+            self.SIGNALS.run_live.emit(0)
         elif bttn == "live data":
             self.rdbttn_auto.setEnabled(True)
-            self.signals.run_live.emit(1)
+            self.SIGNALS.run_live.emit(1)
         elif bttn == "manual motor moving":
             self.bttn_search.setEnabled(False)
             self.bttn_tracking.setEnabled(False)
@@ -715,9 +732,13 @@ class JetTracking(Display):
             self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(True)
             self.bttn_stop_tracking.setEnabled(True)
+        elif bttn == "calibration in GUI":
+            self.thread_options['calibration source'] = bttn
+        elif bttn == "calibration from results":
+            self.thread_options['calibration source'] = bttn
+
     
     def setDefaultStyleSheet(self):
-
         # This should be done with a json file
 
         self.setStyleSheet("\
