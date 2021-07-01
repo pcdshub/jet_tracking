@@ -127,9 +127,6 @@ class Label(QLabel):
 
 
 class JetTracking(Display):
-    rdbuttonstatus = pyqtSignal(int)
-    sigmaval = pyqtSignal(int)
-    nsampval = pyqtSignal(int)
 
     def __init__(self, parent=None, args=None, macros=None):
         super(JetTracking, self).__init__(parent=parent, args=args, macros=macros)
@@ -158,13 +155,11 @@ class JetTracking(Display):
                    "jet_peak_std" : 0,
                    }
 
-        self.SIGNALS = Signals()
-        self.worker = StatusThread(self.SIGNALS)
         self.thread_options = {}
         #  keys:
         #  live graphing
         #  calibration source
-        #  sigma
+        #  percent
         #  averaging
         #  sampling rate
         #  manual motor
@@ -177,6 +172,9 @@ class JetTracking(Display):
         #  step size
         #  averaging
         #  scanning algorithm
+
+        self.SIGNALS = Signals()
+        self.worker = StatusThread(self.SIGNALS)
 
         # assemble widgets
         self.setup_ui()
@@ -311,12 +309,14 @@ class JetTracking(Display):
         self.layout_allrdbttns.addWidget(self.rdbttn_cali_live, 1, 1) 
 
         #####################################################################
-        # make input box for changing nsampning for sigma
+        # make input box for changing the percent of allowed values from the
+        # mean and the number of points for averaging on the graph and the 
+        # refresh rate to update the points/graph
         #####################################################################
 
-        self.lbl_sigma = Label("Sigma \n(0.1 - 5)")
-        self.le_sigma = LineEdit("2")
-        self.le_sigma.valRange(0.1, 5.0)
+        self.lbl_percent = Label("Percent \n(0 - 100)")
+        self.le_percent = LineEdit("70")
+        self.le_percent.valRange(0, 100)
         
         self.lbl_ave_graph = Label('averaging (graph) \n(5 - 300)')
         self.lbl_samprate = Label('sampling rate \n(2 - 300)')
@@ -331,8 +331,8 @@ class JetTracking(Display):
         self.layout_samp = QHBoxLayout()
         self.frame_samp.setLayout(self.layout_samp)
         self.layout_usr_cntrl.addWidget(self.frame_samp)
-        self.layout_samp.addWidget(self.lbl_sigma)
-        self.layout_samp.addWidget(self.le_sigma)
+        self.layout_samp.addWidget(self.lbl_percent)
+        self.layout_samp.addWidget(self.le_percent)
         self.layout_samp.addWidget(self.lbl_ave_graph)
         self.layout_samp.addWidget(self.le_ave_graph)
         self.layout_samp.addWidget(self.lbl_samprate)
@@ -508,7 +508,7 @@ class JetTracking(Display):
 
         self.thread_options['live graphing'] = self.bttngrp1.checkedId()
         self.thread_options['calibration source'] = self.bttngrp3.checkedId()
-        self.thread_options['sigma'] = float(self.le_sigma.text())
+        self.thread_options['percent'] = float(self.le_percent.text())
         self.thread_options['averaging'] = float(self.le_ave_graph.text())
         self.thread_options['sampling rate'] = float(self.le_samprate.text())
         self.thread_options['manual motor'] = self.bttngrp2.checkedId()
@@ -522,7 +522,7 @@ class JetTracking(Display):
         ###################################################
         # SIGNALS and slots
         ###################################################
-        self.le_sigma.checkVal.connect(self.update_sigma)
+        self.le_percent.checkVal.connect(self.update_percent)
         self.le_samprate.checkVal.connect(self.update_samprate)
         self.le_ave_graph.checkVal.connect(self.update_nsamp)
         self.le_motor_ll.checkVal.connect(self.update_limits)
@@ -634,21 +634,21 @@ class JetTracking(Display):
 
     def plot_data(self, data):
         self.ratio_graph.plt.setData(list(data['time']), list(data['ratio']))
-        self.ratio_graph.sigma_low.setData(list(data['time']), list(collections.deque(\
+        self.ratio_graph.percent_low.setData(list(data['time']), list(collections.deque(\
                   [(self.calibration_values['mean_ratio'] - \
                   self.calibration_values['std_ratio'])]*300, 300)))
-        self.ratio_graph.sigma_high.setData(list(data['time']), list(collections.deque(\
+        self.ratio_graph.percent_high.setData(list(data['time']), list(collections.deque(\
                   [(self.calibration_values['mean_ratio'] + \
                   self.calibration_values['std_ratio'])]*300, 300)))
         self.ratio_graph.setXRange(list(data['time'])[0], list(data['time'])[-1])
 
         self.i0_graph.plt.setData(list(data['time']), list(data['i0']))
-        self.i0_graph.sigma_low.setData(list(data['time']), list(collections.deque(\
+        self.i0_graph.percent_low.setData(list(data['time']), list(collections.deque(\
                   [self.calibration_values['i0_low']]*300, 300)))
-        self.i0_graph.sigma_high.setData(list(data['time']), list(collections.deque(\
+        self.i0_graph.percent_high.setData(list(data['time']), list(collections.deque(\
                   [self.calibration_values['i0_high']]*300, 300)))
         self.diff_graph.plt.setData(list(data['time']), list(data['diff']))
-        self.diff_graph.sigma_high.setData(list(data['time']), list(collections.deque(\
+        self.diff_graph.percent_high.setData(list(data['time']), list(collections.deque(\
                   [self.calibration_values['i0_high']]*300, 300)))
 
     def plot_ave_data(self, data):
@@ -669,8 +669,8 @@ class JetTracking(Display):
                self.correction_thread.finished.connect(self.cleanup_correction)
                self.correction_thread.start()
 
-    def update_sigma(self, sigma):
-        self.thread_options['sigma'] = sigma
+    def update_percent(self, percent):
+        self.thread_options['percent'] = percent
         self.SIGNALS.threadOp.emit(self.thread_options)
 
     def update_nsamp(self, nsamp):

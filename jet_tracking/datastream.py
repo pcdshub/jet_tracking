@@ -5,6 +5,7 @@ import threading
 import json
 from pathlib import Path
 from statistics import mean, stdev, StatisticsError
+import scipy.stats as st
 import numpy as np
 from pcdsdevices.epics_motor import IMS
 from ophyd import EpicsSignal
@@ -66,7 +67,7 @@ def DivWithTry(v1, v2):
     try:
         a = v1/v2
     except (TypeError, ZeroDivisionError) as e:
-        print(f"got error [e]")
+        #print(f"got error [e]")
         a = 0
     return(a)
         
@@ -166,7 +167,7 @@ class StatusThread(QThread):
         self.count = 0
         self.calibrated = False
         self.calibration_time = 10
-        self.calibration_values = {"i0": {'mean': 0, 'stdev': 0}, "diff": {'mean': 0, 'stdev': 0}, "ratio": {'mean': 0, 'stdev': 0}}
+        self.calibration_values = {'i0':{'mean':0, 'stdev':0, 'range':(0, 0)}, 'diff':{'mean':0, 'stdev':0, 'range':(0, 0)}, 'ratio':{'mean':0, 'stdev':0, 'range':(0, 0)}}
         self.i0_rdbutton_selection = 'gatt' #this should change
 
         ## buffers and data collection 
@@ -174,7 +175,7 @@ class StatusThread(QThread):
                          "average diff": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                          "average ratio": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                          "time": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE)}
-        self.flaggedEvents = {"low intensity": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
+        self.flagged_events = {"low intensity": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                             "missed shot": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                             "dropped shot": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE)}
         self.buffers = {"i0":collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
@@ -195,6 +196,15 @@ class StatusThread(QThread):
         self.SIGNALS.getThreadOptions.emit()
 
     def set_options(self, options):
+        """sets the thread options anytime something from the main gui side changes
+        The thread options are:
+        live graphing:
+        calibration source
+        percent
+        averaging
+        sampling rate: 
+        manual motor: bool
+        """
         self.thread_options = options
 
     def update_mode(self, mode):
@@ -226,13 +236,13 @@ class StatusThread(QThread):
                 if self.count % self.thread_options['averaging'] == 0:
                     try:
                         avei0 =  mean(Skimmer('dropped shot',
-                                           list(self.buffers['i0']), self.flaggedEvents))
+                                           list(self.buffers['i0']), self.flagged_events))
                         self.averages["average i0"].append(avei0)
                         avediff =  mean(Skimmer('dropped shot',
-                                           list(self.buffers['diff']), self.flaggedEvents))
+                                           list(self.buffers['diff']), self.flagged_events))
                         self.averages["average diff"].append(avediff)
                         averatio =  mean(Skimmer('dropped shot',
-                                     list(self.buffers['ratio']), self.flaggedEvents))
+                                     list(self.buffers['ratio']), self.flagged_events))
                         self.averages["average ratio"].append(averatio)
                     except StatisticsError:
                         for i in range(len(self.averages)-1):
@@ -249,38 +259,60 @@ class StatusThread(QThread):
 
     def check_status_update(self):
         if self.calibrated:
-            if np.count_nonzero(self.flaggedEvents['missed shot']) > self.NOTIFICATION_TOLERANCE:
+            if np.count_nonzero(self.flagged_events['missed shot']) > self.NOTIFICATION_TOLERANCE:
                 self.SIGNALS.status.emit("warning, missed shots", "red")
-            elif np.count_nonzero(self.flaggedEvents['dropped shot'])> self.NOTIFICATION_TOLERANCE:
+            elif np.count_nonzero(self.flagged_events['dropped shot'])> self.NOTIFICATION_TOLERANCE:
                 self.SIGNALS.status.emit("lots of dropped shots", "yellow")
-            elif np.count_nonzero(self.flaggedEvents['low intensity']) > self.NOTIFICATION_TOLERANCE:
-                self.SIGNALS.status.emit("low intensity", "orange")
+            elif np.count_nonzero(self.flagged_events['high intensity']) > self.NOTIFICATION_TOLERANCE:
+                self.SIGNALS.status.emit("High Intensity", "orange") # when timer reaches 2 minutes emit "High intensity still, consider re-calibrating"
             else:
                 self.SIGNALS.status.emit("everything is good", "green")
         else:
             self.SIGNALS.status.emit("not calibrated", "orange")
 
+    def normal_range(self, percent, sigma, mean):
+        """ Used to find the upper and lower values on a normal distribution curve
+        Parameters
+        ----------
+        percent: float
+                 the percent represents the range of allowed values from the mean
+        sigma: float
+                 sigma as provided by the calibration
+        mean: float
+                 mean as provided by the calibration
+        returns
+        -------
+        a: float
+                 the lower value percent/2 away from the mean
+        b: float
+                 the upper value percent2 away from the mean
+        """
+        L = (1 - percent) /  2.
+        r = 1 - L
+        zL = st.norm.ppf(L)
+        zr = st.norm.ppf(r)
+        a = (zL * sigma)
+        b = (zr * sigma)
+        return(a, b)
+
     def event_flagging(self):
-        if (self.buffers['ratio'][-1] <  
-                (self.calibration_values['ratio']['mean'] - 
-                self.thread_options['sigma']*self.calibration_values['ratio']['stdev'])):
-            self.flaggedEvents['low intensity'].append(self.buffers['ratio'][-1])
+        """ The method of flagging values that are outside of the values indicated
+        from the gui. Values that fall within the allowed range receive a value of
+        zero in self.flagged_events deque. Otherwise, that position gets updated with
+        the current value in the buffer.
+        """
+        if self.buffers['ratio'][-1] > self.calibration_values['ratio']['range'][1]:
+            self.flagged_events['high intensity'].append(self.buffers['ratio'][-1])
         else:
-            self.flaggedEvents['low intensity'].append(0)
-        if (self.buffers['i0'][-1] < 
-                (self.calibration_values['i0']['mean'] - 
-                self.thread_options['sigma']*self.calibration_values['i0']['stdev'])):
-            self.flaggedEvents['dropped shot'].append(self.buffers['i0'][-1])
+            self.flagged_events['high intensity'].append(0)
+        if self.buffers['i0'][-1] < self.calibration_values['i0']['range'][0]:
+            self.flagged_events['dropped shot'].append(self.buffers['i0'][-1])
         else:
-            self.flaggedEvents['dropped shot'].append(0)
-        if (self.buffers['ratio'][-1] < 
-                (self.calibration_values['ratio']['mean'] - 
-                2*self.thread_options['sigma']*self.calibration_values['ratio']['stdev'])):
-            #print(self.buffers['ratio'][-1], self.calibration_values['ratio']['mean'] - 
-            #    2*self.thread_options['sigma']*self.calibration_values['ratio']['stdev'])
-            self.flaggedEvents['missed shot'].append(self.buffers['i0'][-1])
+            self.flagged_events['dropped shot'].append(0)
+        if self.buffers['ratio'][-1] < self.calibration_values['ratio']['range'][0]:
+            self.flagged_events['missed shot'].append(self.buffers['i0'][-1])
         else:
-            self.flaggedEvents['missed shot'].append(0)
+            self.flagged_events['missed shot'].append(0)
 
     def calibrate(self, v):
         if self.thread_options['calibration source'] == "calibration from results":
@@ -290,8 +322,14 @@ class StatusThread(QThread):
                 pass
             self.calibration_values['i0']['mean'] =  float(results['i0_median'])
             self.calibration_values['i0']['stdev'] = float(results['i0_low'])
+            self.calibration_values['i0']['range'] = self.normal_range(self.thread_options['percent'],
+                                                                       self.calibration_values['i0']['stdev'],
+                                                                       self.calibration_values['i0']['mean'])
             self.calibration_values['ratio']['mean'] = float(results['mean_ratio'])
             self.calibration_values['ratio']['stdev'] = float(results['std_ratio'])
+            self.calibration_values['ratio']['range'] = self.normal_range(self.thread_options['percent'],
+                                                                       self.calibration_values['ratio']['stdev'],
+                                                                       self.calibration_values['ratio']['mean'])
             self.SIGNALS.calibration_value.emit(self.calibration_values)
             self.calibrated = True
             self.mode = 'running'
@@ -315,10 +353,19 @@ class StatusThread(QThread):
                     time.sleep(1/self.thread_options['sampling rate'])
             self.calibration_values['i0']['mean'] = mean(cal_values[0])
             self.calibration_values['i0']['stdev'] = stdev(cal_values[0])
+            self.calibration_values['i0']['range'] = self.normal_range(self.thread_options['percent'],
+                                                                       self.calibration_values['i0']['stdev'],
+                                                                       self.calibration_values['i0']['mean'])
             self.calibration_values['diff']['mean'] = mean(cal_values[1])
             self.calibration_values['diff']['stdev'] = stdev(cal_values[1])
+            self.calibration_values['diff']['range'] = self.normal_range(self.thread_options['percent'],
+                                                                         self.calibration_values['diff']['stdev'],
+                                                                         self.calibration_values['diff']['mean'])
             self.calibration_values['ratio']['mean'] = mean(cal_values[2])
             self.calibration_values['ratio']['stdev'] = stdev(cal_values[2])
+            self.calibration_values['ratio']['range'] = self.normal_range(self.thread_options['percent'],
+                                                                          self.calibration_values['ratio']['stdev'],
+                                                                          self.calibration_values['ratio']['mean'])
             self.calibrated = True
             self.mode = "running"
             self.SIGNALS.calibration_value.emit(self.calibration_values)
