@@ -548,6 +548,8 @@ class JetTracking(Display):
         self.SIGNALS.buffers.connect(self.plot_data)
         self.SIGNALS.avevalues.connect(self.plot_ave_data)
         self.SIGNALS.finished.connect(self._motor_stop)
+        self.SIGNALS.wake_motor.connect(self._start_tracking)
+        self.SIGNALS.sleep_motor.connect(self._stop_tracking)
         self.SIGNALS.message.connect(self.receive_message)
         ###################################################
 
@@ -560,8 +562,9 @@ class JetTracking(Display):
         self.worker.start()
 
     def _stop(self):
-        self.worker.requestInterruption()
-        self.worker.wait()
+        if self.worker.isRunning():
+            self.worker.requestInterruption()
+            self.worker.wait()
 
     def _motor_stop(self, vals):
         self.text_area.append("motor position: " + vals['position'])
@@ -580,16 +583,16 @@ class JetTracking(Display):
 
     def _start_search(self):
         if self.worker.isRunning():
-            self.worker_motor = MotorThread(self.SIGNALS, "search")
+            self.worker_motor = MotorThread(self.SIGNALS)
             self.worker_motor.start()
         else:
             self.text_area.append("there's nothing to scan!")
 
     def _start_tracking(self):
-        self.SIGNALS.motormove.emit(1)
+        print("start tracking")
 
     def _stop_tracking(self):
-        self.SIGNALS.motormove.emit(2)
+        print("stop tracking")
 
     def update_calibration(self, cal):
         if self.thread_options['calibration source'] == 'calibration in GUI':
@@ -694,11 +697,7 @@ class JetTracking(Display):
         self.motor_options['averaging'] = float(avg)
         self.SIGNALS.motorOp.emit(self.motor_options)
 
-    def update_algorithm(self, alg):
-        #  index:
-        #  0 - 
-        #  1 -
-        #  2 - 
+    def update_algorithm(self, alg): 
         self.motor_options['scanning algorithm'] = self.cbox_algorithm.currentIndex()
         self.SIGNALS.motorOp.emit(self.motor_options)
 

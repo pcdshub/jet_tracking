@@ -9,7 +9,7 @@ import scipy.stats as st
 import numpy as np
 from pcdsdevices.epics_motor import IMS
 from ophyd import EpicsSignal
-from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QThread, QObject
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from num_gen import sinwv
@@ -70,7 +70,7 @@ def DivWithTry(v1, v2):
         #print(f"got error [e]")
         a = 0
     return(a)
-        
+
 
 class Singleton(type):
     _instances = {}
@@ -81,7 +81,6 @@ class Singleton(type):
                 if cls not in cls._instances:
                     cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return(cls._instances[cls])
-
 
 class ValueReader(metaclass=Singleton):
 
@@ -159,6 +158,8 @@ class StatusThread(QThread):
         """
         self.SIGNALS = signals
         self.reader = ValueReader(signals)
+        self.processor_worker = EventProcessor(signals)
+
         self.mode = "running"  #can either be running or calibrating
         self.TIMER = time.time()
         self.BUFFER_SIZE = 300
@@ -175,22 +176,20 @@ class StatusThread(QThread):
                          "average diff": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                          "average ratio": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                          "time": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE)}
-        self.flagged_events = {"low intensity": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
+        self.flagged_events = {"high intensity": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                             "missed shot": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                             "dropped shot": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE)}
         self.buffers = {"i0":collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                         "diff":collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE), 
                         "ratio": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE), 
                         "time": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE)}
-        
+        self.dropped_shot_threshold = 1000
+        self.flag_message = None
+
         ## signals
         self.SIGNALS.mode.connect(self.update_mode)
-        self.SIGNALS.motormove.connect(self.motor_interface)
         self.SIGNALS.update_calibration.connect(self.update_cali)
-
         self.SIGNALS.threadOp.connect(self.set_options)
-        # self.init_options() #this needs to only happen if the variables
-        # can be set first in the init before the thread is created
 
     def get_options(self):
         self.SIGNALS.getThreadOptions.emit()
@@ -261,12 +260,17 @@ class StatusThread(QThread):
         if self.calibrated:
             if np.count_nonzero(self.flagged_events['missed shot']) > self.NOTIFICATION_TOLERANCE:
                 self.SIGNALS.status.emit("warning, missed shots", "red")
+                self.processor_worker.flag_counter('missed shot', 300, self.wake_motor())
             elif np.count_nonzero(self.flagged_events['dropped shot'])> self.NOTIFICATION_TOLERANCE:
                 self.SIGNALS.status.emit("lots of dropped shots", "yellow")
+                self.processor_worker.flag_counter('dropped shot', self.sleep_motor())
             elif np.count_nonzero(self.flagged_events['high intensity']) > self.NOTIFICATION_TOLERANCE:
                 self.SIGNALS.status.emit("High Intensity", "orange") # when timer reaches 2 minutes emit "High intensity still, consider re-calibrating"
+                self.processor_worker.flag_counter('high intensity', 1000, self.recalibrate())
             else:
                 self.SIGNALS.status.emit("everything is good", "green")
+                if self.processor_worker.isCounting == True:
+                    self.processor_worker('everything is good', 1000, self.processor_worker.stop_count())
         else:
             self.SIGNALS.status.emit("not calibrated", "orange")
 
@@ -305,7 +309,7 @@ class StatusThread(QThread):
             self.flagged_events['high intensity'].append(self.buffers['ratio'][-1])
         else:
             self.flagged_events['high intensity'].append(0)
-        if self.buffers['i0'][-1] < self.calibration_values['i0']['range'][0]:
+        if self.buffers['i0'][-1] < self.dropped_shot_threshold:
             self.flagged_events['dropped shot'].append(self.buffers['i0'][-1])
         else:
             self.flagged_events['dropped shot'].append(0)
@@ -313,6 +317,9 @@ class StatusThread(QThread):
             self.flagged_events['missed shot'].append(self.buffers['i0'][-1])
         else:
             self.flagged_events['missed shot'].append(0)
+
+    def get_event(self):
+        return(self.flagged_event)
 
     def calibrate(self, v):
         if self.thread_options['calibration source'] == "calibration from results":
@@ -330,6 +337,8 @@ class StatusThread(QThread):
             self.calibration_values['ratio']['range'] = self.normal_range(self.thread_options['percent'],
                                                                        self.calibration_values['ratio']['stdev'],
                                                                        self.calibration_values['ratio']['mean'])
+            self.dropped_shot_threshold = self.normal_range(95, self.calibration_values['i0']['stdev'],
+                                                            self.calibration_values['i0']['mean'])[0]
             self.SIGNALS.calibration_value.emit(self.calibration_values)
             self.calibrated = True
             self.mode = 'running'
@@ -366,6 +375,8 @@ class StatusThread(QThread):
             self.calibration_values['ratio']['range'] = self.normal_range(self.thread_options['percent'],
                                                                           self.calibration_values['ratio']['stdev'],
                                                                           self.calibration_values['ratio']['mean'])
+            self.dropped_shot_threshold = self.normal_range(95, self.calibration_values['i0']['stdev'],
+                                                            self.calibration_values['i0']['mean'])[0]
             self.calibrated = True
             self.mode = "running"
             self.SIGNALS.calibration_value.emit(self.calibration_values)
@@ -373,73 +384,89 @@ class StatusThread(QThread):
             self.SIGNALS.message.emit('was not able to calibrate')
             self.calibrated = False
             self.mode = 'running'
+
+    def recalibrate(self):
+        self.SIGNALS.message.emit("recalibrating..")
  
-    def motor_interface(self, val):
-        if val == 0:
-            # scan
-            print("scanning..")
-        if val == 1:
-            print("tracking..")
-            # tracking
-        if val == 2:
-            print("stop tracking..")
-            # stop tracking
+    def wake_motor(self):
+        self.SIGNALS.message.emit("wake motor")
+
+    def sleep_motor(self):
+        self.SIGNALS.message.emit("sleep motor")
+
+class EventProcessor(QThread):
+    def __init__(self, signals):
+        super(EventProcessor, self).__init__()
+        self.SIGNALS = signals
+        self.flag_type = {}
+        self.isCounting = False
+
+    def flag_counter(self, new_flag, num_flagged, func_to_execute):
+        self.isCounting = True
+        if new_flag in self.flag_type.keys():
+            self.flag_type[new_flag] += 1
+            if num_flagged >= self.flag_type[new_flag]:
+                del(self.flag_type[new_flag])
+                func_to_execute() 
+        else:
+            self.flag_type[new_flag] = 1
+            for key in self.flag_type:
+                self.flag_type[key] -= 1
+                if self.flag_type[key] <= 0:
+                    del(self.flag_type[key])
+    
+    def stop_count(self):
+        self.flag_type = {}
+        self.isCounting = False
+        
 
 class MotorThread(QThread):
-    def __init__(self, signals, move_type):
+    def __init__(self, signals):
         super(MotorThread, self).__init__()
-        self.move_type = move_type
-        self.moves = []
         self.SIGNALS = signals
-        self.thread_options['averaging'] = 10
-        self.motor_position = 0
-        self.backlash_step = 0.050
-        self.tol = 0.002
-        self.motor_ll = -0.02
-        self.motor_hl = 0.02
+        self.moves = []
+        self.motor_options = {}
         self.ratio_pv = PV_DICT.get('ratio', None)
         self.ratio = EpicsSignal(self.ratio_pv)
         self.ratio_intensity = 0
-        self.motor = IMS('XCS:USR:MMS:39', name='jet_x')
+        self.motor = IMS('XCS:USR:MMS:39', name='jet_x') # this needs to move out to a cfg file
         time.sleep(1)
         for i in self.motor.component_names:
             print(i,getattr(self.motor,i).connected)
         self.motor.log.setLevel(level='CRITICAL')
+        self.SIGNALS.motorOp.connect(self.params)
+        
         self.set_motor_params()
 
-        self.SIGNALS.limits.connect(self.get_limits)
-        self.SIGNALS.tol.connect(self.get_tol) 
-
-    def get_limits(self, low, high):
-        self.motor_ll = low
-        self.motor_hl = high
-        print(low, high)
-
-    def get_tol(self, tol):
-        self.tol = tol
-        print(tol)
-
     def set_motor_params(self):
-        #self.motor_ll = self.motor.low_limit
-        #self.motor_hl =self.motor.high_limit
-        self.motor_position = self.motor.position
+        self.SIGNALS.getMotorOptions.emit()
+
+    def params(self, p):
+        """ sets the motor options so that it can be used to run the algorithms
+        parameters
+        ----------
+        p: dict
+            consists of "high limit", "low limit", "step size", "averaging", and "scanning algorithm"
+        """
+        self.motor_options = p
 
     def run(self):
-        if self.move_type == "search":
-            self.motor_position = self.motor.position
-            self.motor_position, self.ratio_intensity = self._search(self.motor_position, -.01, .01, .0005, 60)
+        if self.motor_options['scanning algorithm'] == "search":
+            done = 0
+            while not done:
+                self.motor_position = self.motor.position
+                self.motor_position, self.ratio_intensity = self._search(self.motor_position, -.01, .01, .0005, 60)
             fig = plt.figure()
             plt.xlabel('motor position')
             plt.ylabel('I/I0 intensity')
             plt.plot(self.motor_position, self.ratio_intensity, 'ro')
             x = [a[0] for a in self.moves]
             y = [b[1] for b in self.moves]
-            print(self.moves, x, y)
             plt.scatter(x, y)
             plt.show()
             self.SIGNALS.update_calibration.emit('ratio', self.ratio_intensity)
             self.SIGNALS.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
-        elif self.move_type == "scan":
+        elif self.motor_options['scanning algorithm'] == "scan":
             print("scanning :", self.tol, self.motor_ll, self.motor_hl)
             self.motor_position = self._scan(self.motor_ll, self.motor_hl, self.tol, self.motor_options['averaging'])
             self.ratio_intensity = self.moves[-1][1]
@@ -453,20 +480,10 @@ class MotorThread(QThread):
             plt.show()
             self.SIGNALS.update_calibration.emit('ratio', self.ratio_intensity)
             self.SIGNALS.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
-        elif self.move_type == "track":
+        elif self.move_type == "track": ### these should be inside of each of the scanning algorithms? need to check if were moving once or "Tracking"
             self.SIGNALS.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
             #### look up how to exit safely here
         elif self.move_type == "stop tracking":
             self.SIGNALS.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
             #### again, exit safely  
         
-             
-#class MotorEdit(QUndoCommand):
-#    def __init__(self, motor, position):
-#       super(MotorEdit, self).__init__()
-#       self.motor = motor
-#       self.position = position
-#
-#    def redo(self):
-#       self.motor.mo
-

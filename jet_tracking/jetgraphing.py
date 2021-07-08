@@ -36,8 +36,8 @@ class ScrollingTimeWidget(pg.PlotWidget):
         self.addItem(plt)
 
     def addSigmaPlots(self, plt1, plt2):
-        self.sigma_low = plt1
-        self.sigma_high = plt2
+        self.percent_low = plt1
+        self.percent_high = plt2
         self.addItem(plt1)
         self.addItem(plt2)
 

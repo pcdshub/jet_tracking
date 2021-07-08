@@ -14,10 +14,11 @@ class Signals(QtCore.QObject):
     tol = QtCore.pyqtSignal(float)
     limits = QtCore.pyqtSignal(float, float)
     getThreadOptions = QtCore.pyqtSignal()
-    
+    wake_motor = QtCore.pyqtSignal()
+    sleep_motor = QtCore.pyqtSignal()
+ 
     # emitted in main window
     rdbttn_status = QtCore.pyqtSignal(int)
-    motormove = QtCore.pyqtSignal(int)
     threadOp = QtCore.pyqtSignal(dict)
     motorOp = QtCore.pyqtSignal(dict)
     
