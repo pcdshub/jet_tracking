@@ -13,15 +13,15 @@ class Signals(QtCore.QObject):
     message = QtCore.pyqtSignal(str)
     tol = QtCore.pyqtSignal(float)
     limits = QtCore.pyqtSignal(float, float)
-    getThreadOptions = QtCore.pyqtSignal()
-    wake_motor = QtCore.pyqtSignal()
-    sleep_motor = QtCore.pyqtSignal()
+    wake = QtCore.pyqtSignal()
+    sleep = QtCore.pyqtSignal()
  
     # emitted in main window
     rdbttn_status = QtCore.pyqtSignal(int)
     threadOp = QtCore.pyqtSignal(dict)
     motorOp = QtCore.pyqtSignal(dict)
-    
+    enable_tracking = QtCore.pyqtSignal(bool)   
+ 
     # calibration
     ali0 = QtCore.pyqtSignal(float)
     calibration = QtCore.pyqtSignal()
@@ -30,4 +30,3 @@ class Signals(QtCore.QObject):
     motorPV = QtCore.pyqtSignal(str)
     finished = QtCore.pyqtSignal(dict)
     update_calibration = QtCore.pyqtSignal(str, float)
-    getMotorOptions = QtCore.pyqtSignal()

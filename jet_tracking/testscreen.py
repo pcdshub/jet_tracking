@@ -22,7 +22,7 @@ from qtpy.QtWidgets import (QApplication, QFrame, QGraphicsScene,
                             QVBoxLayout)
 
 from signals import Signals
-from jetgraphing import ScrollingTimeWidget, graph_setup
+from jetgraphing import ScrollingTimeWidget, graph_setup, add_calibration_graph
 
 logging = logging.getLogger('pydm')
 logging.setLevel('CRITICAL')
@@ -138,22 +138,10 @@ class JetTracking(Display):
         # load data from file
         self.load_data()
         #parsed_args, unparsed_args = self.read_args()
+        self.SIGNALS = Signals()
        
         self.hutch = ' '
-        self.calibration_values = {
-                   "i0_low" : 0, 
-                   "i0_high" : 0,
-                   "i0_median" : 0,
-                   "peak_bin" : 0,
-                   "delta_bin" : 0,
-                   "mean_ratio" : 0,
-                   "med_ratio" : 0,
-                   "std_ratio" : 0,
-                   "jet_loc_mean" : 0,
-                   "jet_loc_std" : 0,
-                   "jet_peak_mean" : 0,
-                   "jet_peak_std" : 0,
-                   }
+        self.calibrated = False
 
         self.thread_options = {}
         #  keys:
@@ -164,7 +152,7 @@ class JetTracking(Display):
         #  sampling rate
         #  manual motor
 
-        self.worker_motor = None
+        self.worker_motor = MotorThread(self.SIGNALS)
         self.motor_options = {}
         #  keys:
         #  high limit
@@ -173,7 +161,6 @@ class JetTracking(Display):
         #  averaging
         #  scanning algorithm
 
-        self.SIGNALS = Signals()
         self.worker = StatusThread(self.SIGNALS)
 
         # assemble widgets
@@ -384,18 +371,26 @@ class JetTracking(Display):
         self.bttn_tracking.setText("Track")
         self.bttn_tracking.setEnabled(False)
 
-        self.bttn_stop_tracking = QPushButton()
-        self.bttn_stop_tracking.setText("Stop Tracking")
-        self.bttn_stop_tracking.setEnabled(False)
+        self.bttn_stop_motor = QPushButton()
+        self.bttn_stop_motor.setText("Stop Tracking")
+        self.bttn_stop_motor.setEnabled(False)
+
+        self.lbl_tracking = Label("Tracking")
+        self.lbl_tracking.setSubtitleStyleSheet()
+        self.lbl_tracking_status = Label("False")
+        self.lbl_tracking_status.setStyleSheet(f"\
+                background-color: red;")
 
         self.frame_motor = QFrame()
         self.layout_motor = QVBoxLayout()
         self.layout_motor_manual = QHBoxLayout()
         self.layout_motor_input = QGridLayout()
         self.layout_motor_bttns = QHBoxLayout()
+        self.layout_tracking = QHBoxLayout()
         self.layout_motor.addLayout(self.layout_motor_manual)
         self.layout_motor.addLayout(self.layout_motor_input)
         self.layout_motor.addLayout(self.layout_motor_bttns)
+        self.layout_motor.addLayout(self.layout_tracking)
         self.frame_motor.setLayout(self.layout_motor)
         self.layout_usr_cntrl.addWidget(self.frame_motor)
         self.layout_motor_manual.addWidget(self.rdbttn_manual)
@@ -412,8 +407,9 @@ class JetTracking(Display):
         self.layout_motor_input.addWidget(self.cbox_algorithm, 2, 1)
         self.layout_motor_bttns.addWidget(self.bttn_search)
         self.layout_motor_bttns.addWidget(self.bttn_tracking)
-        self.layout_motor_bttns.addWidget(self.bttn_stop_tracking)
-        
+        self.layout_motor_bttns.addWidget(self.bttn_stop_motor)
+        self.layout_tracking.addWidget(self.lbl_tracking)
+        self.layout_tracking.addWidget(self.lbl_tracking_status)
 
         #####################################################################
         # give a status area that displays values and current tracking
@@ -423,9 +419,9 @@ class JetTracking(Display):
         self.lbl_status = Label("Status")
         self.lbl_status.setTitleStylesheet()
 
-        self.lbl_tracking = Label("Tracking")
-        self.lbl_tracking.setSubtitleStyleSheet()
-        self.lbl_tracking_status = Label("No Tracking")
+        self.lbl_monitor = Label("Monitor")
+        self.lbl_monitor.setSubtitleStyleSheet()
+        self.lbl_monitor_status = Label("Not Started")
 
         self.lbl_i0 = Label("Mean Initial intensity (I0)")
         self.lbl_i0_status = QLCDNumber(7)
@@ -437,10 +433,10 @@ class JetTracking(Display):
         ##############
         self.layout_usr_cntrl.addWidget(self.lbl_status)
 
-        self.frame_tracking_status = QFrame()
-        self.frame_tracking_status.setLayout(QHBoxLayout())
-        self.frame_tracking_status.layout().addWidget(self.lbl_tracking)
-        self.frame_tracking_status.layout().addWidget(self.lbl_tracking_status)
+        self.frame_monitor_status = QFrame()
+        self.frame_monitor_status.setLayout(QHBoxLayout())
+        self.frame_monitor_status.layout().addWidget(self.lbl_monitor)
+        self.frame_monitor_status.layout().addWidget(self.lbl_monitor_status)
 
         self.frame_i0 = QFrame()
         self.frame_i0.setLayout(QHBoxLayout())
@@ -452,7 +448,7 @@ class JetTracking(Display):
         self.frame_diff_i0.layout().addWidget(self.lbl_diff_i0)
         self.frame_diff_i0.layout().addWidget(self.lbl_diff_status)
 
-        self.layout_usr_cntrl.addWidget(self.frame_tracking_status)
+        self.layout_usr_cntrl.addWidget(self.frame_monitor_status)
         self.layout_usr_cntrl.addWidget(self.frame_i0)
         self.layout_usr_cntrl.addWidget(self.frame_diff_i0)
         ###############################
@@ -531,25 +527,22 @@ class JetTracking(Display):
         self.bttngrp1.buttonClicked.connect(self.checkBttn)
         self.bttngrp2.buttonClicked.connect(self.checkBttn)
         self.bttngrp3.buttonClicked.connect(self.checkBttn)
-        self.SIGNALS.getThreadOptions.connect(self.get_thread_options)
-        self.SIGNALS.getMotorOptions.connect(self.get_motor_options)
 
         self.bttn_start.clicked.connect(self._start)
         self.bttn_stop.clicked.connect(self._stop)
         self.bttn_calibrate.clicked.connect(self._calibrate)
-        self.SIGNALS.status.connect(self.update_status)
         self.SIGNALS.calibration_value.connect(self.update_calibration)
 
-        self.bttn_search.clicked.connect(self._start_search)
-        self.bttn_tracking.clicked.connect(self._start_tracking)
-        self.bttn_stop_tracking.clicked.connect(self._stop_tracking)
+        self.bttn_search.clicked.connect(self._start_motor)
+        self.bttn_tracking.clicked.connect(self._enable_tracking)
+        self.bttn_stop_motor.clicked.connect(self._stop_motor)
 
-        self.SIGNALS.status.connect(self.update_status)
+        self.SIGNALS.status.connect(self.update_monitor_status)
         self.SIGNALS.buffers.connect(self.plot_data)
         self.SIGNALS.avevalues.connect(self.plot_ave_data)
-        self.SIGNALS.finished.connect(self._motor_stop)
-        self.SIGNALS.wake_motor.connect(self._start_tracking)
-        self.SIGNALS.sleep_motor.connect(self._stop_tracking)
+
+        self.SIGNALS.wake.connect(self._start_motor)
+        self.SIGNALS.sleep.connect(self._stop_motor)
         self.SIGNALS.message.connect(self.receive_message)
         ###################################################
 
@@ -566,14 +559,7 @@ class JetTracking(Display):
             self.worker.requestInterruption()
             self.worker.wait()
 
-    def _motor_stop(self, vals):
-        self.text_area.append("motor position: " + vals['position'])
-        self.text_area.append("peak intensity: " + vals['ratio'])
-        self.worker_motor.requestInterruption()
-        self.worker_motor.wait()
-
     def _calibrate(self):
-        self._start()
         if not self.worker.isRunning():
             self.text_area.append("You are not running so there's \
                   nothing to calibrate.. hit start first")
@@ -581,36 +567,44 @@ class JetTracking(Display):
             self.SIGNALS.threadOp.emit(self.thread_options)
             self.SIGNALS.mode.emit("calibrate")
 
-    def _start_search(self):
-        if self.worker.isRunning():
-            self.worker_motor = MotorThread(self.SIGNALS)
-            self.worker_motor.start()
+    def _enable_tracking(self):
+        self.update_tracking_status("enabled", green)
+        self.isTracking = True
+        self._start_motor()
+
+    def _start_motor(self):
+        if not self.worker_motor.isRunning():
+            if self.worker.isRunning():
+                self.SIGNALS.motorOp.emit(self.motor_options)
+                self.SIGNALS.mode.emit("correcting")
+                self.worker_motor.start()
+            else:
+                self.text_area.append("there's nothing to scan!")
         else:
-            self.text_area.append("there's nothing to scan!")
+            if self.worker_motor.isInterruptionRequested():
+                self.SIGNALS.motorOp.emit(self.motor_options)
+                self.worker_motor.start()
+            else:
+                self.text_area.append("The motor is already running")
 
-    def _start_tracking(self):
-        print("start tracking")
+    def _stop_motor(self):
+        if self.worker_motor.isRunning():
+            self.worker_motor.requestInterruption()
+            self.worker_motor.wait()
+        if self.sender() is self.bttn_stop_motor:
+            self.isTracking = False
+            self.update_tracking_status('disabled', red)
 
-    def _stop_tracking(self):
-        print("stop tracking")
-
-    def update_calibration(self, cal):
-        if self.thread_options['calibration source'] == 'calibration in GUI':
-            self.calibration_values['i0_median'] = cal['i0']['mean']
-            self.calibration_values['i0_low'] = (cal['i0']['mean']-cal['i0']['stdev'])
-            self.calibration_values['i0_high'] = (cal['i0']['mean']+cal['i0']['stdev'])
-            self.calibration_values['mean_ratio'] = cal['ratio']['mean']
-            self.calibration_values['std_ratio'] = cal['ratio']['stdev']
-        elif self.thread_options['calibration source'] == 'calibration from results':
-            self.calibration_values = cal
-        else:
-            self.text_area.append('there is something wrong with the calibration')
-        self.lbl_i0_status.display(self.calibration_values['i0_median'])
-        self.lbl_diff_status.display(self.calibration_values['mean_ratio'])
-        
+    def update_calibration(self, cal): 
+        self.calibration_values = cal
+        self.lbl_i0_status.display(self.calibration_values['i0']['mean'])
+        self.lbl_diff_status.display(self.calibration_values['diff']['mean'])
+        add_calibration_graph(self.ratio_graph)
+        add_calibration_graph(self.i0_graph)
+        add_calibration_graph(self.diff_graph)
+        self.calibrated = True 
 
     def live_graphing(self):
-
         self.clearLayout(self.layout_graph)
 
         self.ratio_graph = ScrollingTimeWidget(self.SIGNALS)
@@ -637,31 +631,43 @@ class JetTracking(Display):
 
     def plot_data(self, data):
         self.ratio_graph.plt.setData(list(data['time']), list(data['ratio']))
-        self.ratio_graph.percent_low.setData(list(data['time']), list(collections.deque(\
-                  [(self.calibration_values['mean_ratio'] - \
-                  self.calibration_values['std_ratio'])]*300, 300)))
-        self.ratio_graph.percent_high.setData(list(data['time']), list(collections.deque(\
-                  [(self.calibration_values['mean_ratio'] + \
-                  self.calibration_values['std_ratio'])]*300, 300)))
         self.ratio_graph.setXRange(list(data['time'])[0], list(data['time'])[-1])
-
         self.i0_graph.plt.setData(list(data['time']), list(data['i0']))
-        self.i0_graph.percent_low.setData(list(data['time']), list(collections.deque(\
-                  [self.calibration_values['i0_low']]*300, 300)))
-        self.i0_graph.percent_high.setData(list(data['time']), list(collections.deque(\
-                  [self.calibration_values['i0_high']]*300, 300)))
         self.diff_graph.plt.setData(list(data['time']), list(data['diff']))
-        self.diff_graph.percent_high.setData(list(data['time']), list(collections.deque(\
-                  [self.calibration_values['i0_high']]*300, 300)))
+        if self.calibrated:
+            self.diff_graph.percent_low.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['diff']['range'][0]]*300, 300))) 
+            self.diff_graph.percent_high.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['diff']['range'][1]]*300, 300)))
+            self.diff_graph.mean_plt.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['diff']['mean']]*300, 300)))
+            self.ratio_graph.percent_low.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['ratio']['range'][0]]*300, 300)))
+            self.ratio_graph.percent_high.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['ratio']['range'][1]]*300, 300)))
+            self.ratio_graph.mean_plt.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['ratio']['mean']]*300, 300)))
+            self.i0_graph.percent_low.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['i0']['range'][0]]*300, 300)))
+            self.i0_graph.percent_high.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['i0']['range'][1]]*300, 300)))
+            self.i0_graph.mean_plt.setData(list(data['time']), list(collections.deque(\
+                  [self.calibration_values['i0']['mean']]*300, 300)))
 
     def plot_ave_data(self, data):
-        self.ratio_graph.avePlt.setData(list(data['time']), list(data['average ratio']))
-        self.i0_graph.avePlt.setData(list(data['time']), list(data['average i0']))
-        self.diff_graph.avePlt.setData(list(data['time']), list(data['average diff']))
+        self.ratio_graph.avg_plt.setData(list(data['time']), list(data['average ratio']))
+        self.i0_graph.avg_plt.setData(list(data['time']), list(data['average i0']))
+        self.diff_graph.avg_plt.setData(list(data['time']), list(data['average diff']))
 
-    def update_status(self, status, color):
+    def update_tracking_status(self, status, color):
         self.lbl_tracking_status.setText(status)
         self.lbl_tracking_status.setStyleSheet(f"\
+                background-color: {color};")
+        self.SIGNALS.enable_tracking.emit(self.isTracking)
+
+    def update_monitor_status(self, status, color):
+        self.lbl_monitor_status.setText(status)
+        self.lbl_monitor_status.setStyleSheet(f"\
                 background-color: {color};")
 
     def receive_status(self, status):
@@ -675,6 +681,8 @@ class JetTracking(Display):
     def update_percent(self, percent):
         self.thread_options['percent'] = percent
         self.SIGNALS.threadOp.emit(self.thread_options)
+        if self.calibrated:
+            self.SIGNALS.mode.emit('calibrate')
 
     def update_nsamp(self, nsamp):
         self.thread_options['average'] = nsamp
@@ -701,12 +709,6 @@ class JetTracking(Display):
         self.motor_options['scanning algorithm'] = self.cbox_algorithm.currentIndex()
         self.SIGNALS.motorOp.emit(self.motor_options)
 
-    def get_thread_options(self):
-        self.SIGNALS.threadOp.emit(self.thread_options)
-
-    def get_motor_options(self):
-        self.SIGNALS.motorOp.emit(self.motor_options)
-
     def receive_message(self, message):
         self.text_area.append(message)
 
@@ -726,11 +728,11 @@ class JetTracking(Display):
         elif bttn == "manual motor moving":
             self.bttn_search.setEnabled(False)
             self.bttn_tracking.setEnabled(False)
-            self.bttn_stop_tracking.setEnabled(False)
+            self.bttn_stop_motor.setEnabled(False)
         elif bttn == "automated motor moving":
             self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(True)
-            self.bttn_stop_tracking.setEnabled(True)
+            self.bttn_stop_motor.setEnabled(True)
         elif bttn == "calibration in GUI":
             self.thread_options['calibration source'] = bttn
         elif bttn == "calibration from results":

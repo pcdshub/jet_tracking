@@ -24,8 +24,11 @@ lock = threading.Lock()
 # constants
 JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
 SD_LOC = '/reg/d/psdm/'
-PV_DICT = {'diff': 'XCS:JTRK:REQ:DIFF_INTENSITY', 'gatt': 'XCS:JTRK:REQ:I0', 'ratio': 'XCS:JTRK:REQ:RATIO'}
+PV_DICT = {'diff': 'XCS:JTRK:REQ:DIFF_INTENSITY', 'i0': 'XCS:JTRK:REQ:I0', 'ratio': 'XCS:JTRK:REQ:RATIO'}
 CFG_FILE = 'jt_configs/xcs_config.yml'
+HUTCH = 'xcs'
+EXPERIMENT = 'xcsx1568'
+
 
 def parse_config(cfg_file=CFG_FILE):
     with open(args.cfg_file) as f:
@@ -93,15 +96,15 @@ class ValueReader(metaclass=Singleton):
         self.live_data = live
 
     def live_data_stream(self):
-        gatt = PV_DICT.get('gatt', None)
-        self.signal_gatt = EpicsSignal(gatt)
+        i0 = PV_DICT.get('i0', None)
+        self.signal_i0 = EpicsSignal(i0)
         #wave8 = self.PVs.get('wave8', None)
         #self.signal_wave8 = EpicsSignal(wave8)
         diff = PV_DICT.get('diff', None)
         self.signal_diff = EpicsSignal(diff)
         ratio = PV_DICT.get('ratio', None)
         self.signal_ratio = EpicsSignal(ratio)
-        self.gatt = self.signal_gatt.get()
+        self.i0 = self.signal_i0.get()
         self.diff = self.signal_diff.get()
         self.ratio = self.signal_ratio.get()
 
@@ -117,25 +120,25 @@ class ValueReader(metaclass=Singleton):
         #buf = memoryview(msg)
         #data = np.frombuffer(buf, dtype=md['dtype'])
         #data = np.ndarray.tolist(data.reshape(md['shape']))
-        #self.gatt = data[0]
+        #self.i0 = data[0]
         #self.diff = data[1]
 	
         x = 0.8
-        y = 0.4
-        self.gatt = sinwv(x) + 5000
-        self.diff = sinwv(y)
+        y = 0.1
+        self.i0 = sinwv(x, 5000)
+        self.diff = sinwv(y, 2000)
         try:
-            self.ratio = self.diff/self.diff
+            self.ratio = self.i0/self.diff
         except:
             self.ratio = self.ratio
 
     def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.live_data:
             self.live_data_stream()
-            return({'gatt': self.gatt, 'diff': self.diff, 'ratio': self.ratio})
+            return({'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio})
         else:
             self.sim_data_stream()
-            return({'gatt': self.gatt, 'diff': self.diff, 'ratio': self.ratio})
+            return({'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio})
 
  
 class StatusThread(QThread):
@@ -160,6 +163,7 @@ class StatusThread(QThread):
         self.reader = ValueReader(signals)
         self.processor_worker = EventProcessor(signals)
 
+        self.isTracking = False
         self.mode = "running"  #can either be running or calibrating
         self.TIMER = time.time()
         self.BUFFER_SIZE = 300
@@ -167,9 +171,8 @@ class StatusThread(QThread):
         self.thread_options = {}
         self.count = 0
         self.calibrated = False
-        self.calibration_time = 10
+        self.cal_vals = [[],[],[]]
         self.calibration_values = {'i0':{'mean':0, 'stdev':0, 'range':(0, 0)}, 'diff':{'mean':0, 'stdev':0, 'range':(0, 0)}, 'ratio':{'mean':0, 'stdev':0, 'range':(0, 0)}}
-        self.i0_rdbutton_selection = 'gatt' #this should change
 
         ## buffers and data collection 
         self.averages = {"average i0":collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE), 
@@ -188,11 +191,11 @@ class StatusThread(QThread):
 
         ## signals
         self.SIGNALS.mode.connect(self.update_mode)
-        self.SIGNALS.update_calibration.connect(self.update_cali)
         self.SIGNALS.threadOp.connect(self.set_options)
+        self.SIGNALS.enable_tracking.connect(self.tracking)
 
-    def get_options(self):
-        self.SIGNALS.getThreadOptions.emit()
+    def tracking(self, b):
+        self.isTracking = b
 
     def set_options(self, options):
         """sets the thread options anytime something from the main gui side changes
@@ -209,70 +212,73 @@ class StatusThread(QThread):
     def update_mode(self, mode):
         self.mode = mode
 
-    def update_cali(self, name, val):
-        self.calibration_values[name] = val
-        self.SIGNALS.calibration_value.emit(self.calibration_values)
+    def update_buffer(self, vals):
+        if self.count < self.BUFFER_SIZE:
+            self.count += 1
+            self.buffers['i0'].append(vals.get('i0'))
+            self.buffers['diff'].append(vals.get('diff'))
+            self.buffers['ratio'].append(vals.get('ratio'))
+            self.buffers['time'].append(time.time()-self.TIMER) ### time should be the clock time instead of runtime
+        else:
+            self.count += 1 #### do I need to protect from this number getting too big?
+            self.buffers['i0'].append(vals.get('i0'))
+            self.buffers['diff'].append(vals.get('diff'))
+            self.buffers['ratio'].append(vals.get('ratio'))
+            self.buffers['time'].append(time.time()-self.TIMER)
+            self.event_flagging()
+        if self.count % self.thread_options['averaging'] == 0:
+            try:
+                avei0 =  mean(Skimmer('dropped shot',
+                                       list(self.buffers['i0']), self.flagged_events))
+                self.averages["average i0"].append(avei0)
+                avediff =  mean(Skimmer('dropped shot',
+                                        list(self.buffers['diff']), self.flagged_events))
+                self.averages["average diff"].append(avediff)
+                averatio =  mean(Skimmer('dropped shot',
+                                         list(self.buffers['ratio']), self.flagged_events))
+                self.averages["average ratio"].append(averatio)
+            except StatisticsError:
+                for i in range(len(self.averages)-1):
+                    keys = [*self.averages.keys()]
+                    self.averages[keys[i]].append(0)
+            self.averages["time"].append(time.time()-self.TIMER)
+            self.SIGNALS.avevalues.emit(self.averages)
+        self.SIGNALS.buffers.emit(self.buffers)
 
     def run(self):
-        """Long-running task."""
-
+        """Long-running task to collect data points"""
         while not self.isInterruptionRequested():
             new_values = self.reader.read_value() 
             if self.mode == "running":
-                if self.count < self.BUFFER_SIZE:
-                    self.count += 1
-                    self.buffers['i0'].append(new_values.get(self.i0_rdbutton_selection))
-                    self.buffers['diff'].append(new_values.get('diff'))
-                    self.buffers['ratio'].append(new_values.get('ratio'))
-                    self.buffers['time'].append(time.time()-self.TIMER) ### time should be the clock time instead of runtime
-                else: 
-                    self.count += 1 #### do I need to protect from this number getting too big?
-                    self.buffers['i0'].append(new_values.get(self.i0_rdbutton_selection))
-                    self.buffers['diff'].append(new_values.get('diff'))
-                    self.buffers['ratio'].append(new_values.get('ratio'))
-                    self.buffers['time'].append(time.time()-self.TIMER)
-                    self.event_flagging()
-                if self.count % self.thread_options['averaging'] == 0:
-                    try:
-                        avei0 =  mean(Skimmer('dropped shot',
-                                           list(self.buffers['i0']), self.flagged_events))
-                        self.averages["average i0"].append(avei0)
-                        avediff =  mean(Skimmer('dropped shot',
-                                           list(self.buffers['diff']), self.flagged_events))
-                        self.averages["average diff"].append(avediff)
-                        averatio =  mean(Skimmer('dropped shot',
-                                     list(self.buffers['ratio']), self.flagged_events))
-                        self.averages["average ratio"].append(averatio)
-                    except StatisticsError:
-                        for i in range(len(self.averages)-1):
-                            keys = [*self.averages.keys()]
-                            self.averages[keys[i]].append(0)
-                            #self.SIGNALS.message.emit("You are having a hard time getting averages, likely due to too much flagging. Try changing sigma.")
-                    self.averages["time"].append(time.time()-self.TIMER)
-                    self.SIGNALS.avevalues.emit(self.averages)
-                    self.check_status_update()
-                self.SIGNALS.buffers.emit(self.buffers)
+                self.update_buffer(new_values)
+                self.check_status_update()
                 time.sleep(1/self.thread_options['sampling rate'])
             elif self.mode == "calibrate":
+                self.update_buffer(new_values)
                 self.calibrate(new_values)
+            elif self.mode == "correcting":
+                self.update_buffer(new_values)
 
     def check_status_update(self):
-        if self.calibrated:
+        if self.calibrated and self.mode != "correcting":
+            #print(self.flagged_events)
             if np.count_nonzero(self.flagged_events['missed shot']) > self.NOTIFICATION_TOLERANCE:
-                self.SIGNALS.status.emit("warning, missed shots", "red")
-                self.processor_worker.flag_counter('missed shot', 300, self.wake_motor())
+                self.SIGNALS.status.emit("Warning, missed shots", "red")
+                self.processor_worker.flag_counter('missed shot', 300, self.wake_motor)
             elif np.count_nonzero(self.flagged_events['dropped shot'])> self.NOTIFICATION_TOLERANCE:
                 self.SIGNALS.status.emit("lots of dropped shots", "yellow")
-                self.processor_worker.flag_counter('dropped shot', self.sleep_motor())
+                self.processor_worker.flag_counter('dropped shot',300, self.sleep_motor)
             elif np.count_nonzero(self.flagged_events['high intensity']) > self.NOTIFICATION_TOLERANCE:
-                self.SIGNALS.status.emit("High Intensity", "orange") # when timer reaches 2 minutes emit "High intensity still, consider re-calibrating"
-                self.processor_worker.flag_counter('high intensity', 1000, self.recalibrate())
+                self.SIGNALS.status.emit("High Intensity", "orange") 
+                self.processor_worker.flag_counter('high intensity', 1000, self.recalibrate)
             else:
                 self.SIGNALS.status.emit("everything is good", "green")
                 if self.processor_worker.isCounting == True:
-                    self.processor_worker('everything is good', 1000, self.processor_worker.stop_count())
-        else:
+                    self.processor_worker('everything is good', 1000, self.processor_worker.stop_count)
+        elif not self.calibrated and self.mode != "correcting":
             self.SIGNALS.status.emit("not calibrated", "orange")
+        elif self.mode == "correcting":
+            self.SIGNALS.status.emit("Correcting ..", "pink")
 
     def normal_range(self, percent, sigma, mean):
         """ Used to find the upper and lower values on a normal distribution curve
@@ -289,15 +295,15 @@ class StatusThread(QThread):
         a: float
                  the lower value percent/2 away from the mean
         b: float
-                 the upper value percent2 away from the mean
+                 the upper value percent/2 away from the mean
         """
-        L = (1 - percent) /  2.
-        r = 1 - L
+        L = (1. - (percent/100.)) /  2.
+        r = 1. - L
         zL = st.norm.ppf(L)
         zr = st.norm.ppf(r)
-        a = (zL * sigma)
-        b = (zr * sigma)
-        return(a, b)
+        a = (zL * sigma) + mean
+        b = (zr * sigma) + mean
+        return([a, b])
 
     def event_flagging(self):
         """ The method of flagging values that are outside of the values indicated
@@ -321,78 +327,80 @@ class StatusThread(QThread):
     def get_event(self):
         return(self.flagged_event)
 
+    def set_calibration_values(self, name, mean, std):
+        self.calibration_values[name]['mean'] = mean
+        self.calibration_values[name]['stdev'] = std
+        self.calibration_values[name]['range'] = self.normal_range(self.thread_options['percent'],
+                                                                   self.calibration_values[name]['stdev'],
+                                                                   self.calibration_values[name]['mean'])
+        self.SIGNALS.calibration_value.emit(self.calibration_values)
+
     def calibrate(self, v):
+        """ Either gets the calibration values from the file created by the calibration shared memory process
+        or it runs a calibration itself by averaging over a length of time (number of new events) and updates
+        the calibration_values dictionary with the mean (or median), standard deviation, and range.
+        If the calibration is successful, then the calibration is set to True, mode is set to running,
+        and the calibration_values are updated.
+        """
+
         if self.thread_options['calibration source'] == "calibration from results":
-            results, cal_file = get_cal_results('xcs', 'xcsx47519') ### change the experiment
+            results, cal_file = get_cal_results(HUTCH, EXPERIMENT) ### change the experiment
             if results == None:
                 self.SIGNALS.message.emit("no calibration file there")
                 pass
-            self.calibration_values['i0']['mean'] =  float(results['i0_median'])
-            self.calibration_values['i0']['stdev'] = float(results['i0_low'])
-            self.calibration_values['i0']['range'] = self.normal_range(self.thread_options['percent'],
-                                                                       self.calibration_values['i0']['stdev'],
-                                                                       self.calibration_values['i0']['mean'])
-            self.calibration_values['ratio']['mean'] = float(results['mean_ratio'])
-            self.calibration_values['ratio']['stdev'] = float(results['std_ratio'])
-            self.calibration_values['ratio']['range'] = self.normal_range(self.thread_options['percent'],
-                                                                       self.calibration_values['ratio']['stdev'],
-                                                                       self.calibration_values['ratio']['mean'])
+            self.set_calibration_values('i0', float(results['i0_mean']), float(results['i0_low']))
+            self.set_calibration_values('ratio', float(results['ratio_median']), float(results['ratio_low']))
+            self.set_calibration_values('diff', float(results['diff_mean']), float(results['diff_low']))
             self.dropped_shot_threshold = self.normal_range(95, self.calibration_values['i0']['stdev'],
                                                             self.calibration_values['i0']['mean'])[0]
-            self.SIGNALS.calibration_value.emit(self.calibration_values)
             self.calibrated = True
             self.mode = 'running'
-            self.SIGNALS.message.emit(str(cal_file))
-            self.SIGNALS.message.emit('i0 median: ' + results['i0_median'])
-            self.SIGNALS.message.emit('i0 low: ' + results['i0_low'])
-            self.SIGNALS.message.emit('mean ratio: ' + results['mean_ratio'])
-            self.SIGNALS.message.emit('standard deviation of the ratio: ' + (results['std_ratio']))
-            self.SIGNALS.calibration_value.emit(results)
+            self.SIGNALS.message.emit('calibration file: ' + str(cal_file))
+
         elif self.thread_options['calibration source'] == 'calibration in GUI':
-            for key in self.calibration_values:
-                self.calibration_values[key]['mean'] = 0
-                self.calibration_values[key]['stdev'] = 0
-            timer = time.time()
-            cal_values = [[],[],[]]
-            while time.time()-timer < 5:
-                if v.get(self.i0_rdbutton_selection) > 5000:
-                    cal_values[0].append(v.get(self.i0_rdbutton_selection))
-                    cal_values[1].append(v.get('diff'))
-                    cal_values[2].append(v.get('ratio'))
-                    time.sleep(1/self.thread_options['sampling rate'])
-            self.calibration_values['i0']['mean'] = mean(cal_values[0])
-            self.calibration_values['i0']['stdev'] = stdev(cal_values[0])
-            self.calibration_values['i0']['range'] = self.normal_range(self.thread_options['percent'],
-                                                                       self.calibration_values['i0']['stdev'],
-                                                                       self.calibration_values['i0']['mean'])
-            self.calibration_values['diff']['mean'] = mean(cal_values[1])
-            self.calibration_values['diff']['stdev'] = stdev(cal_values[1])
-            self.calibration_values['diff']['range'] = self.normal_range(self.thread_options['percent'],
-                                                                         self.calibration_values['diff']['stdev'],
-                                                                         self.calibration_values['diff']['mean'])
-            self.calibration_values['ratio']['mean'] = mean(cal_values[2])
-            self.calibration_values['ratio']['stdev'] = stdev(cal_values[2])
-            self.calibration_values['ratio']['range'] = self.normal_range(self.thread_options['percent'],
-                                                                          self.calibration_values['ratio']['stdev'],
-                                                                          self.calibration_values['ratio']['mean'])
-            self.dropped_shot_threshold = self.normal_range(95, self.calibration_values['i0']['stdev'],
+            if v.get('i0') > 500:
+                self.cal_vals[0].append(v.get('i0'))
+                self.cal_vals[1].append(v.get('diff'))
+                self.cal_vals[2].append(v.get('ratio'))
+                time.sleep(1/self.thread_options['sampling rate'])
+            if len(self.cal_vals[0]) > 100:
+                self.set_calibration_values('i0', mean(self.cal_vals[0]), stdev(self.cal_vals[0]))
+                self.set_calibration_values('diff', mean(self.cal_vals[1]), stdev(self.cal_vals[1]))
+                self.set_calibration_values('ratio', mean(self.cal_vals[2]), stdev(self.cal_vals[2]))
+                self.dropped_shot_threshold = self.normal_range(95, self.calibration_values['i0']['stdev'],
                                                             self.calibration_values['i0']['mean'])[0]
-            self.calibrated = True
-            self.mode = "running"
-            self.SIGNALS.calibration_value.emit(self.calibration_values)
+                self.calibrated = True
+                self.cal_vals = [[],[],[]]
+                self.mode = "running"
+
         else:
             self.SIGNALS.message.emit('was not able to calibrate')
             self.calibrated = False
             self.mode = 'running'
+        if self.calibrated:    
+            self.SIGNALS.message.emit('i0 median: ' + str(self.calibration_values['i0']['mean']))
+            self.SIGNALS.message.emit('i0 low: ' + str(self.calibration_values['i0']['stdev']))
+            self.SIGNALS.message.emit('mean ratio: ' + str(self.calibration_values['ratio']['mean']))
+            self.SIGNALS.message.emit('standard deviation of the ratio: ' + str(self.calibration_values['ratio']['stdev']))
 
     def recalibrate(self):
-        self.SIGNALS.message.emit("recalibrating..")
+        self.SIGNALS.message.emit("The data may need to be recalibrated. There is consistently higher I/I0 than the calibration..")
  
     def wake_motor(self):
-        self.SIGNALS.message.emit("wake motor")
+        if self.isTracking:
+            self.SIGNALS.message.emit("waking up motor")
+            self.SIGNALS.wake.emit()
+        else:
+            self.SIGNALS.message.emit("consider running a motor search or turning on tracking")
 
     def sleep_motor(self):
-        self.SIGNALS.message.emit("sleep motor")
+        if self.isTracking:
+            self.SIGNALS.message.emit("everything is good.. putting motor to sleep")
+            self.SIGNALS.sleep.emit()
+        else:
+            pass
+
+
 
 class EventProcessor(QThread):
     def __init__(self, signals):
@@ -403,14 +411,16 @@ class EventProcessor(QThread):
 
     def flag_counter(self, new_flag, num_flagged, func_to_execute):
         self.isCounting = True
-        if new_flag in self.flag_type.keys():
+        print("This is inside of the event processor!!!   KSEUHFKJSNFDEKAYWGEFIUHASBDFJYAWEGFUKYHABDFJYAWEGFKHAJWEBD", self.flag_type)
+        if new_flag in self.flag_type.copy():
             self.flag_type[new_flag] += 1
-            if num_flagged >= self.flag_type[new_flag]:
+            if num_flagged <= self.flag_type[new_flag]:
                 del(self.flag_type[new_flag])
                 func_to_execute() 
         else:
             self.flag_type[new_flag] = 1
-            for key in self.flag_type:
+        for key in self.flag_type:
+            if key != new_flag:
                 self.flag_type[key] -= 1
                 if self.flag_type[key] <= 0:
                     del(self.flag_type[key])
@@ -418,6 +428,8 @@ class EventProcessor(QThread):
     def stop_count(self):
         self.flag_type = {}
         self.isCounting = False
+
+
         
 
 class MotorThread(QThread):
@@ -426,20 +438,15 @@ class MotorThread(QThread):
         self.SIGNALS = signals
         self.moves = []
         self.motor_options = {}
-        self.ratio_pv = PV_DICT.get('ratio', None)
-        self.ratio = EpicsSignal(self.ratio_pv)
-        self.ratio_intensity = 0
-        self.motor = IMS('XCS:USR:MMS:39', name='jet_x') # this needs to move out to a cfg file
-        time.sleep(1)
-        for i in self.motor.component_names:
-            print(i,getattr(self.motor,i).connected)
-        self.motor.log.setLevel(level='CRITICAL')
+        #self.ratio_pv = PV_DICT.get('ratio', None)
+        #self.ratio = EpicsSignal(self.ratio_pv)
+        #self.ratio_intensity = 0
+        #self.motor = IMS('XCS:USR:MMS:39', name='jet_x') # this needs to move out to a cfg file
+        #time.sleep(1)
+        #for i in self.motor.component_names:
+        #    print(i,getattr(self.motor,i).connected)
+        #self.motor.log.setLevel(level='CRITICAL')
         self.SIGNALS.motorOp.connect(self.params)
-        
-        self.set_motor_params()
-
-    def set_motor_params(self):
-        self.SIGNALS.getMotorOptions.emit()
 
     def params(self, p):
         """ sets the motor options so that it can be used to run the algorithms
@@ -451,8 +458,17 @@ class MotorThread(QThread):
         self.motor_options = p
 
     def run(self):
+        print("I just want to see when this prints")
+        while not self.isInterruptedRequested():
+            print("I am now running", self.motor_options)
+            time.sleep(3)
+            print("I am now going to sleep")
+            self.SIGNALS.sleep.emit()
+        print("Interruption was requested: ", self.isInterruptedRequested())
+
+
+"""
         if self.motor_options['scanning algorithm'] == "search":
-            done = 0
             while not done:
                 self.motor_position = self.motor.position
                 self.motor_position, self.ratio_intensity = self._search(self.motor_position, -.01, .01, .0005, 60)
@@ -486,4 +502,4 @@ class MotorThread(QThread):
         elif self.move_type == "stop tracking":
             self.SIGNALS.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
             #### again, exit safely  
-        
+"""        
