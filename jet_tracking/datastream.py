@@ -254,6 +254,7 @@ class StatusThread(QThread):
                 self.check_status_update()
                 time.sleep(1/self.thread_options['sampling rate'])
             elif self.mode == "calibrate":
+                self.calibrated = False
                 self.update_buffer(new_values)
                 self.calibrate(new_values)
             elif self.mode == "correcting":
@@ -274,7 +275,7 @@ class StatusThread(QThread):
             else:
                 self.SIGNALS.status.emit("everything is good", "green")
                 if self.processor_worker.isCounting == True:
-                    self.processor_worker('everything is good', 1000, self.processor_worker.stop_count)
+                    self.processor_worker.flag_counter('everything is good', 1000, self.processor_worker.stop_count)
         elif not self.calibrated and self.mode != "correcting":
             self.SIGNALS.status.emit("not calibrated", "orange")
         elif self.mode == "correcting":
@@ -342,7 +343,7 @@ class StatusThread(QThread):
         If the calibration is successful, then the calibration is set to True, mode is set to running,
         and the calibration_values are updated.
         """
-
+        
         if self.thread_options['calibration source'] == "calibration from results":
             results, cal_file = get_cal_results(HUTCH, EXPERIMENT) ### change the experiment
             if results == None:

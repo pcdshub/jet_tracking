@@ -595,7 +595,17 @@ class JetTracking(Display):
             self.isTracking = False
             self.update_tracking_status('disabled', red)
 
-    def update_calibration(self, cal): 
+    def update_calibration(self, cal):
+        """
+        this function is called when the calibration button is ran, and a successful calibration 
+        is done from the StatusThread. It gets the dictionary of calibration values from the thread
+        and sets the calibration values. It also updates the display. It checks if the calibration has 
+        been ran before. If it has, then it clears the calibration plots and then resets them.
+        """
+        if self.calibrated:
+            self.ratio_graph.removeCalibrationPlots()
+            self.i0_graph.removeCalibrationPlots()
+            self.diff_graph.removeCalibrationPlots() 
         self.calibration_values = cal
         self.lbl_i0_status.display(self.calibration_values['i0']['mean'])
         self.lbl_diff_status.display(self.calibration_values['diff']['mean'])

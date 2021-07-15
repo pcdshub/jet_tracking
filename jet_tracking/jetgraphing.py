@@ -29,6 +29,11 @@ class ScrollingTimeWidget(pg.PlotWidget):
 
         self.SIGNALS = signals
         self.setMouseEnabled(x=False, y=False)
+        self.plt = pg.ScatterPlotItem()
+        self.avg_plt = pg.PlotCurveItem()
+        self.mean_plt = pg.PlotCurveItem()
+        self.percent_low = pg.PlotCurveItem()
+        self.percent_high = pg.PlotCurveItem()
 
     def addPlot(self, plt):
         self.plt = plt
@@ -45,6 +50,13 @@ class ScrollingTimeWidget(pg.PlotWidget):
     def addSigmaPlots(self, plt1, plt2):
         self.percent_low = plt1
         self.percent_high = plt2
-        self.addItem(plt1)
-        self.addItem(plt2)
+        self.pfill = pg.FillBetweenItem(self.percent_high, self.percent_low, brush=(50, 50, 200, 50)) 
+        self.addItem(self.percent_low)
+        self.addItem(self.percent_high)
+        self.addItem(self.pfill)
+
+    def removeCalibrationPlots(self):
+        self.removeItem(self.percent_low)
+        self.removeItem(self.percent_high)
+        self.removeItem(self.mean_plt)
 
