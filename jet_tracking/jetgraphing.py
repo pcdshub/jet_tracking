@@ -55,8 +55,9 @@ class ScrollingTimeWidget(pg.PlotWidget):
         self.addItem(self.percent_high)
         self.addItem(self.pfill)
 
-    def removeCalibrationPlots(self):
+    def refreshCalibrationPlots(self):
         self.removeItem(self.percent_low)
         self.removeItem(self.percent_high)
         self.removeItem(self.mean_plt)
-
+        self.addMeanPlot(self.mean_plt)
+        self.addSigmaPlots(self.percent_low, self.percent_high)
