@@ -143,7 +143,7 @@ class ValueReader(metaclass=Singleton):
  
 class StatusThread(QThread):
 
-    def __init__(self, signals):
+    def __init__(self, context, signals):
         super(StatusThread, self).__init__()
         """Child class of QThread which processes data and hands it to the main thread
         
@@ -160,9 +160,10 @@ class StatusThread(QThread):
         
         """
         self.SIGNALS = signals
+        self.context = context
         self.reader = ValueReader(signals)
         self.processor_worker = EventProcessor(signals)
-
+        print("__init__ of StatusThread: %d" % QThread.currentThreadId())
         self.isTracking = False
         self.mode = "running"  #can either be running or calibrating
         self.TIMER = time.time()
@@ -248,7 +249,8 @@ class StatusThread(QThread):
     def run(self):
         """Long-running task to collect data points"""
         while not self.isInterruptionRequested():
-            new_values = self.reader.read_value() 
+            new_values = self.reader.read_value()
+            #print("run method: %d" % QThread.currentThreadId()) 
             if self.mode == "running":
                 self.update_buffer(new_values)
                 self.check_status_update()
@@ -259,6 +261,7 @@ class StatusThread(QThread):
                 self.calibrate(new_values)
             elif self.mode == "correcting":
                 self.update_buffer(new_values)
+        print("Interruption request: %d" % QThread.currentThreadId())
 
     def check_status_update(self):
         if self.calibrated and self.mode != "correcting":
@@ -349,11 +352,22 @@ class StatusThread(QThread):
             if results == None:
                 self.SIGNALS.message.emit("no calibration file there")
                 pass
-            self.set_calibration_values('i0', float(results['i0_mean']), float(results['i0_low']))
-            self.set_calibration_values('ratio', float(results['ratio_median']), float(results['ratio_low']))
-            self.set_calibration_values('diff', float(results['diff_mean']), float(results['diff_low']))
-            self.dropped_shot_threshold = self.normal_range(95, self.calibration_values['i0']['stdev'],
-                                                            self.calibration_values['i0']['mean'])[0]
+            self.set_calibration_values('i0', 
+                                       float(results['i0_mean']), 
+                                       float(results['i0_low'])
+                                       )
+            self.set_calibration_values('ratio', 
+                                       float(results['ratio_median']), 
+                                       float(results['ratio_low'])
+                                       )
+            self.set_calibration_values('diff', 
+                                       float(results['diff_mean']), 
+                                       float(results['diff_low'])
+                                       )
+            self.dropped_shot_threshold = self.normal_range(90, 
+                                                           self.calibration_values['i0']['stdev'],
+                                                           self.calibration_values['i0']['mean']
+                                                           )[0]
             self.calibrated = True
             self.mode = 'running'
             self.SIGNALS.message.emit('calibration file: ' + str(cal_file))
@@ -365,11 +379,22 @@ class StatusThread(QThread):
                 self.cal_vals[2].append(v.get('ratio'))
                 time.sleep(1/self.thread_options['sampling rate'])
             if len(self.cal_vals[0]) > 100:
-                self.set_calibration_values('i0', mean(self.cal_vals[0]), stdev(self.cal_vals[0]))
-                self.set_calibration_values('diff', mean(self.cal_vals[1]), stdev(self.cal_vals[1]))
-                self.set_calibration_values('ratio', mean(self.cal_vals[2]), stdev(self.cal_vals[2]))
-                self.dropped_shot_threshold = self.normal_range(95, self.calibration_values['i0']['stdev'],
-                                                            self.calibration_values['i0']['mean'])[0]
+                self.set_calibration_values('i0', 
+                                           mean(self.cal_vals[0]), 
+                                           stdev(self.cal_vals[0])
+                                           )
+                self.set_calibration_values('diff', 
+                                           mean(self.cal_vals[1]), 
+                                           stdev(self.cal_vals[1])
+                                           )
+                self.set_calibration_values('ratio', 
+                                           mean(self.cal_vals[2]), 
+                                           stdev(self.cal_vals[2])
+                                           )
+                self.dropped_shot_threshold = self.normal_range(90, 
+                                                               self.calibration_values['i0']['stdev'],
+                                                               self.calibration_values['i0']['mean']
+                                                               )[0]
                 self.calibrated = True
                 self.cal_vals = [[],[],[]]
                 self.mode = "running"
@@ -412,7 +437,7 @@ class EventProcessor(QThread):
 
     def flag_counter(self, new_flag, num_flagged, func_to_execute):
         self.isCounting = True
-        print("This is inside of the event processor!!!   KSEUHFKJSNFDEKAYWGEFIUHASBDFJYAWEGFUKYHABDFJYAWEGFKHAJWEBD", self.flag_type)
+        #print("This is inside of the event processor!!!   KSEUHFKJSNFDEKAYWGEFIUHASBDFJYAWEGFUKYHABDFJYAWEGFKHAJWEBD", self.flag_type)
         if new_flag in self.flag_type.copy():
             self.flag_type[new_flag] += 1
             if num_flagged <= self.flag_type[new_flag]:
@@ -420,7 +445,7 @@ class EventProcessor(QThread):
                 func_to_execute() 
         else:
             self.flag_type[new_flag] = 1
-        for key in self.flag_type:
+        for key in self.flag_type.copy():
             if key != new_flag:
                 self.flag_type[key] -= 1
                 if self.flag_type[key] <= 0:
@@ -434,9 +459,10 @@ class EventProcessor(QThread):
         
 
 class MotorThread(QThread):
-    def __init__(self, signals):
+    def __init__(self, context, signals):
         super(MotorThread, self).__init__()
         self.SIGNALS = signals
+        self.context = context
         self.moves = []
         self.motor_options = {}
         #self.ratio_pv = PV_DICT.get('ratio', None)
