@@ -18,6 +18,7 @@ class MainWindow(QMainWindow):
         self.setup_ui()
 
     def setup_ui(self):
+        self.setMinimumSize(self.minimumSizeHint())
         self.setWindowTitle("Jet Tracking")
         self.statusBar = self.statusBar
         self.menuBar = self.createMenuBar()
@@ -134,7 +135,7 @@ class MainWindow(QMainWindow):
         self.controlsDock.setWidget(self.controlsWidget)
         self.controlsDock.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         self.addDockWidget(Qt.RightDockWidgetArea, self.controlsDock)
-        self.resizeDocks([self.controlsDock], [30], Qt.Horizontal)
+        self.resizeDocks([self.controlsDock], [45], Qt.Horizontal)
         # Jet Image Widget
         #self.jetImageDock = QtWidgets.QDockWidget("Jet Image", self)
         #self.jetImageDock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.BottomDockWidgetArea)

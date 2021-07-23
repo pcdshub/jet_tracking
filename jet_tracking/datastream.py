@@ -163,7 +163,7 @@ class StatusThread(QThread):
         self.context = context
         self.reader = ValueReader(signals)
         self.processor_worker = EventProcessor(signals)
-
+        print("__init__ of StatusThread: %d" % QThread.currentThreadId())
         self.isTracking = False
         self.mode = "running"  #can either be running or calibrating
         self.TIMER = time.time()
@@ -249,7 +249,8 @@ class StatusThread(QThread):
     def run(self):
         """Long-running task to collect data points"""
         while not self.isInterruptionRequested():
-            new_values = self.reader.read_value() 
+            new_values = self.reader.read_value()
+            #print("run method: %d" % QThread.currentThreadId()) 
             if self.mode == "running":
                 self.update_buffer(new_values)
                 self.check_status_update()
@@ -260,6 +261,7 @@ class StatusThread(QThread):
                 self.calibrate(new_values)
             elif self.mode == "correcting":
                 self.update_buffer(new_values)
+        print("Interruption request: %d" % QThread.currentThreadId())
 
     def check_status_update(self):
         if self.calibrated and self.mode != "correcting":
@@ -435,7 +437,7 @@ class EventProcessor(QThread):
 
     def flag_counter(self, new_flag, num_flagged, func_to_execute):
         self.isCounting = True
-        print("This is inside of the event processor!!!   KSEUHFKJSNFDEKAYWGEFIUHASBDFJYAWEGFUKYHABDFJYAWEGFKHAJWEBD", self.flag_type)
+        #print("This is inside of the event processor!!!   KSEUHFKJSNFDEKAYWGEFIUHASBDFJYAWEGFUKYHABDFJYAWEGFKHAJWEBD", self.flag_type)
         if new_flag in self.flag_type.copy():
             self.flag_type[new_flag] += 1
             if num_flagged <= self.flag_type[new_flag]:
