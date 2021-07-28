@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QFrame
-from jet_tracking.datastream import StatusThread, MotorThread
-from jet_tracking.gui.widgets.controlWidgetUi import Controls_Ui
+from datastream import StatusThread, MotorThread
+from gui.widgets.controlWidgetUi import Controls_Ui
 import logging
 
 log = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.bttn_stop_motor.clicked.connect(self._stop_motor)
 
         self.signals.status.connect(self.update_monitor_status)
-        self.signals.display_calibration.conneect(self.update_calibration)
+        self.signals.display_calibration.connect(self.update_calibration)
 
         self.signals.wake.connect(self._start_motor)
         self.signals.sleep.connect(self._stop_motor)

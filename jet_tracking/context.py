@@ -3,26 +3,27 @@ import logging
 import threading
 
 log = logging.getLogger(__name__)
-lock = threading.lock()
+lock = threading.Lock()
 
 class Context():
     def __init__(self, signals):
         self.signals = signals
-        JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
-        SD_LOC = '/reg/d/psdm/'
-        PV_DICT = {'diff': 'XCS:JTRK:REQ:DIFF_INTENSITY', 'i0': 'XCS:JTRK:REQ:I0', 'ratio': 'XCS:JTRK:REQ:RATIO'}
-        CFG_FILE = 'jt_configs/xcs_config.yml'
-        HUTCH = 'xcs'
-        EXPERIMENT = 'xcsx1568'
+        self.JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
+        self.SD_LOC = '/reg/d/psdm/'
+        self.PV_DICT = {'diff': 'XCS:JTRK:REQ:DIFF_INTENSITY', 'i0': 'XCS:JTRK:REQ:I0', 'ratio': 'XCS:JTRK:REQ:RATIO'}
+        self.CFG_FILE = 'jt_configs/xcs_config.yml'
+        self.HUTCH = 'xcs'
+        self.EXPERIMENT = 'xcsx1568'
         self.initialize_control_options()
 
     def initialize_control_options(self):
         self.thread_options = {}
         self.motor_options = {}
         self.calibration_values = {}
-        self.live_data = False
+        self.live_data = True
         self.isTracking = False
         self.calibrated = False
+        print(self.calibrated)
 
     def update_thread_options(self, thr, name, val):
         if thr == 'status':
@@ -34,10 +35,10 @@ class Context():
 
     def run_live(self, live):
         self.live_data = live
-        self.signals.run_live(self.live_data)
+        self.signals.run_live.emit(self.live_data)
 
-    def parse_config(cfg_file=CFG_FILE):
-        with open(args.cfg_file) as f:
+    def parse_config(self):
+        with open(self.CFG_FILE) as f:
           yml_dict = yaml.load(f, Loader=yaml.FullLoader)
         return yml_dict
         # api_port = yml_dict['api_msg']['port']
@@ -52,7 +53,7 @@ class Context():
         # exp = yml_dict['experiment']
         # run = yml_dict['run']
 
-    def get_cal_results(hutch, exp):
+    def get_cal_results(self, hutch, exp):
         results_dir = Path(f'/cds/home/opr/{hutch}opr/experiments/{exp}/jt_calib/')
         cal_files = list(results_dir.glob('jt_cal*'))
         cal_files.sort(key=os.path.getmtime)
@@ -63,21 +64,6 @@ class Context():
             return cal_results, cal_file_path
         else:
             return None
-
-    def Skimmer(key, oldlist, checklist):
-        skimlist = []
-        for i in range(len(checklist[key])):
-            if checklist[key][i] == 0:
-                skimlist.append(oldlist[i])
-        return (skimlist)
-
-    def DivWithTry(v1, v2):
-        try:
-            a = v1 / v2
-        except (TypeError, ZeroDivisionError) as e:
-            # print(f"got error [e]")
-            a = 0
-        return (a)
 
     def set_mode(self, mode):
         self.mode = mode

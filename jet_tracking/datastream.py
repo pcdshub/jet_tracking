@@ -6,13 +6,15 @@ import numpy as np
 from ophyd import EpicsSignal
 from PyQt5.QtCore import QThread, QObject
 from tools.num_gen import sinwv
+from tools.quick_calc import DivWithTry, Skimmer
 import collections
+import threading
 
 ologging = logging.getLogger('ophyd')
 ologging.setLevel('CRITICAL')
 
 log = logging.getLogger(__name__)
-
+lock = threading.Lock()
 
 class Singleton(type):
     _instances = {}
@@ -101,6 +103,7 @@ class StatusThread(QThread):
         self.createEventProcessor()
         self.createVars()
         self.connect_signals()
+        self.initialize_buffers()
         log.info("__init__ of StatusThread: %d" % QThread.currentThreadId())
 
     def createVars(self):
@@ -117,14 +120,13 @@ class StatusThread(QThread):
         self.calibration_values = {'i0':{'mean':0, 'stdev':0, 'range':(0, 0)}, 'diff':{'mean':0, 'stdev':0, 'range':(0, 0)}, 'ratio':{'mean':0, 'stdev':0, 'range':(0, 0)}}
 
     def createValueReader(self):
-        self.reader = ValueReader(context, signals)
+        self.reader = ValueReader(self.context, self.signals)
 
     def createEventProcessor(self):
-        self.processor_worker = EventProcessor(context, signals)
+        self.processor_worker = EventProcessor(self.context, self.signals)
 
     def initialize_buffers(self):
         ## buffers and data collection
-        self.BUFFER_SIZE = 300
         self.averages = {"average i0":collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE), 
                          "average diff": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                          "average ratio": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
@@ -145,6 +147,9 @@ class StatusThread(QThread):
 
     def tracking(self, b):
         self.isTracking = b
+
+    def update_mode(self, mode):
+        self.mode = mode
 
     def set_options(self, options):
         """sets the thread options anytime something from the main gui side changes
@@ -374,7 +379,7 @@ class StatusThread(QThread):
 
 
 class EventProcessor(QThread):
-    def __init__(self, signals):
+    def __init__(self, context, signals):
         super(EventProcessor, self).__init__()
         self.SIGNALS = signals
         self.flag_type = {}

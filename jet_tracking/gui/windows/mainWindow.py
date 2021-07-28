@@ -1,9 +1,9 @@
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import QTabWidget, QAction, QMainWindow, QLabel
-from jet_tracking.context import Context
-from jet_tracking.gui.views.jetTrackerView import JetTrackerView
-from jet_tracking.gui.windows.mainWindowUi import Ui_MainWindow
-from jet_tracking.signals import Signals
+from context import Context
+from gui.views.jetTrackerView import JetTrackerView
+from gui.windows.mainWindowUi import Ui_MainWindow
+from signals import Signals
 import logging
 
 log = logging.getLogger(__name__)
@@ -13,8 +13,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
         self.setAttribute(Qt.WA_AlwaysStackOnTop)
-        self.context = Context()
         self.signals = Signals()
+        self.context = Context(self.signals)
         self.setupUi(self)
 
         self.create_views_and_dialogs()

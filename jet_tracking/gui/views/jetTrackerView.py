@@ -1,13 +1,17 @@
-from jet_tracking.gui.widgets.controlWidget import ControlsWidget
-from jet_tracking.gui.widgets.graphWidget import GraphsWidget
-from jet_tracking.signals import Signals
+from PyQt5.Qt import Qt
+from PyQt5.QtWidgets import QWidget, QDockWidget, QSizePolicy, QHBoxLayout, QMainWindow
 
-logging = logging.getLogger('pydm')
-logging.setLevel('CRITICAL')
+from gui.widgets.controlWidget import ControlsWidget
+from gui.widgets.graphWidget import GraphsWidget
+from signals import Signals
+import logging
+
+log = logging.getLogger('pydm')
+log.setLevel('CRITICAL')
 
 class JetTrackerView(QWidget):
 
-    def __init__(self, context=None, signals=None):
+    def __init__(self, context, signals):
         super(JetTrackerView, self).__init__()
         self.signals = signals
         self.context = context
@@ -19,7 +23,7 @@ class JetTrackerView(QWidget):
         self.setLayout(self.mainLayout)
 
     def createGraphWidget(self):
-        self.graphWidget = GraphsWidget(context=None, signals=self.signals)
+        self.graphWidget = GraphsWidget(context=self.context, signals=self.signals)
 
     def createDockWidgets(self):
         #self.setDockNestingEnabled(True)

@@ -3,8 +3,9 @@ import sys, os
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QIcon
 from PyQt5.Qt import Qt
-
-from jet_tracking.gui.windows.mainWindow import MainWindow
+#from . import datastream
+#sys.path.append('/reg/g/pcds/epics-dev/ajshack/jet_tracking/jet_tracking')
+from gui.windows.mainWindow import MainWindow
 import logging
 
 log = logging.getLogger(__name__)

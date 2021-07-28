@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QVBoxLayout, QButtonGroup, QRadioButton, QGridLayout, QHBoxLayout, QPushButton, QLCDNumber, \
     QFrame, QTextEdit
 
-from jet_tracking.gui.widgets.basicWidgets import CollapsibleBox, Label, LineEdit, ComboBox
+from gui.widgets.basicWidgets import CollapsibleBox, Label, LineEdit, ComboBox
 
 
 class Controls_Ui(object):

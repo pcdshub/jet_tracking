@@ -22,6 +22,8 @@ class Signals(QtCore.QObject):
     motorOp = QtCore.pyqtSignal(dict)
     enable_tracking = QtCore.pyqtSignal(bool)   
     refreshCal = QtCore.pyqtSignal()
+
+    display_calibration= QtCore.pyqtSignal()
  
     # calibration
     ali0 = QtCore.pyqtSignal(float)
