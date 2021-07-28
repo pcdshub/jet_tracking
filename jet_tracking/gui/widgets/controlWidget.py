@@ -104,7 +104,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.context.set_tracking(False)
             self.update_tracking_status('disabled', red)
 
-    def update_calibration(self, cal):
+    def update_calibration(self):
         """
         this function is called when a successful calibration is ran. It updates the display.
         """
