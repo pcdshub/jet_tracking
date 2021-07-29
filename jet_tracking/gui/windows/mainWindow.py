@@ -2,6 +2,7 @@ from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import QTabWidget, QAction, QMainWindow, QLabel
 from context import Context
 from gui.views.jetTrackerView import JetTrackerView
+from gui.views.jetImageView import JetImageView
 from gui.windows.mainWindowUi import Ui_MainWindow
 from signals import Signals
 import logging
@@ -23,14 +24,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.connect_signals()
 
     def setup_window_tabs(self):
-        # self.setDockNestingEnabled(True)
+        self.setDockNestingEnabled(True)
         self.tabWidget = QTabWidget()
         self.setCentralWidget(self.tabWidget)
         self.tabWidget.addTab(self.jetTrackerView, "Jet Tracker")
+        self.tabWidget.addTab(self.jetImageView, "Jet Image")
 
 
     def create_views_and_dialogs(self):
-        self.jetTrackerView = JetTrackerView(self.context, self.signals)
+        self.jetTrackerView = JetTrackerView(self.context, self.signals, self)
+        self.jetImageView = JetImageView(self.context, self.signals)
         # self.helpDialog = HelpDialog()
 
     def connect_buttons(self):
