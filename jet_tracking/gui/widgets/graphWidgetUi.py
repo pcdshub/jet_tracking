@@ -12,9 +12,9 @@ class Graphs_Ui(object):
 
         obj.layout = QVBoxLayout()
         obj.setLayout(self.layout)
-        obj.ratio_graph = ScrollingTimeWidget(self.signals)
-        obj.i0_graph = ScrollingTimeWidget(self.signals)
-        obj.diff_graph = ScrollingTimeWidget(self.signals)
+        obj.ratio_graph = ScrollingTimeWidget(self.context, self.signals)
+        obj.i0_graph = ScrollingTimeWidget(self.context, self.signals)
+        obj.diff_graph = ScrollingTimeWidget(self.context, self.signals)
         graph_setup(obj.ratio_graph, "Intensity Ratio", f"I/I\N{SUBSCRIPT ZERO}", \
                         pg.mkPen(width=5, color='r'))
         graph_setup(obj.i0_graph, "Initial Intensity", f"I\N{SUBSCRIPT ZERO}", \

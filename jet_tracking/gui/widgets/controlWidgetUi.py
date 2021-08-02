@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QVBoxLayout, QButtonGroup, QRadioButton, QGridLayout, QHBoxLayout, QPushButton, QLCDNumber, \
-    QFrame, QTextEdit
+    QFrame, QTextEdit, QSizePolicy
 
 from gui.widgets.basicWidgets import CollapsibleBox, Label, LineEdit, ComboBox
 
@@ -29,7 +29,9 @@ class Controls_Ui(object):
 
         obj.bttngrp3 = QButtonGroup()
         obj.rdbttn_cali_live = QRadioButton("calibration in GUI")
+        obj.rdbttn_cali_live.setMinimumSize(10, 10)
         obj.rdbttn_cali = QRadioButton("calibration from results")
+        obj.rdbttn_cali.setMinimumSize(10, 10)
         obj.rdbttn_cali.setChecked(True)
         obj.bttngrp3.addButton(obj.rdbttn_cali, id=0)
         obj.bttngrp3.addButton(obj.rdbttn_cali_live, id=1)
@@ -39,43 +41,58 @@ class Controls_Ui(object):
         ##############
         obj.layout_graph = QVBoxLayout()
         obj.layout_allrdbttns = QGridLayout()
-        obj.layout_allrdbttns.setColumnStretch(0, 1)
+        obj.layout_allrdbttns.setColumnStretch(0, 6)
         obj.layout_allrdbttns.setColumnStretch(1, 1)
-        obj.layout_allrdbttns.setColumnStretch(2, 1)
+        obj.layout_allrdbttns.setRowStretch(1, 5)
         obj.layout_allrdbttns.addWidget(obj.rdbttn_live, 0, 0)
         obj.layout_allrdbttns.addWidget(obj.rdbttn_sim, 0, 1)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali, 1, 0)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali_live, 1, 1)
+        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali, 1, 0, 1, 2)
+        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali_live, 1, 1, 1, 2)
+        obj.layout_allrdbttns.setRowMinimumHeight(0, 20)
+        obj.layout_allrdbttns.setRowMinimumHeight(1, 30)
         obj.layout_graph.addLayout(obj.layout_allrdbttns)
+        obj.layout_graph.addSpacing(5)
 
         #####################################################################
         # make input box for changing the percent of allowed values from the
         # mean and the number of points for averaging on the graph and the
-        # refresh rate to update the points/graph
+        # refresh rate to update the points/graph and the amount of time being
+        # viewed in the pyqtplot
         #####################################################################
 
         obj.lbl_percent = Label("Percent \n(1 - 100)")
         obj.le_percent = LineEdit("70")
         obj.le_percent.valRange(1, 100)
 
-        obj.lbl_ave_graph = Label('Averaging (graph) \n(5 - 300)')
-        obj.lbl_refresh_rate = Label('Refresh Rate \n(2 - 300)')
+        obj.lbl_ave_graph = Label('Averaging \n(5 - 100)')
+        obj.lbl_refresh_rate = Label('Refresh Rate \n(2 - 100)')
         obj.le_ave_graph = LineEdit("50")
-        obj.le_ave_graph.valRange(5, 300)
+        obj.le_ave_graph.valRange(5, 100)
         obj.le_refresh_rate = LineEdit("50")
-        obj.le_refresh_rate.valRange(2, 300)
+        obj.le_refresh_rate.valRange(2, 100)
+        obj.lbl_x_axis = Label("X-axis Time View \n(10s-60s")
+        obj.le_x_axis = LineEdit("30")
+        obj.le_x_axis.valRange(10, 60)
 
         # setup layout
         ##############
 
-        obj.layout_samp = QHBoxLayout()
-        obj.layout_samp.addWidget(obj.lbl_percent)
-        obj.layout_samp.addWidget(obj.le_percent)
-        obj.layout_samp.addWidget(obj.lbl_ave_graph)
-        obj.layout_samp.addWidget(obj.le_ave_graph)
-        obj.layout_samp.addWidget(obj.lbl_refresh_rate)
-        obj.layout_samp.addWidget(obj.le_refresh_rate)
-        obj.layout_graph.addLayout(obj.layout_samp)
+        obj.layout_percent = QHBoxLayout()
+        obj.layout_ave = QHBoxLayout()
+        obj.layout_refresh = QHBoxLayout()
+        obj.layout_x_axis = QHBoxLayout()
+        obj.layout_percent.addWidget(obj.lbl_percent, 75)
+        obj.layout_percent.addWidget(obj.le_percent)
+        obj.layout_ave.addWidget(obj.lbl_ave_graph, 75)
+        obj.layout_ave.addWidget(obj.le_ave_graph)
+        obj.layout_refresh.addWidget(obj.lbl_refresh_rate, 75)
+        obj.layout_refresh.addWidget(obj.le_refresh_rate)
+        obj.layout_x_axis.addWidget(obj.lbl_x_axis, 75)
+        obj.layout_x_axis.addWidget(obj.le_x_axis)
+        obj.layout_graph.addLayout(obj.layout_percent)
+        obj.layout_graph.addLayout(obj.layout_ave)
+        obj.layout_graph.addLayout(obj.layout_refresh)
+        obj.layout_graph.addLayout(obj.layout_x_axis)
         obj.box_graph.setContentLayout(obj.layout_graph)
 
         ###################################################################
@@ -86,8 +103,8 @@ class Controls_Ui(object):
         obj.layout_usr_cntrl.addWidget(obj.box_motor)
 
         obj.bttngrp2 = QButtonGroup()
-        obj.rdbttn_manual = QRadioButton("manual motor moving")
-        obj.rdbttn_auto = QRadioButton("automated motor moving")
+        obj.rdbttn_manual = QRadioButton("manual \nmotor moving")
+        obj.rdbttn_auto = QRadioButton("automated \nmotor moving")
         obj.rdbttn_manual.setChecked(True)
         obj.bttngrp2.addButton(obj.rdbttn_manual, id=1)
         obj.bttngrp2.addButton(obj.rdbttn_auto, id=0)
@@ -112,6 +129,7 @@ class Controls_Ui(object):
         obj.le_ave_motor.valRange(1, 300)
 
         obj.cbox_algorithm = ComboBox()
+        obj.cbox_algorithm.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         obj.cbox_algorithm.addItem("Ternary Search")
         obj.cbox_algorithm.addItem("Full Scan")
 
@@ -143,16 +161,16 @@ class Controls_Ui(object):
         obj.layout_motor.addLayout(obj.layout_motor_bttns)
         obj.layout_motor_manual.addWidget(obj.rdbttn_manual)
         obj.layout_motor_manual.addWidget(obj.rdbttn_auto)
-        obj.layout_motor_input.addWidget(obj.lbl_motor_ll, 0, 0)
-        obj.layout_motor_input.addWidget(obj.le_motor_ll, 0, 1)
-        obj.layout_motor_input.addWidget(obj.lbl_motor_hl, 0, 2)
-        obj.layout_motor_input.addWidget(obj.le_motor_hl, 0, 3)
-        obj.layout_motor_input.addWidget(obj.lbl_motor_size, 1, 0)
-        obj.layout_motor_input.addWidget(obj.le_size, 1, 1)
-        obj.layout_motor_input.addWidget(obj.lbl_motor_average, 1, 2)
-        obj.layout_motor_input.addWidget(obj.le_ave_motor, 1, 3)
-        obj.layout_motor_input.addWidget(obj.lbl_algorithm, 2, 0)
-        obj.layout_motor_input.addWidget(obj.cbox_algorithm, 2, 1)
+        obj.layout_motor_input.addWidget(obj.lbl_motor_ll, 0, 0, 2, 1)
+        obj.layout_motor_input.addWidget(obj.le_motor_ll, 0, 1, 2, 1)
+        obj.layout_motor_input.addWidget(obj.lbl_motor_hl, 0, 2, 2, 1)
+        obj.layout_motor_input.addWidget(obj.le_motor_hl, 0, 3, 2, 1)
+        obj.layout_motor_input.addWidget(obj.lbl_motor_size, 3, 0, 2, 1)
+        obj.layout_motor_input.addWidget(obj.le_size, 3, 1, 2, 1)
+        obj.layout_motor_input.addWidget(obj.lbl_motor_average, 3, 2, 2, 1)
+        obj.layout_motor_input.addWidget(obj.le_ave_motor, 3, 3, 2, 1)
+        obj.layout_motor_input.addWidget(obj.lbl_algorithm, 5, 0, 2, 1)
+        obj.layout_motor_input.addWidget(obj.cbox_algorithm, 5, 1, 2, 2)
         obj.layout_motor_bttns.addWidget(obj.bttn_search)
         obj.layout_motor_bttns.addWidget(obj.bttn_tracking)
         obj.layout_motor_bttns.addWidget(obj.bttn_stop_motor)

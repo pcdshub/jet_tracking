@@ -8,14 +8,14 @@ class Editor_Ui(object):
         used to setup the layout and initialize graphs
         """
 
-        obj.layout = QVBoxLayout(obj)
-        obj.setLayout(self.layout)
+        obj.layout = QVBoxLayout()
+        obj.setLayout(obj.layout)
 
         obj.lbl_thresh = QLabel("Threshold")
         obj.range_slider_thresh = QRangeSlider(obj)
 
-        self.layout_thresh = QHBoxLayout()
-        self.layout_thresh.addWidget(obj.lbl_thresh)
-        self.layout_thresh.addWidget(obj.range_slider_thresh)
+        obj.layout_thresh = QHBoxLayout()
+        obj.layout_thresh.addWidget(obj.lbl_thresh)
+        obj.layout_thresh.addWidget(obj.range_slider_thresh)
 
         obj.layout.addLayout(obj.layout_thresh)

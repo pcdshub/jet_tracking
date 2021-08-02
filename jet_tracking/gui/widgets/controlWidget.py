@@ -1,8 +1,9 @@
-from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QThread, QTimer
 from PyQt5.QtWidgets import QFrame
 from datastream import StatusThread, MotorThread
 from gui.widgets.controlWidgetUi import Controls_Ui
 import logging
+import itertools
 
 log = logging.getLogger(__name__)
 
@@ -15,28 +16,32 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.signals = signals
         self.context = context
         self.setupUi(self)
+        self.initialize_threads()
         self.set_thread_options()
         self.set_motor_options()
-        self._start()
+        self.make_connections()
 
-    def set_thread_options(self):
-        self.context.thread_options['live graphing'] = self.bttngrp1.checkedId()
-        self.context.thread_options['calibration source'] = self.bttngrp3.checkedId()
-        self.context.thread_options['percent'] = float(self.le_percent.text())
-        self.context.thread_options['averaging'] = float(self.le_ave_graph.text())
-        self.context.thread_options['sampling rate'] = float(self.le_refresh_rate.text())
-        self.context.thread_options['manual motor'] = self.bttngrp2.checkedId()
-
-    def set_motor_options(self):
-        self.context.motor_options['high limit'] = float(self.le_motor_hl.text())
-        self.context.motor_options['low limit'] = float(self.le_motor_ll.text())
-        self.context.motor_options['step size'] = float(self.le_size.text())
-        self.context.motor_options['averaging'] = float(self.le_ave_motor    .text())
-        self.context.motor_options['algorithm'] = self.cbox_algorithm.currentIndex()
-
-    def _start(self):
+    def initialize_threads(self):
         self.worker_status = StatusThread(self.context, self.signals)
         self.worker_motor = MotorThread(self.context, self.signals)
+
+    def set_thread_options(self):
+        self.context.update_thread_options('status', 'live graphing', self.bttngrp1.checkedId())
+        self.context.update_thread_options('status', 'calibration source', self.bttngrp3.checkedId())
+        self.context.update_thread_options('status', 'percent', float(self.le_percent.text()))
+        self.context.update_thread_options('status', 'averaging', float(self.le_ave_graph.text()))
+        self.context.update_thread_options('status', 'refresh rate', float(self.le_refresh_rate.text()))
+        self.context.update_thread_options('status', 'display time', float(self.le_x_axis.text()))
+        self.context.update_thread_options('status', 'manual motor', self.bttngrp2.checkedId())
+
+    def set_motor_options(self):
+        self.context.update_thread_options('motor', 'high limit', float(self.le_motor_hl.text()))
+        self.context.update_thread_options('motor', 'low limit', float(self.le_motor_ll.text()))
+        self.context.update_thread_options('motor', 'step size', float(self.le_size.text()))
+        self.context.update_thread_options('motor', 'averaging', float(self.le_ave_motor.text()))
+        self.context.update_thread_options('motor', 'algorithm', self.cbox_algorithm.currentIndex())
+
+    def make_connections(self):
 
         self.le_percent.checkVal.connect(self.update_percent)
         self.le_refresh_rate.checkVal.connect(self.update_refresh_rate)
@@ -61,7 +66,11 @@ class ControlsWidget(QFrame, Controls_Ui):
 
         self.bttn_stop.clicked.connect(self._stop)
         self.bttn_calibrate.clicked.connect(self._calibrate)
-        self.bttn_start.clicked.connect(self.worker_status.start)
+        self.bttn_start.clicked.connect(self.start_processes)
+
+    def start_processes(self):
+        self.worker_status.start()
+        self.signals.start_timer.emit()
 
     def _stop(self):
         if self.worker_motor.isRunning():
@@ -147,7 +156,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.context.update_thread_options('status', 'average', nsamp)
 
     def update_refresh_rate(self, rrate):
-        self.context.update_thread_options('status', 'sampling rate', rrate)
+        self.context.update_thread_options('status', 'refresh rate', rrate)
 
     def update_limits(self, limit):
         self.context.update_thread_options('motor', 'high limit', float(self.le_motor_hl.text()))

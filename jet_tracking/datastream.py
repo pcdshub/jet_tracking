@@ -108,8 +108,8 @@ class StatusThread(QThread):
 
     def createVars(self):
         self.mode = "running"
-        self.TIMER = time.time()
         self.flag_message = None
+        self.TIMER = time.time()
         self.BUFFER_SIZE = 300
         self.NOTIFICATION_TOLERANCE = 200
         self.thread_options = {}
@@ -144,6 +144,7 @@ class StatusThread(QThread):
         self.signals.mode.connect(self.update_mode)
         self.signals.threadOp.connect(self.set_options)
         self.signals.enable_tracking.connect(self.tracking)
+        self.signals.send_values.connect(self.points_to_plot)
 
     def tracking(self, b):
         self.isTracking = b
@@ -158,10 +159,16 @@ class StatusThread(QThread):
         calibration source
         percent
         averaging
-        sampling rate: 
+        refresh rate: 
         manual motor: bool
         """
         self.thread_options = options
+
+    def points_to_plot(self, length):
+        i0 = self.buffers['i0'][-1]
+        diff = self.buffers['diff'][-1]
+        ratio = self.buffers['i0'][-1]
+        self.signals.buffers.emit(i0, diff, ratio)
 
     def update_buffer(self, vals):
         if self.count < self.BUFFER_SIZE:
@@ -169,9 +176,9 @@ class StatusThread(QThread):
             self.buffers['i0'].append(vals.get('i0'))
             self.buffers['diff'].append(vals.get('diff'))
             self.buffers['ratio'].append(vals.get('ratio'))
-            self.buffers['time'].append(time.time()-self.TIMER) ### time should be the clock time instead of runtime
+            self.buffers['time'].append(time.time()-self.TIMER)
         else:
-            self.count += 1 #### do I need to protect from this number getting too big?
+            self.count += 1
             self.buffers['i0'].append(vals.get('i0'))
             self.buffers['diff'].append(vals.get('diff'))
             self.buffers['ratio'].append(vals.get('ratio'))
@@ -194,7 +201,7 @@ class StatusThread(QThread):
                     self.averages[keys[i]].append(0)
             self.averages["time"].append(time.time()-self.TIMER)
             self.signals.avevalues.emit(self.averages)
-        self.signals.buffers.emit(self.buffers)
+        #self.signals.buffers.emit(self.buffers)
 
     def run(self):
         """Long-running task to collect data points"""
@@ -204,7 +211,7 @@ class StatusThread(QThread):
             if self.mode == "running":
                 self.update_buffer(new_values)
                 self.check_status_update()
-                time.sleep(1/self.thread_options['sampling rate'])
+                time.sleep(1/self.thread_options['refresh rate'])
             elif self.mode == "calibrate":
                 self.calibrated = False
                 self.update_buffer(new_values)
@@ -327,7 +334,7 @@ class StatusThread(QThread):
                 self.cal_vals[0].append(v.get('i0'))
                 self.cal_vals[1].append(v.get('diff'))
                 self.cal_vals[2].append(v.get('ratio'))
-                time.sleep(1/self.thread_options['sampling rate'])
+                time.sleep(1/self.thread_options['refresh rate'])
             if len(self.cal_vals[0]) > 100:
                 self.set_calibration_values('i0', 
                                            mean(self.cal_vals[0]), 

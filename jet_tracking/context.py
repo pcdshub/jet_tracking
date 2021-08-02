@@ -1,4 +1,4 @@
-
+import numpy as np
 import logging
 import threading
 
@@ -23,7 +23,8 @@ class Context():
         self.live_data = True
         self.isTracking = False
         self.calibrated = False
-        print(self.calibrated)
+        self.plot_time = 30
+        self.x_axis = list(np.linspace(0, 30, 300))
 
     def update_thread_options(self, thr, name, val):
         if thr == 'status':
