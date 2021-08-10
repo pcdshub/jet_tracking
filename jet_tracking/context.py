@@ -17,8 +17,20 @@ class Context():
         self.initialize_control_options()
 
     def initialize_control_options(self):
-        self.thread_options = {}
-        self.motor_options = {}
+        self.thread_options = {'live graphing': True,
+                               'calibration source': 'calibration from results',
+                               'percent': 70,
+                               'averaging': 50,
+                               'refresh rate': 50,
+                               'display time': 30,
+                               'manual motor': True
+                               }
+        self.motor_options = {'high limit': 5,
+                              'low limit': -5,
+                              'step size': 10,
+                              'averaging': 10,
+                              'algorithm': 'Ternary Search'
+                              }
         self.calibration_values = {}
         self.live_data = True
         self.isTracking = False
@@ -28,9 +40,24 @@ class Context():
 
     def update_thread_options(self, thr, name, val):
         if thr == 'status':
+            if name == 'refresh rate':
+                self.signals.refresh_rate.emit(val)
+            if name == 'percent':
+                pass
+            if name == 'average':
+                pass
             self.thread_options[name] = val
             self.send_status_update()
+
         elif thr == 'motor':
+            if name == 'high limit' or name == 'low limit':
+                pass
+            if name == 'step size':
+                pass
+            if name == 'averaging':
+                pass
+            if name == 'algorithm':
+                pass
             self.motor_options[name] = val
             self.send_motor_update()
 

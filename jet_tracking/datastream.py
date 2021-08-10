@@ -111,6 +111,7 @@ class StatusThread(QThread):
         self.flag_message = None
         self.TIMER = time.time()
         self.BUFFER_SIZE = 300
+        self.AVERAGING_SIZE = 6
         self.NOTIFICATION_TOLERANCE = 200
         self.thread_options = {}
         self.count = 0
@@ -127,10 +128,10 @@ class StatusThread(QThread):
 
     def initialize_buffers(self):
         ## buffers and data collection
-        self.averages = {"average i0":collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE), 
-                         "average diff": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
-                         "average ratio": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
-                         "time": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE)}
+        self.averages = {"average i0":collections.deque([0]*(self.AVERAGING_SIZE), self.AVERAGING_SIZE),
+                         "average diff": collections.deque([0]*(self.AVERAGING_SIZE), self.AVERAGING_SIZE),
+                         "average ratio": collections.deque([0]*(self.AVERAGING_SIZE), self.AVERAGING_SIZE),
+                         "time": collections.deque([0]*(self.AVERAGING_SIZE), self.AVERAGING_SIZE)}
         self.flagged_events = {"high intensity": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                             "missed shot": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
                             "dropped shot": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE)}
@@ -164,11 +165,56 @@ class StatusThread(QThread):
         """
         self.thread_options = options
 
-    def points_to_plot(self, length):
-        i0 = self.buffers['i0'][-1]
-        diff = self.buffers['diff'][-1]
-        ratio = self.buffers['i0'][-1]
-        self.signals.buffers.emit(i0, diff, ratio)
+    def points_to_plot(self, t):
+        """
+        makes list of values the correct length to be plotted on the
+        graph and sends the values through the buffers signal
+        """
+        i0 = list(self.buffers['i0'])
+        diff = list(self.buffers['diff'])
+        ratio = list(self.buffers['ratio'])
+        b = {'i0': i0, 'diff': diff, 'ratio': ratio}
+        self.signals.buffers.emit(b)
+        if t != -1:
+            if t == -2:
+                for key in self.averages:
+                    if key != 'time':
+                        self.averages[key].append(float("NaN"))
+                        #self.averages[key].append(self.averages[key][-3])
+                        self.averages[key].append(self.averages[key][-2])
+                self.averages['time'].append(0)
+                self.averages['time'].append(0)
+                #self.averages['time'].append(self.averages['time'][-self.AVERAGING_SIZE])
+                avei0 = list(self.averages['average i0'])
+                avediff = list(self.averages['average diff'])
+                averatio = list(self.averages['average ratio'])
+                x_axis = list(self.averages['time'])
+                avgs = {'average i0': avei0, 'average diff': avediff,
+                       'average ratio': averatio, 'time': x_axis}
+                self.signals.avevalues.emit(avgs)
+            else:
+                try:
+                    avei0 =  mean(Skimmer('dropped shot',
+                                   list(self.buffers['i0']), self.flagged_events))
+                    self.averages["average i0"].append(avei0)
+                    avediff =  mean(Skimmer('dropped shot',
+                                    list(self.buffers['diff']), self.flagged_events))
+                    self.averages["average diff"].append(avediff)
+                    averatio =  mean(Skimmer('dropped shot',
+                                     list(self.buffers['ratio']), self.flagged_events))
+                    self.averages["average ratio"].append(averatio)
+                except StatisticsError:
+                    for i in range(len(self.averages)-1):
+                        keys = [*self.averages.keys()]
+                        self.averages[keys[i]].append(0)
+                self.averages['time'].append(t)
+                avei0 = list(self.averages['average i0'])
+                avediff = list(self.averages['average diff'])
+                averatio = list(self.averages['average ratio'])
+                x_axis = list(self.averages['time'])
+                avgs = {'average i0': avei0, 'average diff': avediff,
+                    'average ratio': averatio, 'time': x_axis}
+                self.signals.avevalues.emit(avgs)
 
     def update_buffer(self, vals):
         if self.count < self.BUFFER_SIZE:
@@ -184,30 +230,29 @@ class StatusThread(QThread):
             self.buffers['ratio'].append(vals.get('ratio'))
             self.buffers['time'].append(time.time()-self.TIMER)
             self.event_flagging()
-        if self.count % self.thread_options['averaging'] == 0:
-            try:
-                avei0 =  mean(Skimmer('dropped shot',
-                                       list(self.buffers['i0']), self.flagged_events))
-                self.averages["average i0"].append(avei0)
-                avediff =  mean(Skimmer('dropped shot',
-                                        list(self.buffers['diff']), self.flagged_events))
-                self.averages["average diff"].append(avediff)
-                averatio =  mean(Skimmer('dropped shot',
-                                         list(self.buffers['ratio']), self.flagged_events))
-                self.averages["average ratio"].append(averatio)
-            except StatisticsError:
-                for i in range(len(self.averages)-1):
-                    keys = [*self.averages.keys()]
-                    self.averages[keys[i]].append(0)
-            self.averages["time"].append(time.time()-self.TIMER)
-            self.signals.avevalues.emit(self.averages)
+        #if self.count % self.thread_options['averaging'] == 0:
+        #    try:
+        #        avei0 =  mean(Skimmer('dropped shot',
+        #                               list(self.buffers['i0']), self.flagged_events))
+        #        self.averages["average i0"].append(avei0)
+        #        avediff =  mean(Skimmer('dropped shot',
+        #                                list(self.buffers['diff']), self.flagged_events))
+        #        self.averages["average diff"].append(avediff)
+        #        averatio =  mean(Skimmer('dropped shot',
+        #                                 list(self.buffers['ratio']), self.flagged_events))
+        #        self.averages["average ratio"].append(averatio)
+        #    except StatisticsError:
+        #        for i in range(len(self.averages)-1):
+        #            keys = [*self.averages.keys()]
+        #            self.averages[keys[i]].append(0)
+        #    self.averages["time"].append(time.time()-self.TIMER)
+            #self.signals.avevalues.emit(self.averages)
         #self.signals.buffers.emit(self.buffers)
 
     def run(self):
         """Long-running task to collect data points"""
         while not self.isInterruptionRequested():
             new_values = self.reader.read_value()
-            #print("run method: %d" % QThread.currentThreadId()) 
             if self.mode == "running":
                 self.update_buffer(new_values)
                 self.check_status_update()

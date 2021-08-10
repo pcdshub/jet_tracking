@@ -65,7 +65,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.signals.message.connect(self.receive_message)
 
         self.bttn_stop.clicked.connect(self._stop)
-        self.bttn_calibrate.clicked.connect(self._calibrate)
+        self.bttn_calibrate.clicked.connect(self._calibrate) #should call self.context.handle_calibrate
         self.bttn_start.clicked.connect(self.start_processes)
 
     def start_processes(self):
@@ -77,6 +77,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.worker_motor.requestInterruption()
             self.worker_motor.wait()
         if self.worker_status.isRunning():
+            self.signals.stop_timer.emit()
             self.worker_status.requestInterruption()
             self.worker_status.wait()
 

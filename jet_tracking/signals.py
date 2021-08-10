@@ -5,7 +5,7 @@ class Signals(QtCore.QObject):
 
     # emitted in thread
     status = QtCore.pyqtSignal(str, str)
-    buffers = QtCore.pyqtSignal(float, float, float)
+    buffers = QtCore.pyqtSignal(dict)
     avevalues = QtCore.pyqtSignal(dict)
     calibration_value = QtCore.pyqtSignal(dict)
     run_live = QtCore.pyqtSignal(int)
@@ -15,8 +15,12 @@ class Signals(QtCore.QObject):
     limits = QtCore.pyqtSignal(float, float)
     wake = QtCore.pyqtSignal()
     sleep = QtCore.pyqtSignal()
-    send_values = QtCore.pyqtSignal()
+    send_values = QtCore.pyqtSignal(float)
     start_timer = QtCore.pyqtSignal()
+    stop_timer = QtCore.pyqtSignal()
+    stop_graphing = QtCore.pyqtSignal()
+    refresh_rate = QtCore.pyqtSignal(int)
+
  
     # emitted in main window
     rdbttn_status = QtCore.pyqtSignal(int)

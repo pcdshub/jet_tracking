@@ -4,9 +4,8 @@ from datastream import StatusThread
 from collections import deque
 import time
 
-# COMMENTS FROM MARC
-# I'D STILL PUT THESE FLOATING FUNCTION INSIDE A FILE IN THE TOOLS FOLDER
-# I'D SET SCROLLINGTIMEWIDGET TO ITS OWN WIDGET IN THE WIDGET FOLDER
+# PUT THESE FLOATING FUNCTION INSIDE A FILE IN THE TOOLS FOLDER
+# SET SCROLLINGTIMEWIDGET TO ITS OWN WIDGET IN THE WIDGET FOLDER
 
 def graph_setup(graph, title, y_axis, pen):
     graph.setTitle(title=title)
@@ -55,7 +54,7 @@ class ScrollingTimeWidget(pg.PlotWidget):
     def addSigmaPlots(self, plt1, plt2):
         self.percent_low = plt1
         self.percent_high = plt2
-        #self.pfill = pg.FillBetweenItem(self.percent_high, self.percent_low, brush=(50, 50, 200, 50))
+        self.pfill = pg.FillBetweenItem(self.percent_high, self.percent_low, brush=(50, 50, 200, 50))
         self.addItem(self.percent_low)
         self.addItem(self.percent_high)
         self.addItem(self.pfill)

@@ -14,21 +14,43 @@ class GraphsWidget(QFrame, Graphs_Ui):
         self.signals = signals
         self.context = context
         self.setupUi(self)
+        self.initialize_vals()
+        self.setup_timer()
+        self.connect_signals()
+
+    def initialize_vals(self):
+        self.timer = QTimer()
+        self.refresh_rate = self.context.thread_options['refresh rate']
+        self.time_window = self.context.x_axis[-1]
+        self.naverage = self.context.thread_options['averaging']
+        self.avecycle = list(range(1, self.naverage+1))
+        self.x_vals = self.context.x_axis
+
+    def connect_signals(self):
+        #connect signals
         self.signals.buffers.connect(self.plot_data)
         self.signals.avevalues.connect(self.plot_ave_data)
         self.signals.calibration_value.connect(self.calibrate)
-        self.signals.start_timer.connect(self.setup_timer)
+        self.signals.start_timer.connect(self.timer.start)
+        self.signals.stop_timer.connect(self.timer.stop)
+        self.signals.refresh_rate.connect(self.update_refresh_rate)
 
-    def cycle_time(self, c):
-        self.x_vals = c.append(c.pop(0))
+    def cycle_time(self):
+        """
+        used to ask the Status thread to send values to be plotted
+        """
+        self.avecycle.append(self.avecycle.pop(0))
+        self.x_vals.append(self.x_vals.pop(0))
+        if self.avecycle[-1] == self.naverage: #or self.x_vals[-1] == self.time_window:
+            self.signals.send_values.emit(self.x_vals[-1])
+        else:
+            self.signals.send_values.emit(-1)
+        if self.x_vals[0] == 0:
+            self.signals.send_values.emit(-2)
 
     def setup_timer(self):
-        self.refresh_rate = self.context.thread_options['refresh rate']
-        self.x_vals = self.context.x_axis
-        self.timer = QTimer()
         self.timer.setInterval(self.refresh_rate)
-        self.timer.timeout(self.cycle_time(self.x_vals))
-        self.timer.start()
+        self.timer.timeout.connect(self.cycle_time)
 
     def calibrate(self, cal):
         self.context.set_calibration_values(cal)
@@ -55,11 +77,11 @@ class GraphsWidget(QFrame, Graphs_Ui):
         self.i0_graph.refreshCalibrationPlots()
         self.diff_graph.refreshCalibrationPlots()
 
-    def plot_data(self, i0, diff, ratio):
-        #log.debug("This is the main thread still")
-        self.ratio_graph.plt.setData(self.x_vals[0], ratio)
-        self.i0_graph.plt.setData(self.x_vals[0], i0)
-        self.diff_graph.plt.setData(self.x_vals[0], diff)
+    def plot_data(self, buf):
+        log.debug("This is the main thread still")
+        self.ratio_graph.plt.setData(self.context.x_axis, buf['ratio'])
+        self.i0_graph.plt.setData(self.context.x_axis, buf['i0'])
+        self.diff_graph.plt.setData(self.context.x_axis, buf['diff'])
 
     def plot_calibration(self):
         self.diff_graph.percent_low.setData(self.context.x_axis,
@@ -82,6 +104,10 @@ class GraphsWidget(QFrame, Graphs_Ui):
                   self.i0_mean)
 
     def plot_ave_data(self, data):
-        self.ratio_graph.avg_plt.setData(self.x_vals, list(data['average ratio']))
-        self.i0_graph.avg_plt.setData(self.x_vals, list(data['average i0']))
-        self.diff_graph.avg_plt.setData(self.x_vals, list(data['average diff']))
+        self.ratio_graph.avg_plt.setData(data['time'], data['average ratio'], connect='finite')
+        self.i0_graph.avg_plt.setData(data['time'], data['average i0'], connect='finite')
+        self.diff_graph.avg_plt.setData(data['time'], data['average diff'], connect='finite')
+
+    def update_refresh_rate(self, v):
+        self.refresh_rate = v
+        self.setup_timer()
