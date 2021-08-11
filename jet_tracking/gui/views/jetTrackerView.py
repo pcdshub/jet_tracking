@@ -3,11 +3,11 @@ from PyQt5.QtWidgets import QWidget, QDockWidget, QSizePolicy, QHBoxLayout, QMai
 
 from gui.widgets.controlWidget import ControlsWidget
 from gui.widgets.graphWidget import GraphsWidget
-from signals import Signals
 import logging
 
 log = logging.getLogger('pydm')
 log.setLevel('CRITICAL')
+
 
 class JetTrackerView(QWidget):
 

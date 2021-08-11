@@ -11,6 +11,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 class MainWindow(QMainWindow, Ui_MainWindow):
 
     def __init__(self):

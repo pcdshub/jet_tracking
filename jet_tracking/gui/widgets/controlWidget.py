@@ -26,29 +26,27 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.worker_motor = MotorThread(self.context, self.signals)
 
     def set_thread_options(self):
-        self.context.update_thread_options('status', 'live graphing', self.bttngrp1.checkedId())
-        self.context.update_thread_options('status', 'calibration source', self.bttngrp3.checkedId())
-        self.context.update_thread_options('status', 'percent', float(self.le_percent.text()))
-        self.context.update_thread_options('status', 'averaging', float(self.le_ave_graph.text()))
-        self.context.update_thread_options('status', 'refresh rate', float(self.le_refresh_rate.text()))
-        self.context.update_thread_options('status', 'display time', float(self.le_x_axis.text()))
-        self.context.update_thread_options('status', 'manual motor', self.bttngrp2.checkedId())
+        self.context.update_percent(float(self.le_percent.text()))
+        self.context.update_graph_averaging(float(self.le_ave_graph.text()))
+        self.context.update_refresh_rate(float(self.le_refresh_rate.text()))
+        self.context.update_display_time(int(self.le_x_axis.text()))
 
     def set_motor_options(self):
-        self.context.update_thread_options('motor', 'high limit', float(self.le_motor_hl.text()))
-        self.context.update_thread_options('motor', 'low limit', float(self.le_motor_ll.text()))
-        self.context.update_thread_options('motor', 'step size', float(self.le_size.text()))
-        self.context.update_thread_options('motor', 'averaging', float(self.le_ave_motor.text()))
-        self.context.update_thread_options('motor', 'algorithm', self.cbox_algorithm.currentIndex())
+        self.context.update_limits(float(self.le_motor_hl.text()), float(self.le_motor_ll.text()))
+        self.context.update_step_size(float(self.le_size.text()))
+        self.context.update_motor_averaging(float(self.le_ave_motor.text()))
+        self.context.update_algorithm(self.cbox_algorithm.currentText())
 
     def make_connections(self):
 
-        self.le_percent.checkVal.connect(self.update_percent)
-        self.le_refresh_rate.checkVal.connect(self.update_refresh_rate)
-        self.le_ave_graph.checkVal.connect(self.update_nsamp)
+        self.le_percent.checkVal.connect(self.context.update_percent)
+        self.le_refresh_rate.checkVal.connect(self.context.update_refresh_rate)
+        self.le_ave_graph.checkVal.connect(self.context.update_graph_averaging)
         self.le_motor_ll.checkVal.connect(self.update_limits)
         self.le_motor_hl.checkVal.connect(self.update_limits)
-        self.le_size.checkVal.connect(self.update_tol)
+        self.le_size.checkVal.connect(self.context.update_step_size)
+        self.le_ave_motor.checkVal.connect(self.context.update_motor_averaging)
+        self.cbox_algorithm.currentTextChanged.connect(self.context.update_algorithm)
         self.bttngrp1.buttonClicked.connect(self.checkBttn)
         self.bttngrp2.buttonClicked.connect(self.checkBttn)
         self.bttngrp3.buttonClicked.connect(self.checkBttn)
@@ -57,11 +55,11 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.bttn_tracking.clicked.connect(self._enable_tracking)
         self.bttn_stop_motor.clicked.connect(self._stop_motor)
 
-        self.signals.status.connect(self.update_monitor_status)
-        self.signals.display_calibration.connect(self.update_calibration)
+        self.signals.changeStatus.connect(self.set_monitor_status)
+        self.signals.changeCalibrationDisplay.connect(self.set_calibration)
 
-        self.signals.wake.connect(self._start_motor)
-        self.signals.sleep.connect(self._stop_motor)
+        self.signals.wakeMotor.connect(self._start_motor)
+        self.signals.sleepMotor.connect(self._stop_motor)
         self.signals.message.connect(self.receive_message)
 
         self.bttn_stop.clicked.connect(self._stop)
@@ -70,14 +68,14 @@ class ControlsWidget(QFrame, Controls_Ui):
 
     def start_processes(self):
         self.worker_status.start()
-        self.signals.start_timer.emit()
+        self.signals.startTimer.emit()
 
     def _stop(self):
         if self.worker_motor.isRunning():
             self.worker_motor.requestInterruption()
             self.worker_motor.wait()
         if self.worker_status.isRunning():
-            self.signals.stop_timer.emit()
+            self.signals.stopTimer.emit()
             self.worker_status.requestInterruption()
             self.worker_status.wait()
 
@@ -90,7 +88,7 @@ class ControlsWidget(QFrame, Controls_Ui):
 
     def _enable_tracking(self):
         self.update_tracking_status("enabled", green)
-        self.context.set_tracking(True)
+        self.context.update_tracking(True)
         self._start_motor()
 
     def _start_motor(self):
@@ -112,9 +110,9 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.worker_motor.wait()
         if self.sender() is self.bttn_stop_motor:
             self.context.set_tracking(False)
-            self.update_tracking_status('disabled', red)
+            self.set_tracking_status('disabled', red)
 
-    def update_calibration(self):
+    def set_calibration(self):
         """
         this function is called when a successful calibration is ran. It updates the display.
         """
@@ -127,12 +125,12 @@ class ControlsWidget(QFrame, Controls_Ui):
             layout.removeWidget(widgetToRemove)
             widgetToRemove.setParent(None)
 
-    def update_tracking_status(self, status, color):
+    def set_tracking_status(self, status, color):
         self.lbl_tracking_status.setText(status)
         self.lbl_tracking_status.setStyleSheet(f"\
                 background-color: {color};")
 
-    def update_monitor_status(self, status, color):
+    def set_monitor_status(self, status, color):
         self.lbl_monitor_status.setText(status)
         self.lbl_monitor_status.setStyleSheet(f"\
                 background-color: {color};")
@@ -148,29 +146,8 @@ class ControlsWidget(QFrame, Controls_Ui):
                 self.correction_thread.finished.connect(self.cleanup_correction)
                 self.correction_thread.start()
 
-    def update_percent(self, percent):
-        self.context.update_thread_options('status', 'percent', percent)
-        if self.context.calibrated:
-            self.context.set_mode('calibrate')
-
-    def update_nsamp(self, nsamp):
-        self.context.update_thread_options('status', 'average', nsamp)
-
-    def update_refresh_rate(self, rrate):
-        self.context.update_thread_options('status', 'refresh rate', rrate)
-
     def update_limits(self, limit):
-        self.context.update_thread_options('motor', 'high limit', float(self.le_motor_hl.text()))
-        self.context.update_thread_options('motor', 'low limit', float(self.le_motor_ll.text()))
-
-    def update_tol(self, tol):
-        self.context.update_thread_options('motor', 'step size', tol)
-
-    def update_motor_avg(self, avg):
-        self.context.update_thread_options('motor', 'averaging', avg)
-
-    def update_algorithm(self, alg):
-        self.context.update_thread_options('motor', 'algorithm', alg)
+        self.context.update_limits(float(self.le_motor_hl.text()), float(self.le_motor_ll.text()))
 
     def receive_message(self, message):
         self.text_area.append(message)
@@ -180,22 +157,24 @@ class ControlsWidget(QFrame, Controls_Ui):
         if bttn == "simulated data":
             self.rdbttn_manual.click()
             self.rdbttn_auto.setEnabled(False)
-            self.context.run_live(0)
+            self.context.update_live_graphing(False)
         elif bttn == "live data":
             self.rdbttn_auto.setEnabled(True)
-            self.context.run_live(1)
+            self.context.update_live_graphing(True)
         elif bttn == "manual motor moving":
             self.bttn_search.setEnabled(False)
             self.bttn_tracking.setEnabled(False)
             self.bttn_stop_motor.setEnabled(False)
+            self.context.update_manual_motor(True)
         elif bttn == "automated motor moving":
             self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(True)
             self.bttn_stop_motor.setEnabled(True)
+            self.context.update_manual_motor(False)
         elif bttn == "calibration in GUI":
-            self.context.update_thread_options('status', 'calibration source', bttn)
+            self.context.update_calibration_source(bttn)
         elif bttn == "calibration from results":
-            self.context.update_thread_options('status', 'calibration source', bttn)
+            self.context.update_calibration_source(bttn)
 
     def setDefaultStyleSheet(self):
         # This should be done with a json file

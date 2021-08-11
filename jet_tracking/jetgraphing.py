@@ -1,8 +1,5 @@
 import pyqtgraph as pg
-from PyQt5 import QtCore, QtGui, QtWidgets
-from datastream import StatusThread
-from collections import deque
-import time
+from PyQt5 import QtCore
 
 # PUT THESE FLOATING FUNCTION INSIDE A FILE IN THE TOOLS FOLDER
 # SET SCROLLINGTIMEWIDGET TO ITS OWN WIDGET IN THE WIDGET FOLDER
@@ -32,12 +29,7 @@ class ScrollingTimeWidget(pg.PlotWidget):
         self.context = context
         self.signals = signals
         self.setMouseEnabled(x=False, y=False)
-        self.setXRange(0, self.context.plot_time)
-        #self.plt = pg.ScatterPlotItem()
-        #self.avg_plt = pg.PlotCurveItem()
-        #self.mean_plt = pg.PlotCurveItem()
-        #self.percent_low = pg.PlotCurveItem()
-        #self.percent_high = pg.PlotCurveItem()
+        self.setXRange(0, self.context.display_time)
 
     def addPlot(self, plt):
         self.plt = plt
@@ -65,4 +57,11 @@ class ScrollingTimeWidget(pg.PlotWidget):
         self.removeItem(self.mean_plt)
         self.addMeanPlot(self.mean_plt)
         self.addSigmaPlots(self.percent_low, self.percent_high)
+
+    def changeRange(self):
+        self.removeItem(self.plt)
+        self.removeItem(self.avg_plt)
+        self.setXRange(0, self.context.display_time)
+        self.addPlot(self.plt)
+        self.addAvePlot(self.avg_plt)
 
