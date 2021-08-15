@@ -18,23 +18,30 @@ class Context(object):
         self.live_data = True
         self.calibration_source = "calibration from results"
         self.percent = 70
-        self.graph_averaging = 50
-        self.refresh_rate = 50
-        self.display_time = 60
-        self.buffer_size = 300
-        self.notification_tolerance = 200
+        self.refresh_rate = 5
+        self.graph_ave_time = 2
+        self.display_time = 10
+        self.notification_time = 30
         self.dropped_shot_threshold = 1000
         self.manual_motor = True
-        self.high_limit = 5
-        self.low_limit = -5
-        self.step_size = 10
+        self.high_limit = 50
+        self.low_limit = -50
+        self.step_size = 0.5
         self.motor_averaging = 10
         self.algorithm = 'Ternary Search'
         self.calibration_values = {}
         self.isTracking = False
         self.calibrated = False
         self.live_data = True
+        self.display_flag = None
+        self.naverage = self.graph_ave_time * self.refresh_rate  # number of points over the time wanted for averaging
+        self.buffer_size = self.display_time * self.refresh_rate  # number of points over the graph time
+        self.averaging_size = int(self.buffer_size / self.naverage)  # how many averages can fit within the
         self.x_axis = list(np.linspace(0, self.display_time, self.buffer_size))
+        self.notification_tolerance = self.notification_time * self.refresh_rate
+        self.ave_cycle = list(range(1, self.naverage+1))
+        self.x_cycle = list(range(0, self.buffer_size))
+        self.ave_idx = list(range(0, self.averaging_size+1)) # +1 for NaN value added at the end
 
     def update_live_graphing(self, live):
         self.live_data = live
@@ -57,22 +64,53 @@ class Context(object):
         """
         changes the number of points to average on the graph
         """
-        self.graph_averaging = avg
-        self.signals.changeGraphAve.emit(self.graph_averaging)
+        self.graph_ave_time = avg
+        self.update_buffers_and_cycles("just averaging")
 
     def update_refresh_rate(self, rr):
         """
         changes the refresh rate of the graph
         """
-        self.refresh_rate = rr
-        self.signals.changeRefreshRate.emit(self.refresh_rate)
+        self.refresh_rate = int(rr)
+        self.update_buffers_and_cycles("all")
+
+    def update_buffers_and_cycles(self, who):
+        if who == "all":
+            # if the display time, or refresh rate is changed then these should also change:
+            # 1. x_axis
+            # 2. buffer_size
+            # 3. averaging_size
+            # 4. x_cycle
+            # 5. ave_idx
+            # 6. ave_cycle (the number of points to average has changed to achieve the same amount of time)
+            # 7. naverage
+            self.buffer_size = int(self.display_time * self.refresh_rate)
+            self.naverage = int(self.graph_ave_time * self.refresh_rate)
+            self.averaging_size = int(self.buffer_size / self.naverage)
+            self.x_axis = list(np.linspace(0, self.display_time, self.buffer_size))
+            self.notification_tolerance = int(self.notification_time * self.refresh_rate)
+            self.ave_cycle = list(range(1, self.naverage+1))
+            self.x_cycle = list(range(0, self.buffer_size))
+            self.ave_idx = list(range(0, self.averaging_size+1))
+            self.signals.changeDisplayFlag.emit("all")
+        if who == "just average":
+            self.naverage = int(self.graph_ave_time * self.refresh_rate)
+            self.averaging_size = int(self.buffer_size / self.naverage)
+            self.ave_cycle = list(range(1, self.naverage+1))
+            self.ave_idx = list(range(0, self.averaging_size+1))
+            self.signals.changeDisplayFlag.emit("just average")
 
     def update_display_time(self, dis_t):
-        self.display_time = dis_t
-        self.x_axis = list(np.linspace(0, self.display_time, self.buffer_size))
-        self.signals.changeDisplayTime.emit(self.display_time)
+        """
+        updates the display time or the x-axis window
+        """
+        self.display_time = int(dis_t)
+        self.update_buffers_and_cycles("all")
 
     def update_manual_motor(self, manual):
+        """
+        changes the motor between manual and automatic moving
+        """
         self.manual_motor = manual
         self.signals.changeManual.emit(self.manual_motor)
 

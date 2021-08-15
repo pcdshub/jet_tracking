@@ -1,6 +1,6 @@
 from PyQt5.Qt import Qt
 from PyQt5.QtCore import QCoreApplication
-from PyQt5.QtWidgets import QTabWidget, QAction, QMainWindow, QLabel
+from PyQt5.QtWidgets import QTabWidget, QAction, QMainWindow, QLabel, QSizePolicy
 from context import Context
 from gui.views.jetTrackerView import JetTrackerView
 from gui.views.jetImageView import JetImageView
@@ -20,7 +20,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.signals = Signals()
         self.context = Context(self.signals)
         self.setupUi(self)
-
         self.create_views_and_dialogs()
         self.setup_window_tabs()
         self.createMenuBarActions()
@@ -30,6 +29,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def setup_window_tabs(self):
         self.setDockNestingEnabled(True)
         self.tabWidget = QTabWidget()
+        self.tabWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setCentralWidget(self.tabWidget)
         self.tabWidget.addTab(self.jetTrackerView, "Jet Tracker")
         self.tabWidget.addTab(self.jetImageView, "Jet Image")

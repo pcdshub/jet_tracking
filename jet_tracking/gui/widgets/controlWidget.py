@@ -26,16 +26,18 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.worker_motor = MotorThread(self.context, self.signals)
 
     def set_thread_options(self):
-        self.context.update_percent(float(self.le_percent.text()))
-        self.context.update_graph_averaging(float(self.le_ave_graph.text()))
-        self.context.update_refresh_rate(float(self.le_refresh_rate.text()))
-        self.context.update_display_time(int(self.le_x_axis.text()))
+        pass
+        #self.context.update_percent(float(self.le_percent.text()))
+        #self.context.update_graph_averaging(float(self.le_ave_graph.text()))
+        #self.context.update_refresh_rate(float(self.le_refresh_rate.text()))
+        #self.context.update_display_time(int(self.le_x_axis.text()))
 
     def set_motor_options(self):
-        self.context.update_limits(float(self.le_motor_hl.text()), float(self.le_motor_ll.text()))
-        self.context.update_step_size(float(self.le_size.text()))
-        self.context.update_motor_averaging(float(self.le_ave_motor.text()))
-        self.context.update_algorithm(self.cbox_algorithm.currentText())
+        pass
+        #self.context.update_limits(float(self.le_motor_hl.text()), float(self.le_motor_ll.text()))
+        #self.context.update_step_size(float(self.le_size.text()))
+        #self.context.update_motor_averaging(float(self.le_ave_motor.text()))
+        #self.context.update_algorithm(self.cbox_algorithm.currentText())
 
     def make_connections(self):
 
@@ -44,6 +46,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.le_ave_graph.checkVal.connect(self.context.update_graph_averaging)
         self.le_motor_ll.checkVal.connect(self.update_limits)
         self.le_motor_hl.checkVal.connect(self.update_limits)
+        self.le_x_axis.checkVal.connect(self.context.update_display_time)
         self.le_size.checkVal.connect(self.context.update_step_size)
         self.le_ave_motor.checkVal.connect(self.context.update_motor_averaging)
         self.cbox_algorithm.currentTextChanged.connect(self.context.update_algorithm)
@@ -68,14 +71,12 @@ class ControlsWidget(QFrame, Controls_Ui):
 
     def start_processes(self):
         self.worker_status.start()
-        self.signals.startTimer.emit()
 
     def _stop(self):
         if self.worker_motor.isRunning():
             self.worker_motor.requestInterruption()
             self.worker_motor.wait()
         if self.worker_status.isRunning():
-            self.signals.stopTimer.emit()
             self.worker_status.requestInterruption()
             self.worker_status.wait()
 

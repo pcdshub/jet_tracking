@@ -2,7 +2,7 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal, QParallelAnimationGroup, QPropertyAnimation, Qt, QAbstractAnimation
 from PyQt5.QtGui import QDoubleValidator
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QComboBox, QPushButton, QLineEdit, QToolButton, QWidget, \
-    QScrollArea, QSizePolicy, QVBoxLayout, QLabel, QMessageBox
+    QScrollArea, QVBoxLayout, QLabel, QMessageBox, QFrame
 
 
 class GraphicsView(QGraphicsView):
@@ -196,6 +196,19 @@ class Label(QLabel):
                 font-size: 12px;\
             ")
 
+
+class QHLine(QFrame):
+    def __init__(self):
+        super(QHLine, self).__init__()
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
+
+
+class QVLine(QFrame):
+    def __init__(self):
+        super(QVLine, self).__init__()
+        self.setFrameShape(QFrame.VLine)
+        self.setFrameShadow(QFrame.Sunken)
 
 from dataclasses import dataclass
 

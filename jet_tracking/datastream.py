@@ -7,7 +7,7 @@ from ophyd import EpicsSignal
 from PyQt5.QtCore import QThread
 from tools.num_gen import sinwv
 from tools.quick_calc import DivWithTry, Skimmer
-import collections
+from collections import deque
 import threading
 
 ologging = logging.getLogger('ophyd')
@@ -98,24 +98,29 @@ class StatusThread(QThread):
         ----------
         signals : object
         context : object
-        
         """
         self.signals = signals
         self.context = context
         self.mode = ''
         self.calibration_source = ''
-        self.TIMER = time.time()
         self.flag_message = None
-        self.graph_averaging = 0
         self.refresh_rate = 0
-        self.BUFFER_SIZE = 0
+        self.display_time = 0
+        self.buffer_size = 0
         self.percent = 1
-        self.AVERAGING_SIZE = 0
-        self.NOTIFICATION_TOLERANCE = 0
+        self.averaging_size = 0
+        self.notification_tolerance = 0
+        self.graph_ave_time = 0
         self.count = 0
+        self.naverage = 0
+        self.ave_cycle = []
+        self.ave_idx = []
+        self.x_cycle = []
+        self.x_axis = []
         self.dropped_shot_threshold = 0
         self.calibrated = False
         self.isTracking = False
+        self.display_flag = []
         self.cal_vals = [[], [], []]
         self.calibration_values = {'i0': {'mean': 0, 'stddev': 0, 'range': (0, 0)},
                                    'diff': {'mean': 0, 'stddev': 0, 'range': (0, 0)},
@@ -133,13 +138,18 @@ class StatusThread(QThread):
     def create_vars(self):
         self.mode = "running"
         self.calibration_source = self.context.calibration_source
-        self.graph_averaging = self.context.graph_averaging
         self.refresh_rate = self.context.refresh_rate
         self.percent = self.context.percent
-        self.BUFFER_SIZE = self.context.buffer_size
-        self.AVERAGING_SIZE = int(self.BUFFER_SIZE/self.graph_averaging)
-        self.NOTIFICATION_TOLERANCE = self.context.notification_tolerance
+        self.buffer_size = self.context.buffer_size
+        self.graph_ave_time = self.context.graph_ave_time
+        self.naverage = self.context.naverage
+        self.averaging_size = self.context.averaging_size+1  # +1 for NaN value
+        self.notification_tolerance = self.context.notification_tolerance
         self.dropped_shot_threshold = self.context.dropped_shot_threshold
+        self.x_axis = self.context.x_axis
+        self.ave_cycle = self.context.ave_cycle
+        self.x_cycle = self.context.x_cycle
+        self.ave_idx = self.context.ave_idx
 
     def create_value_reader(self):
         self.reader = ValueReader(self.context, self.signals)
@@ -149,35 +159,65 @@ class StatusThread(QThread):
 
     def initialize_buffers(self):
         # buffers and data collection
-        self.averages = {"average i0": collections.deque([0]*self.AVERAGING_SIZE, self.AVERAGING_SIZE),
-                         "average diff": collections.deque([0]*self.AVERAGING_SIZE, self.AVERAGING_SIZE),
-                         "average ratio": collections.deque([0]*self.AVERAGING_SIZE, self.AVERAGING_SIZE),
-                         "time": collections.deque([0]*self.AVERAGING_SIZE, self.AVERAGING_SIZE)}
-        self.flagged_events = {"high intensity": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
-                               "missed shot": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
-                               "dropped shot": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE)}
-        self.buffers = {"i0": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
-                        "diff": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE),
-                        "ratio": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE), 
-                        "time": collections.deque([0]*self.BUFFER_SIZE, self.BUFFER_SIZE)}
-
+        self.averages = {"i0": deque([0], self.averaging_size),
+                         "diff": deque([0], self.averaging_size),
+                         "ratio": deque([0], self.averaging_size),
+                         "time": deque([0], self.averaging_size)}
+        self.flagged_events = {"high intensity": deque([0], self.buffer_size),
+                               "missed shot": deque([0], self.buffer_size),
+                               "dropped shot": deque([0], self.buffer_size)}
+        self.buffers = {"i0": deque([0], self.buffer_size),
+                        "diff": deque([0], self.buffer_size),
+                        "ratio": deque([0], self.buffer_size),
+                        "time": deque([0], self.buffer_size)}
 
     def connect_signals(self):
         self.signals.mode.connect(self.update_mode)
-        self.signals.changeRefreshRate.connect(self.set_refresh_rate)
+        self.signals.changeDisplayFlag.connect(self.change_display_flag)
+        #self.signals.changeRefreshRate.connect(self.set_refresh_rate)
         self.signals.changePercent.connect(self.set_percent)
         self.signals.changeCalibrationSource.connect(self.set_calibration_source)
+        # self.signals.changeBufferSize.connect(self.set_buffer_size)
+        # self.signals.changeGraphAve.connect(self.set_graph_ave)
         self.signals.enableTracking.connect(self.tracking)
-        self.signals.askForValues.connect(self.points_to_plot)
+        #self.signals.changeAverageSize.connect(self.set_average_size)
+
+    @staticmethod
+    def fix_size(old_size, new_size, b):
+        print(b)
+        d = new_size - old_size
+        if d <= 0:
+            for key in b:
+                old = list(b[key])
+                new = old[-d:]
+                b[key] = deque(new, new_size)
+        else:
+            for key in b:
+                old = list(b[key])
+                b[key] = deque(old, new_size)
+        print(b)
+        return b
+
+    @staticmethod
+    def append_or_set(choice, d, vals, idx):
+        """
+        send in a list of vals in the order 'i0', 'diff', 'ratio' and 'time' and
+        the choice to either "append" or "set" and
+        the dictionary d and then execute the action
+        """
+        keys = list(d.keys())
+        if choice == "append":
+            for key,val in list(zip(keys, vals)):
+                d[key].append(val)
+        elif choice == "set":
+            for key,val in list(zip(keys, vals)):
+                d[key][idx] = val
 
     def tracking(self, b):
         self.isTracking = b
 
     def update_mode(self, mode):
         self.mode = mode
-
-    def set_refresh_rate(self, rr):
-        self.refresh_rate = rr
 
     def set_percent(self, p):
         self.percent = p
@@ -186,98 +226,162 @@ class StatusThread(QThread):
     def set_calibration_source(self, c):
         self.calibration_source = c
 
-    def points_to_plot(self, t):
+    def change_x_axis(self, b):
+        self.signals.changeDisplayTime.emit(self.display_time)
+        self.display_flag = None
+
+    def update_buffers_and_cycles(self):
+        if self.display_flag == "all":
+            current_ave_size = self.averaging_size+1
+            current_buff_size = self.buffer_size
+            self.refresh_rate = self.context.refresh_rate
+            self.buffer_size = self.context.buffer_size
+            self.naverage = self.context.naverage
+            self.averaging_size = self.context.averaging_size+1
+            self.x_axis = self.context.x_axis
+            self.notification_tolerance = self.context.notification_tolerance
+            self.ave_cycle = self.context.ave_cycle
+            self.x_cycle = self.context.x_cycle
+            self.ave_idx = self.context.ave_idx
+            self.averages = self.fix_size(current_ave_size, self.averaging_size, self.averages)
+            self.buffers = self.fix_size(current_buff_size, self.buffer_size, self.buffers)
+            self.flagged_events = self.fix_size(current_buff_size, self.buffer_size, self.flagged_events)
+            self.display_flag = None
+        elif self.display_flag == "just average":
+            current_ave_size = self.averaging_size+1
+            self.naverage = self.context.naverage
+            self.ave_cycle = self.context.ave_cycle
+            self.ave_idx = list(range(0, self.averaging_size))
+            self.averages = self.fix_size(current_ave_size, self.averaging_size, self.averages)
+            self.display_flag = None
+
+    def change_display_flag(self, culprit):
+        if self.display_flag == "all":
+            # this is to protect against making multiple changes and not
+            # catching them
+            pass
+        else:
+            self.display_flag = culprit
+            self.signals.message.emit("updating the graph ...")
+
+    def check_cycle(self, x_idx, ave_cycle):
         """
-        makes list of values the correct length to be plotted on the
-        graph and sends the values through the buffers signal
+        checks where the lists that track indices are at the moment
+        returns a location code so that the graph will update correctly
+        returns (-2) if the average should update, returns (0) if the
+        x axis has cycled all the way back to zero, and returns (-1)
+        at any other point in time.
         """
+        if x_idx == 0 and self.display_flag:
+            self.update_buffers_and_cycles()
+        elif ave_cycle == 0 and self.display_flag == "just average":
+            self.update_buffers_and_cycles()
+        if x_idx == self.buffer_size-1:
+            return 0
+        elif ave_cycle == self.naverage:
+            return -2
+        else:
+            return -1
+
+    def points_to_plot(self, x_idx, ave_cycle, ave_idx):
+        """
+        makes list of values to be plotted on the
+        graph and sends the values through the refresh graphs signal
+        checks if the location info indicates that the average needs to
+        be updated on the graph (0) or if the end of the buffer has been
+        reached (-2)
+        - sets a nan value if the end of the buffer has been reached so that
+        there is a break in the plotting. See plot_ave_data function in
+        graph widget and notice that it says "connect='finite' and look
+        that up for more info
+        """
+        location_info = self.check_cycle(x_idx, ave_cycle)
         i0 = list(self.buffers['i0'])
         diff = list(self.buffers['diff'])
         ratio = list(self.buffers['ratio'])
-        b = {'i0': i0, 'diff': diff, 'ratio': ratio}
-        self.signals.refreshGraphs.emit(b)
-        if t != -1:
-            if t == -2:
-                for key in self.averages:
-                    if key != 'time':
-                        self.averages[key].append(float("NaN"))
-                        #vself.averages[key].append(self.averages[key][-3])
-                        self.averages[key].append(self.averages[key][-2])
-                self.averages['time'].append(0)
-                self.averages['time'].append(0)
-                #vself.averages['time'].append(self.averages['time'][-self.AVERAGING_SIZE])
-                avei0 = list(self.averages['average i0'])
-                avediff = list(self.averages['average diff'])
-                averatio = list(self.averages['average ratio'])
-                x_axis = list(self.averages['time'])
-                avgs = {'average i0': avei0, 'average diff': avediff,
-                        'average ratio': averatio, 'time': x_axis}
-                self.signals.refreshAveValueGraphs.emit(avgs)
+        t = list(self.buffers['time'])
+        buff = {'i0': i0, 'diff': diff, 'ratio': ratio, 'time': t}
+        self.signals.refreshGraphs.emit(buff)
+        if location_info == 0:
+            if ave_idx > len(list(self.averages['i0'])) - 1:
+                choice = "append"
             else:
-                try:
-                    avei0 = mean(Skimmer('dropped shot',
-                                 list(self.buffers['i0']), self.flagged_events))
-                    self.averages["average i0"].append(avei0)
-                    avediff = mean(Skimmer('dropped shot',
-                                   list(self.buffers['diff']), self.flagged_events))
-                    self.averages["average diff"].append(avediff)
-                    averatio = mean(Skimmer('dropped shot',
-                                    list(self.buffers['ratio']), self.flagged_events))
-                    self.averages["average ratio"].append(averatio)
-                except StatisticsError:
-                    for i in range(len(self.averages)-1):
-                        keys = [*self.averages.keys()]
-                        self.averages[keys[i]].append(0)
-                self.averages['time'].append(t)
-                avei0 = list(self.averages['average i0'])
-                avediff = list(self.averages['average diff'])
-                averatio = list(self.averages['average ratio'])
-                x_axis = list(self.averages['time'])
-                avgs = {'average i0': avei0, 'average diff': avediff,
-                        'average ratio': averatio, 'time': x_axis}
-                self.signals.refreshAveValueGraphs.emit(avgs)
+                choice = "set"
+            vals = [float("NaN"), float("NaN"), float("NaN"), float("NaN")]
+            self.append_or_set(choice, self.averages, vals, ave_idx)
+            self.ave_idx.append(self.ave_idx.pop(0))
+            ave_idx = self.ave_idx[0]
+            self.update_averages(ave_idx, x_idx)
+        elif location_info == -2:
+            self.update_averages(ave_idx, x_idx)
 
-    def update_buffer(self, vals):
-        if self.count < self.BUFFER_SIZE:
-            self.count += 1
-            self.buffers['i0'].append(vals.get('i0'))
-            self.buffers['diff'].append(vals.get('diff'))
-            self.buffers['ratio'].append(vals.get('ratio'))
-            self.buffers['time'].append(time.time()-self.TIMER)
+    def update_averages(self, ave_idx, x_idx):
+        if ave_idx > len(list(self.averages['i0']))-1:
+            choice = "append"
         else:
-            self.count += 1
-            self.buffers['i0'].append(vals.get('i0'))
-            self.buffers['diff'].append(vals.get('diff'))
-            self.buffers['ratio'].append(vals.get('ratio'))
-            self.buffers['time'].append(time.time()-self.TIMER)
-            self.event_flagging()
+            choice = "set"
+        try:
+            avei0 = mean(Skimmer('dropped shot',
+                                 list(self.buffers['i0']), self.flagged_events))
+            avediff = mean(Skimmer('dropped shot',
+                                   list(self.buffers['diff']), self.flagged_events))
+            averatio = mean(Skimmer('dropped shot',
+                                    list(self.buffers['ratio']), self.flagged_events))
+            vals = [avei0, avediff, averatio, self.x_axis[x_idx]]
+        except StatisticsError:
+            vals = [0, 0, 0, self.x_axis[x_idx]]
+        self.append_or_set(choice, self.averages, vals, ave_idx)
+        i0 = list(self.averages['i0'])
+        diff = list(self.averages['diff'])
+        ratio = list(self.averages['ratio'])
+        t = list(self.averages['time'])
+        ave = {"i0": i0, "diff": diff,
+               "ratio": ratio, 'time': t}
+        self.ave_idx.append(self.ave_idx.pop(0))
+        self.signals.refreshAveValueGraphs.emit(ave)
+
+    def update_buffer(self, vals, idx):
+        if idx > len(list(self.buffers['i0']))-1:
+            choice = "append"
+        else:
+            choice = "set"
+        vals = [vals.get('i0'), vals.get('diff'), vals.get('ratio'), self.x_axis[idx]]
+        self.append_or_set(choice, self.buffers, vals, idx)
+        if self.calibrated and choice == "set":
+            self.event_flagging(idx)
 
     def run(self):
         """Long-running task to collect data points"""
         while not self.isInterruptionRequested():
             new_values = self.reader.read_value()
+            x_idx = self.x_cycle[0]
+            ave_cycle = self.ave_cycle[0]
+            ave_idx = self.ave_idx[0]
+            self.ave_cycle.append(self.ave_cycle.pop(0))
+            self.x_cycle.append(self.x_cycle.pop(0))
             if self.mode == "running":
-                self.update_buffer(new_values)
+                self.update_buffer(new_values, x_idx)
                 self.check_status_update()
+                self.points_to_plot(x_idx, ave_cycle, ave_idx)
                 time.sleep(1/self.refresh_rate)
             elif self.mode == "calibrate":
                 self.calibrated = False
-                self.update_buffer(new_values)
+                self.update_buffer(new_values, x_idx)
+                self.points_to_plot(x_idx, ave_cycle, ave_idx)
                 self.calibrate(new_values)
             elif self.mode == "correcting":
-                self.update_buffer(new_values)
+                self.update_buffer(new_values, x_idx)
         print("Interruption request: %d" % QThread.currentThreadId())
 
     def check_status_update(self):
         if self.calibrated and self.mode != "correcting":
-            #print(self.flagged_events)
-            if np.count_nonzero(self.flagged_events['missed shot']) > self.NOTIFICATION_TOLERANCE:
+            if np.count_nonzero(self.flagged_events['missed shot']) > self.notification_tolerance:
                 self.signals.changeStatus.emit("Warning, missed shots", "red")
                 self.processor_worker.flag_counter('missed shot', 300, self.wake_motor)
-            elif np.count_nonzero(self.flagged_events['dropped shot'])> self.NOTIFICATION_TOLERANCE:
+            elif np.count_nonzero(self.flagged_events['dropped shot'])> self.notification_tolerance:
                 self.signals.changeStatus.emit("lots of dropped shots", "yellow")
                 self.processor_worker.flag_counter('dropped shot',300, self.sleep_motor)
-            elif np.count_nonzero(self.flagged_events['high intensity']) > self.NOTIFICATION_TOLERANCE:
+            elif np.count_nonzero(self.flagged_events['high intensity']) > self.notification_tolerance:
                 self.signals.changeStatus.emit("High Intensity", "orange")
                 self.processor_worker.flag_counter('high intensity', 1000, self.recalibrate)
             else:
@@ -294,11 +398,11 @@ class StatusThread(QThread):
         """ Used to find the upper and lower values on a normal distribution curve
         Parameters
         ----------
-        percent: float
+        percent:
                  the percent represents the range of allowed values from the mean
-        sigma: float
+        sigma:
                  sigma as provided by the calibration
-        vmean: float
+        vmean:
                  mean as provided by the calibration
         returns
         -------
@@ -315,24 +419,42 @@ class StatusThread(QThread):
         b = (zright * sigma) + vmean
         return [a, b]
 
-    def event_flagging(self):
+    def event_flagging(self, idx):
         """ The method of flagging values that are outside of the values indicated
         from the gui. Values that fall within the allowed range receive a value of
         zero in self.flagged_events deque. Otherwise, that position gets updated with
         the current value in the buffer.
         """
-        if self.buffers['ratio'][-1] > self.calibration_values['ratio']['range'][1]:
-            self.flagged_events['high intensity'].append(self.buffers['ratio'][-1])
+        if idx > len(list(self.flagged_events['i0']))-1:
+            choice = "append"
         else:
-            self.flagged_events['high intensity'].append(0)
+            choice = "set"
+        vals = [vals.get('i0'), vals.get('diff'), vals.get('ratio'), self.x_axis[idx]]
+        self.append_or_set(choice, self.buffers, vals, idx)
+        if self.calibrated:
+            if self.buffers['ratio'][-1] > self.calibration_values['ratio']['range'][1]:
+                high_intensity = self.buffers['ratio'][-1]
+                #self.flagged_events['high intensity'][idx] = self.buffers['ratio'][-1]
+            else:
+                high_intensity = 0
+                #self.flagged_events['high intensity'][idx] = 0
+            if self.buffers['ratio'][-1] < self.calibration_values['ratio']['range'][0]:
+                missed_shot = self.buffers['i0'][-1]
+                #self.flagged_events['missed shot'][idx] = self.buffers['i0'][-1]
+            else:
+                missed_shot = 0
+                #self.flagged_events['missed shot'][idx] = 0
+        else:
+            high_intensity = 0
+            missed_shot = 0
         if self.buffers['i0'][-1] < self.dropped_shot_threshold:
-            self.flagged_events['dropped shot'].append(self.buffers['i0'][-1])
+            dropped_shot = self.buffers['i0'][-1]
+            #self.flagged_events['dropped shot'][idx] = self.buffers['i0'][-1]
         else:
-            self.flagged_events['dropped shot'].append(0)
-        if self.buffers['ratio'][-1] < self.calibration_values['ratio']['range'][0]:
-            self.flagged_events['missed shot'].append(self.buffers['i0'][-1])
-        else:
-            self.flagged_events['missed shot'].append(0)
+            dropped_shot = 0
+            #self.flagged_events['dropped shot'][idx] = 0
+        vals = [high_intensity, missed_shot, dropped_shot]
+        self.append_or_set(choice, self.flagged_events, vals, idx)
 
     def update_calibration_range(self):
         for name in ['i0', 'diff', 'ratio']:
