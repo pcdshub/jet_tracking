@@ -1,9 +1,8 @@
-from PyQt5.QtCore import QThread, QTimer
+from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QFrame
 from datastream import StatusThread, MotorThread
 from gui.widgets.controlWidgetUi import Controls_Ui
 import logging
-import itertools
 
 log = logging.getLogger(__name__)
 

@@ -250,10 +250,10 @@ class QRangeSlider(QWidget):
             * right_thumb_value_changed (int)
     """
     HEIGHT = 20
-    WIDTH = 120
+    WIDTH = 250
     THUMB_WIDTH = 12
     THUMB_HEIGHT = 12
-    TRACK_HEIGHT = 3
+    TRACK_HEIGHT = 5
     TRACK_COLOR = QColor(0xc7, 0xc7, 0xc7)
     TRACK_FILL_COLOR = QColor(0x01, 0x81, 0xff)
     TRACK_PADDING = THUMB_WIDTH // 2 + 1

@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QVBoxLayout, QButtonGroup, QRadioButton, QGridLayout, QHBoxLayout, QPushButton, QLCDNumber, \
+from PyQt5.QtWidgets import QVBoxLayout, QButtonGroup, QRadioButton, \
+    QGridLayout, QHBoxLayout, QPushButton, QLCDNumber, \
     QFrame, QTextEdit, QSizePolicy
 
 from gui.widgets.basicWidgets import CollapsibleBox, Label, LineEdit, ComboBox, QHLine
@@ -66,10 +67,10 @@ class Controls_Ui(object):
         obj.lbl_notification_tol = Label("Notification Tolerance \n(10 - 300s")
         obj.le_notification_tol = LineEdit('30')
         obj.le_notification_tol.valRange(10, 300)
-        obj.lbl_ave_graph = Label('Averaging \n(5 - 30s)')
+        obj.lbl_ave_graph = Label('Averaging \n(1 - 30s)')
         obj.lbl_refresh_rate = Label('Refresh Rate \n(1 - 50Hz)')
         obj.le_ave_graph = LineEdit("5")
-        obj.le_ave_graph.valRange(5, 30)
+        obj.le_ave_graph.valRange(1, 30)
         obj.le_refresh_rate = LineEdit("5")
         obj.le_refresh_rate.valRange(1, 50)
         obj.lbl_x_axis = Label("X-axis Time View \n(10 - 120s)")

@@ -1,7 +1,7 @@
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import QWidget, QDockWidget, QSizePolicy, QHBoxLayout, QMainWindow
 
-from gui.widgets.editorWidget import EditorWidget
+from gui.widgets.simControlWidget import SimWidget
 from signals import Signals
 import logging
 
@@ -16,8 +16,8 @@ class SimulationView(QWidget):
         self.parent = parent
         self.mainLayout = QHBoxLayout()
         self.createEditorWidget()
-        self.mainLayout.addWidget(self.editorWidget)
+        self.mainLayout.addWidget(self.simControlWidget)
         self.setLayout(self.mainLayout)
 
     def createEditorWidget(self):
-        self.editorWidget = EditorWidget(self.context, self.signals)
+        self.simControlWidget = SimWidget(self.context, self.signals)

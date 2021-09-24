@@ -1,6 +1,8 @@
 import numpy as np
 import logging
+import yaml
 import threading
+
 
 log = logging.getLogger(__name__)
 lock = threading.Lock()
@@ -36,12 +38,15 @@ class Context(object):
         self.display_flag = None
         self.naverage = self.graph_ave_time * self.refresh_rate  # number of points over the time wanted for averaging
         self.buffer_size = self.display_time * self.refresh_rate  # number of points over the graph time
-        self.averaging_size = int(self.buffer_size / self.naverage)  # how many averages can fit within the
+        self.averaging_size = int(self.buffer_size / self.naverage)  # how many averages can fit within the time window
         self.x_axis = list(np.linspace(0, self.display_time, self.buffer_size))
         self.notification_tolerance = self.notification_time * self.refresh_rate
         self.ave_cycle = list(range(1, self.naverage+1))
         self.x_cycle = list(range(0, self.buffer_size))
-        self.ave_idx = list(range(0, self.averaging_size+1)) # +1 for NaN value added at the end
+        self.ave_idx = list(range(0, self.averaging_size+1))  # +1 for NaN value added at the end
+
+        self.image = None
+        self.imgray = None
 
     def update_live_graphing(self, live):
         self.live_data = live
@@ -64,8 +69,11 @@ class Context(object):
         """
         changes the number of points to average on the graph
         """
-        self.graph_ave_time = avg
-        self.update_buffers_and_cycles("just averaging")
+        if avg < self.display_time:
+            self.graph_ave_time = avg
+        else:
+            self.graph_ave_time = self.display_time
+        self.update_buffers_and_cycles("just average")
 
     def update_refresh_rate(self, rr):
         """
@@ -93,6 +101,7 @@ class Context(object):
             self.x_cycle = list(range(0, self.buffer_size))
             self.ave_idx = list(range(0, self.averaging_size+1))
             self.signals.changeDisplayFlag.emit("all")
+
         if who == "just average":
             self.naverage = int(self.graph_ave_time * self.refresh_rate)
             self.averaging_size = int(self.buffer_size / self.naverage)
@@ -188,3 +197,10 @@ class Context(object):
 
     def set_calibration_values(self, cal):
         self.calibration_values = cal
+
+    def open_cam_connection(self):
+        self.signals.connectCam.emit()
+
+    def set_images(self, im, imgray):
+        self.image = im
+        self.imgray = imgray

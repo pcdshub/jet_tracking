@@ -109,7 +109,8 @@ class GraphsWidget(QFrame, Graphs_Ui):
 
     def set_x_axis(self):
         self.x_axis = self.context.x_axis
-        self.calibrate(self.calibration_values)
+        if self.calibrated:
+            self.calibrate(self.calibration_values)
 
     def set_graph_ave(self, a):
         self.naverage = int(a)

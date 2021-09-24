@@ -1,5 +1,5 @@
 from PyQt5 import QtCore
-
+import numpy as np
 
 class Signals(QtCore.QObject):
 
@@ -72,3 +72,12 @@ class Signals(QtCore.QObject):
     # emit in GraphsWidget
     # connect in StatusThread
     changeAverageSize = QtCore.pyqtSignal(int)
+    # emit in context
+    # connect in jetImageView
+    connectCam = QtCore.pyqtSignal()
+    # emit in jetImageView
+    # connect in jetImageWidget
+    camName = QtCore.pyqtSignal(str)
+    # emit in editorWidget
+    # connect in jetImageWidget
+    updateImage = QtCore.pyqtSignal(np.ndarray)

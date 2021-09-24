@@ -1,12 +1,12 @@
 import logging
 import time
 from statistics import mean, stdev, StatisticsError
-import scipy.stats as st
+from scipy import stats
 import numpy as np
 from ophyd import EpicsSignal
 from PyQt5.QtCore import QThread
 from tools.num_gen import sinwv
-from tools.quick_calc import DivWithTry, Skimmer
+from tools.quick_calc import div_with_try, skimmer
 from collections import deque
 import threading
 
@@ -143,7 +143,7 @@ class StatusThread(QThread):
         self.buffer_size = self.context.buffer_size
         self.graph_ave_time = self.context.graph_ave_time
         self.naverage = self.context.naverage
-        self.averaging_size = self.context.averaging_size+1  # +1 for NaN value
+        self.averaging_size = self.context.averaging_size+1
         self.notification_tolerance = self.context.notification_tolerance
         self.dropped_shot_threshold = self.context.dropped_shot_threshold
         self.x_axis = self.context.x_axis
@@ -174,13 +174,9 @@ class StatusThread(QThread):
     def connect_signals(self):
         self.signals.mode.connect(self.update_mode)
         self.signals.changeDisplayFlag.connect(self.change_display_flag)
-        #self.signals.changeRefreshRate.connect(self.set_refresh_rate)
         self.signals.changePercent.connect(self.set_percent)
         self.signals.changeCalibrationSource.connect(self.set_calibration_source)
-        # self.signals.changeBufferSize.connect(self.set_buffer_size)
-        # self.signals.changeGraphAve.connect(self.set_graph_ave)
         self.signals.enableTracking.connect(self.tracking)
-        #self.signals.changeAverageSize.connect(self.set_average_size)
 
     @staticmethod
     def fix_size(old_size, new_size, b):
@@ -207,10 +203,10 @@ class StatusThread(QThread):
         """
         keys = list(d.keys())
         if choice == "append":
-            for key,val in list(zip(keys, vals)):
+            for key, val in list(zip(keys, vals)):
                 d[key].append(val)
         elif choice == "set":
-            for key,val in list(zip(keys, vals)):
+            for key, val in list(zip(keys, vals)):
                 d[key][idx] = val
 
     def tracking(self, b):
@@ -232,12 +228,14 @@ class StatusThread(QThread):
 
     def update_buffers_and_cycles(self):
         if self.display_flag == "all":
+            self.signals.changeDisplayTime.emit(self.context.display_time)
             current_ave_size = self.averaging_size+1
             current_buff_size = self.buffer_size
             self.refresh_rate = self.context.refresh_rate
             self.buffer_size = self.context.buffer_size
+            self.display_time = self.context.display_time
             self.naverage = self.context.naverage
-            self.averaging_size = self.context.averaging_size+1
+            self.averaging_size = self.context.averaging_size
             self.x_axis = self.context.x_axis
             self.notification_tolerance = self.context.notification_tolerance
             self.ave_cycle = self.context.ave_cycle
@@ -247,11 +245,14 @@ class StatusThread(QThread):
             self.buffers = self.fix_size(current_buff_size, self.buffer_size, self.buffers)
             self.flagged_events = self.fix_size(current_buff_size, self.buffer_size, self.flagged_events)
             self.display_flag = None
+
         elif self.display_flag == "just average":
             current_ave_size = self.averaging_size+1
+            self.graph_ave_time = self.context.graph_ave_time
+            self.averaging_size = self.context.averaging_size
             self.naverage = self.context.naverage
             self.ave_cycle = self.context.ave_cycle
-            self.ave_idx = list(range(0, self.averaging_size))
+            self.ave_idx = self.context.ave_idx
             self.averages = self.fix_size(current_ave_size, self.averaging_size, self.averages)
             self.display_flag = None
 
@@ -269,7 +270,7 @@ class StatusThread(QThread):
         checks where the lists that track indices are at the moment
         returns a location code so that the graph will update correctly
         returns (-2) if the average should update, returns (0) if the
-        x axis has cycled all the way back to zero, and returns (-1)
+        x axis has cycled all the way back to the last value, and returns (-1)
         at any other point in time.
         """
         if x_idx == 0 and self.display_flag:
@@ -295,7 +296,7 @@ class StatusThread(QThread):
         graph widget and notice that it says "connect='finite' and look
         that up for more info
         """
-        location_info = self.check_cycle(x_idx, ave_cycle)
+        location_info = self.check_cycle(x_idx, ave_cycle) # returns info to inform what to plot
         i0 = list(self.buffers['i0'])
         diff = list(self.buffers['diff'])
         ratio = list(self.buffers['ratio'])
@@ -303,6 +304,8 @@ class StatusThread(QThread):
         buff = {'i0': i0, 'diff': diff, 'ratio': ratio, 'time': t}
         self.signals.refreshGraphs.emit(buff)
         if location_info == 0:
+            self.update_averages(ave_idx, x_idx)
+            ave_idx = self.ave_idx[0]
             if ave_idx > len(list(self.averages['i0'])) - 1:
                 choice = "append"
             else:
@@ -311,7 +314,7 @@ class StatusThread(QThread):
             self.append_or_set(choice, self.averages, vals, ave_idx)
             self.ave_idx.append(self.ave_idx.pop(0))
             ave_idx = self.ave_idx[0]
-            self.update_averages(ave_idx, x_idx)
+
         elif location_info == -2:
             self.update_averages(ave_idx, x_idx)
 
@@ -321,12 +324,17 @@ class StatusThread(QThread):
         else:
             choice = "set"
         try:
-            avei0 = mean(Skimmer('dropped shot',
-                                 list(self.buffers['i0']), self.flagged_events))
-            avediff = mean(Skimmer('dropped shot',
-                                   list(self.buffers['diff']), self.flagged_events))
-            averatio = mean(Skimmer('dropped shot',
-                                    list(self.buffers['ratio']), self.flagged_events))
+            if self.calibrated and len(self.flagged_events['dropped shot']) == len(self.buffers['i0']):
+                avei0 = mean(skimmer('dropped shot',
+                                 list(self.buffers['i0']), self.flagged_events)[:-self.naverage])
+                avediff = mean(skimmer('dropped shot',
+                                   list(self.buffers['diff']), self.flagged_events)[:-self.naverage])
+                averatio = mean(skimmer('dropped shot',
+                                    list(self.buffers['ratio']), self.flagged_events)[:-self.naverage])
+            else:
+                avei0 = mean(list(self.buffers['i0'])[:-self.naverage])
+                avediff = mean(list(self.buffers['diff'])[:-self.naverage])
+                averatio = mean(list(self.buffers['ratio'])[:-self.naverage])
             vals = [avei0, avediff, averatio, self.x_axis[x_idx]]
         except StatisticsError:
             vals = [0, 0, 0, self.x_axis[x_idx]]
@@ -413,8 +421,8 @@ class StatusThread(QThread):
         """
         left = (1. - (percent/100.)) / 2.
         right = 1. - left
-        zleft = st.norm.ppf(left)
-        zright = st.norm.ppf(right)
+        zleft = stats.norm.ppf(left)
+        zright = stats.norm.ppf(right)
         a = (zleft * sigma) + vmean
         b = (zright * sigma) + vmean
         return [a, b]
