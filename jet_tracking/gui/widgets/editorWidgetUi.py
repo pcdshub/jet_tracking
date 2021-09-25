@@ -18,13 +18,4 @@ class Editor_Ui(object):
         obj.layout_thresh.addWidget(obj.lbl_thresh)
         obj.layout_thresh.addWidget(obj.range_slider_thresh)
 
-        obj.lbl_percent_drop = QLabel("Dropped Shots (%)")
-        obj.box_percent_drop = LineEdit("10")
-        obj.box_percent_drop.valRange(0,100)
-
-        obj.layout_percent_drop = QHBoxLayout()
-        obj.layout_percent_drop.addWidget(obj.lbl_percent_drop, 75)
-        obj.layout_percent_drop.addWidget(obj.box_percent_drop)
-
         obj.layout.addLayout(obj.layout_thresh)
-        obj.layout.addLayout(obj.layout_percent_drop)
