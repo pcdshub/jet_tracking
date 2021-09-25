@@ -6,6 +6,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 class SimulationView(QWidget):
 
     def __init__(self, context, signals, parent=None):
