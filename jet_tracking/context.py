@@ -7,6 +7,7 @@ import threading
 log = logging.getLogger(__name__)
 lock = threading.Lock()
 
+
 class Context(object):
 
     def __init__(self, signals):
@@ -40,6 +41,46 @@ class Context(object):
         self.buffer_size = self.display_time * self.refresh_rate  # number of points over the graph time
         self.averaging_size = int(self.buffer_size / self.naverage)  # how many averages can fit within the time window
         self.x_axis = list(np.linspace(0, self.display_time, self.buffer_size))
+
+        # added while adding simulator
+        self.motor_position = 0
+        self.percent_dropped = 10
+        self.peak_intensity = 1
+        self.radius = 0.025
+        self.center = 0.03
+        self.max = 1.0
+        self.bg = 0.05
+
+        # added while adding simulator
+    def update_motor_position(self, mp):
+        self.motor_position = mp
+        self.signals.changeMotorPosition.emit(self.motor_position)
+
+    def update_dropped_shots(self, ds):
+        self.percent_dropped = ds
+        self.signals.changeDroppedShots.emit(self.percent_dropped)
+
+    def update_peak_intensity(self, pi):
+        self.peak_intensity = pi
+        self.signals.changePeakIntensity.emit(self.peak_intensity)
+
+    def update_jet_radius(self, r):
+        self.radius = r
+        self.signals.changeJetRadius.emit(self.radius)
+
+    def update_jet_center(self, jc):
+        self.center = jc
+        self.signals.changeJetCenter.emit(self.center)
+
+    def update_max_intensity(self, mi):
+        self.max = mi
+        self.signals.changeMaxIntensity.emit(self.max)
+
+    def update_background(self, bgn):
+        self.bg = bgn
+        self.signals.changeBackground.emit(self.bg)
+    #
+    
         self.notification_tolerance = self.notification_time * self.refresh_rate
         self.ave_cycle = list(range(1, self.naverage+1))
         self.x_cycle = list(range(0, self.buffer_size))

@@ -1,6 +1,5 @@
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import QWidget, QDockWidget, QSizePolicy, QHBoxLayout, QMainWindow
-
 from gui.widgets.simControlWidget import SimWidget
 from signals import Signals
 import logging

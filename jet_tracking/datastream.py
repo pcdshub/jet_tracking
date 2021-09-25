@@ -6,8 +6,11 @@ import numpy as np
 from ophyd import EpicsSignal
 from PyQt5.QtCore import QThread
 from tools.num_gen import sinwv
+
+from sketch.num_gen import SimulationGenerator
 from tools.quick_calc import div_with_try, skimmer
 from collections import deque
+
 import threading
 
 ologging = logging.getLogger('ophyd')
@@ -35,6 +38,13 @@ class ValueReader(metaclass=Singleton):
         self.context = context
         self.live_data = True
         self.signals.changeRunLive.connect(self.run_live_data)
+
+        self.simgen = SimulationGenerator(self.signals, signals)
+        self.sim_vals = {"i0": 1, "diff": 1, "ratio": 1}
+        self.diff = 1
+        self.i0 = 1
+        self.ratio = 1
+        self.motor_position = 0
 
     def run_live_data(self, live):
         self.live_data = live
@@ -65,14 +75,20 @@ class ValueReader(metaclass=Singleton):
         # self.i0 = data[0]
         # self.diff = data[1]
 
-        x = 0.8
-        y = 0.1
-        self.i0 = sinwv(x, 5000)
-        self.diff = sinwv(y, 2000)
-        try:
-            self.ratio = self.i0/self.diff
-        except:
-            self.ratio = self.ratio
+        # Used for generating random simulated data
+        # x = 0.8
+        # y = 0.1
+        # self.i0 = sinwv(x, 5000)
+        # self.diff = sinwv(y, 2000)
+        # try:
+        #     self.ratio = self.i0/self.diff
+        # except:
+        #     self.ratio = self.ratio
+
+        self.sim_vals = self.simgen.sim()
+        self.i0 = self.sim_vals["i0"]
+        self.diff = self.sim_vals["diff"]
+        self.ratio = self.sim_vals["ratio"]
 
     def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.context.live_data:
@@ -133,6 +149,7 @@ class StatusThread(QThread):
         self.create_vars()
         self.connect_signals()
         self.initialize_buffers()
+
         log.info("__init__ of StatusThread: %d" % QThread.currentThreadId())
 
     def create_vars(self):
@@ -159,6 +176,7 @@ class StatusThread(QThread):
 
     def initialize_buffers(self):
         # buffers and data collection
+
         self.averages = {"i0": deque([0], self.averaging_size),
                          "diff": deque([0], self.averaging_size),
                          "ratio": deque([0], self.averaging_size),
