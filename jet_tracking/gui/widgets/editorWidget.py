@@ -1,4 +1,4 @@
-#import cv2
+import cv2
 from PyQt5.QtWidgets import QFrame
 from gui.widgets.editorWidgetUi import Editor_Ui
 import logging
