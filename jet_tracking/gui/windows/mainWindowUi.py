@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import  QAction, QMenuBar
+from PyQt5.QtWidgets import QAction, QMenuBar
 from PyQt5.QtCore import QSize, QCoreApplication
 import logging
 from gui.windows.simulationWindow import SimWindow
