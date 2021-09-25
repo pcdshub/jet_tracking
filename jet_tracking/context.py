@@ -1,6 +1,6 @@
 import numpy as np
 import logging
-import yaml
+#import yaml
 import threading
 
 
@@ -41,6 +41,13 @@ class Context(object):
         self.buffer_size = self.display_time * self.refresh_rate  # number of points over the graph time
         self.averaging_size = int(self.buffer_size / self.naverage)  # how many averages can fit within the time window
         self.x_axis = list(np.linspace(0, self.display_time, self.buffer_size))
+        self.notification_tolerance = self.notification_time * self.refresh_rate
+        self.ave_cycle = list(range(1, self.naverage + 1))
+        self.x_cycle = list(range(0, self.buffer_size))
+        self.ave_idx = list(range(0, self.averaging_size + 1))  # +1 for NaN value added at the end
+
+        self.image = None
+        self.imgray = None
 
         # added while adding simulator
         self.motor_position = 0
@@ -79,15 +86,6 @@ class Context(object):
     def update_background(self, bgn):
         self.bg = bgn
         self.signals.changeBackground.emit(self.bg)
-    #
-    
-        self.notification_tolerance = self.notification_time * self.refresh_rate
-        self.ave_cycle = list(range(1, self.naverage+1))
-        self.x_cycle = list(range(0, self.buffer_size))
-        self.ave_idx = list(range(0, self.averaging_size+1))  # +1 for NaN value added at the end
-
-        self.image = None
-        self.imgray = None
 
     def update_live_graphing(self, live):
         self.live_data = live

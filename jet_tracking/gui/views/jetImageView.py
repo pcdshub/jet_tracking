@@ -3,9 +3,9 @@ from PyQt5.QtWidgets import QWidget, QDockWidget, QSizePolicy, QHBoxLayout, QMai
 
 from gui.widgets.jetImageWidget import JetImageWidget
 from gui.widgets.editorWidget import EditorWidget
-import yaml
+#import yaml
 import logging
-import cv2
+#import cv2
 
 log = logging.getLogger('pydm')
 log.setLevel('CRITICAL')
