@@ -2,7 +2,7 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import pyqtSignal, QParallelAnimationGroup, QPropertyAnimation, Qt, QAbstractAnimation
 from PyQt5.QtGui import QDoubleValidator
 from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QComboBox, QPushButton, QLineEdit, QToolButton, QWidget, \
-    QScrollArea, QSizePolicy, QVBoxLayout, QLabel, QMessageBox
+    QScrollArea, QVBoxLayout, QLabel, QMessageBox, QFrame
 
 
 class GraphicsView(QGraphicsView):
@@ -197,6 +197,19 @@ class Label(QLabel):
             ")
 
 
+class QHLine(QFrame):
+    def __init__(self):
+        super(QHLine, self).__init__()
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
+
+
+class QVLine(QFrame):
+    def __init__(self):
+        super(QVLine, self).__init__()
+        self.setFrameShape(QFrame.VLine)
+        self.setFrameShadow(QFrame.Sunken)
+
 from dataclasses import dataclass
 
 from PyQt5.QtCore import Qt, QRect, QSize, pyqtSignal
@@ -237,10 +250,10 @@ class QRangeSlider(QWidget):
             * right_thumb_value_changed (int)
     """
     HEIGHT = 20
-    WIDTH = 120
+    WIDTH = 250
     THUMB_WIDTH = 12
     THUMB_HEIGHT = 12
-    TRACK_HEIGHT = 3
+    TRACK_HEIGHT = 5
     TRACK_COLOR = QColor(0xc7, 0xc7, 0xc7)
     TRACK_FILL_COLOR = QColor(0x01, 0x81, 0xff)
     TRACK_PADDING = THUMB_WIDTH // 2 + 1

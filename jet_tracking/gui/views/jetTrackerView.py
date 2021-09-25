@@ -36,4 +36,5 @@ class JetTrackerView(QWidget):
         self.controlsWidget = ControlsWidget(self.context, self.signals)
         self.controlsDock.setWidget(self.controlsWidget)
         self.controlsDock.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.mainLayout.addWidget(self.controlsDock)
 
