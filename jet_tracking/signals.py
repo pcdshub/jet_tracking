@@ -1,5 +1,5 @@
 from PyQt5 import QtCore
-
+import numpy as np
 
 class Signals(QtCore.QObject):
 
@@ -24,15 +24,9 @@ class Signals(QtCore.QObject):
     # emit in
     # connect in ControlsWidget
     sleepMotor = QtCore.pyqtSignal()
-    # emit in GraphsWidget
-    # connect in StatusThread
-    askForValues = QtCore.pyqtSignal(float)
-    # emit in ControlsWidget
+    # emit in StatusThread
     # connect in GraphsWidget
-    startTimer = QtCore.pyqtSignal()
-    # emit in ControlsWidget
-    # connect in GraphsWidget
-    stopTimer = QtCore.pyqtSignal()
+    changeDisplayFlag = QtCore.pyqtSignal(str)
     # emit in Context
     # connect in StatusThread
     enableTracking = QtCore.pyqtSignal(bool)
@@ -74,7 +68,6 @@ class Signals(QtCore.QObject):
     changeMotorAveraging = QtCore.pyqtSignal(float)
     # emit in Context
     # connect in
-    changeAlgorithm = QtCore.pyqtSignal(str)
 
     # added when adding simulator
     update = QtCore.pyqtSignal(dict)
@@ -99,3 +92,16 @@ class Signals(QtCore.QObject):
     changeBackground = QtCore.pyqtSignal(float)
     # emit in Context
     # connect in num_gen
+    changeAlgorithm = QtCore.pyqtSignal(str)
+    # emit in GraphsWidget
+    # connect in StatusThread
+    changeAverageSize = QtCore.pyqtSignal(int)
+    # emit in context
+    # connect in jetImageView
+    connectCam = QtCore.pyqtSignal()
+    # emit in jetImageView
+    # connect in jetImageWidget
+    camName = QtCore.pyqtSignal(str)
+    # emit in editorWidget
+    # connect in jetImageWidget
+    updateImage = QtCore.pyqtSignal(np.ndarray)
