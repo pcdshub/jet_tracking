@@ -3,6 +3,7 @@ import time
 from statistics import mean, stdev, StatisticsError
 from scipy import stats
 import numpy as np
+import collections
 from ophyd import EpicsSignal
 from PyQt5.QtCore import QThread
 from tools.num_gen import sinwv
@@ -163,9 +164,9 @@ class StatusThread(QThread):
                          "diff": deque([0], self.averaging_size),
                          "ratio": deque([0], self.averaging_size),
                          "time": deque([0], self.averaging_size)}
-        self.flagged_events = {"high intensity": deque([0], self.buffer_size),
-                               "missed shot": deque([0], self.buffer_size),
-                               "dropped shot": deque([0], self.buffer_size)}
+        self.flagged_events = {"high intensity": collections.deque([0] * self.buffer_size, self.buffer_size),
+                              "missed shot": collections.deque([0] * self.buffer_size, self.buffer_size),
+                              "dropped shot": collections.deque([0] * self.buffer_size, self.buffer_size)}
         self.buffers = {"i0": deque([0], self.buffer_size),
                         "diff": deque([0], self.buffer_size),
                         "ratio": deque([0], self.buffer_size),
@@ -200,6 +201,12 @@ class StatusThread(QThread):
         send in a list of vals in the order 'i0', 'diff', 'ratio' and 'time' and
         the choice to either "append" or "set" and
         the dictionary d and then execute the action
+
+        Keyword arguments:
+        choice -- either "append" or "set"
+        d -- the dictionary that will be updated
+        vals -- the values or value to be added
+        idx -- the current x_cycle value
         """
         keys = list(d.keys())
         if choice == "append":
@@ -349,6 +356,14 @@ class StatusThread(QThread):
         self.signals.refreshAveValueGraphs.emit(ave)
 
     def update_buffer(self, vals, idx):
+        """
+        Add values from the ValueReader to the buffers dictionary.
+        check if the events that came in should be flagged
+
+        Keyword arguments:
+        vals -- the values received from the ValueReader
+        idx -- the current x index from the x_cycle list variable
+        """
         if idx > len(list(self.buffers['i0']))-1:
             choice = "append"
         else:
@@ -356,7 +371,7 @@ class StatusThread(QThread):
         vals = [vals.get('i0'), vals.get('diff'), vals.get('ratio'), self.x_axis[idx]]
         self.append_or_set(choice, self.buffers, vals, idx)
         if self.calibrated and choice == "set":
-            self.event_flagging(idx)
+            self.event_flagging(vals, idx)
 
     def run(self):
         """Long-running task to collect data points"""
@@ -384,15 +399,19 @@ class StatusThread(QThread):
     def check_status_update(self):
         if self.calibrated and self.mode != "correcting":
             if np.count_nonzero(self.flagged_events['missed shot']) > self.notification_tolerance:
+                print("missed shots")
                 self.signals.changeStatus.emit("Warning, missed shots", "red")
                 self.processor_worker.flag_counter('missed shot', 300, self.wake_motor)
-            elif np.count_nonzero(self.flagged_events['dropped shot'])> self.notification_tolerance:
+            elif np.count_nonzero(self.flagged_events['dropped shot']) > self.notification_tolerance:
+                print("dropped shot")
                 self.signals.changeStatus.emit("lots of dropped shots", "yellow")
-                self.processor_worker.flag_counter('dropped shot',300, self.sleep_motor)
+                self.processor_worker.flag_counter('dropped shot', 300, self.sleep_motor)
             elif np.count_nonzero(self.flagged_events['high intensity']) > self.notification_tolerance:
+                print("high intensity")
                 self.signals.changeStatus.emit("High Intensity", "orange")
                 self.processor_worker.flag_counter('high intensity', 1000, self.recalibrate)
             else:
+                print("everything is good")
                 self.signals.changeStatus.emit("everything is good", "green")
                 if self.processor_worker.isCounting == True:
                     self.processor_worker.flag_counter('everything is good', 1000, self.processor_worker.stop_count)
@@ -427,42 +446,35 @@ class StatusThread(QThread):
         b = (zright * sigma) + vmean
         return [a, b]
 
-    def event_flagging(self, idx):
+    def event_flagging(self, vals, idx):
         """ The method of flagging values that are outside of the values indicated
         from the gui. Values that fall within the allowed range receive a value of
         zero in self.flagged_events deque. Otherwise, that position gets updated with
         the current value in the buffer.
+
+        Keyword arguments:
+        vals -- the values from the ValueReader in the order i0, diff, ratio, x-axis
+        idx -- the current x index from the x_cycle list variable
         """
-        if idx > len(list(self.flagged_events['i0']))-1:
-            choice = "append"
-        else:
-            choice = "set"
-        vals = [vals.get('i0'), vals.get('diff'), vals.get('ratio'), self.x_axis[idx]]
-        self.append_or_set(choice, self.buffers, vals, idx)
         if self.calibrated:
-            if self.buffers['ratio'][-1] > self.calibration_values['ratio']['range'][1]:
-                high_intensity = self.buffers['ratio'][-1]
-                #self.flagged_events['high intensity'][idx] = self.buffers['ratio'][-1]
+            if vals[2] > self.calibration_values['ratio']['range'][1]:
+                high_intensity = vals[2]
+                self.flagged_events['high intensity'][idx] = high_intensity
             else:
                 high_intensity = 0
-                #self.flagged_events['high intensity'][idx] = 0
-            if self.buffers['ratio'][-1] < self.calibration_values['ratio']['range'][0]:
-                missed_shot = self.buffers['i0'][-1]
-                #self.flagged_events['missed shot'][idx] = self.buffers['i0'][-1]
+                self.flagged_events['high intensity'][idx] = high_intensity
+            if vals[2] < self.calibration_values['ratio']['range'][0]:
+                missed_shot = vals[2]
+                self.flagged_events['missed shot'][idx] = missed_shot
             else:
                 missed_shot = 0
-                #self.flagged_events['missed shot'][idx] = 0
-        else:
-            high_intensity = 0
-            missed_shot = 0
-        if self.buffers['i0'][-1] < self.dropped_shot_threshold:
-            dropped_shot = self.buffers['i0'][-1]
-            #self.flagged_events['dropped shot'][idx] = self.buffers['i0'][-1]
+                self.flagged_events['missed shot'][idx] = missed_shot
+        if vals[0] < self.dropped_shot_threshold:
+            dropped_shot = vals[0]
+            self.flagged_events['dropped shot'][idx] = dropped_shot
         else:
             dropped_shot = 0
-            #self.flagged_events['dropped shot'][idx] = 0
-        vals = [high_intensity, missed_shot, dropped_shot]
-        self.append_or_set(choice, self.flagged_events, vals, idx)
+            self.flagged_events['dropped shot'][idx] = dropped_shot
 
     def update_calibration_range(self):
         for name in ['i0', 'diff', 'ratio']:
@@ -509,6 +521,7 @@ class StatusThread(QThread):
                                                             self.calibration_values['i0']['stddev'],
                                                             self.calibration_values['i0']['mean']
                                                             )[0]
+            print(self.calibration_values)
             self.calibrated = True
             self.mode = 'running'
             self.signals.message.emit('calibration file: ' + str(cal_file))
@@ -536,6 +549,8 @@ class StatusThread(QThread):
                                                                 self.calibration_values['i0']['stddev'],
                                                                 self.calibration_values['i0']['mean']
                                                                 )[0]
+                print(self.calibration_values)
+                self.update_calibration_range()
                 self.calibrated = True
                 self.cal_vals = [[], [], []]
                 self.mode = "running"
@@ -578,10 +593,9 @@ class EventProcessor(QThread):
 
     def flag_counter(self, new_flag, num_flagged, func_to_execute):
         self.isCounting = True
-        #print("This is inside of the event processor!!!   KSEUHFKJSNFDEKAYWGEFIUHASBDFJYAWEGFUKYHABDFJYAWEGFKHAJWEBD", self.flag_type)
         if new_flag in self.flag_type.copy():
             self.flag_type[new_flag] += 1
-            if num_flagged <= self.flag_type[new_flag]:
+            if num_flagged >= self.flag_type[new_flag]:
                 del(self.flag_type[new_flag])
                 func_to_execute() 
         else:
