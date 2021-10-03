@@ -98,4 +98,3 @@ class Editor_Ui(object):
         obj.layout.addWidget(obj.hline5)
         obj.layout.addLayout(obj.layout_bttns)
         obj.layout.addStretch()
-

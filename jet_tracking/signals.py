@@ -68,6 +68,30 @@ class Signals(QtCore.QObject):
     changeMotorAveraging = QtCore.pyqtSignal(float)
     # emit in Context
     # connect in
+
+    # added when adding simulator
+    update = QtCore.pyqtSignal(dict)
+    changeMotorPosition = QtCore.pyqtSignal(float)
+    # emit in Context
+    # connect in num_gen
+    changeDroppedShots = QtCore.pyqtSignal(float)
+    # emit in Context
+    # connect in num_gen
+    changePeakIntensity = QtCore.pyqtSignal(float)
+    # emit in Context
+    # connect in num_gen
+    changeJetRadius = QtCore.pyqtSignal(float)
+    # emit in Context
+    # connect in num_gen
+    changeJetCenter = QtCore.pyqtSignal(float)
+    # emit in Context
+    # connect in num_gen
+    changeMaxIntensity = QtCore.pyqtSignal(float)
+    # emit in Context
+    # connect in num_gen
+    changeBackground = QtCore.pyqtSignal(float)
+    # emit in Context
+    # connect in num_gen
     changeAlgorithm = QtCore.pyqtSignal(str)
     # emit in GraphsWidget
     # connect in StatusThread
