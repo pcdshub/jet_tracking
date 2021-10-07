@@ -2,6 +2,17 @@ import math
 import random
 import matplotlib.pyplot as plt
 
+"""
+Questions for Frank
+
+-How would we make the values better reflect "real" values we should see for i0 and diffraction?
+-right now if you change the amount of dropped shots, the ratio also goes down. As I understand it, that 
+shouldn't be the case which is why i look for dropped shots separately. Can we change that?
+- do we need "update vals" to update anything in data stream? if so, we should have those values update in "Context"
+instead.
+
+"""
+
 
 def sinwv(x, shift):
     a = random.random()
@@ -53,8 +64,6 @@ class SimulationGenerator(object):
     def change_noise(self, bg):
         self.bg = bg
 
-# is this actually doing anything?
-
     def updateVals(self, name, vals):
         if name == "percent":
             self.percent_dropped = vals
@@ -75,7 +84,7 @@ class SimulationGenerator(object):
         # this is where you use all of the current values to calculate what value you want to return
         # you may need to think of something for the percentages like a separate function for averaging the values
         # you send out so you know how frequently to send me a "dropped shot" value
-        ...
+
         # val = fancy_code_that_generates_val #this would need to be a dictionary which includes "i0", "diff" and "ratio"
         val = {}
         val["i0"] = self.peak_intensity

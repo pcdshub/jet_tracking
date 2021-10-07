@@ -40,7 +40,7 @@ class ValueReader(metaclass=Singleton):
         self.live_data = True
         self.signals.changeRunLive.connect(self.run_live_data)
 
-        self.simgen = SimulationGenerator(self.signals, signals)
+        self.simgen = SimulationGenerator(self.context, self.signals)
         self.sim_vals = {"i0": 1, "diff": 1, "ratio": 1}
         self.diff = 1
         self.i0 = 1
@@ -410,6 +410,7 @@ class StatusThread(QThread):
                 self.update_buffer(new_values, x_idx)
                 self.points_to_plot(x_idx, ave_cycle, ave_idx)
                 self.calibrate(new_values)
+                time.sleep(1 / self.refresh_rate)
             elif self.mode == "correcting":
                 self.update_buffer(new_values, x_idx)
         print("Interruption request: %d" % QThread.currentThreadId())
@@ -417,19 +418,15 @@ class StatusThread(QThread):
     def check_status_update(self):
         if self.calibrated and self.mode != "correcting":
             if np.count_nonzero(self.flagged_events['missed shot']) > self.notification_tolerance:
-                print("missed shots")
                 self.signals.changeStatus.emit("Warning, missed shots", "red")
                 self.processor_worker.flag_counter('missed shot', 300, self.wake_motor)
             elif np.count_nonzero(self.flagged_events['dropped shot']) > self.notification_tolerance:
-                print("dropped shot")
                 self.signals.changeStatus.emit("lots of dropped shots", "yellow")
                 self.processor_worker.flag_counter('dropped shot', 300, self.sleep_motor)
             elif np.count_nonzero(self.flagged_events['high intensity']) > self.notification_tolerance:
-                print("high intensity")
                 self.signals.changeStatus.emit("High Intensity", "orange")
                 self.processor_worker.flag_counter('high intensity', 1000, self.recalibrate)
             else:
-                print("everything is good")
                 self.signals.changeStatus.emit("everything is good", "green")
                 if self.processor_worker.isCounting == True:
                     self.processor_worker.flag_counter('everything is good', 1000, self.processor_worker.stop_count)
@@ -517,7 +514,6 @@ class StatusThread(QThread):
         If the calibration is successful, then the calibration is set to True, mode is set to running,
         and the calibration_values are updated.
         """
-        
         if self.calibration_source == "calibration from results":
             results, cal_file = get_cal_results(HUTCH, EXPERIMENT) ### change the experiment
             if results == None:
@@ -539,17 +535,16 @@ class StatusThread(QThread):
                                                             self.calibration_values['i0']['stddev'],
                                                             self.calibration_values['i0']['mean']
                                                             )[0]
-            print(self.calibration_values)
             self.calibrated = True
             self.mode = 'running'
             self.signals.message.emit('calibration file: ' + str(cal_file))
 
         elif self.calibration_source == 'calibration in GUI':
-            if v.get('i0') > 500:
-                self.cal_vals[0].append(v.get('i0'))
-                self.cal_vals[1].append(v.get('diff'))
-                self.cal_vals[2].append(v.get('ratio'))
-                time.sleep(1/self.refresh_rate)
+            #if v.get('i0') > 500:
+            self.cal_vals[0].append(v.get('i0'))
+            self.cal_vals[1].append(v.get('diff'))
+            self.cal_vals[2].append(v.get('ratio'))
+            #time.sleep(1/self.refresh_rate)
             if len(self.cal_vals[0]) > 100:
                 self.set_calibration_values('i0',
                                             mean(self.cal_vals[0]),
@@ -567,7 +562,6 @@ class StatusThread(QThread):
                                                                 self.calibration_values['i0']['stddev'],
                                                                 self.calibration_values['i0']['mean']
                                                                 )[0]
-                print(self.calibration_values)
                 self.update_calibration_range()
                 self.calibrated = True
                 self.cal_vals = [[], [], []]
