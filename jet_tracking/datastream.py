@@ -40,7 +40,7 @@ class ValueReader(metaclass=Singleton):
         self.live_data = True
         self.signals.changeRunLive.connect(self.run_live_data)
 
-        self.simgen = SimulationGenerator(self.signals, signals)
+        self.simgen = SimulationGenerator(self.context, self.signals)
         self.sim_vals = {"i0": 1, "diff": 1, "ratio": 1}
         self.diff = 1
         self.i0 = 1
@@ -90,6 +90,7 @@ class ValueReader(metaclass=Singleton):
         self.i0 = self.sim_vals["i0"]
         self.diff = self.sim_vals["diff"]
         self.ratio = self.sim_vals["ratio"]
+#        self.motor_position = self.sim_vals["motor_position"]
 
     def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.context.live_data:

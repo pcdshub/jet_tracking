@@ -1,6 +1,7 @@
 from PyQt5 import QtCore
 import numpy as np
 
+
 class Signals(QtCore.QObject):
 
     # emit in StatusThread
