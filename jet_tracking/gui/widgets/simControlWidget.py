@@ -24,7 +24,7 @@ class SimWidget(QFrame, Sim_Ui):
         self.context.update_max_intensity(float(self.box_max_int.text()))
         self.context.update_background(float(self.box_bg.text()))
 
-        self.context.update_algorithm(self.cbox_algorithm.currentText())
+#        self.context.update_algorithm(self.cbox_algorithm.currentText())
 
     def make_connections(self):
         self.box_motor_pos.checkVal.connect(self.context.update_motor_position)
