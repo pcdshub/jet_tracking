@@ -94,11 +94,14 @@ class SimulationGenerator(object):
         c = random.random()
         self.percent = self.percent_dropped/100
 
+# dropped shots
         if b < self.percent:
 #            val["diff"] = 0
             val["dropped"] = True
             val["diff"] = (self.bg / 10) * (1 + (a - 0.5))
             val["i0"] = self.bg * (1 + (c - 0.5))
+
+# on jet
         else:
             # calculates length of chord of a circle if on jet or sets diff to 0 (plus noise) if off jet
             if abs(self.motor_position - self.center) < self.radius:
@@ -106,6 +109,8 @@ class SimulationGenerator(object):
                             1 + self.bg * (a - 0.5))
                 val["dropped"] = False
                 val["i0"] = self.peak_intensity * 1 + self.bg * (c - 0.5)
+
+#off jet
             else:
                 val["diff"] = self.bg * (1 + (a - 0.5))
                 val["dropped"] = False

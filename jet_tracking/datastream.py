@@ -100,7 +100,7 @@ class ValueReader(metaclass=Singleton):
             return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio}
         else:
             self.sim_data_stream()
-            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio}
+            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio, 'dropped': self.dropped}
 
  
 class StatusThread(QThread):
@@ -598,7 +598,6 @@ class StatusThread(QThread):
             pass
 
 
-
 class EventProcessor(QThread):
     def __init__(self, context, signals):
         super(EventProcessor, self).__init__()
@@ -625,8 +624,6 @@ class EventProcessor(QThread):
         self.flag_type = {}
         self.isCounting = False
 
-
-        
 
 class MotorThread(QThread):
     def __init__(self, context, signals):
