@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QFrame
 from gui.widgets.simControlWidgetUi import Sim_Ui
+from datastream import StatusThread, MotorThread
 import logging
 
 log = logging.getLogger(__name__)
@@ -12,8 +13,12 @@ class SimWidget(QFrame, Sim_Ui):
         self.signals = signals
         self.context = context
         self.setupUi(self)
+#        self.initialize_threads()
         self.make_connections()
         self.set_sim_options()
+
+#    def initialize_threads(self):
+#        self.sim_status = StatusThread(self.context, self.signals)
 
     def set_sim_options(self):
         self.context.update_motor_position(float(self.box_motor_pos.text()))
@@ -36,8 +41,10 @@ class SimWidget(QFrame, Sim_Ui):
         self.box_bg.checkVal.connect(self.context.update_background)
 
 #        self.cbox_algorithm.currentTextChanged.connect(self.context.update_algorithm)
-#        self.bttngrp1.buttonClicked.connect(self.checkBttn)
-#        self.bttn_search.clicked.connect(self._start_motor)
+#        self.bttn_start_tracking.clicked.connect(self._start_sim)
+
+#    def _start_sim(self):
+#        self.sim_status.start()
 
 #    def _enable_tracking(self):
 #        self.update_tracking_status("enabled", green)
