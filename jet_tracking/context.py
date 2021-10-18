@@ -24,7 +24,7 @@ class Context(object):
         self.refresh_rate = 5
         self.graph_ave_time = 2
         self.display_time = 10
-        self.notification_time = 30
+        self.notification_time = 10
         self.dropped_shot_threshold = 1000
         self.manual_motor = True
         self.high_limit = 50
@@ -42,6 +42,7 @@ class Context(object):
         self.averaging_size = int(self.buffer_size / self.naverage)  # how many averages can fit within the time window
         self.x_axis = list(np.linspace(0, self.display_time, self.buffer_size))
         self.notification_tolerance = self.notification_time * self.refresh_rate
+        print(self.notification_tolerance)
         self.ave_cycle = list(range(1, self.naverage + 1))
         self.x_cycle = list(range(0, self.buffer_size))
         self.ave_idx = list(range(0, self.averaging_size + 1))  # +1 for NaN value added at the end

@@ -45,6 +45,7 @@ class ValueReader(metaclass=Singleton):
         self.diff = 1
         self.i0 = 1
         self.ratio = 1
+        self.dropped = False
         self.motor_position = 0
 
     def run_live_data(self, live):
@@ -90,14 +91,15 @@ class ValueReader(metaclass=Singleton):
         self.i0 = self.sim_vals["i0"]
         self.diff = self.sim_vals["diff"]
         self.ratio = self.sim_vals["ratio"]
+        self.dropped = False
 
     def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.context.live_data:
             self.live_data_stream()
-            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio}
+            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio, 'dropped': self.dropped}
         else:
             self.sim_data_stream()
-            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio}
+            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio, 'dropped': self.dropped}
 
  
 class StatusThread(QThread):
@@ -484,7 +486,7 @@ class StatusThread(QThread):
             else:
                 missed_shot = 0
                 self.flagged_events['missed shot'][idx] = missed_shot
-        if vals[0] < self.dropped_shot_threshold:
+        if vals[3] == True:
             dropped_shot = vals[0]
             self.flagged_events['dropped shot'][idx] = dropped_shot
         else:
@@ -540,12 +542,11 @@ class StatusThread(QThread):
             self.signals.message.emit('calibration file: ' + str(cal_file))
 
         elif self.calibration_source == 'calibration in GUI':
-            #if v.get('i0') > 500:
-            self.cal_vals[0].append(v.get('i0'))
-            self.cal_vals[1].append(v.get('diff'))
-            self.cal_vals[2].append(v.get('ratio'))
-            #time.sleep(1/self.refresh_rate)
-            if len(self.cal_vals[0]) > 100:
+            if v.get('dropped') != True:
+                self.cal_vals[0].append(v.get('i0'))
+                self.cal_vals[1].append(v.get('diff'))
+                self.cal_vals[2].append(v.get('ratio'))
+            if len(self.cal_vals[0]) > 50:
                 self.set_calibration_values('i0',
                                             mean(self.cal_vals[0]),
                                             stdev(self.cal_vals[0])
@@ -628,7 +629,7 @@ class EventProcessor(QThread):
 class MotorThread(QThread):
     def __init__(self, context, signals):
         super(MotorThread, self).__init__()
-        self.SIGNALS = signals
+        self.signals = signals
         self.context = context
         self.moves = []
         self.motor_options = {}
@@ -651,12 +652,11 @@ class MotorThread(QThread):
         self.motor_options = p
 
     def run(self):
-        print("I just want to see when this prints")
         while not self.isInterruptedRequested():
             print("I am now running", self.motor_options)
             time.sleep(3)
             print("I am now going to sleep")
-            self.SIGNALS.sleepMotor.emit()
+            self.signals.sleepMotor.emit()
         print("Interruption was requested: ", self.isInterruptedRequested())
 
 
