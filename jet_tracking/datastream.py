@@ -46,6 +46,7 @@ class ValueReader(metaclass=Singleton):
         self.i0 = 1
         self.ratio = 1
         self.motor_position = 0
+        self.dropped = False
 
     def run_live_data(self, live):
         self.live_data = live
@@ -90,6 +91,8 @@ class ValueReader(metaclass=Singleton):
         self.i0 = self.sim_vals["i0"]
         self.diff = self.sim_vals["diff"]
         self.ratio = self.sim_vals["ratio"]
+        self.dropped = self.sim_vals["dropped"]
+#        self.motor_position = self.sim_vals["motor_position"]
 
     def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.context.live_data:
@@ -97,7 +100,7 @@ class ValueReader(metaclass=Singleton):
             return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio}
         else:
             self.sim_data_stream()
-            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio}
+            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio, 'dropped': self.dropped}
 
  
 class StatusThread(QThread):
@@ -595,7 +598,6 @@ class StatusThread(QThread):
             pass
 
 
-
 class EventProcessor(QThread):
     def __init__(self, context, signals):
         super(EventProcessor, self).__init__()
@@ -622,8 +624,6 @@ class EventProcessor(QThread):
         self.flag_type = {}
         self.isCounting = False
 
-
-        
 
 class MotorThread(QThread):
     def __init__(self, context, signals):

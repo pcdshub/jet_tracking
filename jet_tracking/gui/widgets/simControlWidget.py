@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QFrame
 from gui.widgets.simControlWidgetUi import Sim_Ui
+from datastream import StatusThread, MotorThread
 import logging
 
 log = logging.getLogger(__name__)
@@ -12,8 +13,12 @@ class SimWidget(QFrame, Sim_Ui):
         self.signals = signals
         self.context = context
         self.setupUi(self)
+#        self.initialize_threads()
         self.make_connections()
         self.set_sim_options()
+
+#    def initialize_threads(self):
+#        self.sim_status = StatusThread(self.context, self.signals)
 
     def set_sim_options(self):
         self.context.update_motor_position(float(self.box_motor_pos.text()))
@@ -24,6 +29,8 @@ class SimWidget(QFrame, Sim_Ui):
         self.context.update_max_intensity(float(self.box_max_int.text()))
         self.context.update_background(float(self.box_bg.text()))
 
+#        self.context.update_algorithm(self.cbox_algorithm.currentText())
+
     def make_connections(self):
         self.box_motor_pos.checkVal.connect(self.context.update_motor_position)
         self.box_percent_drop.checkVal.connect(self.context.update_dropped_shots)
@@ -32,3 +39,19 @@ class SimWidget(QFrame, Sim_Ui):
         self.box_jet_center.checkVal.connect(self.context.update_jet_center)
         self.box_max_int.checkVal.connect(self.context.update_max_intensity)
         self.box_bg.checkVal.connect(self.context.update_background)
+
+#        self.cbox_algorithm.currentTextChanged.connect(self.context.update_algorithm)
+#        self.bttn_start_tracking.clicked.connect(self._start_sim)
+
+#    def _start_sim(self):
+#        self.sim_status.start()
+
+#    def _enable_tracking(self):
+#        self.update_tracking_status("enabled", green)
+#        self.context.update_tracking(True)
+#        self._start_motor()
+
+#    def set_tracking_status(self, status, color):
+#        self.lbl_tracking_status.setText(status)
+#        self.lbl_tracking_status.setStyleSheet(f"\
+#                background-color: {color};")

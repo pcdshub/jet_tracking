@@ -26,11 +26,11 @@ class SimulationGenerator(object):
         self.context = context
         self.signals = signals
         self.percent_dropped = 10
-        self.peak_intensity = 1
+        self.peak_intensity = 10
         self.motor_position = 0
         self.radius = 0.025
         self.center = 0.03
-        self.max = 1.0
+        self.max = 10
         self.bg = 0.05
         self.percent = 0
         # get current simulated motor position
@@ -81,30 +81,40 @@ class SimulationGenerator(object):
             self.bg = vals
 
     def sim(self):
-        # this is where you use all of the current values to calculate what value you want to return
-        # you may need to think of something for the percentages like a separate function for averaging the values
-        # you send out so you know how frequently to send me a "dropped shot" value
 
-        # val = fancy_code_that_generates_val #this would need to be a dictionary which includes "i0", "diff" and "ratio"
         val = {}
         val["i0"] = self.peak_intensity
         val["diff"] = self.max
         val["ratio"] = 1
+        val["dropped"] = False
 
         a = random.random()
         # dropped shots. for input percentage of shots, 0 is returned for the scattering intensity
         b = random.random()
+        c = random.random()
         self.percent = self.percent_dropped/100
 
+# dropped shots
         if b < self.percent:
-            val["diff"] = 0
+#            val["diff"] = 0
+            val["dropped"] = True
+            val["diff"] = (self.bg / 10) * (1 + (a - 0.5))
+            val["i0"] = self.bg * (1 + (c - 0.5))
+
+# on jet
         else:
             # calculates length of chord of a circle if on jet or sets diff to 0 (plus noise) if off jet
             if abs(self.motor_position - self.center) < self.radius:
                 val["diff"] = self.max * ((2 * math.sqrt(self.radius ** 2 - abs(self.motor_position - self.center) ** 2)) / (2 * self.radius)) * (
                             1 + self.bg * (a - 0.5))
+                val["dropped"] = False
+                val["i0"] = self.peak_intensity * 1 + self.bg * (c - 0.5)
+
+#off jet
             else:
                 val["diff"] = self.bg * (1 + (a - 0.5))
+                val["dropped"] = False
+                val["i0"] = self.peak_intensity * 1 + self.bg * (c - 0.5)
 
         val["ratio"] = val["diff"] / val["i0"]
         return val

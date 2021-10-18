@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QSizePolicy, QButtonGroup, QPushButton
 from gui.widgets.basicWidgets import QRangeSlider, Label, LineEdit, ComboBox
 
 class Sim_Ui(object):
@@ -14,8 +14,8 @@ class Sim_Ui(object):
         obj.lbl_percent_drop = QLabel("Dropped Shots (%)")
         obj.box_percent_drop = LineEdit("10")
         obj.box_percent_drop.valRange(0, 100)
-        obj.lbl_int = QLabel("Calibrated Intensity")
-        obj.box_int = LineEdit("1")
+        obj.lbl_int = QLabel("Beam Intensity")
+        obj.box_int = LineEdit("10")
         obj.box_int.valRange(0, 100)
         obj.lbl_motor_pos = QLabel("Motor Position (mm)")
         obj.box_motor_pos = LineEdit("0")
@@ -27,21 +27,26 @@ class Sim_Ui(object):
         obj.box_jet_center = LineEdit("0.03")
         obj.box_jet_center.valRange(-1, 1)
         obj.lbl_max_int = QLabel("Diffraction Intensity")
-        obj.box_max_int = LineEdit("1")
-        obj.box_max_int.valRange(0, 1)
+        obj.box_max_int = LineEdit("10")
+        obj.box_max_int.valRange(0, 100)
         obj.lbl_bg = QLabel("Background Noise")
         obj.box_bg = LineEdit("0.05")
         obj.box_bg.valRange(0, 1)
-#        obj.cbox_sim_algorithm = ComboBox()
-#        obj.cbox_sim_algorithm.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-#        obj.cbox_sim_algorithm.addItem("Ternary Search")
-#        obj.cbox_sim_algorithm.addItem("Linear Scan")
-#        obj.bttn_start_tracking = QPushButton()
-#        obj.bttn_start_tracking.setText("Start Tracking")
-#        obj.bttn_start_tracking.setEnabled(False)
-#        obj.bttn_stop_tracking = QPushButton()
-#        obj.bttn_stop_tracking.setText("Stop Tracking")
-#        obj.bttn_stop_tracking.setEnabled(False)
+
+        obj.cbox_sim_algorithm = ComboBox()
+        obj.cbox_sim_algorithm.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        obj.cbox_sim_algorithm.addItem("Ternary Search")
+        obj.cbox_sim_algorithm.addItem("Linear Scan")
+        obj.bttn_start_tracking = QPushButton("Start Tracking")
+        obj.bttn_start_tracking.setStyleSheet("\
+            background-color: green;\
+            font-size:16px;\
+            ")
+        obj.bttn_stop_tracking = QPushButton("Stop Tracking")
+        obj.bttn_stop_tracking.setStyleSheet("\
+            background-color: red;\
+            font-size:16px;\
+            ")
 
         obj.layout_percent_drop = QHBoxLayout()
         obj.layout_percent_drop.addWidget(obj.lbl_percent_drop, 75)
@@ -65,6 +70,13 @@ class Sim_Ui(object):
         obj.layout_bg.addWidget(obj.lbl_bg, 75)
         obj.layout_bg.addWidget(obj.box_bg)
 
+        obj.layout_algorithm = QHBoxLayout()
+        obj.layout_algorithm.addWidget(obj.cbox_sim_algorithm)
+        obj.layout_start = QHBoxLayout()
+        obj.layout_start.addWidget(obj.bttn_start_tracking)
+        obj.layout_stop = QHBoxLayout()
+        obj.layout_stop.addWidget(obj.bttn_stop_tracking)
+
         obj.layout.addLayout(obj.layout_percent_drop)
         obj.layout.addLayout(obj.layout_int)
         obj.layout.addLayout(obj.layout_motor_pos)
@@ -72,3 +84,7 @@ class Sim_Ui(object):
         obj.layout.addLayout(obj.layout_jet_center)
         obj.layout.addLayout(obj.layout_max_int)
         obj.layout.addLayout(obj.layout_bg)
+
+        obj.layout.addLayout(obj.layout_algorithm)
+        obj.layout.addLayout(obj.layout_start)
+        obj.layout.addLayout(obj.layout_stop)

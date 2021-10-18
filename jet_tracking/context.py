@@ -52,10 +52,10 @@ class Context(object):
         # added while adding simulator
         self.motor_position = 0
         self.percent_dropped = 10
-        self.peak_intensity = 1
+        self.peak_intensity = 10
         self.radius = 0.025
         self.center = 0.03
-        self.max = 1.0
+        self.max = 10
         self.bg = 0.05
 
         # added while adding simulator
