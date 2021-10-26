@@ -10,7 +10,11 @@ import os
 import sys
 import logging
 from pathlib import Path
-sys.path.append('../')
+
+fpath=os.path.dirname(os.path.abspath(__file__))
+fpathup = '/'.join(fpath.split('/')[:-1])
+sys.path.append(fpathup)
+print(fpathup)
 from utils import get_r_masks, get_evr_w_codes
 
 logger = logging.getLogger(__name__)

@@ -35,6 +35,10 @@ do
   esac
 done
 
+MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+export MYDIR=`echo $MYDIR | sed  s/mpi_scripts//g`
+echo $MYDIR
+
 source /reg/g/psdm/etc/psconda.sh -py3
 
 # If user doesn't specify use minimum required
@@ -44,6 +48,6 @@ PROC=${PROC:='2'}
 #source /reg/g/psdm/sw/conda1/manage/bin/psconda.sh
 #cd /cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/mpi_scripts
 #pythonpathmunge '/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking'
-CONFIG=${CONFIG:=/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/jt_configs/xcs_config.yml}
+CONFIG=${CONFIG:=$MYDIR/jt_configs/xcs_config.yml}
 
-`which mpirun` -n $PROC python -u mpi_driver.py --cfg_file $CONFIG
+`which mpirun` -n $PROC python -u $MYDIR/mpi_scripts/mpi_driver.py --cfg_file $CONFIG

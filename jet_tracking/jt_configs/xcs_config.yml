@@ -4,9 +4,9 @@ api_msg:
 hutch: 'xcs'
 experiment: 'xcsx47519'
 run: '10'
-sim: false
+sim: true
 ffb: false
-event_code: 137
+event_code: 137 # x-ray on event code
 
 det_map:
   name: 'epix10k2M'

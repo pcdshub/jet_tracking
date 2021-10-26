@@ -124,7 +124,7 @@ class MpiWorker(object):
     def start_run(self):
         """Worker should handle any calculations"""
         #mask_det = det.mask(188, unbond=True, unbondnbrs=True, status=True,  edges=True, central=True)
-        ped = self.detector.pedestals(218)[0]
+        #ped = self.detector.pedestals(218)[0]
         for evt_idx, evt in enumerate(self.ds.events()):
             # Definitely not a fan of wrapping the world in a try/except
             # but too many possible failure modes from the data
