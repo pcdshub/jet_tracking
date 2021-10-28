@@ -137,7 +137,7 @@ class MpiWorker(object):
                 
                 # Get i0 Data this is different for differe ipm detectors
                 i0 = getattr(self.ipm[0].get(evt), self.ipm[1])()
-                # Filter base on i0
+                # Filter based on i0
                 if i0<self._i0_thresh[0] or i0>self._i0_thresh[1]:
                     print('Bad shot')
                     continue
