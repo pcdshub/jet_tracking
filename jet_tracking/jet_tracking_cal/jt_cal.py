@@ -369,7 +369,7 @@ if __name__ == '__main__':
     # Setup MPI data source
     ds_name = ''.join(['exp=', exp, ':run=', run, ':smd'])
     if ffb:
-        ds_name += ':dir=/cds/data/drpsrcf/{}/{}/xtc'.format(hutch, exp)
+        ds_name += ':dir='+FFB_LOC+f'{hutch}/{exp}/xtc'
     try:
         print('Make datasource with {}'.format(ds_name))
         ds = psana.MPIDataSource(ds_name)
