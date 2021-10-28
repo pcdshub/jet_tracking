@@ -35,9 +35,7 @@ do
   esac
 done
 
-MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-export MYDIR=`echo $MYDIR | sed  s/mpi_scripts//g`
-echo $MYDIR
+MYDIR=$(dirname "${BASH_SOURCE[0]}" | sed 's/mpi_scripts//')
 
 source /reg/g/psdm/etc/psconda.sh -py3
 
