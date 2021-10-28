@@ -31,7 +31,7 @@ handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
 #JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
-JT_LOC = str(Path(__file__).resolve().parent.parent)
+JT_LOC = os.path.dirname(fpath)
 SD_LOC = '/reg/d/psdm/'
 FFB_LOC = '/cds/data/drpsrcf/'
 
