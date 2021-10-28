@@ -512,7 +512,7 @@ if __name__ == '__main__':
         with open(res_file, 'w') as f:
             results = {k: str(v) for k, v in results.items()}
             json.dump(results, f)
-        logger.info('Saved calibration to {}'.format(res_file))
+        logger.info(f'Saved calibration to {res_file}')
         
         # try to also save calib results to exp directory in hutch opr home 
         # (only works if ran as hutchopr)
