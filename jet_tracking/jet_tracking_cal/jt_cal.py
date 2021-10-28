@@ -35,22 +35,6 @@ JT_LOC = os.path.dirname(fpath)
 SD_LOC = '/reg/d/psdm/'
 FFB_LOC = '/cds/data/drpsrcf/'
 
-#def get_r_masks(shape, bins=100):
-#    """Function to generate radial masks for pixels to include in azav"""
-#    center = (shape[1] / 2, shape[0] / 2)
-#    x, y = np.meshgrid(np.arange(shape[1]) - center[0], \
-#        np.arange(shape[0]) - center[1])
-#    r = np.sqrt(x**2 + y**2)
-#    max_r = np.max(r)
-#    min_r = np.min(r)
-#    bin_size = (max_r - min_r) / bins
-#    radii = np.arange(1, max_r, bin_size)
-#    masks = []
-#    for i in radii:
-#        mask = (np.greater(r, i - bin_size) & np.less(r, i + bin_size))
-#        masks.append(mask)
-#
-#    return masks
 
 def gaussian(x, a, mean, std, m, b):
     """
