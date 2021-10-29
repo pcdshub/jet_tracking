@@ -1,13 +1,13 @@
-#Jet Tracking Application
+# Jet Tracking Application
 The purpose of this application is to automate the positioning of the liquid jet to be conincident with the x-rays.  This version is a start and mostly a proof of concept, because everyone knows you don't build something right the first time ever.  Once this is fully functional then it can be rebuilt with a better architecture and file structure using the proven pieces.
 
-##Calibration
+## Calibration
 The calibration piece is used to identify the typical diffraction ring intensity from the solvent/substrate present in the liquid jet.  The current procedure is to take about 10 seconds of data in a recorded run then analyze the following:
 - Making a cut on the distribution of incoming x ray intensity to identify events with good x ray intensity
 - Get the azimuthal average of the area detector for all of those events and identifying the peak intensity (brightest bin of the ring).  Then summing the intensities of the peak bin and a +/- delta bin value.
 - Get the projection of the jet camera and identify the peak intensity and location of that jet.
 
-###How to run the calibration
+### How to run the calibration
 There are two ways to run the calibration.  
 The suggested/production way is to run through Automatic Run Processing on pswww.
 There is a current definition and run setup for xcsx39718 on Run 82.  You can see the results in the summaries tab for that experiment (elog (aka Data Manager) on pswww)
@@ -38,10 +38,10 @@ Saving report to /reg/d/psdm/xcs/xcsx39718/stats/summary/jt_cal_run_10/report.ht
 finished with jet tracking calibration
 Closing remaining open files:run10_jt_cal.h5...done
 ```
-##Running the shared memory process
+## Running the shared memory process
 Once we have the needed calibration data, you can run the shared memory process
 
-###Sim Mode
+### Sim Mode
 If you set the sim variable to true in the config file, you will run in sim mode.  This means you will read offline data.  This is only setup to use one worker and a master so it's somewhat slow, but very good for debugging.
 
 ```
@@ -49,7 +49,7 @@ $ ssh psana
 $ cd <base_path>/jet_tracking/jet_tracking/mpi_scripts
 $ ./run_mpi_script
 ```
-###Shared Memory
+### Shared Memory
 To run in shared memory you need to ssh to the mon node that has shared memory running.
 
 ```
