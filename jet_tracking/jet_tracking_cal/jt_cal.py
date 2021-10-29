@@ -356,7 +356,7 @@ if __name__ == '__main__':
         hutch = yml_dict['hutch']
         exp = os.environ.get('EXPERIMENT', yml_dict['experiment'])
         run = os.environ.get('RUN_NUM', args.run)
-        if run=='None':
+        if run is None or run==0:
             run = yml_dict['run']
         cal_params = yml_dict['cal_params']
         ffb = yml_dict['ffb']

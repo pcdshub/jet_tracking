@@ -77,6 +77,7 @@ set -- "${POSITIONAL[@]}"
 MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 export MYDIR=`echo $MYDIR | sed  s/jet_tracking_cal//g`
 
+RUN=${RUN:=0}
 # Need to setup for FFB
 QUEUE=${QUEUE:='psanaq'}
 #QUEUE=${QUEUE:='psfehhiprioq'}

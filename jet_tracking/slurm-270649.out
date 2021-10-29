@@ -1,0 +1,33 @@
+/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking
+/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking
+/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking
+/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking
+/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking
+/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking
+/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking
+/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking
+/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking
+/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking
+Make datasource with exp=xcsx47519:run=10:smd
+Make datasource with exp=xcsx47519:run=10:smd
+Make datasource with exp=xcsx47519:run=10:smd
+Make datasource with exp=xcsx47519:run=10:smd
+Make datasource with exp=xcsx47519:run=10:smd
+Make datasource with exp=xcsx47519:run=10:smd
+Make datasource with exp=xcsx47519:run=10:smd
+Make datasource with exp=xcsx47519:run=10:smd
+Make datasource with exp=xcsx47519:run=10:smd
+Make datasource with exp=xcsx47519:run=10:smd
+Will save small data to /reg/d/psdm/xcs/xcsx47519/scratch/run10_jt_cal.h5
+Event: 0
+Event: 0
+Event: 0
+Event: 0
+Event: 0
+Event: 0
+Event: 0
+Event: 0
+Event: 0
+Gathering small data for exp: xcsx47519, run: 10, events: 1000
+Detectors Available: [('NoDetector.0:Evr.0', 'evr0', ''), ('EBeam', '', ''), ('FEEGasDetEnergy', '', ''), ('XCS-DIO-mono', '', ''), ('XCS-IPM-gon', '', ''), ('HX2-SB1-BMMON', '', ''), ('XCS-USB-ENCODER-01', '', ''), ('XCS-SB1-BMMON', '', ''), ('XCS-SB2-BMMON', '', ''), ('XcsEndstation.0:Epix100a.2', 'epix_2', ''), ('XcsEndstation.0:Epix100a.1', 'epix_1', ''), ('XcsEndstation.0:Epix10ka2M.0', 'epix10k2M', ''), ('XcsEndstation.1:Opal1000.1', 'opal_1', ''), ('ControlData', '', '')]
+Event: 0
