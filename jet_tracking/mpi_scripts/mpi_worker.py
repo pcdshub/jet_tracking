@@ -135,7 +135,7 @@ class MpiWorker(object):
                     low_bin = self.peak_bin - self.delta_bin
                     hi_bin = self.peak_bin + self.delta_bin
                 
-                # Get i0 Data this is different for differe ipm detectors
+                # Get i0 data, this is different for different ipm detectors
                 i0 = getattr(self.ipm[0].get(evt), self.ipm[1])()
                 # Filter based on i0
                 if i0<self._i0_thresh[0] or i0>self._i0_thresh[1]:

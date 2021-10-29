@@ -30,26 +30,10 @@ handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
-JT_LOC = str(Path(__file__).resolve().parent.parent)
+JT_LOC = os.path.dirname(fpath)
 SD_LOC = '/reg/d/psdm/'
 FFB_LOC = '/cds/data/drpsrcf/'
 
-#def get_r_masks(shape, bins=100):
-#    """Function to generate radial masks for pixels to include in azav"""
-#    center = (shape[1] / 2, shape[0] / 2)
-#    x, y = np.meshgrid(np.arange(shape[1]) - center[0], \
-#        np.arange(shape[0]) - center[1])
-#    r = np.sqrt(x**2 + y**2)
-#    max_r = np.max(r)
-#    min_r = np.min(r)
-#    bin_size = (max_r - min_r) / bins
-#    radii = np.arange(1, max_r, bin_size)
-#    masks = []
-#    for i in radii:
-#        mask = (np.greater(r, i - bin_size) & np.less(r, i + bin_size))
-#        masks.append(mask)
-#
-#    return masks
 
 def gaussian(x, a, mean, std, m, b):
     """
@@ -368,7 +352,7 @@ if __name__ == '__main__':
     # Setup MPI data source
     ds_name = ''.join(['exp=', exp, ':run=', run, ':smd'])
     if ffb:
-        ds_name += ':dir=/cds/data/drpsrcf/{}/{}/xtc'.format(hutch, exp)
+        ds_name += ':dir='+FFB_LOC+f'{hutch}/{exp}/xtc'
     try:
         print('Make datasource with {}'.format(ds_name))
         ds = psana.MPIDataSource(ds_name)
@@ -527,7 +511,7 @@ if __name__ == '__main__':
         with open(res_file, 'w') as f:
             results = {k: str(v) for k, v in results.items()}
             json.dump(results, f)
-        logger.info('Saved calibration to {}'.format(res_file))
+        logger.info(f'Saved calibration to {res_file}')
         
         # try to also save calib results to exp directory in hutch opr home 
         # (only works if ran as hutchopr)
