@@ -30,7 +30,6 @@ handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
-#JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
 JT_LOC = str(Path(__file__).resolve().parent.parent)
 SD_LOC = '/reg/d/psdm/'
 FFB_LOC = '/cds/data/drpsrcf/'
@@ -336,7 +335,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--cfg', type=str, \
         default=(''.join([JT_LOC, 'jt_configs/xcs_config.yml'])))
-    parser.add_argument('--run', type=int)
+    parser.add_argument('--run', type=int, default=None)
     args = parser.parse_args()
 
     # Start spinning up processes
@@ -356,7 +355,7 @@ if __name__ == '__main__':
         jet_cam_axis = yml_dict['jet_cam']['axis']
         hutch = yml_dict['hutch']
         exp = os.environ.get('EXPERIMENT', yml_dict['experiment'])
-        run = os.environ.get('RUN_NUM', str(args.run))
+        run = os.environ.get('RUN_NUM', args.run)
         if run=='None':
             run = yml_dict['run']
         cal_params = yml_dict['cal_params']

@@ -137,27 +137,31 @@ class MpiWorker(object):
                 
                 # Get i0 Data this is different for differe ipm detectors
                 i0 = getattr(self.ipm[0].get(evt), self.ipm[1])()
-                # Filter base on i0
+                # Filter based on i0
                 if i0<self._i0_thresh[0] or i0>self._i0_thresh[1]:
                     print('Bad shot')
-                    continue
-                
-                # Detector images
-                calib = self.detector.calib(evt)
-                det_image = self.detector.image(evt, calib)
-                az_bins = np.array([np.mean(det_image[mask]) for mask in self._r_mask[low_bin:hi_bin]])
-                intensity = np.sum(az_bins)
+                    dropped = 1
+                    intensity = 0
+                    inorm = 0
+                else:
+                    dropped = 0
 
-                # Normalized intensity
-                inorm = intensity/i0
+                    # Detector images
+                    calib = self.detector.calib(evt)
+                    det_image = self.detector.image(evt, calib)
+                    az_bins = np.array([np.mean(det_image[mask]) for mask in self._r_mask[low_bin:hi_bin]])
+                    intensity = np.sum(az_bins)
 
-                # Get jet projection peak and location
-                jet_proj = self.jet_cam.image(evt).sum(axis=self.jet_cam_axis)
-                max_jet_val = np.amax(jet_proj)
-                max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
+                    # Normalized intensity
+                    inorm = intensity/i0
+
+                    # Get jet projection peak and location
+                    jet_proj = self.jet_cam.image(evt).sum(axis=self.jet_cam_axis)
+                    max_jet_val = np.amax(jet_proj)
+                    max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
 
 #                packet = np.array([i0, intensity, inorm, max_jet_val, max_jet_idx], dtype='float32')
-                packet = np.array([intensity, i0, inorm], dtype='float32')
+                packet = np.array([intensity, i0, inorm, dropped], dtype='float32')
                 self.comm.Isend(packet, dest=0, tag=self.rank)
             except Exception as e:
                 logger.warning('Unable to Process Event: {}'.format(e))
