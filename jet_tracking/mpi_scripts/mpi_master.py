@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class MpiMaster(object):
-    def __init__(self, rank, api_port, det_map, pv_map, sim=True, data_port=8123):
+    def __init__(self, rank, api_port, det_map, pv_map, sim=True, data_port=8123, wf_length=None):
         self._rank = rank
         self._det_map = det_map
         self._pv_map = pv_map
@@ -32,6 +32,7 @@ class MpiMaster(object):
         self._msg_thread.start()
         self.pair_ctx = None
         self.msg_ctx = None
+        self.wf_length = wf_length
 
     @property
     def rank(self):
@@ -153,7 +154,7 @@ class MpiMaster(object):
             else:
                 # consider caput_many with lots, ok for now
                 for k, v in self._pv_map.items():
-                    caput(v, data[k])
+                    caput(v, data[k-1])
                 #caput('XCS:JTRK:REQ:DIFF_INTENSITY', data[1])
                 #caput('XCS:JTRK:REQ:I0', data[0])
         else:

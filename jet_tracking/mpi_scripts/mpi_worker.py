@@ -24,7 +24,10 @@ logger = logging.getLogger(__name__)
 class MpiWorker(object):
     """This worker will collect events and do whatever
     necessary processing, then send to master"""
-    def __init__(self, ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask, event_code=40, plot=False, peak_bin=25, delta_bin=5, data_port=1235):
+    def __init__(self, ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask, calib_results,
+                 event_code=40, 
+                 plot=False, 
+                 data_port=1235):
         self._ds = ds  # We probably need to use kwargs to make this general
         self._detector = detector
         self._ipm = ipm
@@ -36,12 +39,15 @@ class MpiWorker(object):
         self._r_mask = r_mask
         self._plot = plot
         self._event_code = event_code
-        self._peak_bin = peak_bin
-        self._delta_bin = delta_bin
+        self._peak_bin = int(calib_results['peak_bin'])
+        self._delta_bin = int(calib_results['delta_bin'])
+        self._i0_thresh = [float(calib_results['i0_low']), float(calib_results['i0_high'])]
         self._state = None
         self._msg_thread = Thread(target=self.start_msg_thread, args=(data_port,))
         self._msg_thread.start()
         self._attr_lock = Lock()
+        
+        print('I0 threshold: {}, {}'.format(self._i0_thresh[0], self._i0_thresh[1]))
 
     @property
     def rank(self):
@@ -118,31 +124,40 @@ class MpiWorker(object):
     def start_run(self):
         """Worker should handle any calculations"""
         #mask_det = det.mask(188, unbond=True, unbondnbrs=True, status=True,  edges=True, central=True)
-        ped = self.detector.pedestals(218)[0]
+        #ped = self.detector.pedestals(218)[0]
         for evt_idx, evt in enumerate(self.ds.events()):
             # Definitely not a fan of wrapping the world in a try/except
             # but too many possible failure modes from the data
             try:
                 if self.event_code not in self.evr.eventCodes(evt):
                     continue
-
                 with self._attr_lock:
                     low_bin = self.peak_bin - self.delta_bin
                     hi_bin = self.peak_bin + self.delta_bin
+                
+                # Get i0 data, this is different for different ipm detectors
+                i0 = getattr(self.ipm[0].get(evt), self.ipm[1])()
+                # Filter based on i0
+                if i0<self._i0_thresh[0] or i0>self._i0_thresh[1]:
+                    print('Bad shot')
+                    continue
+                
+                # Detector images
                 calib = self.detector.calib(evt)
                 det_image = self.detector.image(evt, calib)
                 az_bins = np.array([np.mean(det_image[mask]) for mask in self._r_mask[low_bin:hi_bin]])
                 intensity = np.sum(az_bins)
 
-                # Get i0 Data this is different for differe ipm detectors
-                i0 = getattr(self.ipm[0].get(evt), self.ipm[1])()
+                # Normalized intensity
+                inorm = intensity/i0
 
                 # Get jet projection peak and location
                 jet_proj = self.jet_cam.image(evt).sum(axis=self.jet_cam_axis)
                 max_jet_val = np.amax(jet_proj)
                 max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
 
-                packet = np.array([i0, intensity, max_jet_val, max_jet_idx], dtype='float32')
+#                packet = np.array([i0, intensity, inorm, max_jet_val, max_jet_idx], dtype='float32')
+                packet = np.array([intensity, i0, inorm], dtype='float32')
                 self.comm.Isend(packet, dest=0, tag=self.rank)
             except Exception as e:
                 logger.warning('Unable to Process Event: {}'.format(e))

@@ -17,6 +17,8 @@ $(basename "$0"):
             Script to run with full path
         -c|--config
             Configuration file you want to use for jt cal
+        -r|--run
+            Run to use for calibration
 EOF
 
 }
@@ -54,6 +56,15 @@ do
             shift
             shift
             ;;
+        -r|--run)
+            RUN="$2"
+            shift
+            shift
+            ;;
+        --interactive)
+            INTERACTIVE=1
+            shift
+            ;;
         *)
             POSITIONAL+=("$1")
 			shift
@@ -62,10 +73,20 @@ do
 done
 set -- "${POSITIONAL[@]}"
 
+#need to export this so that it can be used in the follow-up script even in SLURMx
+MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+export MYDIR=`echo $MYDIR | sed  s/jet_tracking_cal//g`
+
 # Need to setup for FFB
 QUEUE=${QUEUE:='psanaq'}
+#QUEUE=${QUEUE:='psfehhiprioq'}
 TASKS=${TASKS:=10}
-SCRIPT=${SCRIPT:=/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/jet_tracking_cal/jt_cal.py}
-CONFIG=${CONFIG:=/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/jt_configs/xcs_config.yml}
+SCRIPT=${SCRIPT:=$MYDIR/jet_tracking_cal/jt_cal.py}
+CONFIG=${CONFIG:=$MYDIR/jt_configs/xcs_config.yml}
 
-sbatch -p $QUEUE --ntasks $TASKS --job-name="jet track cal" --wrap="mpirun python -u $SCRIPT --cfg $CONFIG"
+if [ -v INTERACTIVE ]; then
+    python -u $SCRIPT --cfg $CONFIG --run $RUN
+    exit 0
+fi
+
+sbatch -p $QUEUE --ntasks-per-node 10 --ntasks $TASKS --job-name="jet track cal" --wrap="mpirun python -u $SCRIPT --cfg $CONFIG --run $RUN"

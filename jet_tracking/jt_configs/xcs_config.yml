@@ -2,9 +2,11 @@ api_msg:
   port: 5000
 
 hutch: 'xcs'
-experiment: 'xcsx39718'
+experiment: 'xcsx47519'
 run: '10'
 sim: true
+ffb: false
+event_code: 137 # x-ray on event code
 
 det_map:
   name: 'epix10k2M'
@@ -17,8 +19,9 @@ det_map:
 pv_map:
   1: 'XCS:JTRK:REQ:DIFF_INTENSITY'
   2: 'XCS:JTRK:REQ:I0'
-  3: 'XCS:JTRK:REQ:JET_PEAK'
-  4: 'XCS:JTRK:REQ:JET_LOC'
+  3: 'XCS:JTRK:REQ:RATIO'
+  #4: 'XCS:JTRK:REQ:JET_PEAK'
+  #5: 'XCS:JTRK:REQ:JET_LOC'
 
 ipm: 
   name: 'XCS-SB2-BMMON'
@@ -32,7 +35,7 @@ jet_cam:
 
 cal_params:
   azav_bins: 100
-  events: 500
+  events: 1000
   i0_bins: 20  # Number of bins for i0 hist cuts
   i0_reject: 0.1  # Percent below peak pin to make cut
   fit_points: 5  # Number of points at start and end of azav array to do line fit
