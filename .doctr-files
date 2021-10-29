@@ -1,12 +1,9 @@
 ./_images/Matias_Arola_poster2018.pdf
 ./_images/Sheen_Jeanna_poster2018.pdf
-./_modules/index.html
-./_modules/jet_tracking/psana/psana2epics.html
 ./_sources/authors.rst.txt
 ./_sources/contributing.rst.txt
 ./_sources/control.rst.txt
 ./_sources/devices.rst.txt
-./_sources/generated/jet_tracking.psana.output_cspad_sum.rst.txt
 ./_sources/index.rst.txt
 ./_sources/installation.rst.txt
 ./_sources/presentations.rst.txt
@@ -46,13 +43,12 @@
 ./_static/plus.png
 ./_static/pygments.css
 ./_static/searchtools.js
-./_static/underscore-1.12.0.js
+./_static/underscore-1.13.1.js
 ./_static/underscore.js
 ./authors.html
 ./contributing.html
 ./control.html
 ./devices.html
-./generated/jet_tracking.psana.output_cspad_sum.html
 ./genindex.html
 ./index.html
 ./installation.html
