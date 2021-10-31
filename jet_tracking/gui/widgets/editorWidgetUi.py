@@ -13,7 +13,8 @@ class Editor_Ui(object):
         obj.layout = QVBoxLayout()
         obj.setLayout(obj.layout)
 
-        obj.bttn_cam = QPushButton("Connect to Jet Cam")
+        obj.bttn_cam_connect = QPushButton("Connect to Jet Cam")
+        obj.bttn_cam_disconnect = QPushButton("Disconnect")
 
         obj.lbl_morph = QLabel("Morphological Operations")
 
@@ -50,8 +51,11 @@ class Editor_Ui(object):
         obj.bttn_clear = QPushButton("Clear")
         obj.bttn_reset_all = QPushButton("Reset All")
 
-        obj.layout_cam = QHBoxLayout()
-        obj.layout_cam.addWidget(obj.bttn_cam)
+        obj.layout_cam1 = QHBoxLayout()
+        obj.layout_cam1.addWidget(obj.bttn_cam_connect)
+
+        obj.layout_cam2 = QHBoxLayout()
+        obj.layout_cam2.addWidget(obj.bttn_cam_disconnect)
 
         obj.layout_thresh = QHBoxLayout()
         obj.layout_thresh.addWidget(obj.lbl_thresh)
@@ -70,12 +74,13 @@ class Editor_Ui(object):
         obj.layout_contrast.addWidget(obj.slider_contrast)
 
         obj.layout_bttns = QVBoxLayout()
-        obj.layout_bttns.addWidget(self.bttn_search)
-        obj.layout_bttns.addWidget(self.bttn_clear)
-        obj.layout_bttns.addWidget(self.bttn_reset_all)
+        obj.layout_bttns.addWidget(obj.bttn_search)
+        obj.layout_bttns.addWidget(obj.bttn_clear)
+        obj.layout_bttns.addWidget(obj.bttn_reset_all)
 
         obj.layout.addStretch()
-        obj.layout.addLayout(obj.layout_cam)
+        obj.layout.addLayout(obj.layout_cam1)
+        obj.layout.addLayout(obj.layout_cam2)
         obj.hline0 = QHLine()
         obj.layout.addWidget(obj.hline0)
         obj.layout.addWidget(obj.lbl_dilate_erode)

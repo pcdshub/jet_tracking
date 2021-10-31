@@ -8,6 +8,26 @@ import numpy as np
 
 log = logging.getLogger(__name__)
 
+"""
+NTS:
+# Create scene
+self.image_item = QGraphicsPixmapItem()
+scene = QGraphicsScene(self)
+scene.addItem(self.image_item)
+
+# Create GraphicView display
+self.view = QGraphicsView(scene, self)
+# Adding right click menus
+self.view.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
+self.zoomout_action = QAction("Fit canvas", self)
+self.view.addAction(self.zoomout_action)
+
+display camera image:
+image = QImage(camera_image, w, h, w, QImage.Format_Grayscale8)
+self.image_item.setPixmap(QPixmap.fromImage(image))
+self.view.fitInView(self.image_item)
+"""
+
 
 class JetImageWidget(QFrame, Image_Ui):
 
@@ -52,6 +72,7 @@ class JetImageWidget(QFrame, Image_Ui):
         self.context.set_images(self.editImage, self.editImageGray)
 
     def update_image(self, im):
+
         self.editImageGray = im
         self.qimage = qi.array2qimage(self.editImageGray, normalize=False)
         self.pixmap = QPixmap(self.qimage)

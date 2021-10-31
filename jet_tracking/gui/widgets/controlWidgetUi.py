@@ -112,6 +112,8 @@ class Controls_Ui(object):
         obj.box_motor = CollapsibleBox("Motor Controls")
         obj.layout_usr_cntrl.addWidget(obj.box_motor)
 
+        obj.bttn_connect_motor = QPushButton("Connect Motor")
+
         obj.bttngrp2 = QButtonGroup()
         obj.rdbttn_manual = QRadioButton("manual \nmotor moving")
         obj.rdbttn_auto = QRadioButton("automated \nmotor moving")
@@ -141,7 +143,7 @@ class Controls_Ui(object):
         obj.cbox_algorithm = ComboBox()
         obj.cbox_algorithm.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
         obj.cbox_algorithm.addItem("Ternary Search")
-        obj.cbox_algorithm.addItem("Full Scan")
+        obj.cbox_algorithm.addItem("Basic Scan")
 
         obj.bttn_search = QPushButton()
         obj.bttn_search.setText("Search")
@@ -162,13 +164,16 @@ class Controls_Ui(object):
                 background-color: red;")
 
         obj.layout_motor = QVBoxLayout()
+        obj.layout_connect_motor = QHBoxLayout()
         obj.layout_motor_manual = QHBoxLayout()
         obj.layout_motor_input = QGridLayout()
         obj.layout_motor_bttns = QHBoxLayout()
         obj.layout_tracking = QHBoxLayout()
+        obj.layout_motor.addLayout(obj.layout_connect_motor)
         obj.layout_motor.addLayout(obj.layout_motor_manual)
         obj.layout_motor.addLayout(obj.layout_motor_input)
         obj.layout_motor.addLayout(obj.layout_motor_bttns)
+        obj.layout_motor.addWidget(obj.bttn_connect_motor)
         obj.layout_motor_manual.addWidget(obj.rdbttn_manual)
         obj.layout_motor_manual.addWidget(obj.rdbttn_auto)
         obj.layout_motor_input.addWidget(obj.lbl_motor_ll, 0, 0, 2, 1)

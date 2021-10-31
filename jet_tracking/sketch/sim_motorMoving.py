@@ -7,14 +7,14 @@ import logging
 
 log = logging.getLogger(__name__)
 
-class SimulatedMotor(object)
 
+class SimulatedMotor(object):
     def __init__(self, context, signals):
 
         # initial values from the control widget
         self.context = context
         self.signals = signals
-        self.motor_position = 0
+        self.position = 0
         self.i0 = 0
         self.i0_ave = 0
         self.left = -0.1
@@ -23,7 +23,7 @@ class SimulatedMotor(object)
         self.wait = 5
         # get current simulated motor position
 #        self.signals.update.connect(self.updateVals)
-        self.signals.changeMotorPosition.connect(self.change_motor)
+        #self.signals.changeMotorPosition.connect(self.change_motor)
 
 #        self.make_connections()
 #        self.set_sim_options()
@@ -33,6 +33,14 @@ class SimulatedMotor(object)
 #
 #    def make_connections(self):
 #        self.box_motor_pos.checkVal.connect(self.context.update_motor_position)
+
+    def move(self, position, wait=False):
+        self.position = position
+        if wait:
+            time.sleep(self.wait)
+        self.signals.changeMotorPosition.emit(self.position)
+
+"""
 
     def change_motor(self, motor_position):
         self.motor_position = motor_position
@@ -44,7 +52,6 @@ class SimulatedMotor(object)
             time.sleep(1 / 15)
         return statistics.mean(i0)
 
-
     def sim_linear(self):
         self.motor_position = self.left
         self.i0_pt = []
@@ -53,13 +60,11 @@ class SimulatedMotor(object)
                 self.i0_pt.append(self.i0.get())
                 self.i0_ave =
 
-
     def sim_ternary(self):
         print("ternary search")
-
 
     def sim_test(self):
         print("you are now tracking")
         time.sleep(5)
         self.motor_position = 0.03
-
+"""

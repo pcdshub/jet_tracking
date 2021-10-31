@@ -14,24 +14,30 @@ class Context(object):
         self.signals = signals
         self.JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
         self.SD_LOC = '/reg/d/psdm/'
-        self.PV_DICT = {'diff': 'XCS:JTRK:REQ:DIFF_INTENSITY', 'i0': 'XCS:JTRK:REQ:I0', 'ratio': 'XCS:JTRK:REQ:RATIO'}
+        self.PV_DICT = {'diff': 'XCS:JTRK:REQ:DIFF_INTENSITY',
+                        'i0': 'XCS:JTRK:REQ:I0',
+                        'ratio': 'XCS:JTRK:REQ:RATIO',
+                        'dropped': '',
+                        'camera': 'CXI:SC1:INLINE:IMAGE2:ArrayData',
+                        'motor': ''}
         self.CFG_FILE = 'jt_configs/xcs_config.yml'
         self.HUTCH = 'xcs'
         self.EXPERIMENT = 'xcsx1568'
         self.live_data = True
         self.calibration_source = "calibration from results"
-        self.percent = 70
+        self.percent = 50
         self.refresh_rate = 5
         self.graph_ave_time = 2
         self.display_time = 10
-        self.notification_time = 10
-        self.dropped_shot_threshold = 1000
+        self.notification_time = 2
         self.manual_motor = True
         self.high_limit = 50
         self.low_limit = -50
         self.step_size = 0.5
+        self.position_tolerance = 0.0005
         self.motor_averaging = 10
         self.algorithm = 'Ternary Search'
+        self.motor_running = False
         self.calibration_values = {}
         self.isTracking = False
         self.calibrated = False
@@ -42,15 +48,14 @@ class Context(object):
         self.averaging_size = int(self.buffer_size / self.naverage)  # how many averages can fit within the time window
         self.x_axis = list(np.linspace(0, self.display_time, self.buffer_size))
         self.notification_tolerance = self.notification_time * self.refresh_rate
-        print(self.notification_tolerance)
         self.ave_cycle = list(range(1, self.naverage + 1))
         self.x_cycle = list(range(0, self.buffer_size))
         self.ave_idx = list(range(0, self.averaging_size + 1))  # +1 for NaN value added at the end
-
         self.image = None
         self.imgray = None
 
-        # added while adding simulator
+        # used in simulator
+        self.live_motor = True
         self.motor_position = 0
         self.percent_dropped = 10
         self.peak_intensity = 10
@@ -58,6 +63,8 @@ class Context(object):
         self.center = 0.03
         self.max = 10
         self.bg = 0.05
+
+        self.cam_refresh_rate = 5
 
         # added while adding simulator
     def update_motor_position(self, mp):
@@ -231,6 +238,7 @@ class Context(object):
     def update_tracking(self, tracking):
         self.isTracking = tracking
         self.signals.enableTracking.emit(self.isTracking)
+        self.signals.sleepMotor.emit()
 
     def set_calibrated(self, c):
         self.calibrated = c
@@ -244,3 +252,10 @@ class Context(object):
     def set_images(self, im, imgray):
         self.image = im
         self.imgray = imgray
+
+    def connect_motor(self):
+        self.signals.connectMotor.emit()
+
+    def update_live_motor(self, live):
+        self.live_motor = live
+        self.signals.liveMotor.emit(live)

@@ -199,6 +199,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def showSimToolbar(self):
         self.simWindow = SimWindow(self.context, self.signals)
         self.simWindow.show()
+        self.context.update_live_motor(False)
 
     def showImageToolbar(self):
         log.info("Image toolbar")

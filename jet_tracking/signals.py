@@ -67,8 +67,18 @@ class Signals(QtCore.QObject):
     # emit in Context
     # connect in
     changeMotorAveraging = QtCore.pyqtSignal(float)
-    # emit in Context
-    # connect in
+    # emit in statusthread
+    # connect in motorthread
+    intensitiesForMotor = QtCore.pyqtSignal(dict)
+    # emit in motorthread
+    # connect in statusthread
+    valuesRequest = QtCore.pyqtSignal()
+    # emit in context
+    # connect in motorthread
+    connectMotor = QtCore.pyqtSignal()
+    # emit in context
+    # connect in motorthread
+    liveMotor = QtCore.pyqtSignal(bool)
 
     # added when adding simulator
     update = QtCore.pyqtSignal(dict)
@@ -98,11 +108,17 @@ class Signals(QtCore.QObject):
     # connect in StatusThread
     changeAverageSize = QtCore.pyqtSignal(int)
     # emit in context
-    # connect in jetImageView
+    # connect in datastream
     connectCam = QtCore.pyqtSignal()
+    # emit in datastream
+    # connect in jetimagewidget
+    camImage = QtCore.pyqtSignal(list)
     # emit in jetImageView
     # connect in jetImageWidget
     camName = QtCore.pyqtSignal(str)
     # emit in editorWidget
     # connect in jetImageWidget
     updateImage = QtCore.pyqtSignal(np.ndarray)
+    # emit in simcontrolwidget
+    #cconnect in controlwidget
+    trackingStatus = QtCore.pyqtSignal(str, str)

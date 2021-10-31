@@ -25,18 +25,16 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.worker_motor = MotorThread(self.context, self.signals)
 
     def set_thread_options(self):
-        pass
-        #self.context.update_percent(float(self.le_percent.text()))
-        #self.context.update_graph_averaging(float(self.le_ave_graph.text()))
-        #self.context.update_refresh_rate(float(self.le_refresh_rate.text()))
-        #self.context.update_display_time(int(self.le_x_axis.text()))
+        self.le_percent.setText(str(self.context.percent))
+        self.le_ave_graph.setText(str(self.context.graph_ave_time))
+        self.le_refresh_rate.setText(str(self.context.refresh_rate))
+        self.le_x_axis.setText(str(self.context.display_time))
 
     def set_motor_options(self):
-        pass
-        #self.context.update_limits(float(self.le_motor_hl.text()), float(self.le_motor_ll.text()))
-        #self.context.update_step_size(float(self.le_size.text()))
-        #self.context.update_motor_averaging(float(self.le_ave_motor.text()))
-        #self.context.update_algorithm(self.cbox_algorithm.currentText())
+        self.le_motor_ll.setText(str(self.context.low_limit))
+        self.le_motor_hl.setText(str(self.context.high_limit))
+        self.le_size.setText(str(self.context.step_size))
+        self.cbox_algorithm.setCurrentText(self.context.algorithm)
 
     def make_connections(self):
 
@@ -53,9 +51,11 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.bttngrp2.buttonClicked.connect(self.checkBttn)
         self.bttngrp3.buttonClicked.connect(self.checkBttn)
 
+        self.bttn_connect_motor.clicked.connect(self.context.connect_motor)
         self.bttn_search.clicked.connect(self._start_motor)
         self.bttn_tracking.clicked.connect(self._enable_tracking)
         self.bttn_stop_motor.clicked.connect(self._stop_motor)
+        self.signals.trackingStatus.connect(self.set_tracking_status)
 
         self.signals.changeStatus.connect(self.set_monitor_status)
         self.signals.changeCalibrationDisplay.connect(self.set_calibration)
@@ -65,7 +65,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.signals.message.connect(self.receive_message)
 
         self.bttn_stop.clicked.connect(self._stop)
-        self.bttn_calibrate.clicked.connect(self._calibrate) #should call self.context.handle_calibrate
+        self.bttn_calibrate.clicked.connect(self._calibrate)
         self.bttn_start.clicked.connect(self.start_processes)
 
     def start_processes(self):
@@ -87,9 +87,8 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.context.set_mode("calibrate")
 
     def _enable_tracking(self):
-        self.update_tracking_status("enabled", green)
+        self.set_tracking_status("enabled", green)
         self.context.update_tracking(True)
-        self._start_motor()
 
     def _start_motor(self):
         if not self.worker_motor.isRunning():
@@ -97,16 +96,17 @@ class ControlsWidget(QFrame, Controls_Ui):
                 self.context.set_mode("correcting")
                 self.worker_motor.start()
             else:
-                self.text_area.append("there's nothing to scan!")
+                self.signals.message.emit("there's nothing to scan!")
         else:
             if not self.worker_motor.isInterruptionRequested():
                 self.worker_motor.start()
             else:
-                self.text_area.append("The motor is already running")
+                self.signals.message.emit("The motor is already running")
 
     def _stop_motor(self):
         if self.worker_motor.isRunning():
             self.worker_motor.requestInterruption()
+            self.context.set_mode("running")
             self.worker_motor.wait()
         if self.sender() is self.bttn_stop_motor:
             self.context.set_tracking(False)
@@ -150,7 +150,11 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.context.update_limits(float(self.le_motor_hl.text()), float(self.le_motor_ll.text()))
 
     def receive_message(self, message):
-        self.text_area.append(message)
+        pt = self.text_area.toPlainText()
+        if pt.split('\n')[-1] == message.split('\n')[-1]:
+            pass
+        else:
+            self.text_area.append(message)
 
     def checkBttn(self, button):
         bttn = button.text()

@@ -35,13 +35,16 @@ class SimulationGenerator(object):
         self.percent = 0
         # get current simulated motor position
         self.signals.update.connect(self.updateVals)
-        self.signals.changeMotorPosition.connect(self.change_motor)
+        self.signals.changeMotorPosition.connect(self.change_position) # self.change_motor)
         self.signals.changeDroppedShots.connect(self.change_dropped)
         self.signals.changePeakIntensity.connect(self.change_intensity)
         self.signals.changeJetRadius.connect(self.change_radius)
         self.signals.changeJetCenter.connect(self.change_center)
         self.signals.changeMaxIntensity.connect(self.change_max)
         self.signals.changeBackground.connect(self.change_noise)
+
+    def change_position(self, position):
+        self.motor_position = position
 
     def change_motor(self, motor_position):
         self.motor_position = motor_position
