@@ -146,11 +146,11 @@ class Controls_Ui(object):
         obj.cbox_algorithm.addItem("Basic Scan")
 
         obj.bttn_search = QPushButton()
-        obj.bttn_search.setText("Search")
+        obj.bttn_search.setText("Go Once")
         obj.bttn_search.setEnabled(False)
 
         obj.bttn_tracking = QPushButton()
-        obj.bttn_tracking.setText("Track")
+        obj.bttn_tracking.setText("Start Tracking")
         obj.bttn_tracking.setEnabled(False)
 
         obj.bttn_stop_motor = QPushButton()

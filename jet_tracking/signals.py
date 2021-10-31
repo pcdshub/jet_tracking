@@ -79,6 +79,9 @@ class Signals(QtCore.QObject):
     # emit in context
     # connect in motorthread
     liveMotor = QtCore.pyqtSignal(bool)
+    # emit in statusthread
+    # connect in motorthread
+    notifyMotor = QtCore.pyqtSignal(str)
 
     # added when adding simulator
     update = QtCore.pyqtSignal(dict)

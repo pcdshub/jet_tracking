@@ -140,7 +140,6 @@ class StatusThread(QThread):
         """
         self.signals = signals
         self.context = context
-        self.mode = ''
         self.calibration_source = ''
         self.flag_message = None
         self.refresh_rate = 0
@@ -158,6 +157,8 @@ class StatusThread(QThread):
         self.x_axis = []
         self.calibrated = False
         self.isTracking = False
+        self.mode = ''
+        self.status = ''
         self.display_flag = []
         self.cal_vals = [[], [], []]
         self.calibration_values = {'i0': {'mean': 0, 'stddev': 0, 'range': (0, 0)},
@@ -270,10 +271,6 @@ class StatusThread(QThread):
     def set_calibration_source(self, c):
         self.calibration_source = c
 
-    def change_x_axis(self, b):
-        self.signals.changeDisplayTime.emit(self.display_time)
-        self.display_flag = None
-
     def update_buffers_and_cycles(self):
         if self.display_flag == "all":
             self.signals.changeDisplayTime.emit(self.context.display_time)
@@ -344,7 +341,7 @@ class StatusThread(QThread):
         graph widget and notice that it says "connect='finite' and look
         that up for more info
         """
-        location_info = self.check_cycle(x_idx, ave_cycle) # returns info to inform what to plot
+        location_info = self.check_cycle(x_idx, ave_cycle)  # returns info to inform what to plot
         i0 = list(self.buffers['i0'])
         diff = list(self.buffers['diff'])
         ratio = list(self.buffers['ratio'])
@@ -361,7 +358,6 @@ class StatusThread(QThread):
             vals = [float("NaN"), float("NaN"), float("NaN"), float("NaN")]
             self.append_or_set(choice, self.averages, vals, ave_idx)
             self.ave_idx.append(self.ave_idx.pop(0))
-            ave_idx = self.ave_idx[0]
 
         elif location_info == -2:
             self.update_averages(ave_idx, x_idx)
@@ -374,11 +370,11 @@ class StatusThread(QThread):
         try:
             if self.calibrated and len(self.flagged_events['dropped shot']) == len(self.buffers['i0']):
                 avei0 = mean(skimmer('dropped shot',
-                                 list(self.buffers['i0']), self.flagged_events)[:-self.naverage])
+                                     list(self.buffers['i0']), self.flagged_events)[:-self.naverage])
                 avediff = mean(skimmer('dropped shot',
-                                   list(self.buffers['diff']), self.flagged_events)[:-self.naverage])
+                                       list(self.buffers['diff']), self.flagged_events)[:-self.naverage])
                 averatio = mean(skimmer('dropped shot',
-                                    list(self.buffers['ratio']), self.flagged_events)[:-self.naverage])
+                                        list(self.buffers['ratio']), self.flagged_events)[:-self.naverage])
             else:
                 avei0 = mean(list(self.buffers['i0'])[:-self.naverage])
                 avediff = mean(list(self.buffers['diff'])[:-self.naverage])
@@ -435,33 +431,27 @@ class StatusThread(QThread):
                 self.points_to_plot(x_idx, ave_cycle, ave_idx)
                 self.calibrate(new_values)
                 time.sleep(1 / self.refresh_rate)
-            elif self.mode == "correcting":
-                self.update_buffer(new_values, x_idx)
-                self.check_status_update()
-                self.points_to_plot(x_idx, ave_cycle, ave_idx)
-                time.sleep(1 / self.refresh_rate)
         print("Interruption request: %d" % QThread.currentThreadId())
 
     def check_status_update(self):
-        if self.calibrated: #and self.mode != "correcting":
+        if self.calibrated:
             if np.count_nonzero(self.flagged_events['missed shot']) > self.notification_tolerance:
                 self.signals.changeStatus.emit("Warning, missed shots", "red")
-                self.processor_worker.flag_counter('missed shot', 300, self.wake_motor)
+                self.processor_worker.flag_counter('missed shot', 300, self.missed_shots)
             elif np.count_nonzero(self.flagged_events['dropped shot']) > self.notification_tolerance:
-                self.signals.changeStatus.emit("lots of dropped shots", "yellow")
-                self.processor_worker.flag_counter('dropped shot', 300, self.pause_motor)
+                self.signals.changeStatus.emit("Lots of dropped shots", "yellow")
+                self.processor_worker.flag_counter('dropped shot', 300, self.dropped_shots)
             elif np.count_nonzero(self.flagged_events['high intensity']) > self.notification_tolerance:
                 self.signals.changeStatus.emit("High Intensity", "orange")
-                self.processor_worker.flag_counter('high intensity', 1000, self.recalibrate)
+                self.processor_worker.flag_counter('high intensity', 1000, self.high_intensity)
             else:
                 if not self.processor_worker.isCounting:
-                    self.signals.changeStatus.emit("everything is good", "green")
+                    self.signals.changeStatus.emit("Everything is good", "green")
+                    self.everything_is_good()
                 if self.processor_worker.isCounting:
                     self.processor_worker.flag_counter('everything is good', 1000, self.everything_is_good)
-        elif not self.calibrated and self.mode != "correcting":
+        elif not self.calibrated:
             self.signals.changeStatus.emit("not calibrated", "orange")
-        elif self.mode == "correcting":
-            self.signals.changeStatus.emit("Correcting ..", "pink")
 
     @staticmethod
     def normal_range(percent, sigma, vmean):
@@ -512,7 +502,7 @@ class StatusThread(QThread):
             else:
                 missed_shot = 0
                 self.flagged_events['missed shot'][idx] = missed_shot
-        if vals[3] == True:
+        if vals[3]:
             dropped_shot = vals[0]
             self.flagged_events['dropped shot'][idx] = dropped_shot
         else:
@@ -526,8 +516,8 @@ class StatusThread(QThread):
                                                                        self.calibration_values[name]['mean'])
         self.signals.changeCalibrationValues.emit(self.calibration_values)
 
-    def set_calibration_values(self, name, mean, std):
-        self.calibration_values[name]['mean'] = mean
+    def set_calibration_values(self, name, vmean, std):
+        self.calibration_values[name]['mean'] = vmean
         self.calibration_values[name]['stddev'] = std
         self.calibration_values[name]['range'] = self.normal_range(self.percent,
                                                                    self.calibration_values[name]['stddev'],
@@ -544,7 +534,7 @@ class StatusThread(QThread):
         and the calibration_values are updated.
         """
         if self.calibration_source == "calibration from results":
-            results, cal_file = get_cal_results(HUTCH, EXPERIMENT) ### change the experiment
+            results, cal_file = get_cal_results(HUTCH, EXPERIMENT)  # change the experiment
             if results == None:
                 self.signals.message.emit("no calibration file there")
                 pass
@@ -604,24 +594,80 @@ class StatusThread(QThread):
         self.signals.message.emit("The data may need to be recalibrated. There is consistently higher I/I0 than the calibration..")
         self.signals.sleepMotor.emit()
  
-    def wake_motor(self):
-        if self.isTracking:
-            self.signals.message.emit("waking up motor")
-            self.signals.wakeMotor.emit()
-        else:
-            self.signals.message.emit("consider running a motor search or turning on tracking")
+    def missed_shots(self):
+        if not self.status:
+            self.status = "missed shots"
+        elif self.status in ["everything is good", "high intensity"]:
+            if self.isTracking and not self.context.motor_running:
+                self.signals.message.emit("lots of missed shots.. starting motor")
+                self.signals.wakeMotor.emit()
+            elif not self.isTracking and not self.context.motor_running:
+                self.signals.message.emit("lots of missed shots.. consider running a search")
+            self.status = "missed shots"
+        elif self.status == "dropped shots":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("resume")
+            self.status = "missed shots"
+        elif self.status == "high intensity":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("missed shots")
+            self.status = "dropped shots"
 
-    def pause_motor(self):
-        if self.isTracking:
+    def dropped_shots(self):
+        if not self.status:
+            self.status = "dropped shots"
+        if self.context.motor_running:
             self.signals.message.emit("lots of dropped shots.. pausing motor")
-            self.signals.pauseMotor.emit()
-        else:
-            pass
+        elif self.status == "everything is good":
+            if self.context.motor_running:
+                self.notifyMotor("pause") # motor should have a pause if dropped shots notification is up because it
+                # may get some "good" shots every now and then still and try to move while there's not really beam
+            self.status = "dropped shots"
+        elif self.status == "missed shots":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("pause")
+            self.status = "dropped shots"
+        elif self.status == "high intensity":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("pause")
+            self.status = "dropped shots"
+
+    def high_intensity(self):
+        if not self.status:
+            self.status = "high intensity"
+        elif self.status == "dropped shots":
+            if self.context.motor_running:
+                self.notifyMotor("resume")  # motor should have a pause if dropped shots notification is up because it
+                # may get some "good" shots every now and then still and try to move while there's not really beam
+            self.status = "high intensity"
+        elif self.status == "missed shots":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("high intensity")
+            self.status = "high intensity"
+        elif self.status == "everything is good":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("you upgraded")
+            self.status = "high intensity"
+
 
     def everything_is_good(self):
         self.processor_worker.stop_count()
-        if self.isTracking:
-            self.signals.notifyMotor.emit()
+        if not self.status:
+            self.status = "everything is good"
+        elif self.status == "dropped shots":
+            if self.context.motor_running:
+                self.signals.notifyMotor("resume") # motor should have a pause if dropped shots notification is up because it
+                # may get some "good" shots every now and then still and try to move while there's not really beam
+            self.status = "everything is good"
+        elif self.status == "missed shots":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("Everything is good")
+            self.status = "everything is good"
+        elif self.status == "high intensity":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("you downgraded")
+            self.status = "everything is good"
+
 
 
 
@@ -716,6 +762,10 @@ class MotorThread(QThread):
         self.vals = {}
         self.request_new_values = False
         self.got_new_values = False
+        self.good_edge_points = []
+        self.bad_edge_points = []
+        self.sweet_spot = []
+        self.pause = False
         self.action = MotorAction(self, self.context, self.signals)
         self.create_vars()
         self.make_connections()
@@ -742,6 +792,7 @@ class MotorThread(QThread):
         self.signals.intensitiesForMotor.connect(self.update_values)
         self.signals.connectMotor.connect(self.connect_to_motor)
         self.signals.liveMotor.connect(self.live_motor)
+        self.signals.notifyMotor.connect(self.impart_knowledge)
 
     def live_motor(self, live):
         self.live = live
@@ -750,11 +801,38 @@ class MotorThread(QThread):
         if self.live:
             # should have a catch here for if this doesn't connect
             self.motor_name = self.context.PV_DICT.get('motor', None)
-            #self.motor = IMS(self.motor_name, name='jet_x')
+            # self.motor = IMS(self.motor_name, name='jet_x')
         elif not self.live:
             print("simulated motor")
             self.motor = SimulatedMotor(self.context, self.signals)
             pass
+
+    def impart_knowledge(self, info):
+        # ["resume", "everything is good", "you downgraded", "you upgraded", "pause", "missed shots", "high intensity"]
+        if info == "everything is good":
+            # if this info is passed then the status was changed from missed shots to everything is good
+            self.good_edge_points.append(self.moves[-1])
+        if info == "resume":
+            # if this info is passed then the status was changed from dropped shots and the motor should resume
+            self.paused = False
+        if info == "you downgraded":
+            # this is when the status is changed from high intensity to missed shots
+            pass
+        if info == "you upgraded":
+            # this is when the status is changed from missed shots to high intensity
+            pass
+        if info == "pause":
+            # if this info is passed then the status was changed to dropped shots and the motor should pause
+            self.pause = True
+        if info == "missed shots":
+            # this is when the status changes from everything is good to missed shots
+            self.bad_edge_ponts.append(self.moves[-1])
+        if info == "high intensity":
+            # this is when the status changes from everything is good to high intensity
+            self.sweet_spot.append(self.moves[-1])
+
+
+
 
     def update_values(self, vals):
         self.got_new_values = True
@@ -767,16 +845,15 @@ class MotorThread(QThread):
     def average_intensity(self):
         self.intensities += [self.vals['ratio']]
         if len(self.intensities) == 5:
-            print("self.intensities: ", self.intensities)
             self.check_motor_options()
             self.moves.append([mean(self.intensities), self.motor.position])  # this should be the same either way
             # for live or sim motor
-            self.done = self.action.execute()
+            if not self.pause:
+                self.done = self.action.execute()
             self.intensities = []
 
     def run(self):
         self.connect_to_motor()
-        print("does this happen multiple times???")
         while not self.isInterruptionRequested():
             if self.done:
                 # fig = plt.figure()
