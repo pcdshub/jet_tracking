@@ -156,9 +156,13 @@ class MpiWorker(object):
                     inorm = intensity/i0
 
                     # Get jet projection peak and location
-                    jet_proj = self.jet_cam.image(evt).sum(axis=self.jet_cam_axis)
-                    max_jet_val = np.amax(jet_proj)
-                    max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
+                    if self.jet_cam is not None:
+                        jet_proj = self.jet_cam.image(evt).sum(axis=self.jet_cam_axis)
+                        max_jet_val = np.amax(jet_proj)
+                        max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
+                    else:
+                        max_jet_val = None
+                        max_jet_idx = None
 
 #                packet = np.array([i0, intensity, inorm, max_jet_val, max_jet_idx], dtype='float32')
                 packet = np.array([intensity, i0, inorm, dropped], dtype='float32')
