@@ -15,6 +15,10 @@ following functions:
 *
 """
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 class MotorAction(object):
     def __init__(self, motor_thread, context, signals):
         self.context = context
@@ -33,12 +37,12 @@ class MotorAction(object):
         self.new_distance_from_image_center = 0
 
     def execute(self):
-        if self.motor_thread.algorithm is "Ternary Search":
+        if self.motor_thread.algorithm == "Ternary Search":
             self.ternary_search.search()
             if self.ternary_search.done:
                 return(True)
             else: return(False)
-        elif self.motor_thread.algorithm is "Basic Scan":
+        elif self.motor_thread.algorithm == "Basic Scan":
             self.basic_scan.scan()
             if self.basic_scan.done:
                 return(True)
@@ -73,6 +77,7 @@ class BasicScan(object):
 
 class TernarySearch(object):
     def __init__(self, motor_thread):
+        logger.info("TernarySearch object created.")
         self.motor_thread = motor_thread
         self.done = False
         self.step = 0
@@ -97,19 +102,23 @@ class TernarySearch(object):
         self.hl = self.motor_thread.high_limit - 0.0005
 
     def search(self):
-        if self.step is 0:
-            if self.smart_check_vals != 0:
+        logger.info("TernarySearch.search running...")
+        if self.step == 0:
+#            if self.smart_check_vals != 0:
+            if self.smart_check_vals != [0, 0]:
                 self.compare_to_old()
             self.find_mids(self.ll, self.hl)
+            logger.debug('Low Limit: %d, High Limit: %d', self.ll, self.hl)
+            logger.debug('Mid1: %d, Mid2: %d', self.mid1, self.mid2)
             self.check_if_done()
             self.step += 1
-        if self.step is 1:
+        if self.step == 1:
             self.move_to_mid1()
             self.step += 1
-        if self.step is 2:
+        if self.step == 2:
             self.move_to_mid2()
             self.step += 1
-        if self.step is 3:
+        if self.step == 3:
             self.compare_and_move()
             self.step = 0
 

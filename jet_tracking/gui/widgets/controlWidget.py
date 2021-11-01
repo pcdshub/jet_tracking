@@ -163,12 +163,12 @@ class ControlsWidget(QFrame, Controls_Ui):
         elif bttn == "live data":
             self.rdbttn_auto.setEnabled(True)
             self.context.update_live_graphing(True)
-        elif bttn == "manual motor moving":
+        elif bttn == "manual \nmotor moving":
             self.bttn_search.setEnabled(False)
             self.bttn_tracking.setEnabled(False)
             self.bttn_stop_motor.setEnabled(False)
             self.context.update_manual_motor(True)
-        elif bttn == "automated motor moving":
+        elif bttn == "automated \nmotor moving":
             self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(True)
             self.bttn_stop_motor.setEnabled(True)
