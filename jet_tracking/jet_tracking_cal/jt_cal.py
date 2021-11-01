@@ -339,7 +339,7 @@ if __name__ == '__main__':
         jet_cam_axis = yml_dict['jet_cam']['axis']
         hutch = yml_dict['hutch']
         exp = os.environ.get('EXPERIMENT', yml_dict['experiment'])
-        run = os.environ.get('RUN_NUM', args.run)
+        run = os.environ.get('RUN_NUM', str(args.run))
         if run is None or run==0:
             run = yml_dict['run']
         cal_params = yml_dict['cal_params']
@@ -391,7 +391,7 @@ if __name__ == '__main__':
 
     # Iterate through and pull out small data
     for evt_idx, evt in enumerate(ds.events()):
-        if evt_idx%50==0:
+        if evt_idx%10==0:
             print('Event: {}'.format(evt_idx))
         try:
             if event_code not in evr.eventCodes(evt):

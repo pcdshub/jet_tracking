@@ -73,6 +73,8 @@ do
 done
 set -- "${POSITIONAL[@]}"
 
+umask 002
+
 #need to export this so that it can be used in the follow-up script even in SLURMx
 MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 export MYDIR=`echo $MYDIR | sed  s/jet_tracking_cal//g`
