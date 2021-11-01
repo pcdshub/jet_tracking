@@ -2,17 +2,19 @@ api_msg:
   port: 5000
 
 hutch: 'cxi'
-experiment: 'cxix34517'
+experiment: 'cxix53419'
 run: '10'
-sim: true
-ffb: false
-event_code: 137 # x-ray on event code
+sim: false
+ffb: true
+event_code: 40 # x-ray on event code
 
 det_map:
   name: 'DsdCsPad'
   shape:
-    - 1738
-    - 1742
+#    - 1738
+#    - 1742
+    - 1942
+    - 1940
   dtype: float32
   bins: 100
 
@@ -31,7 +33,7 @@ ipm:
   det: 'f_12_ENRC'
 
 jet_cam:
-  name: 'opal_1'
+  name: 'None'
   axis: 1
 
 cal_params:

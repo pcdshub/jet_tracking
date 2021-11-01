@@ -1,21 +1,41 @@
 api_msg:
   port: 5000
 
+hutch: 'cxi'
+experiment: 'cxilw5019'
+run: '120'
+sim: false
+ffb: true
+event_code: 40 # x-ray on event code
+
 det_map:
   name: 'jungfrau4M'
   shape:
     - 2203
     - 2299
   dtype: float32
-  bins: 50
+  bins: 100
 
 pv_map:
   1: 'CXI:JTRK:REQ:DIFF_INTENSITY'
   2: 'CXI:JTRK:REQ:I0'
+  3: 'CXI:JTRK:REQ:RATIO'
+  4: 'CXI:JTRK:REQ:DROPPED'
 
 ipm: 
   name: 'FEEGasDetEnergy'
   det: 'f_12_ENRC' 
-#ipm:
 #  name: 'CXI-DG2-BMMON'
 #  det: None
+
+jet_cam:
+  name: None
+  axis: 1
+
+cal_params:
+  azav_bins: 100
+  events: 1000
+  i0_bins: 30  # Number of bins for i0 hist cuts
+  i0_reject: 0.1  # Percent below peak pin to make cut
+  fit_points: 5  # Number of points at start and end of azav array to do line fit
+  delta_bin: 3  # Number of azav bins around peak used for integration
