@@ -35,14 +35,17 @@ with open(args.cfg_file) as f:
     ipm_name = yml_dict['ipm']['name']
     ipm_det = yml_dict['ipm']['det']
     pv_map = yml_dict['pv_map']
-#    jet_cam_name = yml_dict['jet_cam']['name']
-#    jet_cam_axis = yml_dict['jet_cam']['axis']
+    jet_cam_name = yml_dict['jet_cam']['name']
+    jet_cam_axis = yml_dict['jet_cam']['axis']
     sim = yml_dict['sim']
     hutch = yml_dict['hutch']
     exp = yml_dict['experiment']
     run = yml_dict['run']
     event_code = yml_dict['event_code']
     #wf_length = yml_dict['wf_length']
+
+if jet_cam_name=='None' or jet_cam_name=='none':
+    jet_cam_name = None
 
 # Get calibration results
 calib_dir = Path(''.join(['/cds/data/psdm/', hutch, '/', exp, '/calib/']))
@@ -73,7 +76,10 @@ else:
 ds = psana.DataSource(dsname)
 detector = psana.Detector(det_map['name'])
 ipm = (psana.Detector(ipm_name), ipm_det)
-#jet_cam = psana.Detector(jet_cam_name)
+if jet_cam_name is not None:
+    jet_cam = psana.Detector(jet_cam_name)
+else:
+    jet_cam = None
 evr = get_evr_w_codes(psana.DetNames())
 print(evr.name)
 r_mask = get_r_masks(det_map['shape'])
