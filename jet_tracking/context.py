@@ -73,6 +73,9 @@ class Context(object):
         self.motor_position = mp
         self.signals.changeMotorPosition.emit(self.motor_position)
 
+    def update_motor_running(self, running):
+        self.motor_running = running
+
     def update_dropped_shots(self, ds):
         self.percent_dropped = ds
         self.signals.changeDroppedShots.emit(self.percent_dropped)

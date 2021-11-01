@@ -402,10 +402,11 @@ class StatusThread(QThread):
             choice = "append"
         else:
             choice = "set"
-        vals = [vals.get('i0'), vals.get('diff'), vals.get('ratio'), self.x_axis[idx]]
-        self.append_or_set(choice, self.buffers, vals, idx)
+        v = [vals.get('i0'), vals.get('diff'), vals.get('ratio'), self.x_axis[idx]]
+        self.append_or_set(choice, self.buffers, v, idx)
+        v = [vals.get('i0'), vals.get('diff'), vals.get('ratio'), vals.get('dropped')]
         if self.calibrated and choice == "set":
-            self.event_flagging(vals, idx)
+            self.event_flagging(v, idx)
 
     def run(self):
         """Long-running task to collect data points"""
@@ -434,19 +435,19 @@ class StatusThread(QThread):
         if self.calibrated:
             if np.count_nonzero(self.flagged_events['missed shot']) > self.notification_tolerance:
                 self.signals.changeStatus.emit("Warning, missed shots", "red")
-                self.processor_worker.flag_counter('missed shot', 300, self.missed_shots)
+                self.processor_worker.flag_counter('missed shot', 50, self.missed_shots)
             elif np.count_nonzero(self.flagged_events['dropped shot']) > self.notification_tolerance:
                 self.signals.changeStatus.emit("Lots of dropped shots", "yellow")
-                self.processor_worker.flag_counter('dropped shot', 300, self.dropped_shots)
+                self.processor_worker.flag_counter('dropped shot', 50, self.dropped_shots)
             elif np.count_nonzero(self.flagged_events['high intensity']) > self.notification_tolerance:
                 self.signals.changeStatus.emit("High Intensity", "orange")
-                self.processor_worker.flag_counter('high intensity', 1000, self.high_intensity)
+                self.processor_worker.flag_counter('high intensity', 50, self.high_intensity)
             else:
                 if not self.processor_worker.isCounting:
                     self.signals.changeStatus.emit("Everything is good", "green")
                     self.everything_is_good()
                 if self.processor_worker.isCounting:
-                    self.processor_worker.flag_counter('everything is good', 1000, self.everything_is_good)
+                    self.processor_worker.flag_counter('everything is good', 50, self.everything_is_good)
         elif not self.calibrated:
             self.signals.changeStatus.emit("not calibrated", "orange")
 
@@ -500,10 +501,10 @@ class StatusThread(QThread):
                 missed_shot = 0
                 self.flagged_events['missed shot'][idx] = missed_shot
         if not vals[3]:
-            dropped_shot = vals[0]
-            self.flagged_events['dropped shot'][idx] = dropped_shot
-        else:
             dropped_shot = 0
+            self.flagged_events['dropped shot'][idx] = dropped_shot
+        elif vals[3]:
+            dropped_shot = 1
             self.flagged_events['dropped shot'][idx] = dropped_shot
 
     def update_calibration_range(self):
@@ -602,13 +603,12 @@ class StatusThread(QThread):
             self.signals.wakeMotor.emit()
         elif not self.isTracking and not self.context.motor_running:
             self.signals.message.emit("lots of missed shots.. consider running a search")
-        if self.status == "everything is good":
-            self.signals.notifyMotor.emit("missed shots")
-        elif self.status == "dropped shots":
-            if self.context.motor_running:
+        if self.context.motor_running:
+            if self.status == "everything is good":
+                self.signals.notifyMotor.emit("missed shots")
+            elif self.status == "dropped shots":
                 self.signals.notifyMotor.emit("resume")
-        elif self.status == "high intensity":
-            if self.context.motor_running:
+            elif self.status == "high intensity":
                 self.signals.notifyMotor.emit("you downgraded")
         self.status = "missed_shots"
 
@@ -619,27 +619,23 @@ class StatusThread(QThread):
         self.status = "dropped shots"
 
     def high_intensity(self):
-        if self.status == "dropped shots":
-            if self.context.motor_running:
+        if self.context.motor_running:
+            if self.status == "dropped shots":
                 self.notifyMotor("resume")
-        elif self.status == "missed shots":
-            if self.context.motor_running:
+            elif self.status == "missed shots":
                 self.signals.notifyMotor.emit("high intensity")
-        elif self.status == "everything is good":
-            if self.context.motor_running:
+            elif self.status == "everything is good":
                 self.signals.notifyMotor.emit("you upgraded")
         self.status = "high intensity"
 
     def everything_is_good(self):
         self.processor_worker.stop_count()
-        if self.status == "dropped shots":
-            if self.context.motor_running:
+        if self.context.motor_running:
+            if self.status == "dropped shots":
                 self.signals.notifyMotor("resume")
-        elif self.status == "missed shots":
-            if self.context.motor_running:
+            elif self.status == "missed shots":
                 self.signals.notifyMotor.emit("Everything is good")
-        elif self.status == "high intensity":
-            if self.context.motor_running:
+            elif self.status == "high intensity":
                 self.signals.notifyMotor.emit("you downgraded")
         self.status = "everything is good"
 
@@ -655,7 +651,7 @@ class EventProcessor(QThread):
         self.isCounting = True
         if new_flag in self.flag_type.copy():
             self.flag_type[new_flag] += 1
-            if num_flagged >= self.flag_type[new_flag]:
+            if num_flagged == self.flag_type[new_flag]:
                 del(self.flag_type[new_flag])
                 func_to_execute() 
         else:
@@ -778,7 +774,6 @@ class MotorThread(QThread):
             print("connecting to: ", self.motor_name)
             self.motor = IMS(self.motor_name, name='jet_x')
         elif not self.live:
-            print("simulated motor")
             self.motor = SimulatedMotor(self.context, self.signals)
             pass
 
@@ -810,13 +805,14 @@ class MotorThread(QThread):
             self.sweet_spot.append(self.moves[-1])
 
     def update_values(self, vals):
-        self.got_new_values = True
-        self.check_motor_options()
-        if vals != self.vals and vals['dropped'] is False:
-            self.vals = vals
-            self.average_intensity()
-        else:
-            pass
+        if not self.done:
+            self.got_new_values = True
+            self.check_motor_options()
+            if vals != self.vals and vals['dropped'] is False:
+                self.vals = vals
+                self.average_intensity()
+            else:
+                pass
 
     def average_intensity(self):
         self.intensities += [self.vals['ratio']]
@@ -831,13 +827,16 @@ class MotorThread(QThread):
 
     def run(self):
         self.connect_to_motor()
+        self.moves = []
+        self.done = False
         while not self.isInterruptionRequested():
             if self.done:
                 if len(self.moves) > 4:
                     x = [a[1] for a in self.moves]
                     y = [b[0] for b in self.moves]
                     self.signals.plotMotorMoves.emit(self.motor.position, self.max_value, x, y)
-                    self.clear_data()
+                    print("go to sleep now..")
+                    time.sleep(2)
                     self.signals.sleepMotor.emit()
             else:
                 if self.request_new_values and self.got_new_values:
@@ -848,10 +847,6 @@ class MotorThread(QThread):
                     self.request_new_values = True
             time.sleep(1/self.refresh_rate)
         print("Interruption was requested: Motor Thread")
-
-    def clear_data(self):
-        self.moves = []
-        self.done = False
 
 
 """

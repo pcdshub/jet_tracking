@@ -96,6 +96,7 @@ class ControlsWidget(QFrame, Controls_Ui):
     def _start_motor(self):
         if not self.worker_motor.isRunning():
             if self.worker_status.isRunning():
+                self.context.update_motor_running(True)
                 self.worker_motor.start()
             else:
                 self.signals.message.emit("You must start getting points first!")
@@ -107,6 +108,7 @@ class ControlsWidget(QFrame, Controls_Ui):
 
     def _stop_motor(self):
         if self.worker_motor.isRunning():
+            self.context.update_motor_running(False)
             self.worker_motor.requestInterruption()
             self.worker_motor.wait()
         if self.sender() is self.bttn_stop_motor:
