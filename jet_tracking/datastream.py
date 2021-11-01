@@ -5,7 +5,9 @@ from scipy import stats
 import numpy as np
 import collections
 from ophyd import EpicsSignal
+from epics import caget
 from PyQt5.QtCore import QThread
+from PyQt5.QtGui import QImage
 #from pcdsdevices.epics_motor import IMS
 from sketch.num_gen import SimulationGenerator
 from sketch.motorMoving import MotorAction
@@ -673,6 +675,10 @@ class JetImageFeed(QThread):
         self.signals = signals
         self.context = context
         self.cam_name = ''
+        self.array_size_x_data = 0
+        self.array_size_y_data = 0
+        self.array_size_x_viewer = 0
+        self.array_size_y_viewer = 0
         self.cam_array = ''
         self.refresh_rate = self.context.cam_refresh_rate
         self.editor = {}
@@ -688,11 +694,26 @@ class JetImageFeed(QThread):
 
     def connect_cam(self):
         self.cam_name = self.context.PV_DICT.get('camera', None)
-        try:
-            self.signal_cam = EpicsSignal(self.cam_name)
-            self.connected = True
-        except:
+        self.array_size_x_data = caget(self.cam_name + ':IMAGE1:ArraySize0_RBV')
+        self.array_size_y_data = caget(self.cam_name + ':IMAGE1:ArraySize1_RBV')
+        self.array_size_x_viewer = caget(self.cam_name + ':IMAGE2:ArraySize0_RBV')
+        self.array_size_y_viewer = caget(self.cam_name + ':IMAGE2:ArraySize1_RBV')
+        if self.array_size_x_data != self.array_size_x_viewer or \
+                self.array_size_y_data != self.array_size_y_viewer:
+            self.signals.message.emit("ROI defined with markers in canViewer won't make sense because of "
+                                      "different resolutions between the camera and camViewer")
+        image = caget(self.cam_name + ':IMAGE1:ArrayData')
+        if len(image) == 0:
+            self.signals.message.emit("Can't read camera...")
             self.connected = False
+        else:
+            image = np.reshape(image, (self.array_size_x_data, self.array_size_y_data))
+            self.connected = True
+
+    @staticmethod
+    def fix_image(im, x, y):
+        im = np.reshape(im, (x, y))
+        return im
 
     def update_editor_vals(self, e):
         self.editor = e
@@ -701,12 +722,17 @@ class JetImageFeed(QThread):
         return(cam)
 
     def run(self):
-        if self.connected:
-            self.cam_array = self.signal_cam.get()
-            self.cam_array = self.edit(self.cam_array)
-            self.signals.camImage.emit(self.cam_array)
-            time.sleep(self.refresh_rate)
-
+        self.connect_cam()
+        while not self.requestInterruption():
+            if self.connected:
+                image = caget(self.cam_name + ':IMAGE1:ArrayData')
+                image = self.fix_image(image, self.array_size_x_data, self.array_size_y_data)
+                image = QImage(image, self.array_size_x_data, self.array_size_y_data, QImage.Format_Grayscale8)
+                self.signals.camImage.emit(image)
+                time.sleep(1/self.refresh_rate)
+            else:
+                time.sleep(1/self.refresh_rate)
+        print("Interruption was requested: Image Thread")
 
 class MotorThread(QThread):
     def __init__(self, context, signals):

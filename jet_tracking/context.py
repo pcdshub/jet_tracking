@@ -20,7 +20,7 @@ class Context(object):
                         'i0': 'CXI:JTRK:REQ:I0',
                         'ratio': 'CXI:JTRK:REQ:RATIO',
                         'dropped': 'CXI:JTRK:REQ:DROPPED',
-                        'camera': 'CXI:SC3:INLINE:IMAGE2:ArrayData',
+                        'camera': 'CXI:SC1:INLINE',
                         'motor': 'CXI:PI3:MMS:01'}
         self.CFG_FILE = 'jt_configs/cxi_config.yml'
         self.HUTCH = 'cxi'
@@ -66,7 +66,7 @@ class Context(object):
         self.max = 10
         self.bg = 0.05
 
-        self.cam_refresh_rate = 5
+        self.cam_refresh_rate = 3
 
         # added while adding simulator
     def update_motor_position(self, mp):
