@@ -24,15 +24,15 @@ logger = logging.getLogger(__name__)
 class MpiWorker(object):
     """This worker will collect events and do whatever
     necessary processing, then send to master"""
-    def __init__(self, ds, detector, ipm, evr, r_mask, calib_results,
+    def __init__(self, ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask, calib_results,
                  event_code=40, 
                  plot=False, 
                  data_port=1235):
         self._ds = ds  # We probably need to use kwargs to make this general
         self._detector = detector
         self._ipm = ipm
-#        self._jet_cam = jet_cam
-#        self._jet_cam_axis = jet_cam_axis
+        self._jet_cam = jet_cam
+        self._jet_cam_axis = jet_cam_axis
         self._evr = evr
         self._comm = MPI.COMM_WORLD
         self._rank = self._comm.Get_rank()
@@ -113,13 +113,13 @@ class MpiWorker(object):
             except:
                 logger.warning('You must provide int for delta bin')
 
-#    @property
-#    def jet_cam(self):
-#        return self._jet_cam
+    @property
+    def jet_cam(self):
+        return self._jet_cam
 
-#    @property
-#    def jet_cam_axis(self):
-#        return self._jet_cam_axis
+    @property
+    def jet_cam_axis(self):
+        return self._jet_cam_axis
 
     def start_run(self):
         """Worker should handle any calculations"""
@@ -156,9 +156,9 @@ class MpiWorker(object):
                     inorm = intensity/i0
 
                     # Get jet projection peak and location
-#                    jet_proj = self.jet_cam.image(evt).sum(axis=self.jet_cam_axis)
-#                    max_jet_val = np.amax(jet_proj)
-#                    max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
+                    jet_proj = self.jet_cam.image(evt).sum(axis=self.jet_cam_axis)
+                    max_jet_val = np.amax(jet_proj)
+                    max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
 
 #                packet = np.array([i0, intensity, inorm, max_jet_val, max_jet_idx], dtype='float32')
                 packet = np.array([intensity, i0, inorm, dropped], dtype='float32')
