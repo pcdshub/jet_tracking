@@ -15,6 +15,10 @@ following functions:
 *
 """
 
+import logging
+logger = logging.getLogger(__name__)
+
+
 class MotorAction(object):
     def __init__(self, motor_thread, context, signals):
         self.context = context
@@ -106,6 +110,7 @@ class BasicScan(object):
 
 class TernarySearch(object):
     def __init__(self, motor_thread):
+        logger.info("TernarySearch object created.")
         self.motor_thread = motor_thread
         self.beginning = True
         self.done = False
@@ -126,7 +131,7 @@ class TernarySearch(object):
         self.tolerance = self.motor_thread.tolerance
         if self.beginning:
             self.low = self.abs_ll
-            self.high =self.abs_hl
+            self.high = self.abs_hl
             self.beginning = False
 
     def find_mids(self, low, high):
@@ -193,6 +198,8 @@ class TernarySearch(object):
             self.low = self.mid1
             self.high = self.high
             self.max_value = i2
+
+
 '''
     def _search(motor, intensity, absolute, left, right, tol, nsamp):
         # this needs quite a bit more thought...

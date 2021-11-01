@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import QFrame, QGraphicsPixmapItem
 from PyQt5.QtGui import QPixmap, QImage
 from gui.widgets.jetImageWidgetUi import Image_Ui
-import qimage2ndarray as qi
 import cv2
 import logging
 import numpy as np
@@ -74,7 +73,7 @@ class JetImageWidget(QFrame, Image_Ui):
     def update_image(self, im):
 
         self.editImageGray = im
-        self.qimage = qi.array2qimage(self.editImageGray, normalize=False)
+        #self.qimage = qi.array2qimage(self.editImageGray, normalize=False)
         self.pixmap = QPixmap(self.qimage)
         self.view.scene().clear()
         self.pixmapItem = QGraphicsPixmapItem()

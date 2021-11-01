@@ -16,7 +16,7 @@ from collections import deque
 import threading
 
 ologging = logging.getLogger('ophyd')
-ologging.setLevel('CRITICAL')
+ologging.setLevel('DEBUG')
 
 log = logging.getLogger(__name__)
 lock = threading.Lock()
@@ -531,25 +531,30 @@ class StatusThread(QThread):
         and the calibration_values are updated.
         """
         if self.calibration_source == "calibration from results":
-            results, cal_file = get_cal_results(HUTCH, EXPERIMENT)  # change the experiment
+            results, cal_file = self.context.get_cal_results()  # change the experiment
             if results == None:
                 self.signals.message.emit("no calibration file there")
-                pass
-            self.set_calibration_values('i0', 
-                                        float(results['i0_mean']),
+                self.calibrated = False
+                self.mode= 'running'
+            else:
+                self.set_calibration_values('i0', 
+                                        float(results['i0_median']),
                                         float(results['i0_low'])
                                         )
-            self.set_calibration_values('ratio', 
-                                        float(results['ratio_median']),
-                                        float(results['ratio_low'])
+                #self.set_calibration_values('ratio', 
+                #                        float(results['med_ratio']),
+                #                        float(results['ratio_low'])
+                #                        )
+                self.set_calibration_values('diff', 
+                                        float(results['int_median']),
+                                        float(results['int_low'])
                                         )
-            self.set_calibration_values('diff', 
-                                        float(results['diff_mean']),
-                                        float(results['diff_low'])
-                                        )
-            self.calibrated = True
-            self.mode = 'running'
-            self.signals.message.emit('calibration file: ' + str(cal_file))
+                # this should be removed
+                ratio_low = float(results['int_low'])/float(results['i0_low'])
+                self.set_calibration_values('ratio', float(results['med_ratio']), ratio_low)
+                self.calibrated = True
+                self.mode = 'running'
+                self.signals.message.emit('calibration file: ' + str(cal_file))
 
         elif self.calibration_source == 'calibration in GUI':
             if v.get('dropped') != True:
@@ -770,7 +775,8 @@ class MotorThread(QThread):
         if self.live:
             # should have a catch here for if this doesn't connect
             self.motor_name = self.context.PV_DICT.get('motor', None)
-            # self.motor = IMS(self.motor_name, name='jet_x')
+            print("connecting to: ", self.motor_name)
+            self.motor = IMS(self.motor_name, name='jet_x')
         elif not self.live:
             print("simulated motor")
             self.motor = SimulatedMotor(self.context, self.signals)
@@ -805,6 +811,7 @@ class MotorThread(QThread):
 
     def update_values(self, vals):
         self.got_new_values = True
+        self.check_motor_options()
         if vals != self.vals and vals['dropped'] is False:
             self.vals = vals
             self.average_intensity()

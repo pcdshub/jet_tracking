@@ -90,7 +90,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.context.set_mode("calibrate")
 
     def _enable_tracking(self):
-        self.set_tracking_status("enabled", green)
+        self.set_tracking_status("enabled", "green")
         self.context.update_tracking(True)
 
     def _start_motor(self):
@@ -111,9 +111,10 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.worker_motor.wait()
         if self.sender() is self.bttn_stop_motor:
             self.context.set_tracking(False)
-            self.set_tracking_status('disabled', red)
+            self.set_tracking_status('disabled', "red")
 
-    def plot_motor_moves(self, position, maximum, positions, intensities):
+    @staticmethod
+    def plot_motor_moves(position, maximum, positions, intensities):
         fig = plt.figure()
         plt.xlabel('motor position')
         plt.ylabel('I/I0 intensity')
@@ -148,14 +149,6 @@ class ControlsWidget(QFrame, Controls_Ui):
 
     def cleanup_correction(self):
         self.worker_motor = None
-
-    def receive_status(self, status):
-        if status == 'outside':
-            if self.correction_thread is None:
-                # avoid issues with fluctuations and multiple corrections
-                self.correction_thread = correctionThread()
-                self.correction_thread.finished.connect(self.cleanup_correction)
-                self.correction_thread.start()
 
     def update_limits(self, limit):
         self.context.update_limits(float(self.le_motor_hl.text()), float(self.le_motor_ll.text()))

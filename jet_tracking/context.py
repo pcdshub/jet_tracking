@@ -4,6 +4,7 @@ import yaml
 import threading
 import os
 import json
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 lock = threading.Lock()
@@ -15,15 +16,15 @@ class Context(object):
         self.signals = signals
         self.JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
         self.SD_LOC = '/reg/d/psdm/'
-        self.PV_DICT = {'diff': 'XCS:JTRK:REQ:DIFF_INTENSITY',
-                        'i0': 'XCS:JTRK:REQ:I0',
-                        'ratio': 'XCS:JTRK:REQ:RATIO',
-                        'dropped': '',
-                        'camera': 'CXI:SC1:INLINE:IMAGE2:ArrayData',
-                        'motor': ''}
-        self.CFG_FILE = 'jt_configs/xcs_config.yml'
-        self.HUTCH = 'xcs'
-        self.EXPERIMENT = 'xcsx1568'
+        self.PV_DICT = {'diff': 'CXI:JTRK:REQ:DIFF_INTENSITY',
+                        'i0': 'CXI:JTRK:REQ:I0',
+                        'ratio': 'CXI:JTRK:REQ:RATIO',
+                        'dropped': 'CXI:JTRK:REQ:DROPPED',
+                        'camera': 'CXI:SC3:INLINE:IMAGE2:ArrayData',
+                        'motor': 'CXI:PI3:MMS:01'}
+        self.CFG_FILE = 'jt_configs/cxi_config.yml'
+        self.HUTCH = 'cxi'
+        self.EXPERIMENT = 'cxix53419'
         self.live_data = True
         self.calibration_source = "calibration from results"
         self.percent = 50
@@ -230,7 +231,7 @@ class Context(object):
                 cal_results = json.load(f)
             return cal_results, cal_file_path
         else:
-            return None
+            return None, None
 
     def set_mode(self, mode):
         self.mode = mode
