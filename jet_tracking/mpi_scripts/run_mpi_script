@@ -23,7 +23,7 @@ do
       usage exit
       ;;
     -c|--cfgfile)
-      CFGFILE="$2"
+      CONFIG="$2"
       shift
       shift
       ;;
@@ -47,5 +47,7 @@ PROC=${PROC:='2'}
 #cd /cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/mpi_scripts
 #pythonpathmunge '/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking'
 CONFIG=${CONFIG:=$MYDIR/jt_configs/xcs_config.yml}
+
+echo $CONFIG
 
 `which mpirun` -n $PROC python -u $MYDIR/mpi_scripts/mpi_driver.py --cfg_file $CONFIG

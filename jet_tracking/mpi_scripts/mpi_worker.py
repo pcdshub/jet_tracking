@@ -129,8 +129,9 @@ class MpiWorker(object):
             # Definitely not a fan of wrapping the world in a try/except
             # but too many possible failure modes from the data
             try:
-                if self.event_code not in self.evr.eventCodes(evt):
-                    continue
+            #if 1:
+                #if self.event_code not in self.evr.eventCodes(evt):
+                #    continue
                 with self._attr_lock:
                     low_bin = self.peak_bin - self.delta_bin
                     hi_bin = self.peak_bin + self.delta_bin
@@ -151,7 +152,6 @@ class MpiWorker(object):
                     det_image = self.detector.image(evt, calib)
                     az_bins = np.array([np.mean(det_image[mask]) for mask in self._r_mask[low_bin:hi_bin]])
                     intensity = np.sum(az_bins)
-
                     # Normalized intensity
                     inorm = intensity/i0
 
@@ -168,6 +168,7 @@ class MpiWorker(object):
                 packet = np.array([intensity, i0, inorm, dropped], dtype='float32')
                 self.comm.Isend(packet, dest=0, tag=self.rank)
             except Exception as e:
+            #else:
                 logger.warning('Unable to Process Event: {}'.format(e))
                 continue
 

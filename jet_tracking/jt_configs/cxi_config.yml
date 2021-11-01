@@ -6,7 +6,7 @@ experiment: 'cxilw5019'
 run: '120'
 sim: false
 ffb: true
-event_code: 40 # x-ray on event code
+event_code: 137 # x-ray on event code
 
 det_map:
   name: 'jungfrau4M'
