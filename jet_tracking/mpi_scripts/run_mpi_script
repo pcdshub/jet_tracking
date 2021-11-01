@@ -23,7 +23,7 @@ do
       usage exit
       ;;
     -c|--cfgfile)
-      CFGFILE="$2"
+      CONFIG="$2"
       shift
       shift
       ;;

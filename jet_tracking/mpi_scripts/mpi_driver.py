@@ -24,7 +24,7 @@ rank = comm.Get_rank()
 
 # All the args
 parser = argparse.ArgumentParser()
-parser.add_argument('--cfg_file', help='if specified, has information about what metadata to use', type=str, default='cxi_dsd_config.yml')
+parser.add_argument('--cfg_file', help='if specified, has information about what metadata to use', type=str, default='xcs_config.yml')
 args = parser.parse_args()
 
 # Parse config file to hand to workers
@@ -90,6 +90,6 @@ if rank == 0:
 else:
     peak_bin = int(cal_results['peak_bin'])
     delta_bin = int(cal_results['delta_bin'])
-    worker = MpiWorker(ds, detector, ipm, evr, r_mask, cal_results, event_code=event_code)
+    worker = MpiWorker(ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask, cal_results, event_code=event_code)
     print('Worker')
     worker.start_run()

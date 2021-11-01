@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 class MpiWorker(object):
     """This worker will collect events and do whatever
     necessary processing, then send to master"""
-    def __init__(self, ds, detector, ipm, evr, r_mask, calib_results,
+    def __init__(self, ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask, calib_results,
                  event_code=40, 
                  plot=False, 
                  data_port=1235):
