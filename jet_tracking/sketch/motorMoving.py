@@ -69,8 +69,12 @@ class BasicScan(object):
         self.hl = float(self.motor_thread.high_limit)
         self.step_size = self.motor_thread.step_size
 
-    def get_original_values(self):
+    def start_fresh(self):
         if self.beginning:
+            self.done = False
+            self.step = 0
+            self.num_tries = 1
+            self.max_value = 0
             self.original_intensity = self.motor_thread.moves[-1][0]
             self.original_position = self.motor_thread.moves[-1][1]
             self.beginning = False
@@ -79,9 +83,13 @@ class BasicScan(object):
         """does a basic scan from the low limit to one step below the high limit
         in steps if step_size"""
         self.check_motor_options()
-        self.get_original_values()
+        self.start_fresh()
         print(self.motor_thread.moves[-1][1] + self.step_size, self.hl)
-        if self.motor_thread.moves[-1][1] + self.step_size > self.hl:
+        if self.motor_thread.moves[-1][1] + self.step_size < self.hl:
+            position = self.ll + (self.step*self.step_size)
+            self.motor_thread.motor.move(position, wait=False)
+            self.step += 1
+        else:
             moves_reorg = list(map(list, (zip(*self.motor_thread.moves))))
             intensities = moves_reorg[0]
             self.max_value = max(intensities)
@@ -102,10 +110,6 @@ class BasicScan(object):
                     self.num_tries += 1
                     self.signals.message.emit(f"Trying linear scan again, Try {self.num_tries}... 0.005 mm smaller step size")
                     self.step = 0
-        else:
-            position = self.ll + (self.step*self.step_size)
-            self.motor_thread.motor.move(position, wait=False)
-            self.step += 1
 
 
 class TernarySearch(object):
