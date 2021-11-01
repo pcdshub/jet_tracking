@@ -116,12 +116,9 @@ class Signals(QtCore.QObject):
     # emit in context
     # connect in datastream
     connectCam = QtCore.pyqtSignal()
-    # emit in datastream
+    # emit in jetimagefeed
     # connect in jetimagewidget
     camImage = QtCore.pyqtSignal(list)
-    # emit in jetImageView
-    # connect in jetImageWidget
-    camName = QtCore.pyqtSignal(str)
     # emit in editorWidget
     # connect in jetImageWidget
     updateImage = QtCore.pyqtSignal(np.ndarray)

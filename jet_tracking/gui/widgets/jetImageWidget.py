@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QFrame, QGraphicsPixmapItem
-from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtWidgets import QFrame, QGraphicsPixmapItem, QGraphicsView, QGraphicsScene
+from PyQt5.QtGui import QPixmap
 from gui.widgets.jetImageWidgetUi import Image_Ui
+from epics import caget
 import cv2
 import logging
 import numpy as np
@@ -34,48 +35,20 @@ class JetImageWidget(QFrame, Image_Ui):
         super(JetImageWidget, self).__init__()
         self.signals = signals
         self.context = context
-        self.pixmap = None
-        self.ogimage = None
-        self.ogimageGray = None
+        self.pixmap = QPixmap()
+        self.pixmapItem = QGraphicsPixmapItem()
+        self.scene = QGraphicsScene()
+        self.view = QGraphicsView()
         self.make_connections()
         self.setupUi(self)
+        self.connect_scene()
+
+    def connect_scene(self):
+        self.scene.addItem(self.pixmapItem)
+        self.view.setScene(self.scene)
 
     def make_connections(self):
-        self.signals.camName.connect(self.display_image)
-        self.signals.updateImage.connect(self.update_image)
-
-    def display_image(self, im):
-        """
-        used to connect to the Camera PV and display it in the
-        graphic window
-        """
-        if im == "":
-            self.image = np.zeros((100, 100))
-            for i in range(100):
-                for j in range(100):
-                    self.image[i][j] = 0
-                self.image[i][48] = 255
-                self.image[i][49] = 255
-                self.image[i][50] = 255
-        else:
-            self.ogimage = cv2.imread(im)
-            self.editImage = self.ogimage
-            self.ogimageGray = cv2.cvtColor(self.ogimage, cv2.COLOR_BGR2GRAY)
-            self.editImageGray = self.ogimageGray
-
-        height, width, channel = self.ogimage.shape
-        bytesPerLine = 3*width
-        self.qimage = QImage(self.ogimage, width, height, bytesPerLine, QImage.Format_RGB888)
-        self.pixmap = QGraphicsPixmapItem(QPixmap(self.qimage))
-        self.scene.addItem(self.pixmap)
-        self.context.set_images(self.editImage, self.editImageGray)
+        self.signals.camImage.connect(self.update_image)
 
     def update_image(self, im):
-
-        self.editImageGray = im
-        #self.qimage = qi.array2qimage(self.editImageGray, normalize=False)
-        self.pixmap = QPixmap(self.qimage)
-        self.view.scene().clear()
-        self.pixmapItem = QGraphicsPixmapItem()
-        self.view.scene().addItem(self.pixmapItem)
-        self.pixmapItem.setPixmap(self.pixmap)
+        self.pixmapItem.setPixmap(QPixmap.fromImage(im))
