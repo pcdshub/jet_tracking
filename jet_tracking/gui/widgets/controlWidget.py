@@ -128,8 +128,14 @@ class ControlsWidget(QFrame, Controls_Ui):
         plt.scatter(x, y)
         plt.show()
         if save:
-           filename =  
-           np.
+            folder = SAVEFOLDER.format(self.context.HUTCH, self.context.EXPERIMENT)
+            plotfile = folder+f'/motor_figure_%s.png'
+            datafile = folder+f'/motor_data_%s.csv'
+            try:
+                plt.savefig(plotfile)
+                np.savetxt(datafile, [positions,intensities])
+            except:
+                log.warning("Saving files failed!")
 
     def set_calibration(self):
         """Updates the display when a successful calibration is complete."""

@@ -20,11 +20,11 @@ class Context(object):
                         'i0': 'CXI:JTRK:REQ:I0',
                         'ratio': 'CXI:JTRK:REQ:RATIO',
                         'dropped': 'CXI:JTRK:REQ:DROPPED',
-                        'camera': 'CXI:SC3:INLINE:IMAGE2:ArrayData',
+                        'camera': 'CXI:SC1:INLINE:IMAGE2:ArrayData',
                         'motor': 'CXI:PI3:MMS:01'}
         self.CFG_FILE = 'jt_configs/cxi_config.yml'
         self.HUTCH = 'cxi'
-        self.EXPERIMENT = 'cxix53419'
+        self.EXPERIMENT = 'cxilw5019'
         self.live_data = True
         self.calibration_source = "calibration from results"
         self.percent = 50
