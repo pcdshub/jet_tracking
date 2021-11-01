@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QFrame
 from datastream import StatusThread, MotorThread
 from gui.widgets.controlWidgetUi import Controls_Ui
 import logging
+import matplotlib.pyplot as plt
 
 log = logging.getLogger(__name__)
 
@@ -68,6 +69,8 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.bttn_calibrate.clicked.connect(self._calibrate)
         self.bttn_start.clicked.connect(self.start_processes)
 
+        self.signals.plotMotorMoves.connect(self.plot_motor_moves)
+
     def start_processes(self):
         self.worker_status.start()
 
@@ -93,12 +96,12 @@ class ControlsWidget(QFrame, Controls_Ui):
     def _start_motor(self):
         if not self.worker_motor.isRunning():
             if self.worker_status.isRunning():
-                self.worker_motor.run()
+                self.worker_motor.start()
             else:
                 self.signals.message.emit("You must start getting points first!")
         else:
             if not self.worker_motor.isInterruptionRequested():
-                self.worker_motor.run()
+                self.worker_motor.start()
             else:
                 self.signals.message.emit("The motor is already running")
 
@@ -109,6 +112,16 @@ class ControlsWidget(QFrame, Controls_Ui):
         if self.sender() is self.bttn_stop_motor:
             self.context.set_tracking(False)
             self.set_tracking_status('disabled', red)
+
+    def plot_motor_moves(self, position, maximum, positions, intensities):
+        fig = plt.figure()
+        plt.xlabel('motor position')
+        plt.ylabel('I/I0 intensity')
+        plt.plot(position, maximum, 'ro')
+        x = positions
+        y = intensities
+        plt.scatter(x, y)
+        plt.show()
 
     def set_calibration(self):
         """
@@ -163,12 +176,12 @@ class ControlsWidget(QFrame, Controls_Ui):
         elif bttn == "live data":
             self.rdbttn_auto.setEnabled(True)
             self.context.update_live_graphing(True)
-        elif bttn == "manual motor moving":
-            self.bttn_search.setEnabled(False)
+        elif bttn == "manual \nmotor moving":
+            self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(False)
             self.bttn_stop_motor.setEnabled(False)
             self.context.update_manual_motor(True)
-        elif bttn == "automated motor moving":
+        elif bttn == "automated \nmotor moving":
             self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(True)
             self.bttn_stop_motor.setEnabled(True)

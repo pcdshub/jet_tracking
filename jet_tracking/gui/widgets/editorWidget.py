@@ -26,7 +26,7 @@ class EditorWidget(QFrame, Editor_Ui):
 
     def start_cam(self):
         self.context.open_cam_connection()
-        if self.image_stream.connected == True:
+        if self.image_stream.connected:
             print("connected")
             self.image_stream.run()
         else:

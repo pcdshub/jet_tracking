@@ -147,7 +147,7 @@ class Controls_Ui(object):
 
         obj.bttn_search = QPushButton()
         obj.bttn_search.setText("Go Once")
-        obj.bttn_search.setEnabled(False)
+        obj.bttn_search.setEnabled(True)
 
         obj.bttn_tracking = QPushButton()
         obj.bttn_tracking.setText("Start Tracking")

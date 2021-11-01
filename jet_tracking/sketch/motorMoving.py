@@ -21,7 +21,7 @@ class MotorAction(object):
         self.signals = signals
         self.motor_thread = motor_thread
         self.ternary_search = TernarySearch(self.motor_thread)
-        self.basic_scan = BasicScan(self.motor_thread)
+        self.basic_scan = BasicScan(self.motor_thread, signals)
         self.motor = self.motor_thread.motor
         self.last_direction = "none" # positive or negative or none
         self.new_direction = "none" # positive or negative or none
@@ -33,109 +33,166 @@ class MotorAction(object):
         self.new_distance_from_image_center = 0
 
     def execute(self):
-        if self.motor_thread.algorithm is "Ternary Search":
+        if self.motor_thread.algorithm == "Ternary Search":
             self.ternary_search.search()
             if self.ternary_search.done:
-                return(True)
-            else: return(False)
-        elif self.motor_thread.algorithm is "Basic Scan":
+                return(True, self.ternary_search.max_value)
+            else: return(False, self.ternary_search.max_value)
+        elif self.motor_thread.algorithm == "Basic Scan":
             self.basic_scan.scan()
             if self.basic_scan.done:
-                return(True)
-            else: return(False)
+                return(True, self.basic_scan.max_value)
+            else: return(False, self.basic_scan.max_value)
 
 
 class BasicScan(object):
-    def __init__(self, motor_thread):
+    def __init__(self, motor_thread, signals):
         self.motor_thread = motor_thread
+        self.signals = signals
+        self.beginning = True
+        self.original_intensity = 0
+        self.original_position = 0
+        self.max_value = 0
         self.step_size = self.motor_thread.step_size
         self.ll = float(self.motor_thread.low_limit)
         self.hl = float(self.motor_thread.high_limit)
         self.done = False
         self.step = 0
+        self.num_tries = 1
+
+    def check_motor_options(self):
+        self.ll = float(self.motor_thread.low_limit)
+        self.hl = float(self.motor_thread.high_limit)
+        self.step_size = self.motor_thread.step_size
+
+    def get_original_values(self):
+        if self.beginning:
+            self.original_intensity = self.motor_thread.moves[-1][0]
+            self.original_position = self.motor_thread.moves[-1][1]
+            self.beginning = False
 
     def scan(self):
         """does a basic scan from the low limit to one step below the high limit
         in steps if step_size"""
+        self.check_motor_options()
+        self.get_original_values()
+        print(self.motor_thread.moves[-1][1] + self.step_size, self.hl)
         if self.motor_thread.moves[-1][1] + self.step_size > self.hl:
             moves_reorg = list(map(list, (zip(*self.motor_thread.moves))))
             intensities = moves_reorg[0]
-            max_value = max(intensities)
-            index = intensities.index(max_value)
+            self.max_value = max(intensities)
+            index = intensities.index(self.max_value)
             max_location = moves_reorg[1][index]
-            self.motor_thread.motor.move(max_location, wait=True)
-            self.done = True
+            if self.max_value > self.original_intensity:
+                self.motor_thread.motor.move(max_location, wait=False)
+                self.done = True
+                self.beginning = True
+            else:
+                self.step_size = self.step_size - 0.005
+                if self.step_size < 0.001: # for CXI - should not get any smaller than 1/5 size of jet
+                    self.signals.message.emit("Did not find a better value, returning to original position")
+                    self.motor_thread.motor.move(self.original_position, wait=False)
+                    self.done = True
+                    self.beginning = True
+                else:
+                    self.num_tries += 1
+                    self.signals.message.emit(f"Trying linear scan again, Try {self.num_tries}... 0.005 mm smaller step size")
+                    self.step = 0
         else:
             position = self.ll + (self.step*self.step_size)
-            self.motor_thread.motor.move(position, wait=True)
+            self.motor_thread.motor.move(position, wait=False)
             self.step += 1
 
 
 class TernarySearch(object):
     def __init__(self, motor_thread):
         self.motor_thread = motor_thread
+        self.beginning = True
         self.done = False
+        self.max_value = 0
         self.step = 0
-        self.smart_check_vals = [0, 0]
-        self.ll = float(self.motor_thread.low_limit)
-        self.hl = float(self.motor_thread.high_limit)
+        self.smart_check_vals = []
+        self.abs_ll = float(self.motor_thread.low_limit)
+        self.abs_hl = float(self.motor_thread.high_limit)
+        self.tolerance = self.motor_thread.tolerance
+        self.low = 0
+        self.high = 0
         self.mid1 = 0
         self.mid2 = 0
 
-    def find_mids(self, ll, hl):
-        self.mid1 = (ll + ((hl - ll) / 3.0)) + ll
-        self.mid2 = (hl - ((hl - ll) / 3.0)) + hl
+    def check_motor_options(self):
+        self.abs_ll = float(self.motor_thread.low_limit)
+        self.abs_hl = float(self.motor_thread.high_limit)
+        self.tolerance = self.motor_thread.tolerance
+        if self.beginning:
+            self.low = self.abs_ll
+            self.high =self.abs_hl
+            self.beginning = False
+
+    def find_mids(self, low, high):
+        if low < self.abs_ll:
+            low = self.abs_ll
+        if high > self.abs_hl:
+            high = self.abs_hl
+        print(low, high, abs(high-low))
+        self.mid1 = ((low + (high - low)) / 3.0) + low
+        self.mid2 = ((high - (high - low)) / 3.0) + high
+        print(self.mid1, self.mid2)
 
     def compare_to_old(self):
-        if self.smart_check_vals[0] > self.moves[-1][0]:
+        if self.smart_check_vals[0] > self.motor_thread.moves[-1][0]:
             self.try_again()
 
     def try_again(self):
         """puts the low and high limits back with the range slightly
         reduced to get new values"""
-        self.ll = self.motor_thread.low_limit + 0.0005
-        self.hl = self.motor_thread.high_limit - 0.0005
+        self.abs_ll = self.motor_thread.low_limit + 0.0005
+        self.abs_hl = self.motor_thread.high_limit - 0.0005
 
     def search(self):
-        if self.step is 0:
-            if self.smart_check_vals != 0:
-                self.compare_to_old()
-            self.find_mids(self.ll, self.hl)
-            self.check_if_done()
-            self.step += 1
-        if self.step is 1:
-            self.move_to_mid1()
-            self.step += 1
-        if self.step is 2:
-            self.move_to_mid2()
-            self.step += 1
-        if self.step is 3:
+        self.check_motor_options()
+        if self.step == 3:
             self.compare_and_move()
             self.step = 0
+        if self.step == 2:
+            self.move_to_mid2()
+            self.step += 1
+        if self.step == 1:
+            self.move_to_mid1()
+            self.step += 1
+        if self.step == 0:
+            if len(self.smart_check_vals) != 0:
+                self.compare_to_old()
+            self.find_mids(self.low, self.high)
+            self.check_if_done()
+            self.step += 1
 
     def check_if_done(self):
-        if abs(self.hl - self.ll) < self.motor_thread.tolerance:
-            self.motor_thread.motor.move((self.hl + self.ll)*0.5, wait=True)
+        if abs(self.high - self.low) < self.motor_thread.tolerance:
+            self.motor_thread.motor.move((self.high + self.low)*0.5, wait=False)
             self.done = True
+            self.beginning = True
 
     def move_to_mid1(self):
         """Move toward low limit"""
-        self.motor_thread.motor.move(self.mid1, wait=True)
+        self.motor_thread.motor.move(self.mid1, wait=False)
 
     def move_to_mid2(self):
         """Move toward high limit"""
-        self.motor_thread.motor.move(self.mid2, wait=True)
+        self.motor_thread.motor.move(self.mid2, wait=False)
 
     def compare_and_move(self):
         i1 = self.motor_thread.moves[-2][0]
         i2 = self.motor_thread.moves[-1][0]
+        print(i1, i2)
         if i1 > i2:
-            self.ll = self.ll
-            self.hl = self.mid2
-            self.motor_thread.motor.move(self.mid1, wait=True)
+            self.low = self.low
+            self.high = self.mid2
+            self.max_value = i1
         elif i1 < i2:
-            self.ll = self.mid1
-            self.hl = self.hl
+            self.low = self.mid1
+            self.high = self.high
+            self.max_value = i2
 '''
     def _search(motor, intensity, absolute, left, right, tol, nsamp):
         # this needs quite a bit more thought...

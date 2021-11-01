@@ -2,11 +2,10 @@ import logging
 import time
 from statistics import mean, stdev, StatisticsError
 from scipy import stats
-import matplotlib.pyplot as plt
 import numpy as np
 import collections
 from ophyd import EpicsSignal
-from PyQt5.QtCore import QThread, QTimer
+from PyQt5.QtCore import QThread
 #from pcdsdevices.epics_motor import IMS
 from sketch.num_gen import SimulationGenerator
 from sketch.motorMoving import MotorAction
@@ -223,7 +222,6 @@ class StatusThread(QThread):
 
     @staticmethod
     def fix_size(old_size, new_size, b):
-        print(b)
         d = new_size - old_size
         if d <= 0:
             for key in b:
@@ -234,7 +232,6 @@ class StatusThread(QThread):
             for key in b:
                 old = list(b[key])
                 b[key] = deque(old, new_size)
-        print(b)
         return b
 
     @staticmethod
@@ -502,7 +499,7 @@ class StatusThread(QThread):
             else:
                 missed_shot = 0
                 self.flagged_events['missed shot'][idx] = missed_shot
-        if vals[3]:
+        if not vals[3]:
             dropped_shot = vals[0]
             self.flagged_events['dropped shot'][idx] = dropped_shot
         else:
@@ -595,80 +592,51 @@ class StatusThread(QThread):
         self.signals.sleepMotor.emit()
  
     def missed_shots(self):
-        if not self.status:
-            self.status = "missed shots"
-        elif self.status in ["everything is good", "high intensity"]:
-            if self.isTracking and not self.context.motor_running:
-                self.signals.message.emit("lots of missed shots.. starting motor")
-                self.signals.wakeMotor.emit()
-            elif not self.isTracking and not self.context.motor_running:
-                self.signals.message.emit("lots of missed shots.. consider running a search")
-            self.status = "missed shots"
+        if self.isTracking and not self.context.motor_running:
+            self.signals.message.emit("lots of missed shots.. starting motor")
+            self.signals.wakeMotor.emit()
+        elif not self.isTracking and not self.context.motor_running:
+            self.signals.message.emit("lots of missed shots.. consider running a search")
+        if self.status == "everything is good":
+            self.signals.notifyMotor.emit("missed shots")
         elif self.status == "dropped shots":
             if self.context.motor_running:
                 self.signals.notifyMotor.emit("resume")
-            self.status = "missed shots"
-        elif self.status == "high intensity":
-            if self.context.motor_running:
-                self.signals.notifyMotor.emit("missed shots")
-            self.status = "dropped shots"
-
-    def dropped_shots(self):
-        if not self.status:
-            self.status = "dropped shots"
-        if self.context.motor_running:
-            self.signals.message.emit("lots of dropped shots.. pausing motor")
-        elif self.status == "everything is good":
-            if self.context.motor_running:
-                self.notifyMotor("pause") # motor should have a pause if dropped shots notification is up because it
-                # may get some "good" shots every now and then still and try to move while there's not really beam
-            self.status = "dropped shots"
-        elif self.status == "missed shots":
-            if self.context.motor_running:
-                self.signals.notifyMotor.emit("pause")
-            self.status = "dropped shots"
-        elif self.status == "high intensity":
-            if self.context.motor_running:
-                self.signals.notifyMotor.emit("pause")
-            self.status = "dropped shots"
-
-    def high_intensity(self):
-        if not self.status:
-            self.status = "high intensity"
-        elif self.status == "dropped shots":
-            if self.context.motor_running:
-                self.notifyMotor("resume")  # motor should have a pause if dropped shots notification is up because it
-                # may get some "good" shots every now and then still and try to move while there's not really beam
-            self.status = "high intensity"
-        elif self.status == "missed shots":
-            if self.context.motor_running:
-                self.signals.notifyMotor.emit("high intensity")
-            self.status = "high intensity"
-        elif self.status == "everything is good":
-            if self.context.motor_running:
-                self.signals.notifyMotor.emit("you upgraded")
-            self.status = "high intensity"
-
-
-    def everything_is_good(self):
-        self.processor_worker.stop_count()
-        if not self.status:
-            self.status = "everything is good"
-        elif self.status == "dropped shots":
-            if self.context.motor_running:
-                self.signals.notifyMotor("resume") # motor should have a pause if dropped shots notification is up because it
-                # may get some "good" shots every now and then still and try to move while there's not really beam
-            self.status = "everything is good"
-        elif self.status == "missed shots":
-            if self.context.motor_running:
-                self.signals.notifyMotor.emit("Everything is good")
-            self.status = "everything is good"
         elif self.status == "high intensity":
             if self.context.motor_running:
                 self.signals.notifyMotor.emit("you downgraded")
-            self.status = "everything is good"
+        self.status = "missed_shots"
 
+    def dropped_shots(self):
+        if self.context.motor_running:
+            self.signals.message.emit("lots of dropped shots.. pausing motor")
+            self.signals.notifyMotor.emit("pause")
+        self.status = "dropped shots"
 
+    def high_intensity(self):
+        if self.status == "dropped shots":
+            if self.context.motor_running:
+                self.notifyMotor("resume")
+        elif self.status == "missed shots":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("high intensity")
+        elif self.status == "everything is good":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("you upgraded")
+        self.status = "high intensity"
+
+    def everything_is_good(self):
+        self.processor_worker.stop_count()
+        if self.status == "dropped shots":
+            if self.context.motor_running:
+                self.signals.notifyMotor("resume")
+        elif self.status == "missed shots":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("Everything is good")
+        elif self.status == "high intensity":
+            if self.context.motor_running:
+                self.signals.notifyMotor.emit("you downgraded")
+        self.status = "everything is good"
 
 
 class EventProcessor(QThread):
@@ -746,6 +714,7 @@ class MotorThread(QThread):
         self.context = context
         self.moves = []
         self.intensities = []
+        self.vals = {}
         self.done = False
         self.motor_name = ''
         self.motor = None
@@ -759,12 +728,12 @@ class MotorThread(QThread):
         self.tolerance = 0
         self.averaging = 0
         self.refresh_rate = 0
-        self.vals = {}
         self.request_new_values = False
         self.got_new_values = False
         self.good_edge_points = []
         self.bad_edge_points = []
         self.sweet_spot = []
+        self.max_value = 0
         self.pause = False
         self.action = MotorAction(self, self.context, self.signals)
         self.create_vars()
@@ -781,7 +750,7 @@ class MotorThread(QThread):
         self.refresh_rate = self.context.refresh_rate
 
     def check_motor_options(self):
-        self.scanning_algorithm = self.context.algorithm
+        self.algorithm = self.context.algorithm
         self.low_limit = self.context.low_limit
         self.high_limit = self.context.high_limit
         self.step_size = self.context.step_size
@@ -809,12 +778,14 @@ class MotorThread(QThread):
 
     def impart_knowledge(self, info):
         # ["resume", "everything is good", "you downgraded", "you upgraded", "pause", "missed shots", "high intensity"]
+        print(info)
         if info == "everything is good":
             # if this info is passed then the status was changed from missed shots to everything is good
-            self.good_edge_points.append(self.moves[-1])
+            if len(self.moves) > 0:
+                self.good_edge_points.append(self.moves[-1])
         if info == "resume":
             # if this info is passed then the status was changed from dropped shots and the motor should resume
-            self.paused = False
+            self.pause = False
         if info == "you downgraded":
             # this is when the status is changed from high intensity to missed shots
             pass
@@ -826,13 +797,11 @@ class MotorThread(QThread):
             self.pause = True
         if info == "missed shots":
             # this is when the status changes from everything is good to missed shots
-            self.bad_edge_ponts.append(self.moves[-1])
+            if len(self.moves) > 0:
+                self.bad_edge_points.append(self.moves[-1])
         if info == "high intensity":
             # this is when the status changes from everything is good to high intensity
             self.sweet_spot.append(self.moves[-1])
-
-
-
 
     def update_values(self, vals):
         self.got_new_values = True
@@ -846,26 +815,23 @@ class MotorThread(QThread):
         self.intensities += [self.vals['ratio']]
         if len(self.intensities) == 5:
             self.check_motor_options()
+            print(self.moves)
             self.moves.append([mean(self.intensities), self.motor.position])  # this should be the same either way
+            self.intensities = []
             # for live or sim motor
             if not self.pause:
-                self.done = self.action.execute()
-            self.intensities = []
+                self.done, self.max_value = self.action.execute()
 
     def run(self):
         self.connect_to_motor()
         while not self.isInterruptionRequested():
             if self.done:
-                # fig = plt.figure()
-                plt.xlabel('motor position')
-                plt.ylabel('I/I0 intensity')
-                plt.plot(self.motor_position, self.ratio_intensity, 'ro')
-                x = [a[0] for a in self.moves]
-                y = [b[1] for b in self.moves]
-                plt.scatter(x, y)
-                plt.show()
-                self.export_data()
-                self.signals.sleepMotor.emit()
+                if len(self.moves) > 4:
+                    x = [a[1] for a in self.moves]
+                    y = [b[0] for b in self.moves]
+                    self.signals.plotMotorMoves.emit(self.motor.position, self.max_value, x, y)
+                    self.clear_data()
+                    self.signals.sleepMotor.emit()
             else:
                 if self.request_new_values and self.got_new_values:
                     self.request_new_values = False
@@ -875,11 +841,6 @@ class MotorThread(QThread):
                     self.request_new_values = True
             time.sleep(1/self.refresh_rate)
         print("Interruption was requested: Motor Thread")
-
-    def export_data(self):
-        # Here is where you would export the data
-        self.clear_data()
-        pass
 
     def clear_data(self):
         self.moves = []

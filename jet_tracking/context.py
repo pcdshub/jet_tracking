@@ -2,7 +2,8 @@ import numpy as np
 import logging
 import yaml
 import threading
-
+import os
+import json
 
 log = logging.getLogger(__name__)
 lock = threading.Lock()
@@ -31,10 +32,10 @@ class Context(object):
         self.display_time = 10
         self.notification_time = 2
         self.manual_motor = True
-        self.high_limit = 50
-        self.low_limit = -50
-        self.step_size = 0.5
-        self.position_tolerance = 0.0005
+        self.high_limit = 0.1
+        self.low_limit = -0.1
+        self.step_size = 0.02
+        self.position_tolerance = 0.005
         self.motor_averaging = 10
         self.algorithm = 'Ternary Search'
         self.motor_running = False
@@ -219,8 +220,8 @@ class Context(object):
         # exp = yml_dict['experiment']
         # run = yml_dict['run']
 
-    def get_cal_results(self, hutch, exp):
-        results_dir = Path(f'/cds/home/opr/{hutch}opr/experiments/{exp}/jt_calib/')
+    def get_cal_results(self):
+        results_dir = Path(f'/cds/home/opr/{self.HUTCH}opr/experiments/{self.EXPERIMENT}/jt_calib/')
         cal_files = list(results_dir.glob('jt_cal*'))
         cal_files.sort(key=os.path.getmtime)
         if cal_files:
@@ -238,7 +239,6 @@ class Context(object):
     def update_tracking(self, tracking):
         self.isTracking = tracking
         self.signals.enableTracking.emit(self.isTracking)
-        self.signals.sleepMotor.emit()
 
     def set_calibrated(self, c):
         self.calibrated = c
