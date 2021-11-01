@@ -6,7 +6,7 @@ import numpy as np
 import collections
 from ophyd import EpicsSignal
 from PyQt5.QtCore import QThread
-#from pcdsdevices.epics_motor import IMS
+from pcdsdevices.epics_motor import IMS
 from sketch.num_gen import SimulationGenerator
 from sketch.motorMoving import MotorAction
 from sketch.sim_motorMoving import SimulatedMotor

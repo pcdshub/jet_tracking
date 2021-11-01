@@ -3,10 +3,12 @@ from PyQt5.QtWidgets import QFrame
 from datastream import StatusThread, MotorThread
 from gui.widgets.controlWidgetUi import Controls_Ui
 import logging
+import numpy as np
 import matplotlib.pyplot as plt
 
 log = logging.getLogger(__name__)
 
+SAVEFOLDER = '/cds/%sopr/experiments/%s/jet_tracking/output_data/'
 
 class ControlsWidget(QFrame, Controls_Ui):
 
@@ -114,7 +116,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.set_tracking_status('disabled', "red")
 
     @staticmethod
-    def plot_motor_moves(position, maximum, positions, intensities):
+    def plot_motor_moves(position, maximum, positions, intensities, save=True):
         fig = plt.figure()
         plt.xlabel('motor position')
         plt.ylabel('I/I0 intensity')
@@ -123,11 +125,12 @@ class ControlsWidget(QFrame, Controls_Ui):
         y = intensities
         plt.scatter(x, y)
         plt.show()
+        if save:
+           filename =  
+           np.
 
     def set_calibration(self):
-        """
-        this function is called when a successful calibration is ran. It updates the display.
-        """
+        """Updates the display when a successful calibration is complete."""
         self.lbl_i0_status.display(self.context.calibration_values['i0']['mean'])
         self.lbl_diff_status.display(self.context.calibration_values['diff']['mean'])
 
