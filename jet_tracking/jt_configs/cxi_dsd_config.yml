@@ -5,7 +5,7 @@ hutch: 'cxi'
 experiment: 'cxix53419'
 run: '1'
 sim: false
-ffb: false
+ffb: true
 event_code: 40 # x-ray on event code
 
 det_map:
@@ -33,7 +33,7 @@ ipm:
   det: 'f_12_ENRC'
 
 jet_cam:
-  name: 'Timetool'
+  name: 'None'
   axis: 1
 
 cal_params:
