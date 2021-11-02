@@ -5,22 +5,24 @@ from scipy import stats
 import numpy as np
 import collections
 from ophyd import EpicsSignal
-#from epics import caget
+from epics import caget
 from PyQt5.QtCore import QThread
-from PyQt5.QtGui import QImage
-#from pcdsdevices.epics_motor import IMS
+from pcdsdevices.epics_motor import IMS
+from PyQt5.QtGui import QImage, qRgb, qGray
 from sketch.num_gen import SimulationGenerator
 from sketch.motorMoving import MotorAction
 from sketch.sim_motorMoving import SimulatedMotor
 from tools.quick_calc import skimmer
 from collections import deque
-
+import cv2
 import threading
+from qimage2ndarray import array2qimage
 
 ologging = logging.getLogger('ophyd')
 ologging.setLevel('DEBUG')
 
 log = logging.getLogger(__name__)
+log.setLevel('DEBUG')
 lock = threading.Lock()
 
 
@@ -689,9 +691,6 @@ class JetImageFeed(QThread):
     def connect_signals(self):
         self.signals.connectCam.connect(self.connect_cam)
 
-    def disconnect_cam(self):
-        self.requestInterruption()
-
     def connect_cam(self):
         self.cam_name = self.context.PV_DICT.get('camera', None)
         self.array_size_x_data = caget(self.cam_name + ':IMAGE1:ArraySize0_RBV')
@@ -707,7 +706,6 @@ class JetImageFeed(QThread):
             self.signals.message.emit("Can't read camera...")
             self.connected = False
         else:
-            image = np.reshape(image, (self.array_size_x_data, self.array_size_y_data))
             self.connected = True
 
     @staticmethod
@@ -722,17 +720,18 @@ class JetImageFeed(QThread):
         return(cam)
 
     def run(self):
-        self.connect_cam()
-        while not self.requestInterruption():
+        while not self.isInterruptionRequested():
             if self.connected:
                 image = caget(self.cam_name + ':IMAGE2:ArrayData')
-                image = self.fix_image(image, self.array_size_x_data, self.array_size_y_data)
-                image = QImage(image, self.array_size_x_data, self.array_size_y_data, QImage.Format_Grayscale8)
-                self.signals.camImage.emit(image)
+                image = self.fix_image(image, self.array_size_x_viewer, self.array_size_y_viewer
+                qimage = array2qimage(image)
+                self.signals.camImage.emit(qimage)
                 time.sleep(1/self.refresh_rate)
             else:
+                print("you are not connected")
                 time.sleep(1/self.refresh_rate)
         print("Interruption was requested: Image Thread")
+
 
 class MotorThread(QThread):
     def __init__(self, context, signals):
@@ -745,7 +744,6 @@ class MotorThread(QThread):
         self.done = False
         self.motor_name = ''
         self.motor = None
-        self.motor_options = {}
         self.live = True
         self.calibration_values = {}
         self.algorithm = ''
@@ -803,6 +801,16 @@ class MotorThread(QThread):
             self.motor = SimulatedMotor(self.context, self.signals)
             pass
 
+    def clear_values(self):
+        self.moves = []
+        self.done = False
+        self.request_new_values = False
+        self.got_new_values = False
+        self.good_edge_points = []
+        self.bad_edge_points = []
+        self.sweet_spot = []
+        self.max_value = 0
+
     def impart_knowledge(self, info):
         # ["resume", "everything is good", "you downgraded", "you upgraded", "pause", "missed shots", "high intensity"]
         print(info)
@@ -853,8 +861,7 @@ class MotorThread(QThread):
 
     def run(self):
         self.connect_to_motor()
-        self.moves = []
-        self.done = False
+        self.clear_values()
         while not self.isInterruptionRequested():
             if self.done:
                 if len(self.moves) > 4:
@@ -863,6 +870,8 @@ class MotorThread(QThread):
                     self.signals.plotMotorMoves.emit(self.motor.position, self.max_value, x, y)
                     print("go to sleep now..")
                     time.sleep(2)
+                    self.signals.message.emit(f"Found peak intensity {self.max_value} "
+                                              f"at motor position: {self.motor.position}")
                     self.signals.sleepMotor.emit()
             else:
                 if self.request_new_values and self.got_new_values:

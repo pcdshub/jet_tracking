@@ -16,12 +16,13 @@ class Context(object):
         self.signals = signals
         self.JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
         self.SD_LOC = '/reg/d/psdm/'
+        self.SAVEFOLDER = '/cds/%sopr/experiments/%s/jet_tracking/output_data/'
         self.PV_DICT = {'diff': 'CXI:JTRK:REQ:DIFF_INTENSITY',
                         'i0': 'CXI:JTRK:REQ:I0',
                         'ratio': 'CXI:JTRK:REQ:RATIO',
                         'dropped': 'CXI:JTRK:REQ:DROPPED',
                         'camera': 'CXI:SC1:INLINE',
-                        'motor': 'CXI:PI3:MMS:01'}
+                        'motor': 'CXI:PI3:MMS:04'}
         self.CFG_FILE = 'jt_configs/cxi_config.yml'
         self.HUTCH = 'cxi'
         self.EXPERIMENT = 'cxix53419'

@@ -87,7 +87,7 @@ class BasicScan(object):
         print(self.motor_thread.moves[-1][1] + self.step_size, self.hl)
         if self.motor_thread.moves[-1][1] + self.step_size < self.hl:
             position = self.ll + (self.step*self.step_size)
-            self.motor_thread.motor.move(position, wait=False)
+            self.motor_thread.motor.move(position, wait=True)
             self.step += 1
         else:
             moves_reorg = list(map(list, (zip(*self.motor_thread.moves))))
@@ -96,14 +96,14 @@ class BasicScan(object):
             index = intensities.index(self.max_value)
             max_location = moves_reorg[1][index]
             if self.max_value > self.original_intensity:
-                self.motor_thread.motor.move(max_location, wait=False)
+                self.motor_thread.motor.move(max_location, wait=True)
                 self.done = True
                 self.beginning = True
             else:
                 self.step_size = self.step_size - 0.005
                 if self.step_size < 0.001: # for CXI - should not get any smaller than 1/5 size of jet
                     self.signals.message.emit("Did not find a better value, returning to original position")
-                    self.motor_thread.motor.move(self.original_position, wait=False)
+                    self.motor_thread.motor.move(self.original_position, wait=True)
                     self.done = True
                     self.beginning = True
                 else:
@@ -178,17 +178,17 @@ class TernarySearch(object):
 
     def check_if_done(self):
         if abs(self.high - self.low) < self.motor_thread.tolerance:
-            self.motor_thread.motor.move((self.high + self.low)*0.5, wait=False)
+            self.motor_thread.motor.move((self.high + self.low)*0.5, wait=True)
             self.done = True
             self.beginning = True
 
     def move_to_mid1(self):
         """Move toward low limit"""
-        self.motor_thread.motor.move(self.mid1, wait=False)
+        self.motor_thread.motor.move(self.mid1, wait=True)
 
     def move_to_mid2(self):
         """Move toward high limit"""
-        self.motor_thread.motor.move(self.mid2, wait=False)
+        self.motor_thread.motor.move(self.mid2, wait=True)
 
     def compare_and_move(self):
         i1 = self.motor_thread.moves[-2][0]

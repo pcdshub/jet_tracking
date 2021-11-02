@@ -3,13 +3,13 @@ from PyQt5.QtWidgets import QFrame
 from datastream import StatusThread, MotorThread
 from gui.widgets.controlWidgetUi import Controls_Ui
 import logging
+import numpy as np
 import matplotlib.pyplot as plt
 
 log = logging.getLogger(__name__)
 
 
 class ControlsWidget(QFrame, Controls_Ui):
-
     def __init__(self, context, signals):
         super(ControlsWidget, self).__init__()
         log.info("Main Thread: %d" % QThread.currentThreadId())
@@ -115,8 +115,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.context.set_tracking(False)
             self.set_tracking_status('disabled', "red")
 
-    @staticmethod
-    def plot_motor_moves(position, maximum, positions, intensities):
+    def plot_motor_moves(self, position, maximum, positions, intensities, save=False):
         fig = plt.figure()
         plt.xlabel('motor position')
         plt.ylabel('I/I0 intensity')
@@ -125,11 +124,18 @@ class ControlsWidget(QFrame, Controls_Ui):
         y = intensities
         plt.scatter(x, y)
         plt.show()
+        if save:
+            folder = self.context.SAVEFOLDER.format(self.context.HUTCH, self.context.EXPERIMENT)
+            plotfile = folder+f'/motor_figure_%s.png'
+            datafile = folder+f'/motor_data_%s.csv'
+            try:
+                plt.savefig(plotfile)
+                np.savetxt(datafile, *[positions, intensities])
+            except:
+                log.warning("Saving files failed!")
 
     def set_calibration(self):
-        """
-        this function is called when a successful calibration is ran. It updates the display.
-        """
+        """Updates the display when a successful calibration is complete."""
         self.lbl_i0_status.display(self.context.calibration_values['i0']['mean'])
         self.lbl_diff_status.display(self.context.calibration_values['diff']['mean'])
 
@@ -168,9 +174,11 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.rdbttn_manual.click()
             self.rdbttn_auto.setEnabled(False)
             self.context.update_live_graphing(False)
+            self.context.update_live_motor(False)
         elif bttn == "live data":
             self.rdbttn_auto.setEnabled(True)
             self.context.update_live_graphing(True)
+            self.context.update_live_motor(True)
         elif bttn == "manual \nmotor moving":
             self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(False)
