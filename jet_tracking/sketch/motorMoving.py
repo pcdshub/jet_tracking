@@ -61,7 +61,7 @@ class BasicScan(object):
         self.ll = float(self.motor_thread.low_limit)
         self.hl = float(self.motor_thread.high_limit)
         self.done = False
-        self.step = 0
+        self.step = 1
         self.num_tries = 1
 
     def check_motor_options(self):
@@ -72,12 +72,15 @@ class BasicScan(object):
     def start_fresh(self):
         if self.beginning:
             self.done = False
-            self.step = 0
+            self.step = 1
             self.num_tries = 1
             self.max_value = 0
             self.original_intensity = self.motor_thread.moves[-1][0]
             self.original_position = self.motor_thread.moves[-1][1]
+            self.motor_thread.motor.move(self.ll, wait=True)
             self.beginning = False
+        elif self.step == 1 and not self.beginning:
+            self.motor_thread.motor.move(self.ll, wait=True)
 
     def scan(self):
         """does a basic scan from the low limit to one step below the high limit
@@ -85,11 +88,11 @@ class BasicScan(object):
         self.check_motor_options()
         self.start_fresh()
         print(self.motor_thread.moves[-1][1] + self.step_size, self.hl)
-        if self.motor_thread.moves[-1][1] + self.step_size < self.hl:
+        if self.motor_thread.moves[-1][1] + self.step_size < self.hl and not self.beginning:
             position = self.ll + (self.step*self.step_size)
             self.motor_thread.motor.move(position, wait=True)
             self.step += 1
-        else:
+        elif self.motor_thread.moves[-1][1] + self.step_size > self.hl and not self.beginning:
             moves_reorg = list(map(list, (zip(*self.motor_thread.moves))))
             intensities = moves_reorg[0]
             self.max_value = max(intensities)
@@ -109,7 +112,7 @@ class BasicScan(object):
                 else:
                     self.num_tries += 1
                     self.signals.message.emit(f"Trying linear scan again, Try {self.num_tries}... 0.005 mm smaller step size")
-                    self.step = 0
+                    self.step = 1
 
 
 class TernarySearch(object):

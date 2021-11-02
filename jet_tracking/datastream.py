@@ -723,7 +723,7 @@ class JetImageFeed(QThread):
         while not self.isInterruptionRequested():
             if self.connected:
                 image = caget(self.cam_name + ':IMAGE2:ArrayData')
-                image = self.fix_image(image, self.array_size_x_viewer, self.array_size_y_viewer
+                image = self.fix_image(image, self.array_size_x_viewer, self.array_size_y_viewer)
                 qimage = array2qimage(image)
                 self.signals.camImage.emit(qimage)
                 time.sleep(1/self.refresh_rate)
@@ -850,7 +850,7 @@ class MotorThread(QThread):
 
     def average_intensity(self):
         self.intensities += [self.vals['ratio']]
-        if len(self.intensities) == 5:
+        if len(self.intensities) == 7:
             self.check_motor_options()
             print(self.moves)
             self.moves.append([mean(self.intensities), self.motor.position])  # this should be the same either way
