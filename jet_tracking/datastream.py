@@ -5,7 +5,7 @@ from scipy import stats
 import numpy as np
 import collections
 from ophyd import EpicsSignal
-from epics import caget
+#from epics import caget
 from PyQt5.QtCore import QThread
 from PyQt5.QtGui import QImage
 #from pcdsdevices.epics_motor import IMS
@@ -725,7 +725,7 @@ class JetImageFeed(QThread):
         self.connect_cam()
         while not self.requestInterruption():
             if self.connected:
-                image = caget(self.cam_name + ':IMAGE1:ArrayData')
+                image = caget(self.cam_name + ':IMAGE2:ArrayData')
                 image = self.fix_image(image, self.array_size_x_data, self.array_size_y_data)
                 image = QImage(image, self.array_size_x_data, self.array_size_y_data, QImage.Format_Grayscale8)
                 self.signals.camImage.emit(image)
