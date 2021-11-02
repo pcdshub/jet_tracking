@@ -8,19 +8,21 @@ from ophyd import EpicsSignal
 from epics import caget
 from PyQt5.QtCore import QThread
 from pcdsdevices.epics_motor import IMS
-from PyQt5.QtGui import QImage
+from PyQt5.QtGui import QImage, qRgb, qGray
 from sketch.num_gen import SimulationGenerator
 from sketch.motorMoving import MotorAction
 from sketch.sim_motorMoving import SimulatedMotor
 from tools.quick_calc import skimmer
 from collections import deque
-
+import cv2
 import threading
+from qimage2ndarray import array2qimage
 
 ologging = logging.getLogger('ophyd')
 ologging.setLevel('DEBUG')
 
 log = logging.getLogger(__name__)
+log.setLevel('DEBUG')
 lock = threading.Lock()
 
 
@@ -689,10 +691,8 @@ class JetImageFeed(QThread):
     def connect_signals(self):
         self.signals.connectCam.connect(self.connect_cam)
 
-    def disconnect_cam(self):
-        self.requestInterruption()
-
     def connect_cam(self):
+#        log.debug('connect_cam started. Connected = %b', self.connected)
         self.cam_name = self.context.PV_DICT.get('camera', None)
         self.array_size_x_data = caget(self.cam_name + ':IMAGE1:ArraySize0_RBV')
         self.array_size_y_data = caget(self.cam_name + ':IMAGE1:ArraySize1_RBV')
@@ -709,6 +709,8 @@ class JetImageFeed(QThread):
         else:
             image = np.reshape(image, (self.array_size_x_data, self.array_size_y_data))
             self.connected = True
+#        log.debug('connect_cam finished. Connected = %b', self.connected)
+#        print(image)
 
     @staticmethod
     def fix_image(im, x, y):
@@ -722,15 +724,31 @@ class JetImageFeed(QThread):
         return(cam)
 
     def run(self):
-        self.connect_cam()
-        while not self.requestInterruption():
+        while not self.isInterruptionRequested():
             if self.connected:
-                image = caget(self.cam_name + ':IMAGE1:ArrayData')
-                image = self.fix_image(image, self.array_size_x_data, self.array_size_y_data)
-                image = QImage(image, self.array_size_x_data, self.array_size_y_data, QImage.Format_Grayscale8)
-                self.signals.camImage.emit(image)
+                image = caget(self.cam_name + ':IMAGE2:ArrayData')
+                image = self.fix_image(image, self.array_size_x_viewer, self.array_size_y_viewer)
+                #image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+                w = self.array_size_x_viewer
+                h = self.array_size_y_viewer
+#                print('IMAGE2')
+#                print(image[10][10])
+                qimage = array2qimage(image)
+#                qimage = QImage(image, w, h, w, QImage.Format_RGB888)
+#                qimage = QImage(image, w, h, 2*w, QImage.Format_Grayscale8)
+#                qimage = QImage(image, w, h, 2*w, QImage.Format_Indexed8)
+#                qimage = QImage(w, h, QImage.Format_RGB32)
+#                for i in range(256):
+#                    qimage.setColor(i, qRgb(i, i, i))
+#                for i in w:
+#                    for j in h:
+#                        qimage.
+                self.signals.camImage.emit(qimage)
+#                print('IMAGE object')
+#                print(qGray(qimage.pixel(10,10)))
                 time.sleep(1/self.refresh_rate)
             else:
+                print("you are not connected")
                 time.sleep(1/self.refresh_rate)
         print("Interruption was requested: Image Thread")
 

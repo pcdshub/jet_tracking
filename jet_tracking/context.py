@@ -28,7 +28,7 @@ class Context(object):
         self.live_data = True
         self.calibration_source = "calibration from results"
         self.percent = 50
-        self.refresh_rate = 5
+        self.refresh_rate = 1#5
         self.graph_ave_time = 2
         self.display_time = 10
         self.notification_time = 2
