@@ -36,7 +36,7 @@ class EditorWidget(QFrame, Editor_Ui):
         self.rd_bttn_erode.clicked.connect(self.erode_off_on)
         self.rd_bttn_open.clicked.connect(self.open_off_on)
         self.rd_bttn_close.clicked.connect(self.close_off_on)
-        #self.slider_dilate.sliderMoved.connect(
+        #self.slider_dilate.sliderMoved.connect(self.set_dilate)
 
     def start_cam(self):
         self.context.open_cam_connection()
@@ -48,6 +48,9 @@ class EditorWidget(QFrame, Editor_Ui):
     def stop_cam(self):
         self.image_stream.requestInterruption()
         self.image_stream.wait()
+
+#    def set_dilate(self, v):
+        
 
 #    def adjust_image_dilation_erosion(self, v):
 #        if self.imgray != []:

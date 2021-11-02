@@ -117,8 +117,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.context.set_tracking(False)
             self.set_tracking_status('disabled', "red")
 
-    @staticmethod
-    def plot_motor_moves(position, maximum, positions, intensities, save=True):
+    def plot_motor_moves(self, position, maximum, positions, intensities, save=True):
         fig = plt.figure()
         plt.xlabel('motor position')
         plt.ylabel('I/I0 intensity')
