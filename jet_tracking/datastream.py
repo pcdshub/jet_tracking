@@ -5,9 +5,9 @@ from scipy import stats
 import numpy as np
 import collections
 from ophyd import EpicsSignal
-#from epics import caget
+from epics import caget
 from PyQt5.QtCore import QThread
-#from pcdsdevices.epics_motor import IMS
+from pcdsdevices.epics_motor import IMS
 from PyQt5.QtGui import QImage, qRgb, qGray
 from sketch.num_gen import SimulationGenerator
 from sketch.motorMoving import MotorAction
@@ -679,21 +679,20 @@ class JetImageFeed(QThread):
         self.cam_name = ''
         self.dilate = None
         self.erode = None
-        self.open = None
+        self.opene = None
         self.close = None
         self.contrast = None
         self.brightness = None
         self.blur = None
         self.left_threshold = None
         self.right_threshold = None
-        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2)
+        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
         self.array_size_x_data = 0
         self.array_size_y_data = 0
         self.array_size_x_viewer = 0
         self.array_size_y_viewer = 0
         self.cam_array = ''
         self.refresh_rate = self.context.cam_refresh_rate
-        self.editor = {}
         self.signal_cam = None
         self.connected = False
         self.connect_signals()
@@ -727,7 +726,7 @@ class JetImageFeed(QThread):
     def update_editor_vals(self, e):
         self.dilate = e['dilate'][-1]
         self.erode = e['erode'][-1]
-        self.open = e['open'][-1]
+        self.opene = e['open'][-1]
         self.close = e['close'][-1]
         self.contrast = e['contrast'][-1]
         self.brightness = e['brightness'][-1]
@@ -740,8 +739,8 @@ class JetImageFeed(QThread):
             im = cv2.dilate(im, self.kernel, iterations=self.dilate)
         if self.erode:
             im = cv2.erode(im, self.kernel, iterations=self.erode)
-        if self.open:
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.open, self.open))
+        if self.opene:
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.opene, self.opene))
             im = cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
         if self.close:
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.close, self.close))
