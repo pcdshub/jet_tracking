@@ -15,6 +15,7 @@ following functions:
 *
 """
 
+import numpy as np
 import logging
 logger = logging.getLogger(__name__)
 
@@ -109,8 +110,8 @@ class BasicScan(object):
                 self.beginning = True
                 print("Over original, done!")
             else:
-                self.step_size = self.step_size - 0.01
-                if self.step_size <= 0.01: # for CXI - should not get any smaller than 1/5 size of jet
+                self.step_size = self.step_size - 0.02
+                if self.step_size <= 0.02: # for CXI - should not get any smaller than 1/5 size of jet
                     self.signals.message.emit("Did not find a better value, returning to original position")
                     print("Did not find a better value, returning to original position")
                     self.motor_thread.motor.move(self.original_position, wait=True)
@@ -143,6 +144,8 @@ class TernarySearch(object):
     def check_motor_options(self):
         self.abs_ll = float(self.motor_thread.low_limit)
         self.abs_hl = float(self.motor_thread.high_limit)
+        self.abs_ll = min(self.abs_ll, self.abs_hl)
+        self.abs_hl = max(self.abs_ll, self.abs_hl)
         self.tolerance = self.motor_thread.tolerance
         if self.beginning:
             self.low = self.abs_ll
@@ -154,9 +157,9 @@ class TernarySearch(object):
             low = self.abs_ll
         if high > self.abs_hl:
             high = self.abs_hl
-        print(low, high, abs(high-low))
-        self.mid1 = ((low + (high - low)) / 3.0) + low
-        self.mid2 = ((high - (high - low)) / 3.0) + high
+        print(low, high, abs(high - low))
+        self.mid1 = low + abs(high - low) / 3.0
+        self.mid2 = high - abs(high - low) / 3.0
         print(self.mid1, self.mid2)
 
     def compare_to_old(self):

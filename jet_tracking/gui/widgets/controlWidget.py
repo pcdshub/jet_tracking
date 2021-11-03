@@ -38,7 +38,6 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.cbox_algorithm.setCurrentText(self.context.algorithm)
 
     def make_connections(self):
-
         self.le_percent.checkVal.connect(self.context.update_percent)
         self.le_refresh_rate.checkVal.connect(self.context.update_refresh_rate)
         self.le_ave_graph.checkVal.connect(self.context.update_graph_averaging)
@@ -112,7 +111,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.worker_motor.requestInterruption()
             self.worker_motor.wait()
         if self.sender() is self.bttn_stop_motor:
-            self.context.set_tracking(False)
+            self.context.update_tracking(False)
             self.set_tracking_status('disabled', "red")
 
     def plot_motor_moves(self, position, maximum, positions, intensities, save=False):

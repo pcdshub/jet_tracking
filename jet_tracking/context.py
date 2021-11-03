@@ -37,7 +37,7 @@ class Context(object):
         self.high_limit = 0.1
         self.low_limit = -0.1
         self.step_size = 0.02
-        self.position_tolerance = 0.005
+        self.position_tolerance = 0.001
         self.motor_averaging = 10
         self.algorithm = 'Ternary Search'
         self.motor_running = False
