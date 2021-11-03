@@ -67,10 +67,12 @@ class BasicScan(object):
     def check_motor_options(self):
         self.ll = float(self.motor_thread.low_limit)
         self.hl = float(self.motor_thread.high_limit)
-        self.step_size = self.motor_thread.step_size
+        if self.num_tries == 1:
+            self.step_size = self.motor_thread.step_size
 
     def start_fresh(self):
         if self.beginning:
+            print('Resettting values...')
             self.done = False
             self.step = 1
             self.num_tries = 1
@@ -80,6 +82,7 @@ class BasicScan(object):
             self.motor_thread.motor.move(self.ll, wait=True)
             self.beginning = False
         elif self.step == 1 and not self.beginning:
+            print('Restarting without resetting values...')
             self.motor_thread.motor.move(self.ll, wait=True)
 
     def scan(self):
@@ -87,31 +90,36 @@ class BasicScan(object):
         in steps if step_size"""
         self.check_motor_options()
         self.start_fresh()
-        print(self.motor_thread.moves[-1][1] + self.step_size, self.hl)
+        print(f"next position: {self.motor_thread.moves[-1][1] + self.step_size}, limit:{self.hl}")
         if self.motor_thread.moves[-1][1] + self.step_size < self.hl and not self.beginning:
             position = self.ll + (self.step*self.step_size)
             self.motor_thread.motor.move(position, wait=True)
             self.step += 1
+            print("next step")
         elif self.motor_thread.moves[-1][1] + self.step_size > self.hl and not self.beginning:
             moves_reorg = list(map(list, (zip(*self.motor_thread.moves))))
             intensities = moves_reorg[0]
             self.max_value = max(intensities)
             index = intensities.index(self.max_value)
             max_location = moves_reorg[1][index]
+            print(f"max value: {self.max_value}, original_intensity: {self.original_intensity}")
             if self.max_value > self.original_intensity:
                 self.motor_thread.motor.move(max_location, wait=True)
                 self.done = True
                 self.beginning = True
+                print("Over original, done!")
             else:
-                self.step_size = self.step_size - 0.005
-                if self.step_size < 0.001: # for CXI - should not get any smaller than 1/5 size of jet
+                self.step_size = self.step_size - 0.01
+                if self.step_size <= 0.01: # for CXI - should not get any smaller than 1/5 size of jet
                     self.signals.message.emit("Did not find a better value, returning to original position")
+                    print("Did not find a better value, returning to original position")
                     self.motor_thread.motor.move(self.original_position, wait=True)
                     self.done = True
                     self.beginning = True
                 else:
                     self.num_tries += 1
                     self.signals.message.emit(f"Trying linear scan again, Try {self.num_tries}... 0.005 mm smaller step size")
+                    print(f"Trying linear scan again, Try {self.num_tries}... 0.005 mm smaller step size")
                     self.step = 1
 
 

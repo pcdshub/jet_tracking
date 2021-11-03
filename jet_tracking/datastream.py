@@ -160,6 +160,8 @@ class StatusThread(QThread):
         self.x_axis = []
         self.calibrated = False
         self.isTracking = False
+        self.badScanCounter = 0
+        self.badScanLimit = 2
         self.mode = ''
         self.status = ''
         self.display_flag = []
@@ -603,8 +605,13 @@ class StatusThread(QThread):
  
     def missed_shots(self):
         if self.isTracking and not self.context.motor_running:
-            self.signals.message.emit("lots of missed shots.. starting motor")
-            self.signals.wakeMotor.emit()
+            if self.badScanCounter < self.badScanLimit:
+                self.signals.message.emit("lots of missed shots.. starting motor")
+                self.signals.wakeMotor.emit()
+                self.badScanCounter += 1
+            else:
+                self.signals.enableTracking.emit(False)
+                self.signals.trackingStatus.emit('disabled', "red")
         elif not self.isTracking and not self.context.motor_running:
             self.signals.message.emit("lots of missed shots.. consider running a search")
         if self.context.motor_running:
@@ -623,6 +630,7 @@ class StatusThread(QThread):
         self.status = "dropped shots"
 
     def high_intensity(self):
+        self.badScanCounter = 0
         if self.context.motor_running:
             if self.status == "dropped shots":
                 self.notifyMotor("resume")
@@ -633,6 +641,7 @@ class StatusThread(QThread):
         self.status = "high intensity"
 
     def everything_is_good(self):
+        self.badScanCounter = 0
         self.processor_worker.stop_count()
         if self.context.motor_running:
             if self.status == "dropped shots":
@@ -869,7 +878,7 @@ class MotorThread(QThread):
                     y = [b[0] for b in self.moves]
                     self.signals.plotMotorMoves.emit(self.motor.position, self.max_value, x, y)
                     print("go to sleep now..")
-                    time.sleep(2)
+                    time.sleep(7)
                     self.signals.message.emit(f"Found peak intensity {self.max_value} "
                                               f"at motor position: {self.motor.position}")
                     self.signals.sleepMotor.emit()
