@@ -123,8 +123,8 @@ class MpiWorker(object):
 
     def start_run(self):
         """Worker should handle any calculations"""
-        run = next(ds.runs()).run()
-        psana_mask = detector.mask(int(run), calib=True, status=True, edges=True, central=False, unbond=False, unbondnbrs=False)
+        run = next(self._ds.runs()).run()
+        psana_mask = self.detector.mask(int(run), calib=True, status=True, edges=True, central=False, unbond=False, unbondnbrs=False)
         for evt_idx, evt in enumerate(self.ds.events()):
             # Definitely not a fan of wrapping the world in a try/except
             # but too many possible failure modes from the data
