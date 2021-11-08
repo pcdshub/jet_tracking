@@ -1,5 +1,6 @@
 #!/bin/bash
 
+umask 0002
 usage()
 {
 cat << EOF
@@ -47,7 +48,7 @@ PROC=${PROC:='2'}
 #cd /cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking/mpi_scripts
 #pythonpathmunge '/cds/group/pcds/epics-dev/aegger/jet_tracking/jet_tracking'
 #CONFIG=${CONFIG:=$MYDIR/jt_configs/xcs_config.yml}
-CONFIG=${CONFIG:=$MYDIR/jt_configs/cxi_dsd_config.yml}
+CONFIG=${CONFIG:=$MYDIR/jt_configs/cxi_config.yml}
 
 echo $CONFIG
 
