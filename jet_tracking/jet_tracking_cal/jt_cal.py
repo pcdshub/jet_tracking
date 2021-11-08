@@ -376,6 +376,7 @@ if __name__ == '__main__':
     # Get the detectors from the config
     try:
         detector = psana.Detector(det_map['name'])
+        psana_mask = detector.mask(int(run), calib=True, status=True, edges=True, central=False, unbond=False, unbondnbrs=False)
         ipm = psana.Detector(ipm_name)
         if jet_cam_name is not None:
             jet_cam = psana.Detector(jet_cam_name)
@@ -398,6 +399,7 @@ if __name__ == '__main__':
             #        continue
             # Get image and azav
             calib = detector.calib(evt)
+            calib = calib * psana_mask
             det_image = detector.image(evt, calib)
             azav = np.array([np.mean(det_image[mask]) for mask in masks])
             
