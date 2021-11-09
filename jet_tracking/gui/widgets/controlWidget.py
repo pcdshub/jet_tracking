@@ -60,6 +60,8 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.signals.changeStatus.connect(self.set_monitor_status)
         self.signals.changeCalibrationDisplay.connect(self.set_calibration)
 
+        self.signals.changeMotorPosition.connect(self.update_motor)
+
         self.signals.wakeMotor.connect(self._start_motor)
         self.signals.sleepMotor.connect(self._stop_motor)
         self.signals.message.connect(self.receive_message)
@@ -137,6 +139,9 @@ class ControlsWidget(QFrame, Controls_Ui):
         """Updates the display when a successful calibration is complete."""
         self.lbl_i0_status.display(self.context.calibration_values['i0']['mean'])
         self.lbl_diff_status.display(self.context.calibration_values['diff']['mean'])
+    
+    def update_motor(self, mp):
+        self.lbl_motor_status.display(mp)
 
     def clearLayout(self, layout):
         for i in reversed(range(layout.count())):

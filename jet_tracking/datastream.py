@@ -859,7 +859,8 @@ class MotorThread(QThread):
 
     def average_intensity(self):
         self.intensities += [self.vals['ratio']]
-        if len(self.intensities) == 7:
+# this is where we set the integration time for each motor position in the scan
+        if len(self.intensities) == 20:
             self.check_motor_options()
             print(self.moves)
             self.moves.append([mean(self.intensities), self.motor.position])  # this should be the same either way
