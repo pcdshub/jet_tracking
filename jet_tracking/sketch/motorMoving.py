@@ -188,13 +188,12 @@ class BasicScan(object):
         if self.beginning:
             print('Resettting values...')
             self.done = False
-            self.step = 1
+            self.step = 0
             self.num_tries = 1
             self.max_value = 0
             self.original_intensity = self.motor_thread.moves[-1][0]
             self.original_position = self.motor_thread.moves[-1][1]
             self.motor_thread.motor.move(self.ll, wait=True)
-            self.beginning = False
         elif self.step == 1 and not self.beginning:
             print('Restarting without resetting values...')
             self.motor_thread.motor.move(self.ll, wait=True)
@@ -205,7 +204,10 @@ class BasicScan(object):
         self.check_motor_options()
         self.start_fresh()
         print(f"next position: {self.motor_thread.moves[-1][1] + self.step_size}, limit:{self.hl}")
-        if self.motor_thread.moves[-1][1] + self.step_size < self.hl and not self.beginning:
+        if self.step == 0:
+            self.step += 1
+            return
+        elif self.motor_thread.moves[-1][1] + self.step_size < self.hl and not self.beginning:
             position = self.ll + (self.step*self.step_size)
             self.motor_thread.motor.move(position, wait=True)
             self.signals.changeMotorPosition.emit(position)

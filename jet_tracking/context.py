@@ -69,11 +69,6 @@ class Context(object):
 
         self.cam_refresh_rate = 3
 
-        # added while adding simulator
-    def update_motor_position(self, mp):
-        self.motor_position = mp
-        self.signals.changeMotorPosition.emit(self.motor_position)
-
     def update_motor_running(self, running):
         self.motor_running = running
 
