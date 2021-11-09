@@ -686,7 +686,7 @@ class JetImageFeed(QThread):
         self.blur = None
         self.left_threshold = None
         self.right_threshold = None
-        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2)
+        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
         self.array_size_x_data = 0
         self.array_size_y_data = 0
         self.array_size_x_viewer = 0
