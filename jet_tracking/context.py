@@ -5,6 +5,7 @@ import threading
 import os
 import json
 from pathlib import Path
+from argparse import ArgumentParser
 
 log = logging.getLogger(__name__)
 lock = threading.Lock()
@@ -207,7 +208,6 @@ class Context(object):
         sends the string to the motor thread
         """
         self.algorithm = a
-        self.signals.changeAlgorithm.emit(self.algorithm)
 
     def parse_config(self):
         with open(self.CFG_FILE) as f:
