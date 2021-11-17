@@ -202,7 +202,6 @@ class Context(object):
         sends the string to the motor thread
         """
         self.algorithm = a
-        self.signals.changeAlgorithm.emit(self.algorithm)
 
     def parse_config(self):
         with open(self.CFG_FILE) as f:
