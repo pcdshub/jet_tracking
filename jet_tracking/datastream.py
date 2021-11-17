@@ -686,19 +686,29 @@ class JetImageFeed(QThread):
         self.signals = signals
         self.context = context
         self.cam_name = ''
+        self.dilate = None
+        self.erode = None
+        self.opene = None
+        self.close = None
+        self.contrast = None
+        self.brightness = None
+        self.blur = None
+        self.left_threshold = None
+        self.right_threshold = None
+        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
         self.array_size_x_data = 0
         self.array_size_y_data = 0
         self.array_size_x_viewer = 0
         self.array_size_y_viewer = 0
         self.cam_array = ''
         self.refresh_rate = self.context.cam_refresh_rate
-        self.editor = {}
         self.signal_cam = None
         self.connected = False
         self.connect_signals()
 
     def connect_signals(self):
         self.signals.connectCam.connect(self.connect_cam)
+        self.signals.imageProcessing.connect(self.update_editor_vals)
 
     def connect_cam(self):
         self.cam_name = self.context.PV_DICT.get('camera', None)
@@ -723,16 +733,42 @@ class JetImageFeed(QThread):
         return im
 
     def update_editor_vals(self, e):
-        self.editor = e
+        self.dilate = e['dilate'][-1]
+        self.erode = e['erode'][-1]
+        self.opene = e['open'][-1]
+        self.close = e['close'][-1]
+        self.contrast = e['contrast'][-1]
+        self.brightness = e['brightness'][-1]
+        self.blur = e['blur'][-1]
+        self.left_threshold = e['left threshold'][-1]
+        self.right_threshold = e['right threshold'][-1]
 
-    def editor(self, cam):
-        return(cam)
+    def editor(self, im):
+        if self.dilate:
+            im = cv2.dilate(im, self.kernel, iterations=self.dilate)
+        if self.erode:
+            im = cv2.erode(im, self.kernel, iterations=self.erode)
+        if self.opene:
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.opene, self.opene))
+            im = cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
+        if self.close:
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.close, self.close))
+            im = cv2.morphologyEx(im, cv2.MORPH_CLOSE, kernel)
+        if self.contrast:
+            pass
+        if self.brightness:
+            pass
+        if self.blur:
+            pass
+        ret, im = cv2.threshold(im, self.left_threshold, self.right_threshold, cv2.THRESH_BINARY)
+        return(im)
 
     def run(self):
         while not self.isInterruptionRequested():
             if self.connected:
                 image = caget(self.cam_name + ':IMAGE2:ArrayData')
                 image = self.fix_image(image, self.array_size_x_viewer, self.array_size_y_viewer)
+                image = self.editor(image)
                 qimage = array2qimage(image)
                 self.signals.camImage.emit(qimage)
                 time.sleep(1/self.refresh_rate)

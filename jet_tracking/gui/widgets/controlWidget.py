@@ -170,6 +170,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.worker_motor = None
 
     def update_limits(self, limit):
+        print(self.le_motor_hl.text(), self.le_motor_ll.text())
         self.context.update_limits(float(self.le_motor_hl.text()), float(self.le_motor_ll.text()))
 
     def receive_message(self, message):

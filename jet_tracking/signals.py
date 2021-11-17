@@ -88,6 +88,9 @@ class Signals(QtCore.QObject):
     # emit in controlWidget
     # connect in all motor algorithms
     endEarly = QtCore.pyqtSignal()
+    # emit in editorwidget
+    # connect in jetimagefeed
+    imageProcessing = QtCore.pyqtSignal(dict)
 
     # added when adding simulator
     update = QtCore.pyqtSignal(dict)
@@ -126,5 +129,5 @@ class Signals(QtCore.QObject):
     # connect in jetImageWidget
     updateImage = QtCore.pyqtSignal(np.ndarray)
     # emit in simcontrolwidget
-    #cconnect in controlwidget
+    # connect in controlwidget
     trackingStatus = QtCore.pyqtSignal(str, str)
