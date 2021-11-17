@@ -5,10 +5,9 @@ from scipy import stats
 import numpy as np
 import collections
 from ophyd import EpicsSignal
-#from epics import caget
+from epics import caget
 from PyQt5.QtCore import QThread
-#from pcdsdevices.epics_motor import IMS
-from PyQt5.QtGui import QImage, qRgb, qGray
+from pcdsdevices.epics_motor import IMS
 from sketch.num_gen import SimulationGenerator
 from sketch.motorMoving import MotorAction
 from sketch.sim_motorMoving import SimulatedMotor
@@ -712,15 +711,15 @@ class JetImageFeed(QThread):
 
     def connect_cam(self):
         self.cam_name = self.context.PV_DICT.get('camera', None)
-        #self.array_size_x_data = caget(self.cam_name + ':IMAGE1:ArraySize0_RBV')
-        #self.array_size_y_data = caget(self.cam_name + ':IMAGE1:ArraySize1_RBV')
-        #self.array_size_x_viewer = caget(self.cam_name + ':IMAGE2:ArraySize0_RBV')
-        #self.array_size_y_viewer = caget(self.cam_name + ':IMAGE2:ArraySize1_RBV')
+        self.array_size_x_data = caget(self.cam_name + ':IMAGE1:ArraySize0_RBV')
+        self.array_size_y_data = caget(self.cam_name + ':IMAGE1:ArraySize1_RBV')
+        self.array_size_x_viewer = caget(self.cam_name + ':IMAGE2:ArraySize0_RBV')
+        self.array_size_y_viewer = caget(self.cam_name + ':IMAGE2:ArraySize1_RBV')
         if self.array_size_x_data != self.array_size_x_viewer or \
                 self.array_size_y_data != self.array_size_y_viewer:
             self.signals.message.emit("ROI defined with markers in canViewer won't make sense because of "
                                       "different resolutions between the camera and camViewer")
-        #image = caget(self.cam_name + ':IMAGE1:ArrayData')
+        image = caget(self.cam_name + ':IMAGE1:ArrayData')
         if len(image) == 0:
             self.signals.message.emit("Can't read camera...")
             self.connected = False
