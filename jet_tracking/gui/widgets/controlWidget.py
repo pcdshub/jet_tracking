@@ -53,6 +53,7 @@ class ControlsWidget(QFrame, Controls_Ui):
 
         self.bttn_connect_motor.clicked.connect(self.context.connect_motor)
         self.bttn_search.clicked.connect(self._start_motor)
+        self.bttn_stop_current_scan.clicked.connect(self._stop_scanning)
         self.bttn_tracking.clicked.connect(self._enable_tracking)
         self.bttn_stop_motor.clicked.connect(self._stop_motor)
         self.signals.trackingStatus.connect(self.set_tracking_status)
@@ -115,6 +116,12 @@ class ControlsWidget(QFrame, Controls_Ui):
         if self.sender() is self.bttn_stop_motor:
             self.context.update_tracking(False)
             self.set_tracking_status('disabled', "red")
+
+    def _stop_scanning(self):
+        if self.worker_motor.isRunning():
+            self.signals.endEarly.emit()
+        else:
+            self.signals.message.emit("You aren't scanning!")
 
     def plot_motor_moves(self, position, maximum, positions, intensities, save=False):
         fig = plt.figure()

@@ -63,7 +63,7 @@ class Controls_Ui(object):
 
         obj.lbl_percent = Label("Percent to Accept \n(1 - 99)")
         obj.le_percent = LineEdit("70")
-        obj.le_percent.valRange(1, 100)
+        obj.le_percent.valRange(1, 99)
         obj.le_percent.setToolTip('Sets the percentage of I/I0 values that are accepted as normal based on a Gaussian distribution.\n Lower numbers are stricter and will trigger a scan more easily.')
         obj.lbl_notification_tol = Label("Notification Tolerance \n(10 - 300s)")
         obj.le_notification_tol = LineEdit('30')
@@ -147,7 +147,7 @@ class Controls_Ui(object):
 
         obj.le_ave_motor = LineEdit("10")
         obj.le_ave_motor.valRange(1, 300)
-        obj.le_ave_motor.setToolTip('???')
+        obj.le_ave_motor.setToolTip('number of points to average before moving motor')
 
         obj.cbox_algorithm = ComboBox()
         obj.cbox_algorithm.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
@@ -160,6 +160,11 @@ class Controls_Ui(object):
         obj.bttn_search.setText("Go Once")
         obj.bttn_search.setEnabled(True)
         obj.bttn_search.setToolTip('Runs the chosen search algorithm once and moves to the optimized motor position.')
+
+        obj.bttn_stop_current_scan = QPushButton()
+        obj.bttn_stop_current_scan.setText("Stop Scan")
+        obj.bttn_stop_current_scan.setEnabled(True)
+        obj.bttn_stop_current_scan.setToolTip("Stops the current scan in its tracks!")
 
         obj.bttn_tracking = QPushButton()
         obj.bttn_tracking.setText("Start Tracking")
@@ -182,10 +187,12 @@ class Controls_Ui(object):
         obj.layout_motor_manual = QHBoxLayout()
         obj.layout_motor_input = QGridLayout()
         obj.layout_motor_bttns = QHBoxLayout()
+        obj.layout_single_scan = QHBoxLayout()
         obj.layout_tracking = QHBoxLayout()
         obj.layout_motor.addLayout(obj.layout_connect_motor)
         obj.layout_motor.addLayout(obj.layout_motor_manual)
         obj.layout_motor.addLayout(obj.layout_motor_input)
+        obj.layout_motor.addLayout(obj.layout_single_scan)
         obj.layout_motor.addLayout(obj.layout_motor_bttns)
         obj.layout_motor.addWidget(obj.bttn_connect_motor)
         obj.layout_motor_manual.addWidget(obj.rdbttn_manual)
@@ -200,7 +207,8 @@ class Controls_Ui(object):
         obj.layout_motor_input.addWidget(obj.le_ave_motor, 3, 3, 2, 1)
         obj.layout_motor_input.addWidget(obj.lbl_algorithm, 5, 0, 2, 1)
         obj.layout_motor_input.addWidget(obj.cbox_algorithm, 5, 1, 2, 2)
-        obj.layout_motor_bttns.addWidget(obj.bttn_search)
+        obj.layout_single_scan.addWidget(obj.bttn_search)
+        obj.layout_single_scan.addWidget(obj.bttn_stop_current_scan)
         obj.layout_motor_bttns.addWidget(obj.bttn_tracking)
         obj.layout_motor_bttns.addWidget(obj.bttn_stop_motor)
         obj.box_motor.setContentLayout(obj.layout_motor)

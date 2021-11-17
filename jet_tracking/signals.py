@@ -85,6 +85,9 @@ class Signals(QtCore.QObject):
     # emit in motorthread
     # connect in controlwidget
     plotMotorMoves = QtCore.pyqtSignal(float, float, list, list)
+    # emit in controlWidget
+    # connect in all motor algorithms
+    endEarly = QtCore.pyqtSignal()
 
     # added when adding simulator
     update = QtCore.pyqtSignal(dict)
