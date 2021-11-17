@@ -15,7 +15,7 @@ class Context(object):
 
     def __init__(self, signals):
         self.signals = signals
-        self.JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
+        self.JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking_all/jet_tracking/'
         self.SD_LOC = '/reg/d/psdm/'
         self.SAVEFOLDER = '/cds/%sopr/experiments/%s/jet_tracking/output_data/'
         self.PV_DICT = {'diff': 'CXI:JTRK:REQ:DIFF_INTENSITY',
@@ -24,9 +24,40 @@ class Context(object):
                         'dropped': 'CXI:JTRK:REQ:DROPPED',
                         'camera': 'CXI:SC1:INLINE',
                         'motor': 'CXI:PI1:MMS:01'}
-        self.CFG_FILE = 'jt_configs/cxi_config.yml'
+#        self.CFG_FILE = 'jt_configs/cxi_config.yml'
         self.HUTCH = 'cxi'
         self.EXPERIMENT = 'cxix53419'
+
+        self.parser = ArgumentParser()
+        self.parser.add_argument('--cfg', type=str, \
+            default= 'jt_configs/cxi_config.yml')
+        #parser.add_argument('--run', type=int, default=None)
+        self.args = self.parser.parse_args()
+        self.path = '/cds/group/pcds/epics-dev/espov/jet_tracking_all/jet_tracking/jt_configs/'
+        self.JT_CFG = ''.join([self.JT_LOC, self.args.cfg])
+        print(self.JT_CFG)
+#        cfg = '/cds/group/pcds/epics-dev/espov/jet_tracking_all/jet_tracking/jt_configs/cxi_config.yml'
+
+        with open(self.JT_CFG) as f:
+            yml_dict = yaml.load(f, Loader=yaml.FullLoader)
+            self.ipm_name = yml_dict['ipm']['name']
+            self.motor = yml_dict['motor']['name']
+            self.jet_cam_name = yml_dict['jet_cam']['name']
+            self.jet_cam_axis = yml_dict['jet_cam']['axis']
+            self.HUTCH = yml_dict['hutch']
+            self.EXPERIMENT = os.environ.get('EXPERIMENT', yml_dict['experiment'])
+            self.pv_map = yml_dict['pv_map']
+
+        if self.jet_cam_name=='None' or self.jet_cam_name=='none':
+            self.jet_came_name = None
+
+        if self.motor=='None' or self.motor=='none':
+            print('Please provide a motor PV in the config file')
+
+        print(self.EXPERIMENT)
+        print(self.motor)
+        print(self.pv_map)
+
         self.live_data = True
         self.calibration_source = "calibration from results"
         self.percent = 50
