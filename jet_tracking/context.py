@@ -18,6 +18,7 @@ class Context(object):
         self.JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking_all/jet_tracking/'
         self.SD_LOC = '/reg/d/psdm/'
         self.SAVEFOLDER = '/cds/%sopr/experiments/%s/jet_tracking/output_data/'
+        # default values. these are overwritten if a config file is used
         self.PV_DICT = {'diff': 'CXI:JTRK:REQ:DIFF_INTENSITY',
                         'i0': 'CXI:JTRK:REQ:I0',
                         'ratio': 'CXI:JTRK:REQ:RATIO',
@@ -27,7 +28,9 @@ class Context(object):
 #        self.CFG_FILE = 'jt_configs/cxi_config.yml'
         self.HUTCH = 'cxi'
         self.EXPERIMENT = 'cxix53419'
-
+        # end of defaults
+        
+        # parses config file
         self.parser = ArgumentParser()
         self.parser.add_argument('--cfg', type=str, \
             default= 'jt_configs/cxi_config.yml')
@@ -35,8 +38,6 @@ class Context(object):
         self.args = self.parser.parse_args()
         self.path = '/cds/group/pcds/epics-dev/espov/jet_tracking_all/jet_tracking/jt_configs/'
         self.JT_CFG = ''.join([self.JT_LOC, self.args.cfg])
-        print(self.JT_CFG)
-#        cfg = '/cds/group/pcds/epics-dev/espov/jet_tracking_all/jet_tracking/jt_configs/cxi_config.yml'
 
         with open(self.JT_CFG) as f:
             yml_dict = yaml.load(f, Loader=yaml.FullLoader)
@@ -53,10 +54,14 @@ class Context(object):
 
         if self.motor=='None' or self.motor=='none':
             print('Please provide a motor PV in the config file')
-
-        print(self.EXPERIMENT)
-        print(self.motor)
-        print(self.pv_map)
+        
+        self.pv_map['diff'] = self.pv_map.pop(1)
+        self.pv_map['i0'] = self.pv_map.pop(2)
+        self.pv_map['ratio'] = self.pv_map.pop(3)
+        self.pv_map['dropped'] = self.pv_map.pop(4)
+        self.pv_map['camera'] = self.jet_cam_name
+        self.pv_map['motor'] = self.motor
+        self.PV_DICT = self.pv_map
 
         self.live_data = True
         self.calibration_source = "calibration from results"

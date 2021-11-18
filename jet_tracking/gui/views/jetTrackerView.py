@@ -19,13 +19,15 @@ class JetTrackerView(QWidget):
         self.mainLayout = QHBoxLayout()
         self.createGraphWidget()
         self.createDockWidgets()
-        self.mainLayout.addWidget(self.graphWidget)
         self.mainLayout.addWidget(self.controlsDock)
-        self.parent.resizeDocks([self.controlsDock], [45], Qt.Horizontal)
+        self.mainLayout.addWidget(self.graphWidget)
+#        self.parent.resizeDocks([self.controlsDock], [45], Qt.Horizontal)
+        print(self.parent)
         self.setLayout(self.mainLayout)
 
     def createGraphWidget(self):
         self.graphWidget = GraphsWidget(context=self.context, signals=self.signals)
+        self.graphWidget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred) 
 
     def createDockWidgets(self):
         self.parent.setDockNestingEnabled(True)
@@ -36,5 +38,5 @@ class JetTrackerView(QWidget):
         self.controlsWidget = ControlsWidget(self.context, self.signals)
         self.controlsDock.setWidget(self.controlsWidget)
         self.controlsDock.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        self.mainLayout.addWidget(self.controlsDock)
+#        self.mainLayout.addWidget(self.controlsDock)
 
