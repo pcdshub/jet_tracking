@@ -911,7 +911,7 @@ class MotorThread(QThread):
         self.signals.liveMotor.connect(self.live_motor)
         self.signals.notifyMotor.connect(self.impart_knowledge)
         self.signals.motorMode.connect(self.change_motor_mode)
-        self.signals.imageProcessingComplete(self.next_calibration_position)
+        self.signals.imageProcessingComplete.connect(self.next_calibration_position)
 
     def change_motor_mode(self, m):
         if m == 'sleep' and self.mode == 'run':
