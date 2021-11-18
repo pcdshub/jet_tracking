@@ -857,21 +857,27 @@ class MotorThread(QThread):
         self.context = context
         self.moves = []
         self.intensities = []
+        self.calibration_steps = 1
         self.vals = {}
         self.done = False
         self.motor_name = ''
         self.motor = None
         self.live = True
+        self.connected = False
+        self.mode = 'sleep'
         self.calibration_values = {}
         self.algorithm = ''
         self.low_limit = 0
         self.high_limit = 0
         self.step_size = 0
+        self.initial_position = 0
         self.tolerance = 0
         self.averaging = 0
         self.refresh_rate = 0
         self.request_new_values = False
         self.got_new_values = False
+        self.request_image_processor = False
+        self.complete_image_processor = False
         self.good_edge_points = []
         self.bad_edge_points = []
         self.sweet_spot = []
@@ -904,9 +910,30 @@ class MotorThread(QThread):
         self.signals.connectMotor.connect(self.connect_to_motor)
         self.signals.liveMotor.connect(self.live_motor)
         self.signals.notifyMotor.connect(self.impart_knowledge)
+        self.signals.motorMode.connect(self.change_motor_mode)
+        self.signals.imageProcessingComplete(self.next_calibration_position)
+
+    def change_motor_mode(self, m):
+        if m == 'sleep' and self.mode == 'run':
+            self.signals.message.emit('Canceling motor moving immediately, going to sleep')
+            self.mode = m
+        if m == 'sleep' and self.mode == 'calibrate':
+            self.signals.message.emit('calibration finished')
+            self.mode = m
+        if m == 'calibrate' and self.mode == 'sleep':
+            self.signals.message.emit('starting image motor moving calibration')
+            self.mode = m
+        if m == 'calibrate' and self.mode == 'run':
+            self.signals.message.emit('Calibrating while the mode is run should not be possible!!!')
+        if m == 'run' and self.mode == 'calibrate':
+            self.signals.message.emit('run while the mode is calibrate should not be possible!!!')
+        if m == 'run' and self.mode == 'sleep':
+            self.signals.message.emit('starting the algorithm you selected :)')
 
     def live_motor(self, live):
         self.live = live
+        if self.connected:
+            self.connect_to_motor()
 
     def connect_to_motor(self):
         if self.live:
@@ -915,7 +942,6 @@ class MotorThread(QThread):
             self.motor = IMS(self.motor_name, name='jet_x')
         elif not self.live:
             self.motor = SimulatedMotor(self.context, self.signals)
-            pass
 
     def clear_values(self):
         self.moves = []
@@ -962,6 +988,12 @@ class MotorThread(QThread):
             # intensity
             self.sweet_spot.append(self.moves[-1])
 
+    def next_calibration_position(self):
+        if self.calibration_steps == 1:
+            self.initial_position = self.motor.position
+        self.motor.move(self.initial_position + (self.step_size*self.calibration_steps))
+        self.calibration_steps += 1
+
     def update_values(self, vals):
         if not self.done:
             self.got_new_values = True
@@ -983,80 +1015,44 @@ class MotorThread(QThread):
             # this should be the same either way
             self.moves.append([mean(self.intensities), self.motor.position])
             self.intensities = []
-            # for live or sim motor
             if not self.pause:
                 self.done, self.max_value = self.action.execute()
 
     def run(self):
-        self.connect_to_motor()
-        self.clear_values()
         while not self.isInterruptionRequested():
-            if self.done:
-                if len(self.moves) > 4:
-                    x = [a[1] for a in self.moves]
-                    y = [b[0] for b in self.moves]
-                    self.signals.plotMotorMoves.emit(self.motor.position,
-                                                     self.max_value, x, y)
-                    print("go to sleep now..")
-                    time.sleep(7)
-                    self.signals.message.emit(f"Found peak intensity "
-                                              f"{self.max_value} at motor "
-                                              f"position: "
-                                              f"{self.motor.position}")
-                    self.signals.sleepMotor.emit()
-            else:
-                if self.request_new_values and self.got_new_values:
-                    self.request_new_values = False
-                    self.got_new_values = False
-                if not self.request_new_values:
-                    self.signals.valuesRequest.emit()
-                    self.request_new_values = True
+            if self.mode == 'run':
+                if self.done:
+                    if len(self.moves) > 4:
+                        x = [a[1] for a in self.moves]
+                        y = [b[0] for b in self.moves]
+                        self.signals.plotMotorMoves.emit(self.motor.position, self.max_value, x, y)
+                        print("go to sleep now..")
+                        time.sleep(7)
+                        self.signals.message.emit(f"Found peak intensity {self.max_value} "
+                                                  f"at motor position: {self.motor.position}")
+                        self.mode = 'sleep'
+                else:
+                    if self.request_new_values and self.got_new_values:
+                        self.request_new_values = False
+                        self.got_new_values = False
+                    if not self.request_new_values:
+                        self.signals.valuesRequest.emit()
+                        self.request_new_values = True
+            elif self.mode == 'calibrate':
+                if self.calibration_steps == 5:
+                    self.signals.displayMotorCalibration.emit()
+                    self.motor.move(self.initial_position)
+                    self.calibration_steps = 1
+                    self.mode = 'sleep'
+                else:
+                    if self.request_image_processor and self.complete_image_processor:
+                        self.request_image_processor = False
+                        self.complete_image_processor = False
+                    if not self.request_image_processor:
+                        self.signals.imageProcessingRequest.emit(self.motor.position)
+                        self.request_image_processor = True
+            elif self.mode == 'sleep':
+                self.clear_values()
+                pass
             time.sleep(1/self.refresh_rate)
         print("Interruption was requested: Motor Thread")
-
-
-# What is this?
-"""
-        if self.motor_options['scanning algorithm'] == "search":
-            while not done:
-                self.motor_position = self.motor.position
-                self.motor_position, self.ratio_intensity = self._search(
-                    self.motor_position, -.01, .01, .0005, 60)
-            fig = plt.figure()
-            plt.xlabel('motor position')
-            plt.ylabel('I/I0 intensity')
-            plt.plot(self.motor_position, self.ratio_intensity, 'ro')
-            x = [a[0] for a in self.moves]
-            y = [b[1] for b in self.moves]
-            plt.scatter(x, y)
-            plt.show()
-            self.signals.update_calibration.emit('ratio', self.ratio_intensity)
-            self.signals.finished.emit({'position': self.motor_position,
-                                        'ratio': self.ratio_intensity})
-        elif self.motor_options['scanning algorithm'] == "scan":
-            print("scanning :", self.tol, self.motor_ll, self.motor_hl)
-            self.motor_position = self._scan(self.motor_ll, self.motor_hl,
-                self.tol, self.motor_options['averaging'])
-            self.ratio_intensity = self.moves[-1][1]
-            fig = plt.figure()
-            plt.xlabel('motor position')
-            plt.ylabel('I/I0 intensity')
-            plt.plot(self.motor_position, self.ratio_intensity, 'ro')
-            x = [a[0] for a in self.moves]
-            y = [b[1] for b in self.moves]
-            plt.scatter(x, y)
-            plt.show()
-            self.signals.update_calibration.emit('ratio', self.ratio_intensity)
-            self.signals.finished.emit({'position': self.motor_position,
-                                        'ratio': self.ratio_intensity})
-        # these should be inside of each of the scanning algorithms?
-        # need to check if were moving once or "Tracking"
-        elif self.move_type == "track":
-            self.signals.finished.emit({'position': self.motor_position,
-                                        'ratio': self.ratio_intensity})
-            #### look up how to exit safely here
-        elif self.move_type == "stop tracking":
-            self.signals.finished.emit({'position': self.motor_position,
-                                        'ratio': self.ratio_intensity})
-            #### again, exit safely
-"""

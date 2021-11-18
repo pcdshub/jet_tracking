@@ -32,7 +32,8 @@ class JetTrackerView(QWidget):
                                        QSizePolicy.Preferred)
 
     def createDockWidgets(self):
-        self.parent.setDockNestingEnabled(True)
+        # maybe the dock needs to be in a frame?? still not able to pop it back in.
+        #self.parent.setDockNestingEnabled(True)
         self.controlsDock = QDockWidget("Controls", self)
         self.controlsDock.setAllowedAreas(Qt.RightDockWidgetArea
                                           | Qt.BottomDockWidgetArea)

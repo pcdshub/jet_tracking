@@ -33,6 +33,7 @@ class EditorWidget(QFrame, Editor_Ui):
     def make_connections(self):
         self.bttn_cam_connect.clicked.connect(self.start_cam)
         self.bttn_cam_disconnect.clicked.connect(self.stop_cam)
+        self.bttn_cam_calibrate.clicked.connect(self.calibrate)
         self.rd_bttn_dilate.clicked.connect(self.dilate_off_on)
         self.rd_bttn_erode.clicked.connect(self.erode_off_on)
         self.rd_bttn_open.clicked.connect(self.open_off_on)
@@ -59,6 +60,12 @@ class EditorWidget(QFrame, Editor_Ui):
     def stop_cam(self):
         self.image_stream.requestInterruption()
         self.image_stream.wait()
+
+    def calibrate(self):
+        if self.image_stream.connected:
+            self.context.calibrate_image()
+        else:
+            self.signals.message.emit("The image feed is not live, try to connect camera")
 
     def set_dilate(self, v):
         self.sliders['dilate'].append(v)

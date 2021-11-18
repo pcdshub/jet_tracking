@@ -27,9 +27,10 @@ class Context(object):
                         'dropped': 'CXI:JTRK:REQ:DROPPED',
                         'camera': 'CXI:SC1:INLINE',
                         'motor': 'CXI:PI1:MMS:01'}
-#        self.CFG_FILE = 'jt_configs/cxi_config.yml'
+        #self.CFG_FILE = 'jt_configs/cxi_config.yml'
         self.HUTCH = 'cxi'
         self.EXPERIMENT = 'cxix53419'
+<<<<<<< HEAD
         # end of defaults
 
         # parses config file
@@ -82,6 +83,7 @@ class Context(object):
         self.motor_averaging = 10
         self.algorithm = 'Ternary Search'
         self.motor_running = False
+        self.motor_mode = ''
         self.calibration_values = {}
         self.isTracking = False
         self.calibrated = False
@@ -98,6 +100,7 @@ class Context(object):
                                        self.refresh_rate)
         self.ave_cycle = list(range(1, self.naverage + 1))
         self.x_cycle = list(range(0, self.buffer_size))
+
         # +1 for NaN value added at the end
         self.ave_idx = list(range(0, self.averaging_size + 1))
         self.image = None
@@ -299,9 +302,15 @@ class Context(object):
     def open_cam_connection(self):
         self.signals.connectCam.emit()
 
-    def set_images(self, im, imgray):
-        self.image = im
-        self.imgray = imgray
+    def calibrate_image(self):
+        if self.motor_running:
+            self.signals.message.emit("the motor is currently running an algorithm. Try stopping motor first")
+        else:
+            self.update_motor_mode('calibrate')
+
+    def update_motor_mode(self, mode):
+        self.motor_mode = mode
+        self.signals.motorMode.emit(self.motor_mode)
 
     def connect_motor(self):
         self.signals.connectMotor.emit()

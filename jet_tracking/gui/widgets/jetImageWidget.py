@@ -14,7 +14,7 @@ class JetImageWidget(QWidget, Image_Ui):
         super(JetImageWidget, self).__init__()
         self.signals = signals
         self.context = context
-        self.pixmap = QPixmap()
+        self.pixmap = JetImageAction(self.context, self.signals)
         self.pixmap_item = QGraphicsPixmapItem()
         self.make_connections()
         self.setupUi(self)

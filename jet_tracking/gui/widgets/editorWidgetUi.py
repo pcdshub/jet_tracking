@@ -16,6 +16,7 @@ class Editor_Ui(object):
 
         obj.bttn_cam_connect = QPushButton("Connect to Jet Cam")
         obj.bttn_cam_disconnect = QPushButton("Disconnect")
+        obj.bttn_cam_calibrate = QPushButton("Calibrate")
 
         obj.lbl_morph = QLabel("Morphological Operations")
 
@@ -128,6 +129,7 @@ class Editor_Ui(object):
         obj.layout.addStretch()
         obj.layout.addLayout(obj.layout_cam1)
         obj.layout.addLayout(obj.layout_cam2)
+        obj.layout.addWidget(obj.bttn_cam_calibrate)
         obj.hline0 = QHLine()
         obj.layout.addWidget(obj.hline0)
         obj.layout.addWidget(obj.lbl_dilate)
