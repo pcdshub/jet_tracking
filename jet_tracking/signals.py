@@ -20,12 +20,6 @@ class Signals(QtCore.QObject):
     # connect in StatusThread
     message = QtCore.pyqtSignal(str)
     # emit in StatusThread
-    # connect in ControlsWidget
-    wakeMotor = QtCore.pyqtSignal()
-    # emit in
-    # connect in ControlsWidget
-    sleepMotor = QtCore.pyqtSignal()
-    # emit in StatusThread
     # connect in GraphsWidget
     changeDisplayFlag = QtCore.pyqtSignal(str)
     # emit in Context
@@ -82,6 +76,9 @@ class Signals(QtCore.QObject):
     # emit in statusthread
     # connect in motorthread
     notifyMotor = QtCore.pyqtSignal(str)
+    # emit in context
+    # connect in motorthread
+    motorMode = QtCore.pyqtSignal(str)
     # emit in motorthread
     # connect in controlwidget
     plotMotorMoves = QtCore.pyqtSignal(float, float, list, list)
@@ -91,6 +88,9 @@ class Signals(QtCore.QObject):
     # emit in editorwidget
     # connect in jetimagefeed
     imageProcessing = QtCore.pyqtSignal(dict)
+    # emit in motorthread
+    # connect in jetimagethread
+    imageProcessingRequest = QtCore.pyqtSignal(float)
 
     # added when adding simulator
     update = QtCore.pyqtSignal(dict)

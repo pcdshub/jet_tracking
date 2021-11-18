@@ -58,20 +58,15 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.bttn_stop_motor.clicked.connect(self._stop_motor)
         self.signals.trackingStatus.connect(self.set_tracking_status)
 
-        self.signals.changeStatus.connect(self.set_monitor_status)
-        self.signals.changeCalibrationDisplay.connect(self.set_calibration)
-
-        self.signals.changeMotorPosition.connect(self.update_motor)
-
-        self.signals.wakeMotor.connect(self._start_motor)
-        self.signals.sleepMotor.connect(self._stop_motor)
-        self.signals.message.connect(self.receive_message)
-
         self.bttn_stop.clicked.connect(self._stop)
         self.bttn_calibrate.clicked.connect(self._calibrate)
         self.bttn_start.clicked.connect(self.start_processes)
 
+        self.signals.changeStatus.connect(self.set_monitor_status)
+        self.signals.changeCalibrationDisplay.connect(self.set_calibration)
         self.signals.plotMotorMoves.connect(self.plot_motor_moves)
+        self.signals.changeMotorPosition.connect(self.update_motor)
+        self.signals.message.connect(self.receive_message)
 
     def start_processes(self):
         self.worker_status.start()
@@ -99,6 +94,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         if not self.worker_motor.isRunning():
             if self.worker_status.isRunning():
                 self.context.update_motor_running(True)
+                self.context.update_motor_mode('sleep')
                 self.worker_motor.start()
             else:
                 self.signals.message.emit("You must start getting points first!")
