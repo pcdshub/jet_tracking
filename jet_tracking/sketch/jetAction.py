@@ -6,7 +6,6 @@ class JetImageAction(QPixmap):
         super(JetImageAction, self).__init__()
         self.context = context
         self.signals = signals
-        self.parent = parent
         self.make_connections()
 
     def make_connections(self):

@@ -89,8 +89,11 @@ class Signals(QtCore.QObject):
     # connect in jetimagefeed
     imageProcessing = QtCore.pyqtSignal(dict)
     # emit in motorthread
-    # connect in jetimagethread
+    # connect in jetimageaction
     imageProcessingRequest = QtCore.pyqtSignal(float)
+    # emit in jetImageAction
+    # connect in motorthread
+    imageProcessingComplete = QtCore.pyqtSignal()
 
     # added when adding simulator
     update = QtCore.pyqtSignal(dict)

@@ -5,9 +5,9 @@ from scipy import stats
 import numpy as np
 import collections
 from ophyd import EpicsSignal
-#from epics import caget
+from epics import caget
 from PyQt5.QtCore import QThread
-#from pcdsdevices.epics_motor import IMS
+from pcdsdevices.epics_motor import IMS
 from sketch.num_gen import SimulationGenerator
 from sketch.motorMoving import MotorAction
 from sketch.sim_motorMoving import SimulatedMotor
@@ -837,7 +837,7 @@ class MotorThread(QThread):
         self.signals.liveMotor.connect(self.live_motor)
         self.signals.notifyMotor.connect(self.impart_knowledge)
         self.signals.motorMode.connect(self.change_motor_mode)
-        self.signals.imageProcessingComplete(self.next_calibration_position)
+        self.signals.imageProcessingComplete.connect(self.next_calibration_position)
 
     def change_motor_mode(self, m):
         if m == 'sleep' and self.mode == 'run':
