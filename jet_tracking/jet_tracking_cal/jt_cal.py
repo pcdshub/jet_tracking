@@ -444,6 +444,7 @@ if __name__ == '__main__':
         i0_data = np.array(i0_data)
         i0_hist, edges, i0_low, i0_high, i0_med = peak_lr(i0_data)
         i0_idxs = np.where((i0_data > i0_low) & (i0_data < i0_high))
+        i0_high = 2*i0_high
         i0_data_use = i0_data[i0_idxs]
         
         if jet_cam_name is not None:

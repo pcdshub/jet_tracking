@@ -141,10 +141,12 @@ class MpiWorker(object):
                 # Filter based on i0
                 if i0<self._i0_thresh[0] or i0>self._i0_thresh[1]:
                     print('Bad shot')
+                    print(i0)
                     dropped = 1
                     intensity = 0
                     inorm = 0
                 else:
+                    print(i0)
                     dropped = 0
 
                     # Detector images

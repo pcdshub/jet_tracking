@@ -1,18 +1,18 @@
 api_msg:
   port: 5000
 
-hutch: 'cxi'
-experiment: 'cxip21119'
+hutch: 'mfx'
+experiment: 'mfxx45919'
 run: '1'
 sim: false
 ffb: true
-event_code: 40 # x-ray on event code
+event_code: 198 # x-ray on event code
 
 det_map:
-  name: 'jungfrau4M'
+  name: 'Rayonix'
   shape:
-    - 2203
-    - 2299
+    - 960
+    - 960
   dtype: float32
   bins: 100
 
@@ -23,8 +23,8 @@ pv_map:
   4: 'CXI:JTRK:REQ:DROPPED'
 
 ipm: 
-  name: 'FEEGasDetEnergy'
-  det: 'f_12_ENRC' 
+  name: 'MFX-DG2-BMMON'
+  det: 'TotalIntensity' 
 #  name: 'CXI-DG2-BMMON'
 #  det: None
 
