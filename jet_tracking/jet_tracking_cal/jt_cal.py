@@ -395,8 +395,10 @@ if __name__ == '__main__':
         if evt_idx%10==0:
             print('Event: {}'.format(evt_idx))
         try:
-            #if event_code not in evr.eventCodes(evt):
-            #        continue
+            print(event_code)
+            print(type(event_code))
+            if event_code not in evr.eventCodes(evt):
+                    continue
             # Get image and azav
             calib = detector.calib(evt)
             calib = calib * psana_mask

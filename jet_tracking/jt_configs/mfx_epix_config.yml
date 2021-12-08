@@ -17,10 +17,10 @@ det_map:
   bins: 100
 
 pv_map:
-  1: 'CXI:JTRK:REQ:DIFF_INTENSITY'
-  2: 'CXI:JTRK:REQ:I0'
-  3: 'CXI:JTRK:REQ:RATIO'
-  4: 'CXI:JTRK:REQ:DROPPED'
+  1: 'MFX:JTRK:REQ:DIFF_INTENSITY'
+  2: 'MFX:JTRK:REQ:I0'
+  3: 'MFX:JTRK:REQ:RATIO'
+  4: 'MFX:JTRK:REQ:DROPPED'
 
 ipm: 
   name: 'FEEGasDetEnergy'
@@ -34,7 +34,7 @@ jet_cam:
   axis: 1
 
 motor:
-    name: 'CXI:PI1:MMS:01'
+    name: 'MFX:PI1:MMS:01'
 
 cal_params:
   azav_bins: 100
