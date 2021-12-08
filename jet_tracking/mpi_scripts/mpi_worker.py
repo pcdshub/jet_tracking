@@ -129,9 +129,8 @@ class MpiWorker(object):
             # Definitely not a fan of wrapping the world in a try/except
             # but too many possible failure modes from the data
             try:
-            #if 1:
-                #if self.event_code not in self.evr.eventCodes(evt):
-                #    continue
+                if self.event_code not in self.evr.eventCodes(evt):
+                    continue
                 with self._attr_lock:
                     low_bin = self.peak_bin - self.delta_bin
                     hi_bin = self.peak_bin + self.delta_bin
