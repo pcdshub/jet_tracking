@@ -537,7 +537,7 @@ if __name__ == '__main__':
         hopr_dir = '/cds/home/opr/{}opr/experiments/{}/jt_calib'.format(hutch, exp)
         try:
             if not os.path.exists(hopr_dir):
-                os.mkdir(hopr_dir)
+                Path(hopr_dir).mkdir(mode=777, parents=True)
             res_file = ''.join([hopr_dir, '/jt_cal_', run, '_results'])
             with open(res_file, 'w') as f:
                 results = {k: str(v) for k, v in results.items()}
