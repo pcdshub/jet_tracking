@@ -30,7 +30,6 @@ handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
 logger.addHandler(handler)
 
-#JT_LOC = '/cds/group/pcds/epics-dev/espov/jet_tracking/jet_tracking/'
 JT_LOC = os.path.dirname(fpath)
 SD_LOC = '/reg/d/psdm/'
 FFB_LOC = '/cds/data/drpsrcf/'
@@ -320,7 +319,7 @@ if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--cfg', type=str, \
         default=(''.join([JT_LOC, 'jt_configs/xcs_config.yml'])))
-    parser.add_argument('--run', type=int)
+    parser.add_argument('--run', type=int, default=None)
     args = parser.parse_args()
 
     # Start spinning up processes
@@ -341,11 +340,14 @@ if __name__ == '__main__':
         hutch = yml_dict['hutch']
         exp = os.environ.get('EXPERIMENT', yml_dict['experiment'])
         run = os.environ.get('RUN_NUM', str(args.run))
-        if run=='None':
+        if run is None or run==0:
             run = yml_dict['run']
         cal_params = yml_dict['cal_params']
         ffb = yml_dict['ffb']
         event_code = yml_dict['event_code']
+
+    if jet_cam_name=='None' or jet_cam_name=='none':
+        jet_cam_name = None
 
     # Get Events for each worker
     num_events = int(cal_params['events'] / size)
@@ -374,8 +376,10 @@ if __name__ == '__main__':
     # Get the detectors from the config
     try:
         detector = psana.Detector(det_map['name'])
+        psana_mask = detector.mask(int(run), calib=True, status=True, edges=True, central=False, unbond=False, unbondnbrs=False)
         ipm = psana.Detector(ipm_name)
-        jet_cam = psana.Detector(jet_cam_name)
+        if jet_cam_name is not None:
+            jet_cam = psana.Detector(jet_cam_name)
         evr = get_evr_w_codes(psana.DetNames())
         masks = get_r_masks(det_map['shape'], cal_params['azav_bins'])
     except Exception as e:
@@ -388,13 +392,16 @@ if __name__ == '__main__':
 
     # Iterate through and pull out small data
     for evt_idx, evt in enumerate(ds.events()):
-        if evt_idx%50==0:
+        if evt_idx%10==0:
             print('Event: {}'.format(evt_idx))
         try:
+            print(event_code)
+            print(type(event_code))
             if event_code not in evr.eventCodes(evt):
                     continue
             # Get image and azav
             calib = detector.calib(evt)
+            calib = calib * psana_mask
             det_image = detector.image(evt, calib)
             azav = np.array([np.mean(det_image[mask]) for mask in masks])
             
@@ -402,16 +409,20 @@ if __name__ == '__main__':
             # Be nice not to waste cycles on getattr at some point
             i0_data = getattr(ipm.get(evt), ipm_det)()
             
-            # Get jet projection and location
-            if not plt.get_backend()=='agg':
-                if evt_idx == 5:
-                    plt.imshow(jet_cam.image(evt))
-                    plt.show()
-                    plt.plot(jet_cam.image(evt).sum(axis=jet_cam_axis))
-                    plt.show()
-            jet_proj = jet_cam.image(evt).sum(axis=jet_cam_axis)
-            max_jet_val = np.amax(jet_proj)
-            max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
+            if jet_cam_name is not None:
+                # Get jet projection and location
+                if not plt.get_backend()=='agg':
+                    if evt_idx == 5:
+                        plt.imshow(jet_cam.image(evt))
+                        plt.show()
+                        plt.plot(jet_cam.image(evt).sum(axis=jet_cam_axis))
+                        plt.show()
+                jet_proj = jet_cam.image(evt).sum(axis=jet_cam_axis)
+                max_jet_val = np.amax(jet_proj)
+                max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
+            else:
+                max_jet_val = 1e6
+                max_jet_idx = 1e6
             smd.event(azav=azav, i0=i0_data, jet_peak=max_jet_val, jet_loc=max_jet_idx)
         except Exception as e:
             logger.info('Unable to process event {}: {}'.format(evt_idx, e))
@@ -435,14 +446,21 @@ if __name__ == '__main__':
         i0_data = np.array(i0_data)
         i0_hist, edges, i0_low, i0_high, i0_med = peak_lr(i0_data)
         i0_idxs = np.where((i0_data > i0_low) & (i0_data < i0_high))
+        i0_high = 2*i0_high
         i0_data_use = i0_data[i0_idxs]
-   
-        jet_loc_use = jet_loc[i0_idxs]
-        jet_loc_mean = np.mean(jet_loc_use)
-        jet_loc_std = np.std(jet_loc_use)
-        jet_peak_use = jet_peak[i0_idxs]
-        jet_peak_mean = np.mean(jet_peak_use)
-        jet_peak_std = np.std(jet_peak_use)
+        
+        if jet_cam_name is not None:
+            jet_loc_use = jet_loc[i0_idxs]
+            jet_loc_mean = np.mean(jet_loc_use)
+            jet_loc_std = np.std(jet_loc_use)
+            jet_peak_use = jet_peak[i0_idxs]
+            jet_peak_mean = np.mean(jet_peak_use)
+            jet_peak_std = np.std(jet_peak_use)
+        else:
+            jet_loc_mean = None
+            jet_loc_std = None
+            jet_peak_mean = None
+            jet_peak_std = None
  
         # Generate figure for i0 params
         p = peak_fig('{}'.format(ipm_name), i0_hist, edges, i0_med, i0_low, i0_high)
@@ -519,7 +537,7 @@ if __name__ == '__main__':
         hopr_dir = '/cds/home/opr/{}opr/experiments/{}/jt_calib'.format(hutch, exp)
         try:
             if not os.path.exists(hopr_dir):
-                os.mkdir(hopr_dir)
+                Path(hopr_dir).mkdir(mode=777, parents=True)
             res_file = ''.join([hopr_dir, '/jt_cal_', run, '_results'])
             with open(res_file, 'w') as f:
                 results = {k: str(v) for k, v in results.items()}

@@ -32,7 +32,6 @@ class MpiMaster(object):
         self._msg_thread.start()
         self.pair_ctx = None
         self.msg_ctx = None
-        self.wf_length = wf_length
 
     @property
     def rank(self):

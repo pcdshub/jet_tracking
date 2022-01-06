@@ -14,7 +14,6 @@ from pathlib import Path
 fpath=os.path.dirname(os.path.abspath(__file__))
 fpathup = '/'.join(fpath.split('/')[:-1])
 sys.path.append(fpathup)
-print(fpathup)
 from utils import get_r_masks, get_evr_w_codes
 
 logger = logging.getLogger(__name__)
@@ -45,6 +44,9 @@ with open(args.cfg_file) as f:
     event_code = yml_dict['event_code']
     #wf_length = yml_dict['wf_length']
 
+if jet_cam_name=='None' or jet_cam_name=='none':
+    jet_cam_name = None
+
 # Get calibration results
 calib_dir = Path(''.join(['/cds/data/psdm/', hutch, '/', exp, '/calib/']))
 jt_dir = Path(''.join([str(calib_dir), '/jt_results/']))
@@ -74,9 +76,13 @@ else:
 ds = psana.DataSource(dsname)
 detector = psana.Detector(det_map['name'])
 ipm = (psana.Detector(ipm_name), ipm_det)
-jet_cam = psana.Detector(jet_cam_name)
+if jet_cam_name is not None:
+    jet_cam = psana.Detector(jet_cam_name)
+else:
+    jet_cam = None
 evr = get_evr_w_codes(psana.DetNames())
 print(evr.name)
+print(pv_map)
 r_mask = get_r_masks(det_map['shape'])
 
 if rank == 0:
