@@ -5,7 +5,7 @@ env:
   global:
     - OFFICIAL_REPO="pcdshub/jet_tracking"
     # Doctr deploy key for pcdshub/jet_tracking
-    - secure: "vUuAt00AjoyYdCEfrqDiYEBN/0j5Rg0YF4er9fwbtgzlb/q9eHjyEI1XZm+WrTZE1k6U3RHM4SLct7FWMYVMrJ5nDehZF2iaFbDMjSBbANe3+zj7iaBZsLRDh9tivALv1pqavtVivZ98ypiX/GGwvGgtruOeFAsYdCAabPpsRHzsMZzWYr5vkm+ylUtncsJBRuqaHEczf3NMIL7TdO5B3Qwsws1ohgMQfedby2DI4cgZ8jLcJ5ZVnfS0gshy1RNpWc+lY0xb6/dIHW2V6Ca+YAl6VcN8uiF6RD4XgaDvzoZTfwWI5BcvgBULS1w1/aUzSWAWYARVEwA0v/QJ/ftFmx602a9yvFWje67TEPuCYR0uDU/osDYywnkEZNVZuv5CGO8KncBi12zBUGRW+aPpr+59cUOpQhkoRfJAFXRBwsCrKrXSYubNv1K64S+C6SkuPOIdGJdurh7naMPK4S3yUQmJ4I/samGq5MCy560YcKqj7KtDiRwgqXa5ho6meoaFKBCsfFpcF8flcygsSTCIa0WaKm4s79HcbiqJEO/CwZvWAjpz2DDuxApebM2uRWBa5S0AyY9vCQMAojyP67wd6z/RoZenDMl3Vrc197+RRbbujvpI/XkTS1SOV/9K2/+lX+Tj0Xv5XImiBTIdq8LPo2QgyMna7H7HmJ1uDeqXlGM="
+    - secure: "V2DzajEtsKUl0+J4pziJWuGPQ4q4kUdKs0V7xIdDxnzO6RmuI49tulurfr/HwMa1Euitiuc1SfIpA+rbaPs0xysbZWAG2mpqT7s/RvFZ/+/rTKp/4GZkH8hvS7/8INQTFImwpHUWiG1L+3sv9+3SM0h3CorvWsBnknIkllHu7Qh2dqfW0bK7bgSjn2wGkgoP53QF3BQne08U2n7mMkD0stibzZCODPwUMNNJYDSa/4yjyPO0DOEVFs7iox3ToZ352OFKHsMO+awcMCFN8gP/c7Al+xp4IBGLX0s4U0AQGru+JqKae3zwukq2pDyWWgieH5QpAfm/Ht7KKH4hnzGtj9AL81dC9RkXDLV3iSN0SNPrVlrjJNnQi9gTxsXHd2NwVF0kXgo+7oX/zoEpIn+Z6wfOfseO+KFFFYYz3ASKS1U8UZo5qyAcCFPHl0T0WEcYZVvfre1GQkpRRVnNvfJdEAN2rWMi+ovKcVnH8rhc4uPwxdR5vSAcI1xKJMS7OUI0edAm2LvIOh4+ri2et5WR4ulhpaVm5/iDBxqYaz/vGWy+vu+Q9UzrZuGP4igt+SqMMlXkrAaJhAURaKSnqOiVUZI4JCeQ+0f88N2SkupsYAjIc040tEKsBaLgjBL1BnouR1owGwBqv6yeMail8nW0HBRZMGyH/SI4ZvK/HCWBGMg="
 
 matrix:
   include:
@@ -53,6 +53,3 @@ script:
       popd
       doctr deploy . --built-docs docs/build/html --deploy-branch-name gh-pages
     fi
-
-after_success:
-  - codecov

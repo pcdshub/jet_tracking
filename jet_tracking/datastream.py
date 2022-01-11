@@ -17,6 +17,7 @@ import cv2
 import threading
 from qimage2ndarray import array2qimage
 
+
 ologging = logging.getLogger('ophyd')
 ologging.setLevel('DEBUG')
 
