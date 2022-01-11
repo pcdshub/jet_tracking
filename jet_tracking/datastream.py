@@ -501,6 +501,12 @@ class StatusThread(QThread):
                 self.flagged_events['high intensity'][idx] = high_intensity
             if vals[2] < self.calibration_values['ratio']['range'][0]:
                 missed_shot = vals[2]
+
+                # added to fix issue with dropped shots
+                # revisit if there's anything weird    
+                if missed_shot == 0:
+                    missed_shot = 0.01
+                # print("missed shot: ", missed_shot)
                 self.flagged_events['missed shot'][idx] = missed_shot
             else:
                 missed_shot = 0

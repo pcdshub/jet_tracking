@@ -15,20 +15,25 @@ class SimWidget(QFrame, Sim_Ui):
         self.setupUi(self)
         self.make_connections()
         self.set_sim_options()
+        self.initialize_threads()
+
+    def initialize_threads(self):
+        self.worker_status = StatusThread(self.context, self.signals)
+        self.worker_motor = MotorThread(self.context, self.signals)
 
     def set_sim_options(self):
-        self.context.update_motor_position(float(self.box_motor_pos.text()))
+#        self.context.update_motor_position(float(self.box_motor_pos.text()))
         self.context.update_dropped_shots(float(self.box_percent_drop.text()))
         self.context.update_peak_intensity(float(self.box_int.text()))
         self.context.update_jet_radius(float(self.box_jet_radius.text()))
         self.context.update_jet_center(float(self.box_jet_center.text()))
         self.context.update_max_intensity(float(self.box_max_int.text()))
         self.context.update_background(float(self.box_bg.text()))
-
+        self.box_motor_pos.setText(str(self.context.motor_position))
 #        self.context.update_algorithm(self.cbox_algorithm.currentText())
 
     def make_connections(self):
-        self.box_motor_pos.checkVal.connect(self.context.update_motor_position)
+#        self.box_motor_pos.checkVal.connect(self.context.update_motor_position)
         self.box_percent_drop.checkVal.connect(self.context.update_dropped_shots)
         self.box_int.checkVal.connect(self.context.update_peak_intensity)
         self.box_jet_radius.checkVal.connect(self.context.update_jet_radius)
