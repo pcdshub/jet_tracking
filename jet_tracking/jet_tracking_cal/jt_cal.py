@@ -1,27 +1,27 @@
-import h5py
-from mpi4py import MPI
-import numpy as np
-import logging
-import psana
-import yaml
-from scipy.optimize import curve_fit
-from argparse import ArgumentParser
 import json
+import logging
 import os
 import sys
 import time
-from bokeh.plotting import figure, show, output_file
-from bokeh.models import Span, Legend, LegendItem, ColorBar, LinearColorMapper
-from bokeh.io import output_notebook
-import panel as pn
-import matplotlib.pyplot as plt
+from argparse import ArgumentParser
 from pathlib import Path
 
-fpath=os.path.dirname(os.path.abspath(__file__))
+import h5py
+import matplotlib.pyplot as plt
+import numpy as np
+import panel as pn
+import psana
+import yaml
+from bokeh.models import ColorBar, Legend, LegendItem, LinearColorMapper, Span
+from bokeh.plotting import figure
+from mpi4py import MPI
+from scipy.optimize import curve_fit
+
+fpath = os.path.dirname(os.path.abspath(__file__))
 fpathup = '/'.join(fpath.split('/')[:-1])
 sys.path.append(fpathup)
 print(fpathup)
-from utils import get_r_masks, get_evr_w_codes 
+from utils import get_evr_w_codes, get_r_masks  # NOQA
 
 # Need to go to stdout for arp/sbatch
 logger = logging.getLogger(__name__)
@@ -67,10 +67,11 @@ def gaussian(x, a, mean, std, m, b):
     """
     return (a * np.exp(-((x - mean) / 2 / std) ** 2)) + (m * x + b)
 
+
 def fit_line(ave_azav, fit_points=5):
     """
     Fit the line from edges of array
-    
+
     Parameters
     ----------
     ave_azav: ndarray
@@ -83,7 +84,7 @@ def fit_line(ave_azav, fit_points=5):
     -------
     m: float
         slope of the fit
-    
+
     b: float
         y intercept of fit
     """
@@ -96,9 +97,10 @@ def fit_line(ave_azav, fit_points=5):
 
     return m, b
 
+
 def peak_lr(array_data, threshold=0.1, bins=50):
-    """Find max of normal distribution from histogram, 
-    search right and left until population falls below threshold, 
+    """Find max of normal distribution from histogram,
+    search right and left until population falls below threshold,
     will run into problems with bimodal distribution.  This is naive,
     look at KDE
 
@@ -106,7 +108,7 @@ def peak_lr(array_data, threshold=0.1, bins=50):
     ----------
     array_data: array like
         1D array data to cut on
-    
+
     threshold: float
         percent of max population to throw out.  Upper/lower
 
@@ -137,7 +139,7 @@ def peak_lr(array_data, threshold=0.1, bins=50):
     peak_idx = np.where(hist == peak_val)[0][0]
     i0_med = edges[peak_idx]
 
-    #search right
+    # search right
     right = np.argmax(hist[peak_idx:] < threshold * peak_val)
     right += peak_idx
     i0_high = edges[right]
@@ -145,14 +147,16 @@ def peak_lr(array_data, threshold=0.1, bins=50):
     # search left
     left_array = hist[:peak_idx]
     left = peak_idx - np.argmax(left_array[::-1] < threshold * peak_val)
-    # ugly way to capture cases where the i0 does not drop to the threshold value on the left
-    if left==peak_idx:
+    # ugly way to capture cases where the i0 does not drop to the threshold
+    # value on the left
+    if left == peak_idx:
         print('New threshold: i0_med/2')
         threshold = peak_val/2
         left = peak_idx - np.argmax(left_array[::-1] < threshold)
     i0_low = edges[left]
 
     return hist_all, edges_all, i0_low, i0_high, i0_med
+
 
 def calc_azav_peak(ave_azav):
     """
@@ -182,11 +186,12 @@ def calc_azav_peak(ave_azav):
         p0 = [max(ave_azav), mean, std, m, b]
         popt, _ = curve_fit(gaussian, x, ave_azav, p0=p0)
         peak = int(round(popt[1]))
-    except Exception as e:
+    except Exception:
         logger.info('Failed to fit Gaussian, using peak')
         peak = np.argmax(ave_azav)
 
     return peak
+
 
 def get_integrated_intensity(ave_azav, peak_bin, delta_bin=3):
     """
@@ -215,12 +220,13 @@ def get_integrated_intensity(ave_azav, peak_bin, delta_bin=3):
 
     return integrated_intensity
 
+
 def fit_limits(i0_data, peak_vals, i_low, i_high, bins=100):
     """
-    Get the line fit and standard deviation of the plot of i0 
+    Get the line fit and standard deviation of the plot of i0
     vs int_intensities.  This will give information about
     distribution of integrated intensities for given i0 values
-    
+
     Parameters
     ----------
     i0_data: ndarray
@@ -237,10 +243,10 @@ def fit_limits(i0_data, peak_vals, i_low, i_high, bins=100):
 
     return x, y, m, b, sigma
 
-          ###### Bokeh Figures #######
 
+# Bokeh Figures
 def peak_fig(signal, hist, edges, med, low, high):
-    """General histogram plotter with peak location and 
+    """General histogram plotter with peak location and
     left/right limits plotted"""
     fig = figure(
         title='Used Intensity Distribution for {0}. \
@@ -249,33 +255,31 @@ def peak_fig(signal, hist, edges, med, low, high):
         y_axis_label='Counts'
     )
     fig.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:])
-    left_line = Span(location=low, dimension='height', \
-        line_color='black')
-    right_line = Span(location=high, dimension='height', \
-        line_color='black')
-    peak_line = Span(location=med, dimension='height', \
-        line_color='red')
+    left_line = Span(location=low, dimension='height', line_color='black')
+    right_line = Span(location=high, dimension='height', line_color='black')
+    peak_line = Span(location=med, dimension='height', line_color='red')
     fig.renderers.extend([left_line, right_line, peak_line])
 
     return fig
+
 
 def azav_fig(ave_azav, peak, intensity, delta_bin):
     """Generate the azav fig for html file"""
     x_vals = np.arange(len(ave_azav))
     fig = figure(
-        title='Average Azimuthal Binned Array: Center - {0}, \
-            min/max - {1}/{2}, intensity - {3}'.format(peak, \
-            peak-delta_bin, peak+delta_bin, round(intensity, 2)),
+        title=f'Average Azimuthal Binned Array: Center - {peak}, min/max - '
+              f'{peak-delta_bin}/{peak+delta_bin}, intensity - '
+              f'{round(intensity, 2)}',
         x_axis_label='Bins',
         y_axis_label='Intensity',
     )
 
-    peak_line = Span(location=peak, dimension='height', \
-        line_color='green', line_width=2)
-    lower_line = Span(location=peak-delta_bin, dimension='height', \
-        line_color='black')
-    upper_line = Span(location=peak+delta_bin, dimension='height', \
-        line_color='black')
+    peak_line = Span(location=peak, dimension='height',
+                     line_color='green', line_width=2)
+    lower_line = Span(location=peak-delta_bin, dimension='height',
+                      line_color='black')
+    upper_line = Span(location=peak+delta_bin, dimension='height',
+                      line_color='black')
     ave_azav_curve = fig.scatter(x_vals, ave_azav)
     fig.renderers.extend([peak_line, lower_line, upper_line])
 
@@ -286,28 +290,29 @@ def azav_fig(ave_azav, peak, intensity, delta_bin):
 
     return fig
 
+
 def intensity_hist(intensity_hist, edges):
-    fig = figure(
-            title='Intensity Histogram'
-    )
+    fig = figure(title='Intensity Histogram')
     fig.quad(top=intensity_hist, bottom=0, left=edges[:-1], right=edges[1:])
 
     return fig
 
+
 def intensity_vs_peak_fig(intensity, peak_vals, x, y, slope, intercept, sigma):
-    """Simple plot of intensity vs peak value"""
+    """Simple plot of intensity vs peak value.txt"""
     fig = figure(
-        title='Peak value vs Intensity. Slope = {0}, Intercept = {1}'.\
-            format(round(slope, 2), round(intercept, 2)),
+        title=f'Peak value vs Intensity. Slope = {round(slope, 2)}, '
+              f'Intercept = {round(intercept, 2)}',
         x_axis_label='Intensity Monitor Value',
         y_axis_label='Peak Values'
     )
     fig.x_range.range_padding = fig.y_range.range_padding = 0
     h, y_edge, x_edge = np.histogram2d(peak_vals, intensity, bins=100)
-    fig.image(image=[h], x=x_edge[0], y=y_edge[0], dh=y_edge[-1]-y_edge[0], \
-        dw=x_edge[-1]-x_edge[0], palette="Spectral11")
-    color_mapper = LinearColorMapper(palette="Spectral11", low=h.min(), high=h.max())
-    color_bar = ColorBar(color_mapper=color_mapper, location=(0,0))
+    fig.image(image=[h], x=x_edge[0], y=y_edge[0], dh=y_edge[-1]-y_edge[0],
+              dw=x_edge[-1]-x_edge[0], palette="Spectral11")
+    color_mapper = LinearColorMapper(palette="Spectral11", low=h.min(),
+                                     high=h.max())
+    color_bar = ColorBar(color_mapper=color_mapper, location=(0, 0))
     fig.xaxis.bounds = [i0_low, i0_high]
     fig.add_layout(color_bar, 'right')
     fig.line(x, y, color='red')
@@ -315,10 +320,11 @@ def intensity_vs_peak_fig(intensity, peak_vals, x, y, slope, intercept, sigma):
     fig.line(x, y + 1 * sigma, color='orange')
     return fig
 
+
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--cfg', type=str, \
-        default=(''.join([JT_LOC, 'jt_configs/xcs_config.yml'])))
+    parser.add_argument('--cfg', type=str, default=(
+        ''.join([JT_LOC, 'jt_configs/xcs_config.yml'])))
     parser.add_argument('--run', type=int, default=None)
     args = parser.parse_args()
 
@@ -340,13 +346,13 @@ if __name__ == '__main__':
         hutch = yml_dict['hutch']
         exp = os.environ.get('EXPERIMENT', yml_dict['experiment'])
         run = os.environ.get('RUN_NUM', str(args.run))
-        if run is None or run==0:
+        if run is None or run == 0:
             run = yml_dict['run']
         cal_params = yml_dict['cal_params']
         ffb = yml_dict['ffb']
         event_code = yml_dict['event_code']
 
-    if jet_cam_name=='None' or jet_cam_name=='none':
+    if jet_cam_name == 'None' or jet_cam_name == 'none':
         jet_cam_name = None
 
     # Get Events for each worker
@@ -366,9 +372,11 @@ if __name__ == '__main__':
     # Setup smd saver
     jt_file = 'run{}_jt_cal.h5'.format(run)
     if ffb:
-        jt_file_path = ''.join([FFB_LOC, hutch, '/', exp, '/scratch/', jt_file])
+        jt_file_path = ''.join([FFB_LOC, hutch, '/', exp, '/scratch/',
+                                jt_file])
     else:
-        jt_file_path = ''.join([SD_LOC, hutch, '/', exp, '/scratch/', jt_file])
+        jt_file_path = ''.join([SD_LOC, hutch, '/', exp, '/scratch/',
+                                jt_file])
     if rank == 0:
         logger.info('Will save small data to {}'.format(jt_file_path))
     smd = ds.small_data(jt_file_path, gather_interval=100)
@@ -376,7 +384,9 @@ if __name__ == '__main__':
     # Get the detectors from the config
     try:
         detector = psana.Detector(det_map['name'])
-        psana_mask = detector.mask(int(run), calib=True, status=True, edges=True, central=False, unbond=False, unbondnbrs=False)
+        psana_mask = detector.mask(int(run), calib=True, status=True,
+                                   edges=True, central=False, unbond=False,
+                                   unbondnbrs=False)
         ipm = psana.Detector(ipm_name)
         if jet_cam_name is not None:
             jet_cam = psana.Detector(jet_cam_name)
@@ -387,31 +397,32 @@ if __name__ == '__main__':
         sys.exit()
 
     if rank == 0:
-        logger.info('Gathering small data for exp: {}, run: {}, events: {}'.format(exp, run, cal_params['events']))
+        logger.info(f"Gathering small data for exp: {exp}, run: {run}, events:"
+                    f" {cal_params['events']}")
         logger.info('Detectors Available: {}'.format(psana.DetNames()))
 
     # Iterate through and pull out small data
     for evt_idx, evt in enumerate(ds.events()):
-        if evt_idx%10==0:
+        if evt_idx % 10 == 0:
             print('Event: {}'.format(evt_idx))
         try:
             print(event_code)
             print(type(event_code))
             if event_code not in evr.eventCodes(evt):
-                    continue
+                continue
             # Get image and azav
             calib = detector.calib(evt)
             calib = calib * psana_mask
             det_image = detector.image(evt, calib)
             azav = np.array([np.mean(det_image[mask]) for mask in masks])
-            
+
             # Get i0 Data this is different for differe ipm detectors
             # Be nice not to waste cycles on getattr at some point
             i0_data = getattr(ipm.get(evt), ipm_det)()
-            
+
             if jet_cam_name is not None:
                 # Get jet projection and location
-                if not plt.get_backend()=='agg':
+                if not plt.get_backend() == 'agg':
                     if evt_idx == 5:
                         plt.imshow(jet_cam.image(evt))
                         plt.show()
@@ -419,17 +430,18 @@ if __name__ == '__main__':
                         plt.show()
                 jet_proj = jet_cam.image(evt).sum(axis=jet_cam_axis)
                 max_jet_val = np.amax(jet_proj)
-                max_jet_idx = np.where(jet_proj==max_jet_val)[0][0]
+                max_jet_idx = np.where(jet_proj == max_jet_val)[0][0]
             else:
                 max_jet_val = 1e6
                 max_jet_idx = 1e6
-            smd.event(azav=azav, i0=i0_data, jet_peak=max_jet_val, jet_loc=max_jet_idx)
+            smd.event(azav=azav, i0=i0_data, jet_peak=max_jet_val,
+                      jet_loc=max_jet_idx)
         except Exception as e:
             logger.info('Unable to process event {}: {}'.format(evt_idx, e))
 
         if evt_idx == num_events:
             break
-    
+
     smd.save()
     if rank == 0:
         while not os.path.exists(jt_file_path):
@@ -441,14 +453,14 @@ if __name__ == '__main__':
         azav_data = np.array(f['azav'])
         jet_loc = np.array(f['jet_loc'])
         jet_peak = np.array(f['jet_peak'])
-    
+
         # Find I0 distribution and filter out unused values
         i0_data = np.array(i0_data)
         i0_hist, edges, i0_low, i0_high, i0_med = peak_lr(i0_data)
         i0_idxs = np.where((i0_data > i0_low) & (i0_data < i0_high))
         i0_high = 2*i0_high
         i0_data_use = i0_data[i0_idxs]
-        
+
         if jet_cam_name is not None:
             jet_loc_use = jet_loc[i0_idxs]
             jet_loc_mean = np.mean(jet_loc_use)
@@ -461,9 +473,9 @@ if __name__ == '__main__':
             jet_loc_std = None
             jet_peak_mean = None
             jet_peak_std = None
- 
+
         # Generate figure for i0 params
-        p = peak_fig('{}'.format(ipm_name), i0_hist, edges, i0_med, i0_low, i0_high)
+        p = peak_fig(f'{ipm_name}', i0_hist, edges, i0_med, i0_low, i0_high)
 
         # Get the azav value we'll use
         azav_use = [azav_data[idx] for idx in i0_idxs[0]]
@@ -472,17 +484,22 @@ if __name__ == '__main__':
         peak_bin = calc_azav_peak(ave_azav)
 
         # Get the integrated intensity and generate fig
-        integrated_intensity = get_integrated_intensity(ave_azav, peak_bin, cal_params['delta_bin'])
-        int_hist, int_edges, int_low, int_high, int_med = peak_lr(integrated_intensity)
-        p1 = azav_fig(ave_azav, peak_bin, integrated_intensity, cal_params['delta_bin'])
+        integrated_intensity = get_integrated_intensity(
+            ave_azav, peak_bin, cal_params['delta_bin'])
+        int_hist, int_edges, int_low, int_high, int_med = peak_lr(
+            integrated_intensity)
+        p1 = azav_fig(
+            ave_azav, peak_bin, integrated_intensity, cal_params['delta_bin'])
 
         # Go back through indices and find peak values for all the intensities
         low_bin = peak_bin - cal_params['delta_bin']
         high_bin = peak_bin + cal_params['delta_bin']
         peak_vals = [azav[low_bin:high_bin].sum(axis=0) for azav in azav_use]
         # Now fit I0 vs diffraction intensities
-        x, y, slope, intercept, sigma = fit_limits(i0_data_use, peak_vals, i0_low, i0_high)
-        p2 = intensity_vs_peak_fig(i0_data_use, peak_vals, x, y, slope, intercept, sigma)
+        x, y, slope, intercept, sigma = fit_limits(i0_data_use, peak_vals,
+                                                   i0_low, i0_high)
+        p2 = intensity_vs_peak_fig(i0_data_use, peak_vals, x, y, slope,
+                                   intercept, sigma)
 
         # Ratio information
         ratios = peak_vals / i0_data_use
@@ -512,7 +529,8 @@ if __name__ == '__main__':
         logger.info('Results: {}'.format(results))
 
         # Set report directory
-        results_dir = ''.join([SD_LOC, hutch, '/', exp, '/stats/summary/jt_cal_run_', run])
+        results_dir = ''.join([SD_LOC, hutch, '/', exp,
+                               '/stats/summary/jt_cal_run_', run])
 
         # Get calib dir for meta data saving
         calib_dir = ''.join([SD_LOC, hutch, '/', exp, '/calib/jt_results/'])
@@ -531,10 +549,10 @@ if __name__ == '__main__':
             results = {k: str(v) for k, v in results.items()}
             json.dump(results, f)
         logger.info(f'Saved calibration to {res_file}')
-        
-        # try to also save calib results to exp directory in hutch opr home 
+
+        # try to also save calib results to exp directory in hutch opr home
         # (only works if ran as hutchopr)
-        hopr_dir = '/cds/home/opr/{}opr/experiments/{}/jt_calib'.format(hutch, exp)
+        hopr_dir = f'/cds/home/opr/{hutch}opr/experiments/{exp}/jt_calib'
         try:
             if not os.path.exists(hopr_dir):
                 Path(hopr_dir).mkdir(mode=777, parents=True)
@@ -544,10 +562,12 @@ if __name__ == '__main__':
                 json.dump(results, f)
             logger.info('Saved calibration to {}'.format(res_file))
         except Exception as e:
-            logger.warning('Unable to write to {}opr experiment directory: {}'.format(hutch, e))
+            logger.warning(f'Unable to write to {hutch}opr experiment '
+                           f'directory: {e}')
 
         # Accumulate plots and write report
-        gspec = pn.GridSpec(sizing_mode='stretch_both', name='JT Cal Results: Run {}'.format(run))
+        gspec = pn.GridSpec(sizing_mode='stretch_both',
+                            name='JT Cal Results: Run {}'.format(run))
         gspec[0:3, 0:3] = p
         gspec[4:6, 0:3] = p1
         gspec[7:12, 0:3] = p2

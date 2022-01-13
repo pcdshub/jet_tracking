@@ -1,10 +1,9 @@
-from PyQt5.QtWidgets import QFrame, QWidget, QGraphicsPixmapItem, QGraphicsView, QGraphicsScene
-from PyQt5.QtGui import QPixmap
-from gui.widgets.jetImageWidgetUi import Image_Ui
-#from epics import caget
-import cv2
 import logging
-import numpy as np
+
+# from epics import caget
+from gui.widgets.jetImageWidgetUi import Image_Ui
+from PyQt5.QtGui import QPixmap
+from PyQt5.QtWidgets import QGraphicsPixmapItem, QWidget
 
 log = logging.getLogger(__name__)
 

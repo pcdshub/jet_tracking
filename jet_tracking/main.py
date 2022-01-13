@@ -1,14 +1,16 @@
 import ctypes
-import sys, os
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtGui import QIcon
-from PyQt5.Qt import Qt
-#from . import datastream
-#sys.path.append('/reg/g/pcds/epics-dev/ajshack/jet_tracking/jet_tracking')
-from gui.windows.mainWindow import MainWindow
 import logging
+import os
+import sys
+
+# from . import datastream
+# sys.path.append('/reg/g/pcds/epics-dev/ajshack/jet_tracking/jet_tracking')
+from gui.windows.mainWindow import MainWindow
+from PyQt5.Qt import Qt
+from PyQt5.QtWidgets import QApplication
 
 log = logging.getLogger(__name__)
+
 
 class App(QApplication):
     def __init__(self, sys_argv):
@@ -30,7 +32,8 @@ class App(QApplication):
         handler = logging.StreamHandler()
         handler.setLevel(logging.CRITICAL)
         formatter = logging.Formatter(
-            "%(asctime)s\t (%(name)-25.25s) (thread:%(thread)d) (line:%(lineno)5d)\t[%(levelname)-5.5s] %(message)s")
+            "%(asctime)s\t (%(name)-25.25s) (thread:%(thread)d) "
+            "(line:%(lineno)5d)\t[%(levelname)-5.5s] %(message)s")
         handler.setFormatter(formatter)
         logger.addHandler(handler)
 
@@ -40,7 +43,10 @@ class App(QApplication):
             sys.__excepthook__(exc_type, exc_value, exc_traceback)
             return
 
-        log.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+        log.error("Uncaught exception", exc_info=(exc_type, exc_value,
+                                                  exc_traceback))
+
+
 def main():
     # Makes the icon in the taskbar as well.
     appID = "opt-id"  # arbitrary string
@@ -50,7 +56,8 @@ def main():
         pass
 
     app = App(sys.argv)
-    # app.setWindowIcon(QIcon(application_path + "{0}gui{0}misc{0}logo{0}logo3.ico".format(os.sep)))
+    # app.setWindowIcon(QIcon(application_path
+    #                   + "{0}gui{0}misc{0}logo{0}logo3.ico".format(os.sep)))
     sys.exit(app.exec_())
 
 

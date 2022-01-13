@@ -1,5 +1,7 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, QSlider, QSizePolicy, QButtonGroup, QPushButton
-from gui.widgets.basicWidgets import QRangeSlider, Label, LineEdit, ComboBox
+from gui.widgets.basicWidgets import ComboBox, LineEdit
+from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSizePolicy,
+                             QVBoxLayout)
+
 
 class Sim_Ui(object):
 
@@ -16,25 +18,26 @@ class Sim_Ui(object):
         obj.box_percent_drop.valRange(0, 100)
         obj.lbl_int = QLabel("Beam Intensity")
         obj.box_int = LineEdit("10")
-      #  obj.box_int.valRange(0, 100)
+        # obj.box_int.valRange(0, 100)
         obj.lbl_motor_pos = QLabel("Motor Position (mm)")
         obj.box_motor_pos = LineEdit("0")
-      #  obj.box_motor_pos.valRange(-1, 1)
+        # obj.box_motor_pos.valRange(-1, 1)
         obj.lbl_jet_radius = QLabel("Jet Radius (mm)")
         obj.box_jet_radius = LineEdit("0.025")
-      #  obj.box_jet_radius.valRange(0, 0.1)
+        # obj.box_jet_radius.valRange(0, 0.1)
         obj.lbl_jet_center = QLabel("Jet Center (mm)")
         obj.box_jet_center = LineEdit("0.03")
-      #  obj.box_jet_center.valRange(-1, 1)
+        # obj.box_jet_center.valRange(-1, 1)
         obj.lbl_max_int = QLabel("Diffraction Intensity")
         obj.box_max_int = LineEdit("10")
-      #  obj.box_max_int.valRange(0, 100)
+        # obj.box_max_int.valRange(0, 100)
         obj.lbl_bg = QLabel("Background Noise")
         obj.box_bg = LineEdit("0.05")
-      #  obj.box_bg.valRange(0, 1)
+        # obj.box_bg.valRange(0, 1)
 
         obj.cbox_sim_algorithm = ComboBox()
-        obj.cbox_sim_algorithm.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        obj.cbox_sim_algorithm.setSizePolicy(QSizePolicy.Expanding,
+                                             QSizePolicy.Preferred)
         obj.cbox_sim_algorithm.addItem("Ternary Search")
         obj.cbox_sim_algorithm.addItem("Linear Scan")
         obj.bttn_start_tracking = QPushButton("Start Tracking")

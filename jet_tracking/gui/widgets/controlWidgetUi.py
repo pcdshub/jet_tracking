@@ -1,8 +1,8 @@
-from PyQt5.QtWidgets import QVBoxLayout, QButtonGroup, QRadioButton, \
-    QGridLayout, QHBoxLayout, QPushButton, QLCDNumber, \
-    QFrame, QTextEdit, QSizePolicy
-
-from gui.widgets.basicWidgets import CollapsibleBox, Label, LineEdit, ComboBox, QHLine
+from gui.widgets.basicWidgets import (CollapsibleBox, ComboBox, Label,
+                                      LineEdit, QHLine)
+from PyQt5.QtWidgets import (QButtonGroup, QFrame, QGridLayout, QHBoxLayout,
+                             QLCDNumber, QPushButton, QRadioButton,
+                             QSizePolicy, QTextEdit, QVBoxLayout)
 
 
 class Controls_Ui(object):
@@ -64,35 +64,43 @@ class Controls_Ui(object):
         obj.lbl_percent = Label("Percent to Accept \n(1 - 99)")
         obj.le_percent = LineEdit("70")
         obj.le_percent.valRange(1, 99)
-        obj.le_percent.setToolTip('Sets the percentage of I/I0 values that are accepted as normal based on a Gaussian distribution.\n Lower numbers are stricter and will trigger a scan more easily.')
-        obj.lbl_notification_tol = Label("Notification Tolerance \n(10 - 300s)")
+        obj.le_percent.setToolTip('Sets the percentage of I/I0 values that are'
+                                  ' accepted as normal based on a Gaussian '
+                                  'distribution.\n Lower numbers are stricter '
+                                  'and will trigger a scan more easily.')
+        obj.lbl_notification_tol = Label("Notification Tolerance \n(10-300s)")
         obj.le_notification_tol = LineEdit('30')
         obj.le_notification_tol.valRange(10, 300)
-        obj.le_notification_tol.setToolTip('Sets time delay before notifications trigger an action.')
+        obj.le_notification_tol.setToolTip('Sets time delay before '
+                                           'notifications trigger an action.')
         obj.lbl_ave_graph = Label('Averaging \n(1 - 30s)')
         obj.lbl_refresh_rate = Label('Refresh Rate \n(1 - 50Hz)')
         obj.le_ave_graph = LineEdit("5")
         obj.le_ave_graph.valRange(1, 30)
-        obj.le_ave_graph.setToolTip('Sets averaging time for each point in the plots.')
+        obj.le_ave_graph.setToolTip('Sets averaging time for each point in the'
+                                    ' plots.')
         obj.le_refresh_rate = LineEdit("5")
         obj.le_refresh_rate.valRange(1, 50)
-        obj.le_refresh_rate.setToolTip('Sets the refresh rate for the plots. \nHigh refresh rates may make the GUI run slowly.')
+        obj.le_refresh_rate.setToolTip('Sets the refresh rate for the plots. '
+                                       '\nHigh refresh rates may make the GUI '
+                                       'run slowly.')
         obj.lbl_x_axis = Label("X-Axis Time View \n(10 - 120s)")
         obj.le_x_axis = LineEdit("60")
         obj.le_x_axis.valRange(10, 120)
-        obj.le_x_axis.setToolTip('Sets the length of the time axis for the plots. \nThis parameter only refreshes after the plots have reached the current maximum time on the plots.')
-
+        obj.le_x_axis.setToolTip('Sets the length of the time axis for the '
+                                 'plots. \nThis parameter only refreshes after'
+                                 ' the plots have reached the current maximum '
+                                 'time on the plots.')
 
         # setup layout
         ##############
-
         obj.layout_percent = QHBoxLayout()
         obj.layout_tol = QHBoxLayout()
         obj.layout_ave = QHBoxLayout()
         obj.layout_refresh = QHBoxLayout()
         obj.layout_x_axis = QHBoxLayout()
         obj.layout_percent.addWidget(obj.lbl_percent, 75)
-        obj.layout_percent.addWidget(obj.le_percent)        
+        obj.layout_percent.addWidget(obj.le_percent)
         obj.layout_tol.addWidget(obj.lbl_notification_tol, 75)
         obj.layout_tol.addWidget(obj.le_notification_tol)
         obj.layout_ave.addWidget(obj.lbl_ave_graph, 75)
@@ -143,21 +151,25 @@ class Controls_Ui(object):
 
         obj.le_size = LineEdit("0.02")
         obj.le_size.valRange(0, 100)
-        obj.le_size.setToolTip('Move motor by this amount each step in basic scans')
+        obj.le_size.setToolTip('Move motor by this amount each step in basic '
+                               'scans')
 
         obj.le_ave_motor = LineEdit("10")
         obj.le_ave_motor.valRange(1, 300)
-        obj.le_ave_motor.setToolTip('Number of points to average before moving motor')
+        obj.le_ave_motor.setToolTip('Number of points to average before moving'
+                                    ' motor')
 
         obj.cbox_algorithm = ComboBox()
-        obj.cbox_algorithm.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        obj.cbox_algorithm.setSizePolicy(QSizePolicy.Expanding,
+                                         QSizePolicy.Preferred)
         obj.cbox_algorithm.addItem("Ternary Search")
         obj.cbox_algorithm.addItem("Basic Scan")
         obj.cbox_algorithm.addItem("Linear + Ternary")
         obj.cbox_algorithm.addItem("Dynamic Linear Scan")
 
         obj.le_tolerance = LineEdit("0.001")
-        obj.le_tolerance.setToolTip('Tolerance for ternary search, stops when step size equals tolerance')
+        obj.le_tolerance.setToolTip('Tolerance for ternary search, stops when '
+                                    'step size equals tolerance')
         obj.le_tolerance.valRange(0, 10)
         obj.lbl_tolerance = Label("Tolerance (mm)")
 
@@ -169,17 +181,21 @@ class Controls_Ui(object):
         obj.bttn_search = QPushButton()
         obj.bttn_search.setText("Go Once")
         obj.bttn_search.setEnabled(True)
-        obj.bttn_search.setToolTip('Runs the chosen search algorithm once and moves to the optimized motor position.')
+        obj.bttn_search.setToolTip('Runs the chosen search algorithm once and '
+                                   'moves to the optimized motor position.')
 
         obj.bttn_stop_current_scan = QPushButton()
         obj.bttn_stop_current_scan.setText("Stop Scan")
         obj.bttn_stop_current_scan.setEnabled(True)
-        obj.bttn_stop_current_scan.setToolTip("Stops the current scan in its tracks!")
+        obj.bttn_stop_current_scan.setToolTip("Stops the current scan in its "
+                                              "tracks!")
 
         obj.bttn_tracking = QPushButton()
         obj.bttn_tracking.setText("Start Tracking")
         obj.bttn_tracking.setEnabled(False)
-        obj.bttn_tracking.setToolTip('Enables tracking mode. \nA search will begin if scattering intensity drops below threshold.')
+        obj.bttn_tracking.setToolTip('Enables tracking mode. \nA search will '
+                                     'begin if the scattering intensity drops '
+                                     'below the threshold.')
 
         obj.bttn_stop_motor = QPushButton()
         obj.bttn_stop_motor.setText("Stop Tracking")
@@ -189,14 +205,13 @@ class Controls_Ui(object):
         obj.lbl_tracking = Label("Tracking")
         obj.lbl_tracking.setSubtitleStyleSheet()
         obj.lbl_tracking_status = Label("False")
-        obj.lbl_tracking_status.setStyleSheet(f"\
-                background-color: red;")
+        obj.lbl_tracking_status.setStyleSheet("background-color: red;")
 
         obj.layout_motor = QVBoxLayout()
         obj.layout_connect_motor = QHBoxLayout()
         obj.layout_motor_manual = QHBoxLayout()
         obj.layout_motor_input = QGridLayout()
-        obj.layout_scan_settings  = QHBoxLayout()
+        obj.layout_scan_settings = QHBoxLayout()
         obj.layout_motor_bttns = QHBoxLayout()
         obj.layout_single_scan = QHBoxLayout()
         obj.layout_tracking = QHBoxLayout()
@@ -244,15 +259,14 @@ class Controls_Ui(object):
         obj.lbl_tracking = Label("Tracking")
         obj.lbl_tracking.setSubtitleStyleSheet()
         obj.lbl_tracking_status = Label("False")
-        obj.lbl_tracking_status.setStyleSheet(f"\
-                background-color: red;")
+        obj.lbl_tracking_status.setStyleSheet("background-color: red;")
 
         obj.lbl_i0 = Label("Mean Initial intensity (I0)")
         obj.lbl_i0_status = QLCDNumber(7)
 
         obj.lbl_diff_i0 = Label("Mean I/I0")
         obj.lbl_diff_status = QLCDNumber(7)
-        
+
         obj.lbl_motor = Label("Motor Position (mm)")
         obj.lbl_motor_status = QLCDNumber(7)
 
@@ -289,22 +303,22 @@ class Controls_Ui(object):
         obj.layout_usr_cntrl.addWidget(obj.frame_tracking_status)
         obj.layout_usr_cntrl.addWidget(obj.frame_i0)
         obj.layout_usr_cntrl.addWidget(obj.frame_diff_i0)
-        
+
         obj.layout_usr_cntrl.addWidget(obj.frame_motor)
-        
+
         ###############################
 
-        ########################################################################
+        #######################################################################
         # text area for giving updates the user can see
-        ########################################################################
+        #######################################################################
 
         obj.text_area = QTextEdit("~~~read only information for user~~~")
         obj.text_area.setReadOnly(True)
         obj.layout_usr_cntrl.addWidget(obj.text_area)
 
-        #########################################################################
+        #######################################################################
         # main buttons!!!!
-        #########################################################################
+        #######################################################################
 
         obj.bttn_calibrate = QPushButton("Calibrate")
         obj.bttn_calibrate.setStyleSheet("\

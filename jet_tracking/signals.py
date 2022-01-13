@@ -1,6 +1,7 @@
-from PyQt5 import QtCore
 import numpy as np
+from PyQt5 import QtCore
 from PyQt5.QtGui import QImage
+
 
 class Signals(QtCore.QObject):
 

@@ -1,9 +1,6 @@
-from PyQt5.QtWidgets import QAction, QMenuBar
-from PyQt5.QtCore import QSize, QCoreApplication
-import logging
-from gui.windows.simulationWindow import SimWindow
+from PyQt5.QtCore import QSize
+from PyQt5.QtWidgets import QMenuBar
 
-log = logging.getLogger(__name__)
 
 class Ui_MainWindow(object):
     def setupUi(self, obj):
@@ -18,6 +15,3 @@ class Ui_MainWindow(object):
 
     def minimumSizeHint(self):
         return (QSize(1400, 800))
-
-
-
