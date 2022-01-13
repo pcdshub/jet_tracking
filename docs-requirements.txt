@@ -1,3 +1,8 @@
+# These are packages and dependencies of various sphinx extensions used
+# for documentation.
+ipython
+matplotlib
+numpydoc
 sphinx
 sphinx_rtd_theme
 doctr
