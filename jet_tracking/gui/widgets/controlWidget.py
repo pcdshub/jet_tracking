@@ -54,7 +54,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.bttngrp3.buttonClicked.connect(self.checkBttn)
 
         self.bttn_connect_motor.clicked.connect(self.context.connect_motor)
-        self.bttn_search.clicked.connect(self._start_motor)
+        self.bttn_search.clicked.connect(self.start_algorithm)
         self.bttn_stop_current_scan.clicked.connect(self._stop_scanning)
         self.bttn_tracking.clicked.connect(self._enable_tracking)
         self.bttn_stop_motor.clicked.connect(self._stop_motor)
@@ -72,6 +72,10 @@ class ControlsWidget(QFrame, Controls_Ui):
 
     def start_processes(self):
         self.worker_status.start()
+        self._start_motor()
+
+    def start_algorithm(self):
+        self.context.update_motor_mode("run")
 
     def _stop(self):
         if self.worker_motor.isRunning():
@@ -105,7 +109,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             if not self.worker_motor.isInterruptionRequested():
                 self.worker_motor.start()
             else:
-                self.signals.message.emit("The motor is already running")
+                self.signals.message.emit("The motor thread is already started")
 
     def _stop_motor(self):
         if self.worker_motor.isRunning():

@@ -2,8 +2,7 @@ from datastream import MotorThread, StatusThread
 from gui.widgets.simControlWidgetUi import Sim_Ui
 from PyQt5.QtWidgets import QFrame
 
-
-class SimWidget(QFrame, Sim_Ui):
+class SimWidget(QFrame, SimUi):
 
     def __init__(self, context, signals):
         super(SimWidget, self).__init__()
@@ -27,7 +26,6 @@ class SimWidget(QFrame, Sim_Ui):
         self.context.update_max_intensity(float(self.box_max_int.text()))
         self.context.update_background(float(self.box_bg.text()))
         self.box_motor_pos.setText(str(self.context.motor_position))
-        # self.context.update_algorithm(self.cbox_algorithm.currentText())
 
     def make_connections(self):
         # self.box_motor_pos.checkVal.connect(self.context.update_motor_position)
@@ -38,6 +36,7 @@ class SimWidget(QFrame, Sim_Ui):
         self.box_jet_center.checkVal.connect(self.context.update_jet_center)
         self.box_max_int.checkVal.connect(self.context.update_max_intensity)
         self.box_bg.checkVal.connect(self.context.update_background)
+        self.cbox_sim_algorithm.currentTextChanged.connect(self.context.update_algorithm)
         self.bttn_start_tracking.clicked.connect(self.start_tracking)
         self.bttn_stop_tracking.clicked.connect(self.stop_tracking)
 
@@ -47,4 +46,5 @@ class SimWidget(QFrame, Sim_Ui):
 
     def stop_tracking(self):
         self.context.update_tracking(False)
+        # maybe need to stop the motor if stop tracking is pressed??
         self.signals.trackingStatus.emit("Not Tracking", "red")

@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSizePolicy,
                              QVBoxLayout)
 
 
-class Sim_Ui(object):
+class SimUi(object):
 
     def setupUi(self, obj):
         """
@@ -39,6 +39,7 @@ class Sim_Ui(object):
         obj.cbox_sim_algorithm.setSizePolicy(QSizePolicy.Expanding,
                                              QSizePolicy.Preferred)
         obj.cbox_sim_algorithm.addItem("Ternary Search")
+        obj.cbox_sim_algorithm.addItem("Basic Scan")
         obj.cbox_sim_algorithm.addItem("Linear Scan")
         obj.bttn_start_tracking = QPushButton("Start Tracking")
         obj.bttn_start_tracking.setStyleSheet("\

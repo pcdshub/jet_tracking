@@ -664,6 +664,13 @@ class StatusThread(QThread):
         self.signals.sleepMotor.emit()
 
     def missed_shots(self):
+        if self.context.motor_running:
+            if self.status == "everything is good":
+                self.signals.notifyMotor.emit("missed shots")
+            elif self.status == "dropped shots":
+                self.signals.notifyMotor.emit("resume")
+            elif self.status == "high intensity":
+                self.signals.notifyMotor.emit("you downgraded")
         if self.isTracking and not self.context.motor_running:
             if self.badScanCounter < self.badScanLimit:
                 self.signals.message.emit("lots of missed shots.. "
@@ -864,6 +871,7 @@ class MotorThread(QThread):
         self.motor = None
         self.live = True
         self.connected = False
+        self.wait = True
         self.mode = 'sleep'
         self.calibration_values = {}
         self.algorithm = ''
@@ -929,6 +937,8 @@ class MotorThread(QThread):
             self.signals.message.emit('run while the mode is calibrate should not be possible!!!')
         if m == 'run' and self.mode == 'sleep':
             self.signals.message.emit('starting the algorithm you selected :)')
+            self.mode = m
+            self.connect_to_motor()
 
     def live_motor(self, live):
         self.live = live
@@ -940,8 +950,10 @@ class MotorThread(QThread):
             self.motor_name = self.context.PV_DICT.get('motor', None)
             print("connecting to: ", self.motor_name)
             self.motor = IMS(self.motor_name, name='jet_x')
+            self.wait = True
         elif not self.live:
             self.motor = SimulatedMotor(self.context, self.signals)
+            self.wait = False
 
     def clear_values(self):
         self.moves = []
@@ -1009,6 +1021,7 @@ class MotorThread(QThread):
         # this is where we set the integration time for each motor position
         # in the scan
         if len(self.intensities) == 20:
+            print(self.intensities)
             self.check_motor_options()
             print(self.moves)
 
@@ -1031,6 +1044,7 @@ class MotorThread(QThread):
                         self.signals.message.emit(f"Found peak intensity {self.max_value} "
                                                   f"at motor position: {self.motor.position}")
                         self.mode = 'sleep'
+                        self.context.update_motor_mode('sleep')
                 else:
                     if self.request_new_values and self.got_new_values:
                         self.request_new_values = False
@@ -1044,6 +1058,7 @@ class MotorThread(QThread):
                     self.motor.move(self.initial_position)
                     self.calibration_steps = 1
                     self.mode = 'sleep'
+                    self.context.update_motor_mode('sleep')
                 else:
                     if self.request_image_processor and self.complete_image_processor:
                         self.request_image_processor = False
