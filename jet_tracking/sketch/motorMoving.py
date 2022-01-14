@@ -26,13 +26,13 @@ class MotorAction(object):
         self.signals = signals
         self.motor_thread = motor_thread
         self.ternary_search = TernarySearch(self.motor_thread, signals)
-        self.basic_scan = BasicScan(self.motor_thread, signals)
-        self.linear_ternary = LinearTernary(self.motor_thread, signals)
-        self.dyn_linear = DynamicLinear(self.motor_thread, signals)
+        self.basic_scan = BasicScan(self.motor_thread, context, signals)
+        self.linear_ternary = LinearTernary(self.motor_thread, context, signals)
+        self.dyn_linear = DynamicLinear(self.motor_thread, context, signals)
         self.motor = self.motor_thread.motor
         self.stop_search = False
-        self.last_direction = "none" # positive or negative or none
-        self.new_direction = "none" # positive or negative or none
+        self.last_direction = "none"   # positive or negative or none
+        self.new_direction = "none"  # positive or negative or none
         self.last_position = 0
         self.new_position = 0
         self.last_intensity = 0
@@ -52,41 +52,42 @@ class MotorAction(object):
             if self.stop_search:
                 self.stop_search = False
                 #self.ternary_search.move_to_max()
-                return(True, self.ternary_search.max_value)
+                return True, self.ternary_search.max_value
             self.ternary_search.search()
             if self.ternary_search.done:
-                return(True, self.ternary_search.max_value)
-            else: return(False, self.ternary_search.max_value)
+                return True, self.ternary_search.max_value
+            else: return False, self.ternary_search.max_value
         elif self.motor_thread.algorithm == "Basic Scan":
             if self.stop_search:
                 self.basic_scan.move_to_max()
                 self.stop_search = False
-                return(True, self.basic_scan.max_value)
+                return True, self.basic_scan.max_value
             self.basic_scan.scan()
             if self.basic_scan.done:
-                return(True, self.basic_scan.max_value)
-            else: return(False, self.basic_scan.max_value)
+                return True, self.basic_scan.max_value
+            else: return False, self.basic_scan.max_value
         elif self.motor_thread.algorithm == "Linear + Ternary":
             if self.stop_search:
                 self.stop_search = False
-                return(True, self.linear_ternary.max_value)
+                return True, self.linear_ternary.max_value
             self.linear_ternary.search()
             if self.linear_ternary.done:
-                return(True, self.linear_ternary.max_value)
-            else: return(False, self.linear_ternary.max_value)
+                return True, self.linear_ternary.max_value
+            else: return False, self.linear_ternary.max_value
         elif self.motor_thread.algorithm == "Dynamic Linear Scan":
             if self.stop_search:
                 self.stop_search = False
-                return(True, self.dyn_linear.max_value)
+                return True, self.dyn_linear.max_value
             self.dyn_linear.scan()
             if self.dyn_linear.done:
-                return(True, self.dyn_linear.max_value)
-            else: return(False, self.dyn_linear.max_value)
+                return True, self.dyn_linear.max_value
+            else: return False, self.dyn_linear.max_value
 
 
 class LinearTernary(object):
-    def __init__(self, motor_thread, signals):
+    def __init__(self, motor_thread, context, signals):
         self.motor_thread = motor_thread
+        self.context = context
         self.signals = signals
         self.beginning = True
         self.original_intensity = 0
@@ -110,8 +111,9 @@ class LinearTernary(object):
 
 
 class DynamicLinear(object):
-    def __init__(self, motor_thread, signals):
+    def __init__(self, motor_thread, context, signals):
         self.motor_thread = motor_thread
+        self.context = context
         self.signals = signals
         self.beginning = True
         self.original_intensity = 0
@@ -150,20 +152,20 @@ class DynamicLinear(object):
         self.beginning = False
 
     def find_max_location(self):
-        if self.motor_thread.moves != []:
+        if not self.motor_thread.moves:
             moves_reorg = list(map(list, (zip(*self.motor_thread.moves))))
             intensities = moves_reorg[0]
             self.max_value = max(intensities)
             self.min_value = min(intensities)
             index = intensities.index(self.max_value)
             max_location = moves_reorg[1][index]
-            return(max_location)
+            return max_location
         else:
-            return(self.motor_thread.motor.position)
+            return self.motor_thread.motor.position
 
     def move_to_max(self):
         max_location = self.find_max_location()
-        self.motor_thread.motor.move(max_location, wait=True)
+        self.motor_thread.motor.move(max_location, self.motor_thread.wait)
 
     def scan(self):
         """does a basic scan from the low limit to one step below the high limit
@@ -174,10 +176,10 @@ class DynamicLinear(object):
         if self.beginning:
             self.start_fresh()
             self.beginning = False
-            self.motor_thread.motor.move(self.ll, wait=True)
+            self.motor_thread.motor.move(self.ll, self.motor_thread.wait)
         elif self.motor_thread.moves[-1][1] + self.step_size < self.hl and not self.beginning:
             position = self.ll + (self.step*self.step_size)
-            self.motor_thread.motor.move(position, wait=True)
+            self.motor_thread.motor.move(position, self.motor_thread.wait)
             self.signals.changeMotorPosition.emit(self.motor_thread.motor.position)
             self.step += 1
             print("next step")
@@ -185,7 +187,7 @@ class DynamicLinear(object):
             max_location = self.find_max_location()
             print(f"max value: {self.max_value}, original_intensity: {self.original_intensity}")
             if self.max_value > self.original_intensity:
-                self.motor_thread.motor.move(max_location, wait=True)
+                self.motor_thread.motor.move(max_location, self.motor_thread.wait)
                 self.signals.changeMotorPosition.emit(self.motor_thread.motor.position)
                 self.done = True
                 self.beginning = True
@@ -195,8 +197,8 @@ class DynamicLinear(object):
                 if self.step_size <= 0.02: # for CXI - should not get any smaller than 1/5 size of jet
                     self.signals.message.emit("Did not find a better value, returning to original position")
                     print("Did not find a better value, returning to original position")
-                    self.motor_thread.motor.move(self.original_position, wait=True)
-                    self.signals.changeMotorPosition.emit(self.position)
+                    self.motor_thread.motor.move(self.original_position, self.motor_thread.wait)
+                    self.signals.changeMotorPosition.emit(self.motor_thread.motor.position)
                     self.done = True
                     self.beginning = True
                 else:
@@ -207,8 +209,9 @@ class DynamicLinear(object):
 
 
 class BasicScan(object):
-    def __init__(self, motor_thread, signals):
+    def __init__(self, motor_thread, context, signals):
         self.motor_thread = motor_thread
+        self.context = context
         self.signals = signals
         self.beginning = True
         self.original_intensity = 0
@@ -236,20 +239,20 @@ class BasicScan(object):
             self.step_size = self.motor_thread.step_size
 
     def find_max_location(self):
-        if self.motor_thread.moves != []:
+        if self.motor_thread.moves:
             moves_reorg = list(map(list, (zip(*self.motor_thread.moves))))
             intensities = moves_reorg[0]
             self.max_value = max(intensities)
             self.min_value = min(intensities)
             index = intensities.index(self.max_value)
             max_location = moves_reorg[1][index]
-            return(max_location)
+            return max_location
         else:
-            return(self.motor_thread.motor.position)
+            return self.motor_thread.motor.position
 
     def move_to_max(self):
         max_location = self.find_max_location()
-        self.motor_thread.motor.move(max_location, wait=True)
+        self.motor_thread.motor.move(max_location, self.motor_thread.wait)
 
     def start_fresh(self):
         print('Resettting values...')
@@ -258,7 +261,7 @@ class BasicScan(object):
         self.num_tries = 1
         self.max_value = 0
         self.original_intensity = self.motor_thread.moves[-1][0]
-        self.original_position = self.motor_thread.moves[-1][1]\
+        self.original_position = self.motor_thread.moves[-1][1]
 
     def scan(self):
         """does a basic scan from the low limit to one step below the high limit
@@ -268,10 +271,10 @@ class BasicScan(object):
         if self.beginning:
             self.start_fresh()
             self.beginning = False
-            self.motor_thread.motor.move(self.ll, wait=True)
+            self.motor_thread.motor.move(self.ll, self.motor_thread.wait)
         elif self.motor_thread.moves[-1][1] + self.step_size < self.hl and not self.beginning:
             position = self.ll + (self.step*self.step_size)
-            self.motor_thread.motor.move(position, wait=True)
+            self.motor_thread.motor.move(position, self.motor_thread.wait)
             self.signals.changeMotorPosition.emit(position)
             self.step += 1
             print("next step")
@@ -279,7 +282,7 @@ class BasicScan(object):
             max_location = self.find_max_location()
             print(f"max value: {self.max_value}, original_intensity: {self.original_intensity}")
             if self.max_value > self.original_intensity:
-                self.motor_thread.motor.move(max_location, wait=True)
+                self.motor_thread.motor.move(max_location, self.motor_thread.wait)
                 self.signals.changeMotorPosition.emit(max_location)
                 self.end_scan()
                 print("Over original, done!")
@@ -288,14 +291,14 @@ class BasicScan(object):
                 if self.step_size <= 0.02: # for CXI - should not get any smaller than 1/5 size of jet
                     self.signals.message.emit("Did not find a better value, returning to original position")
                     print("Did not find a better value, returning to original position")
-                    self.motor_thread.motor.move(self.original_position, wait=True)
+                    self.motor_thread.motor.move(self.original_position, self.motor_thread.wait)
                     self.signals.changeMotorPosition.emit(self.original_position)
                     self.end_scan()
                 else:
                     self.num_tries += 1
                     self.signals.message.emit(f"Trying linear scan again, Try {self.num_tries}... 0.005 mm smaller step size")
                     print(f"Trying linear scan again, Try {self.num_tries}... 0.005 mm smaller step size")
-                    self.motor_thread.motor.move(self.ll, wait=True)
+                    self.motor_thread.motor.move(self.ll, self.motor_thread.wait)
                     self.step = 1
 
 
@@ -380,16 +383,16 @@ class TernarySearch(object):
 
     def check_if_done(self):
         if abs(self.high - self.low) < self.motor_thread.tolerance:
-            self.motor_thread.motor.move((self.high + self.low)*0.5, wait=True)
+            self.motor_thread.motor.move((self.high + self.low)*0.5, self.motor_thread.wait)
             self.end_scan()
 
     def move_to_mid1(self):
         """Move toward low limit"""
-        self.motor_thread.motor.move(self.mid1, wait=True)
+        self.motor_thread.motor.move(self.mid1, self.motor_thread.wait)
 
     def move_to_mid2(self):
         """Move toward high limit"""
-        self.motor_thread.motor.move(self.mid2, wait=True)
+        self.motor_thread.motor.move(self.mid2, self.motor_thread.wait)
 
     def compare_and_move(self):
         i1 = self.motor_thread.moves[-2][0]
@@ -428,10 +431,10 @@ class TernarySearch(object):
             return (self.motor.position, self.average_int(nsamp))
         left_third = (2 * left + right) / 3
         right_third = (left + 2 * right) / 3
-        motor.move(left_third + absolute, wait=True)
+        motor.move(left_third + absolute, self.motor_thread.wait)
         left_p = self.motor.position
         i1 = self.average_int(nsamp)
-        motor.move(right_third + absolute, wait=True)
+        motor.move(right_third + absolute, self.motor_thread.wait)
         right_p = self.motor.position
         i2 = self.average_int(nsamp)
         moves.extend([(left_p, i1), (right_p, i2)])
@@ -460,10 +463,10 @@ class TernarySearch(object):
             return(self.motor.position, self.average_int(nsamp))
         left_third = (2*left + right) / 3
         right_third = (left + 2*right) / 3
-        self.motor.move(left_third+absolute, wait=True)
+        self.motor.move(left_third+absolute, self.motor_thread.wait)
         left_p = self.motor.position
         i1 = self.average_int(nsamp)
-        self.motor.move(right_third+absolute, wait=True)
+        self.motor.move(right_third+absolute, self.motor_thread.wait)
         right_p = self.motor.position
         i2 = self.average_int(nsamp)
         self.moves.extend([(left_p, i1), (right_p, i2)])
@@ -482,7 +485,7 @@ class TernarySearch(object):
         moves =
         i1 = average_int(nsamp)
         m1 = motor.position
-        motor.move(left, wait=True)
+        motor.move(left, self.motor_thread.wait)
 
 
     def backlash_scan(self, left, right, tol, nsamp):
@@ -490,7 +493,7 @@ class TernarySearch(object):
         # until the intensity starts going down
         i1 = self.average_int(nsamp)
         m1 = self.motor.position
-        self.motor.move(tol, wait=True)
+        self.motor.move(tol, self.motor_thread.wait)
         i2 = self.average_int(nsamp)
         m2 = self.motor.position
         self.moves.extend([(m1, i1), (m2, i2)])
@@ -499,7 +502,7 @@ class TernarySearch(object):
                 print("i1<i2", i1, i2)
                 i1 = self.average_int(nsamp)
                 self.position_left = self.motor.position
-                self.motor.move(tol, wait=True)
+                self.motor.move(tol, self.motor_thread.wait)
                 i2 = self.average_int(nsamp)
                 self.position_right = self.motor.position
                 self.moves.extend([(m2, i2)])
@@ -509,19 +512,19 @@ class TernarySearch(object):
             i = 0
             for i in range(5):
                 i += 1
-                self.motor.move(tol, wait=True)
+                self.motor.move(tol, self.motor_thread.wait)
                 self.moves.append([(self.motor.position, self.average_int(nsamp))])
-            self.motor.move(self.position_left, wait=True)
+            self.motor.move(self.position_left, self.motor_thread.wait)
             return (self.position_left)
 
         else:  # go back and move right
             # makes a large step to the negative position
             # ideally such that it goes OVER the peak
             #
-            self.motor.move(left, wait=True)
+            self.motor.move(left, self.motor_thread.wait)
             i1 = self.average_int(nsamp)
             m1 = self.motor.position
-            self.motor.move(tol, wait=True)
+            self.motor.move(tol, self.motor_thread.wait)
             i2 = self.average_int(nsamp)
             m2 = self.motor.position
             self.moves.extend([(m1, i1), (m2, i2)])
@@ -530,7 +533,7 @@ class TernarySearch(object):
                 while i1 < i2:
                     i1 = self.average_int(nsamp)
                     self.position_left = self.motor.position
-                    self.motor.move(tol, wait=True)
+                    self.motor.move(tol, self.motor_thread.wait)
                     i2 = self.average_int(nsamp)
                     self.position_right = self.motor.position
                     self.moves.extend([(m2, i2)])
@@ -538,6 +541,6 @@ class TernarySearch(object):
                 i = 0
                 for i in range(5):
                     i += 1
-                    self.motor.move(tol, wait=True)
+                    self.motor.move(tol, self.motor_thread.wait)
 
 '''

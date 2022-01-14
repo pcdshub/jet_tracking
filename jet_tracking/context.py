@@ -63,20 +63,8 @@ class Context(object):
         self.graph_ave_time = 2
         self.display_time = 10
         self.notification_time = 2
-        self.manual_motor = True
-        self.high_limit = 0.1
-        self.low_limit = -0.1
-        self.step_size = 0.02
-        self.position_tolerance = 0.001
-        self.motor_averaging = 10
-        self.algorithm = 'Ternary Search'
-        self.motor_running = False
-        self.motor_mode = ''
-        self.calibration_values = {}
-        self.isTracking = False
         self.calibrated = False
-        self.live_data = True
-        self.display_flag = None
+        self.calibration_values = {}
         self.naverage = self.graph_ave_time * self.refresh_rate  # number of points over the time wanted for averaging
         self.buffer_size = self.display_time * self.refresh_rate  # number of points over the graph time
         self.averaging_size = int(self.buffer_size / self.naverage)  # how many averages can fit within the time window
@@ -86,9 +74,23 @@ class Context(object):
         self.x_cycle = list(range(0, self.buffer_size))
         self.ave_idx = list(range(0, self.averaging_size + 1))  # +1 for NaN value added at the end
 
-        # used in simulator
+        # motor variables
+        self.manual_motor = True
+        self.high_limit = 0.1
+        self.low_limit = -0.1
+        self.step_size = 0.02
+        self.position_tolerance = 0.001
+        self.motor_averaging = 10
+        self.algorithm = 'Ternary Search'
+        self.motor_running = False
+        self.motor_mode = ''
         self.live_motor = True
         self.motor_position = 0
+        self.isTracking = False
+        self.live_data = True
+        self.display_flag = None
+
+        # used in simulator
         self.percent_dropped = 10
         self.peak_intensity = 10
         self.radius = 0.025
@@ -97,33 +99,6 @@ class Context(object):
         self.bg = 0.05
 
         self.cam_refresh_rate = 3
-
-    def update_motor_running(self, running):
-        self.motor_running = running
-
-    def update_dropped_shots(self, ds):
-        self.percent_dropped = ds
-        self.signals.changeDroppedShots.emit(self.percent_dropped)
-
-    def update_peak_intensity(self, pi):
-        self.peak_intensity = pi
-        self.signals.changePeakIntensity.emit(self.peak_intensity)
-
-    def update_jet_radius(self, r):
-        self.radius = r
-        self.signals.changeJetRadius.emit(self.radius)
-
-    def update_jet_center(self, jc):
-        self.center = jc
-        self.signals.changeJetCenter.emit(self.center)
-
-    def update_max_intensity(self, mi):
-        self.max = mi
-        self.signals.changeMaxIntensity.emit(self.max)
-
-    def update_background(self, bgn):
-        self.bg = bgn
-        self.signals.changeBackground.emit(self.bg)
 
     def update_live_graphing(self, live):
         self.live_data = live
@@ -159,6 +134,13 @@ class Context(object):
         self.refresh_rate = int(rr)
         self.update_buffers_and_cycles("all")
 
+    def update_display_time(self, dis_t):
+        """
+        updates the display time or the x-axis window
+        """
+        self.display_time = int(dis_t)
+        self.update_buffers_and_cycles("all")
+
     def update_buffers_and_cycles(self, who):
         if who == "all":
             # if the display time, or refresh rate is changed then these should also change:
@@ -185,13 +167,6 @@ class Context(object):
             self.ave_cycle = list(range(1, self.naverage+1))
             self.ave_idx = list(range(0, self.averaging_size+1))
             self.signals.changeDisplayFlag.emit("just average")
-
-    def update_display_time(self, dis_t):
-        """
-        updates the display time or the x-axis window
-        """
-        self.display_time = int(dis_t)
-        self.update_buffers_and_cycles("all")
 
     def update_manual_motor(self, manual):
         """
@@ -264,10 +239,6 @@ class Context(object):
         self.mode = mode
         self.signals.mode.emit(self.mode)
 
-    def update_tracking(self, tracking):
-        self.isTracking = tracking
-        self.signals.enableTracking.emit(self.isTracking)
-
     def set_calibrated(self, c):
         self.calibrated = c
 
@@ -284,8 +255,17 @@ class Context(object):
             self.update_motor_mode('calibrate')
 
     def update_motor_mode(self, mode):
+        print(mode)
         self.motor_mode = mode
         self.signals.motorMode.emit(self.motor_mode)
+        if self.motor_mode == 'run':
+            self.motor_running = True
+        else:
+            self.motor_running = False
+
+    def update_tracking(self, tracking):
+        self.isTracking = tracking
+        self.signals.enableTracking.emit(self.isTracking)
 
     def connect_motor(self):
         self.signals.connectMotor.emit()
@@ -293,3 +273,33 @@ class Context(object):
     def update_live_motor(self, live):
         self.live_motor = live
         self.signals.liveMotor.emit(live)
+
+    def update_motor_position(self, p):
+        self.motor_position = p
+
+    def update_motor_running(self, running):
+        self.motor_running = running
+
+    def update_peak_intensity(self, pi):
+        self.peak_intensity = pi
+        self.signals.changePeakIntensity.emit(self.peak_intensity)
+
+    def update_jet_radius(self, r):
+        self.radius = r
+        self.signals.changeJetRadius.emit(self.radius)
+
+    def update_jet_center(self, jc):
+        self.center = jc
+        self.signals.changeJetCenter.emit(self.center)
+
+    def update_max_intensity(self, mi):
+        self.max = mi
+        self.signals.changeMaxIntensity.emit(self.max)
+
+    def update_background(self, bgn):
+        self.bg = bgn
+        self.signals.changeBackground.emit(self.bg)
+
+    def update_dropped_shots(self, ds):
+        self.percent_dropped = ds
+        self.signals.changeDroppedShots.emit(self.percent_dropped)

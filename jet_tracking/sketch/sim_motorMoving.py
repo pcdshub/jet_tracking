@@ -40,6 +40,9 @@ class SimulatedMotor(object):
             time.sleep(self.wait)
         self.signals.changeMotorPosition.emit(self.position)
 
+    def position(self):
+        return self.position
+
 """
 
     def change_motor(self, motor_position):

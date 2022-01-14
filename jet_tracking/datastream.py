@@ -5,9 +5,9 @@ from scipy import stats
 import numpy as np
 import collections
 from ophyd import EpicsSignal
-from epics import caget
+#from epics import caget
 from PyQt5.QtCore import QThread
-from pcdsdevices.epics_motor import IMS
+#from pcdsdevices.epics_motor import IMS
 from sketch.num_gen import SimulationGenerator
 from sketch.motorMoving import MotorAction
 from sketch.sim_motorMoving import SimulatedMotor
@@ -602,6 +602,13 @@ class StatusThread(QThread):
         self.signals.message.emit("The data may need to be recalibrated. There is consistently higher I/I0 than the calibration..")
  
     def missed_shots(self):
+        if self.context.motor_running:
+            if self.status == "everything is good":
+                self.signals.notifyMotor.emit("missed shots")
+            elif self.status == "dropped shots":
+                self.signals.notifyMotor.emit("resume")
+            elif self.status == "high intensity":
+                self.signals.notifyMotor.emit("you downgraded")
         if self.isTracking and not self.context.motor_running:
             if self.badScanCounter < self.badScanLimit:
                 self.signals.message.emit("lots of missed shots.. starting motor")
@@ -611,14 +618,7 @@ class StatusThread(QThread):
                 self.signals.enableTracking.emit(False)
                 self.signals.trackingStatus.emit('disabled', "red")
         elif not self.isTracking and not self.context.motor_running:
-            self.signals.message.emit("lots of missed shots.. consider running a search")
-        if self.context.motor_running:
-            if self.status == "everything is good":
-                self.signals.notifyMotor.emit("missed shots")
-            elif self.status == "dropped shots":
-                self.signals.notifyMotor.emit("resume")
-            elif self.status == "high intensity":
-                self.signals.notifyMotor.emit("you downgraded")
+            self.signals.message.emit("lots of missed shots.. consider running a scan")
         self.status = "missed_shots"
 
     def dropped_shots(self):
@@ -790,6 +790,7 @@ class MotorThread(QThread):
         self.motor = None
         self.live = True
         self.connected = False
+        self.wait = True
         self.mode = 'sleep'
         self.calibration_values = {}
         self.algorithm = ''
@@ -855,6 +856,8 @@ class MotorThread(QThread):
             self.signals.message.emit('run while the mode is calibrate should not be possible!!!')
         if m == 'run' and self.mode == 'sleep':
             self.signals.message.emit('starting the algorithm you selected :)')
+            self.mode = m
+            self.connect_to_motor()
 
     def live_motor(self, live):
         self.live = live
@@ -867,8 +870,10 @@ class MotorThread(QThread):
             self.motor_name = self.context.PV_DICT.get('motor', None)
             print("connecting to: ", self.motor_name)
             self.motor = IMS(self.motor_name, name='jet_x')
+            self.wait = True
         elif not self.live:
             self.motor = SimulatedMotor(self.context, self.signals)
+            self.wait = False
 
     def clear_values(self):
         self.moves = []
@@ -927,6 +932,7 @@ class MotorThread(QThread):
         self.intensities += [self.vals['ratio']]
         # this is where we set the integration time for each motor position in the scan
         if len(self.intensities) == 20:
+            print(self.intensities)
             self.check_motor_options()
             self.moves.append([mean(self.intensities), self.motor.position])  # this should be the same either way
             self.intensities = []
@@ -946,6 +952,7 @@ class MotorThread(QThread):
                         self.signals.message.emit(f"Found peak intensity {self.max_value} "
                                                   f"at motor position: {self.motor.position}")
                         self.mode = 'sleep'
+                        self.context.update_motor_mode('sleep')
                 else:
                     if self.request_new_values and self.got_new_values:
                         self.request_new_values = False
@@ -959,6 +966,7 @@ class MotorThread(QThread):
                     self.motor.move(self.initial_position)
                     self.calibration_steps = 1
                     self.mode = 'sleep'
+                    self.context.update_motor_mode('sleep')
                 else:
                     if self.request_image_processor and self.complete_image_processor:
                         self.request_image_processor = False
@@ -971,41 +979,3 @@ class MotorThread(QThread):
                 pass
             time.sleep(1/self.refresh_rate)
         print("Interruption was requested: Motor Thread")
-
-
-"""
-        if self.motor_options['scanning algorithm'] == "search":
-            while not done:
-                self.motor_position = self.motor.position
-                self.motor_position, self.ratio_intensity = self._search(self.motor_position, -.01, .01, .0005, 60)
-            fig = plt.figure()
-            plt.xlabel('motor position')
-            plt.ylabel('I/I0 intensity')
-            plt.plot(self.motor_position, self.ratio_intensity, 'ro')
-            x = [a[0] for a in self.moves]
-            y = [b[1] for b in self.moves]
-            plt.scatter(x, y)
-            plt.show()
-            self.signals.update_calibration.emit('ratio', self.ratio_intensity)
-            self.signals.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
-        elif self.motor_options['scanning algorithm'] == "scan":
-            print("scanning :", self.tol, self.motor_ll, self.motor_hl)
-            self.motor_position = self._scan(self.motor_ll, self.motor_hl, self.tol, self.motor_options['averaging'])
-            self.ratio_intensity = self.moves[-1][1]
-            fig = plt.figure()
-            plt.xlabel('motor position')
-            plt.ylabel('I/I0 intensity')
-            plt.plot(self.motor_position, self.ratio_intensity, 'ro')
-            x = [a[0] for a in self.moves]
-            y = [b[1] for b in self.moves]
-            plt.scatter(x, y)
-            plt.show()
-            self.signals.update_calibration.emit('ratio', self.ratio_intensity)
-            self.signals.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
-        elif self.move_type == "track": ### these should be inside of each of the scanning algorithms? need to check if were moving once or "Tracking"
-            self.signals.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
-            #### look up how to exit safely here
-        elif self.move_type == "stop tracking":
-            self.signals.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
-            #### again, exit safely  
-"""        
