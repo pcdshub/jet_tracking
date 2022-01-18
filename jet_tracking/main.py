@@ -3,8 +3,6 @@ import logging
 import os
 import sys
 
-# from . import datastream
-# sys.path.append('/reg/g/pcds/epics-dev/ajshack/jet_tracking/jet_tracking')
 from gui.windows.mainWindow import MainWindow
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import QApplication
@@ -56,6 +54,7 @@ def main():
         pass
 
     app = App(sys.argv)
+    # To add icon:
     # app.setWindowIcon(QIcon(application_path
     #                   + "{0}gui{0}misc{0}logo{0}logo3.ico".format(os.sep)))
     sys.exit(app.exec_())

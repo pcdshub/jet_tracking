@@ -1,5 +1,0 @@
-pv_map:
-  i0: 'XCS:JTRK:REQ:I0'
-  diff: 'XCS:JTRK:REQ:DIFF_INTENSITY'
-  ratio: 'XCS:JTRK:REQ:RATIO'
-im_loc: 'sketch/jet.png'

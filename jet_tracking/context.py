@@ -253,7 +253,7 @@ class Context(object):
         """
         self.algorithm = a
 
-    def parse_config(self):
+    def parse_config(self):  # Currently unused, saving for modularity
         with open(self.CFG_FILE) as f:
             yml_dict = yaml.load(f, Loader=yaml.FullLoader)
         return yml_dict

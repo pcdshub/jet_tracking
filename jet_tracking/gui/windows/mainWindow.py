@@ -163,24 +163,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setEnabled(False)
         self.helpDialog.exec_()
 
-    def openFile(self):
+    def openFile(self):  # Unused, needs to be removed elsewhere
         print("open file")
-        # fileName = QtWidgets.QFileDialog.getOpenFileName(
-        #     self, self.context.getText("dialog_open", "title"), "/home",
-        #     self.context.getText("dialog_open", "images") +
-        #     u" (*.bmp *.gif *.png *.xpm *.jpg);;" +
-        #     self.context.getText("dialog_open", "all_files") + u" (*)")
-        # if fileName:
-        #     self.context.loadImage(fileName)
 
     def exportData(self):
         print("you tried to export data")
 
     def close(self):
-
         pass
 
-    def undo(self):
+    def undo(self):  # Possible future addition
         print("undo")
         # if self.context.currentImage().posHistory > 0:
         #     self.context.currentImage().posHistory -= 1
@@ -190,7 +182,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #     self.signals.updateCanvas.emit()
         #     self.signals.resizeCanvas.emit()
 
-    def redo(self):
+    def redo(self):  # Possible future addition
         print("redo")
         # if (self.context.currentImage().posHistory <
         #         len(self.context.currentImage().history) - 1):

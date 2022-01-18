@@ -1,23 +1,6 @@
 import math
 import random
 
-"""
-Questions for Frank
-
-- How would we make the values better reflect "real" values we should see for
-  i0 and diffraction?
-- Right now if you change the amount of dropped shots, the ratio also goes
-  down. As I understand it, that shouldn't be the case which is why I look for
-  dropped shots separately. Can we change that?
-- Do we need "update vals" to update anything in data stream? If so, we should
-  have those values update in "Context" instead.
-"""
-
-
-def sinwv(x, shift):
-    a = random.random()
-    return (a * (math.sin(x) ** 2 + shift))
-
 
 class SimulationGenerator(object):
     def __init__(self, context, signals):

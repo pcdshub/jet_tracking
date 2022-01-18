@@ -88,6 +88,9 @@ class ValueReader(metaclass=Singleton):
 
     def sim_data_stream(self):
         """Run with offline data"""
+        # Adam's code for running simulations offline data
+        # TODO: Add flag to enable this
+        #
         # context_data = zmq.Context()
         # socket_data = context_data.socket(zmq.SUB)
         # socket_data.connect(''.join(['tcp://localhost:', '8123']))
@@ -100,16 +103,6 @@ class ValueReader(metaclass=Singleton):
         # data = np.ndarray.tolist(data.reshape(md['shape']))
         # self.i0 = data[0]
         # self.diff = data[1]
-
-        # Used for generating random simulated data
-        # x = 0.8
-        # y = 0.1
-        # self.i0 = sinwv(x, 5000)
-        # self.diff = sinwv(y, 2000)
-        # try:
-        #     self.ratio = self.i0/self.diff
-        # except:
-        #     self.ratio = self.ratio
 
         self.sim_vals = self.simgen.sim()
         self.i0 = self.sim_vals["i0"]
@@ -917,7 +910,6 @@ class MotorThread(QThread):
 
     def connect_to_motor(self):
         if self.live:
-            # should have a catch here for if this doesn't connect
             self.motor_name = self.context.PV_DICT.get('motor', None)
             print("connecting to: ", self.motor_name)
             self.motor = IMS(self.motor_name, name='jet_x')
@@ -982,7 +974,8 @@ class MotorThread(QThread):
 
     def average_intensity(self):
         self.intensities += [self.vals['ratio']]
-# this is where we set the integration time for each motor position in the scan
+        # this is where we set the integration time for each motor position
+        # in the scan
         if len(self.intensities) == 20:
             self.check_motor_options()
             print(self.moves)

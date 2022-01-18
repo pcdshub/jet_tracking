@@ -48,19 +48,3 @@ class SimWidget(QFrame, Sim_Ui):
     def stop_tracking(self):
         self.context.update_tracking(False)
         self.signals.trackingStatus.emit("Not Tracking", "red")
-
-    #     self.cbox_algorithm.currentTextChanged.connect(
-    #         self.context.update_algorithm)
-    #     self.bttn_start_tracking.clicked.connect(self._start_sim)
-    #
-    # def _start_sim(self):
-    #     self.sim_status.start()
-    #
-    # def _enable_tracking(self):
-    #     self.update_tracking_status("enabled", "green")
-    #     self.context.update_tracking(True)
-    #     self._start_motor()
-    #
-    # def set_tracking_status(self, status, color):
-    #     self.lbl_tracking_status.setText(status)
-    #     self.lbl_tracking_status.setStyleSheet(f"background-color: {color};")

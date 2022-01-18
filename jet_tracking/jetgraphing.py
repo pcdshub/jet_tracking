@@ -1,9 +1,6 @@
 import pyqtgraph as pg
 from PyQt5 import QtCore
 
-# PUT THESE FLOATING FUNCTION INSIDE A FILE IN THE TOOLS FOLDER
-# SET SCROLLINGTIMEWIDGET TO ITS OWN WIDGET IN THE WIDGET FOLDER
-
 
 def graph_setup(graph, title, y_axis, pen):
     graph.setTitle(title=title)

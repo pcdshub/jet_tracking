@@ -10,6 +10,5 @@ class Image_Ui(object):
         obj.setLayout(obj.layout)
         obj.view = QGraphicsView()
         obj.scene = QGraphicsScene()
-        # obj.scene.setSceneRect(50, 50, 300, 300)
 
         obj.layout.addWidget(obj.view)
