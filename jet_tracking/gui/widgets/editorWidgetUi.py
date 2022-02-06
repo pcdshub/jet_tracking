@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QLabel, \
-    QSlider, QPushButton, QRadioButton
+from gui.widgets.basicWidgets import QHLine, QRangeSlider
 from PyQt5.Qt import Qt
-from gui.widgets.basicWidgets import QRangeSlider, QHLine
+from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QRadioButton,
+                             QSlider, QVBoxLayout)
+
 
 class Editor_Ui(object):
 
@@ -26,7 +27,7 @@ class Editor_Ui(object):
         obj.slider_dilate.setTickInterval(1)
 
         obj.rd_bttn_dilate = QRadioButton("Dilate On/Off")
-        obj.rd_bttn_dilate.setAutoExclusive(False)        
+        obj.rd_bttn_dilate.setAutoExclusive(False)
 
         obj.lbl_erode = QLabel("Erode edges")
         obj.slider_erode = QSlider(Qt.Horizontal)
@@ -38,11 +39,13 @@ class Editor_Ui(object):
         obj.rd_bttn_erode = QRadioButton("Erode On/Off")
         obj.rd_bttn_erode.setAutoExclusive(False)
 
-        obj.lbl_open_close = QLabel("Open/Close\nOpening is Erosion followed by Dilation,\n"
-                             "it is good for removing small blobs from an image (remove salt noise).\n"
-                             "Close is Dilation followed by Erosion,\n"
-                             "it is good for closing holes inside of objects (remove pepper noise)\n\n")
-        
+        obj.lbl_open_close = QLabel("Open/Close\nOpening is Erosion followed "
+                                    "by Dilation,\nit is good for removing "
+                                    "small blobs from an image (remove salt "
+                                    "noise).\nClose is Dilation followed by "
+                                    "Erosion,\nit is good for closing holes "
+                                    "inside of objects (remove pepper noise)"
+                                    "\n\n")
         obj.lbl_open = QLabel("Open")
         obj.slider_open = QSlider(Qt.Horizontal)
         obj.slider_open.setMinimum(0)
@@ -50,7 +53,7 @@ class Editor_Ui(object):
         obj.slider_open.setTickPosition(QSlider.TicksBelow)
         obj.slider_open.setTickInterval(1)
 
-        obj.rd_bttn_open = QRadioButton("Open On/Off")        
+        obj.rd_bttn_open = QRadioButton("Open On/Off")
         obj.rd_bttn_open.setAutoExclusive(False)
 
         obj.lbl_close = QLabel("Close")
@@ -88,19 +91,19 @@ class Editor_Ui(object):
         obj.layout_dilate = QHBoxLayout()
         obj.layout_dilate.addWidget(self.slider_dilate)
         obj.layout_dilate.addWidget(self.rd_bttn_dilate)
- 
+
         obj.layout_erode = QHBoxLayout()
         obj.layout_erode.addWidget(self.slider_erode)
         obj.layout_erode.addWidget(self.rd_bttn_erode)
- 
+
         obj.layout_close = QHBoxLayout()
         obj.layout_close.addWidget(self.slider_close)
         obj.layout_close.addWidget(self.rd_bttn_close)
- 
+
         obj.layout_open = QHBoxLayout()
         obj.layout_open.addWidget(self.slider_open)
         obj.layout_open.addWidget(self.rd_bttn_open)
-                             
+
         obj.layout_thresh = QHBoxLayout()
         obj.layout_thresh.addWidget(obj.lbl_thresh)
         obj.layout_thresh.addWidget(obj.range_slider_thresh)
@@ -141,10 +144,10 @@ class Editor_Ui(object):
         obj.layout.addWidget(obj.hline3)
         obj.layout.addWidget(obj.lbl_close)
         obj.layout.addLayout(obj.layout_close)
-        #obj.hline4 = QHLine()
-        #obj.layout.addWidget(obj.hline4)
-        #obj.layout.addWidget(obj.lbl_open)
-        #obj.layout.addWidget(obj.slider_open)
+        # obj.hline4 = QHLine()
+        # obj.layout.addWidget(obj.hline4)
+        # obj.layout.addWidget(obj.lbl_open)
+        # obj.layout.addWidget(obj.slider_open)
         obj.hline5 = QHLine()
         obj.layout.addWidget(obj.hline5)
         obj.layout.addLayout(obj.layout_brightness)

@@ -22,9 +22,9 @@ pv_map:
   3: 'CXI:JTRK:REQ:RATIO'
   4: 'CXI:JTRK:REQ:DROPPED'
 
-ipm: 
+ipm:
   name: 'FEEGasDetEnergy'
-  det: 'f_12_ENRC' 
+  det: 'f_12_ENRC'
 #  name: 'CXI-DG2-BMMON'
 #  det: None
 

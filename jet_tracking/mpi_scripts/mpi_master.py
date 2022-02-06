@@ -1,13 +1,12 @@
-from mpi4py import MPI
-import sys
 import logging
+import time
+from collections import deque
+from threading import Lock, Thread
+
 import numpy as np
 import zmq
-import time
 from epics import caput
-from threading import Thread, Lock
-from enum import Enum
-from collections import deque
+from mpi4py import MPI
 
 f = '%(asctime)s - %(levelname)s - %(filename)s:%(funcName)s - %(message)s'
 logging.basicConfig(level=logging.DEBUG, format=f)
@@ -15,7 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class MpiMaster(object):
-    def __init__(self, rank, api_port, det_map, pv_map, sim=True, data_port=8123, wf_length=None):
+    def __init__(self, rank, api_port, det_map, pv_map, sim=True,
+                 data_port=8123, wf_length=None):
         self._rank = rank
         self._det_map = det_map
         self._pv_map = pv_map
@@ -28,7 +28,8 @@ class MpiMaster(object):
         self._data_socket = self.get_data_socket()
         self._pub_socket = self.get_pub_socket()
         self._msg_lock = Lock()
-        self._msg_thread = Thread(target=self.start_msg_thread, args=(api_port,))
+        self._msg_thread = Thread(target=self.start_msg_thread,
+                                  args=(api_port))
         self._msg_thread.start()
         self.pair_ctx = None
         self.msg_ctx = None
@@ -83,7 +84,7 @@ class MpiMaster(object):
             socket.bind(''.join(['tcp://*:', str(data_port)]))
             return socket
 
-        return None 
+        return None
 
     def get_pub_socket(self, data_port=1235):
         """Socket for publishing API calls to workers"""
@@ -98,7 +99,8 @@ class MpiMaster(object):
         """
         while not self.abort:
             start = time.time()
-            data = np.empty(len(self._pv_map), dtype=np.dtype(self.det_map['dtype']))
+            data = np.empty(len(self._pv_map),
+                            dtype=np.dtype(self.det_map['dtype']))
             req = self.comm.Irecv(data, source=MPI.ANY_SOURCE)
             self.send_from_queue()
             req.Wait()
@@ -110,7 +112,7 @@ class MpiMaster(object):
 
     def start_msg_thread(self, api_port):
         """The thread runs a PAIR communication and acts as server side,
-        this allows for control of the parameters during data aquisition 
+        this allows for control of the parameters during data aquisition
         from some client (probably an API for user). Might do subpub if
         we want messages to be handled by workers as well, or master can
         broadcast information
@@ -144,17 +146,14 @@ class MpiMaster(object):
             if self._sim:
                 # Could need this if sending large arrays,
                 # Could end up getting md info from config file
-                md = dict(
-                    dtype = str(data.dtype),
-                    shape = data.shape
-                )
-                self._data_socket.send_json(md, 0|zmq.NOBLOCK)
+                md = dict(dtype=str(data.dtype), shape=data.shape)
+                self._data_socket.send_json(md, 0 | zmq.NOBLOCK)
                 self._data_socket.send(data, 0, copy=False, track=False)
             else:
                 # consider caput_many with lots, ok for now
                 for k, v in self._pv_map.items():
                     caput(v, data[k-1])
-                #caput('XCS:JTRK:REQ:DIFF_INTENSITY', data[1])
-                #caput('XCS:JTRK:REQ:I0', data[0])
+                # caput('XCS:JTRK:REQ:DIFF_INTENSITY', data[1])
+                # caput('XCS:JTRK:REQ:I0', data[0])
         else:
             pass

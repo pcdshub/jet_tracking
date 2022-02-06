@@ -1,20 +1,20 @@
-from mpi_worker import MpiWorker
-from mpi_master import MpiMaster
-from mpi4py import MPI
-import psana
-import yaml
-import re
-import json
 import argparse
+import json
+import logging
 import os
 import sys
-import logging
 from pathlib import Path
 
-fpath=os.path.dirname(os.path.abspath(__file__))
+import psana
+import yaml
+from mpi4py import MPI
+from mpi_master import MpiMaster
+from mpi_worker import MpiWorker
+
+fpath = os.path.dirname(os.path.abspath(__file__))
 fpathup = '/'.join(fpath.split('/')[:-1])
 sys.path.append(fpathup)
-from utils import get_r_masks, get_evr_w_codes
+from utils import get_evr_w_codes, get_r_masks  # NOQA
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,8 @@ rank = comm.Get_rank()
 
 # All the args
 parser = argparse.ArgumentParser()
-parser.add_argument('--cfg_file', help='if specified, has information about what metadata to use', type=str, default='xcs_config.yml')
+parser.add_argument('--cfg_file', help='if specified, has information about '
+                    'what metadata to use', type=str, default='xcs_config.yml')
 args = parser.parse_args()
 
 # Parse config file to hand to workers
@@ -42,21 +43,21 @@ with open(args.cfg_file) as f:
     exp = yml_dict['experiment']
     run = yml_dict['run']
     event_code = yml_dict['event_code']
-    #wf_length = yml_dict['wf_length']
+    # wf_length = yml_dict['wf_length']
 
-if jet_cam_name=='None' or jet_cam_name=='none':
+if jet_cam_name == 'None' or jet_cam_name == 'none':
     jet_cam_name = None
 
 # Get calibration results
 calib_dir = Path(''.join(['/cds/data/psdm/', hutch, '/', exp, '/calib/']))
 jt_dir = Path(''.join([str(calib_dir), '/jt_results/']))
 
-#cal_files = sorted(os.listdir(jt_dir))
+# cal_files = sorted(os.listdir(jt_dir))
 cal_files = list(jt_dir.glob('jt_cal*'))
 cal_files.sort(key=os.path.getmtime)
 if cal_files:
     cal_file_path = cal_files[-1]
-    #cal_file_path = ''.join([jt_dir, cal_file])
+    # cal_file_path = ''.join([jt_dir, cal_file])
     print('Calibration file: {}'.format(cal_file_path))
     with open(cal_file_path) as f:
         cal_results = json.load(f)
@@ -91,6 +92,7 @@ if rank == 0:
 else:
     peak_bin = int(cal_results['peak_bin'])
     delta_bin = int(cal_results['delta_bin'])
-    worker = MpiWorker(ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask, cal_results, event_code=event_code)
+    worker = MpiWorker(ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask,
+                       cal_results, event_code=event_code)
     print('Worker')
     worker.start_run()

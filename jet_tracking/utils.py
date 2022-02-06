@@ -1,10 +1,12 @@
 import numpy as np
 import psana
 
+
 def get_r_masks(shape, bins=100):
     """Function to generate radial masks for pixels to include in azav"""
     center = (shape[1] / 2, shape[0] / 2)
-    x, y = np.meshgrid(np.arange(shape[1]) - center[0], np.arange(shape[0]) - center[1])
+    x, y = np.meshgrid(np.arange(shape[1]) - center[0],
+                       np.arange(shape[0]) - center[1])
     R = np.sqrt(x**2 + y**2)
     max_R = np.max(R)
     min_R = np.min(R)
@@ -16,6 +18,7 @@ def get_r_masks(shape, bins=100):
         masks.append(mask)
 
     return masks
+
 
 def get_evr_w_codes(det_names):
     """Get the evr with the event codes, yes this changes..."""

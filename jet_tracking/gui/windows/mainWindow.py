@@ -1,13 +1,15 @@
+import logging
+
+from context import Context
+from gui.views.jetImageView import JetImageView
+from gui.views.jetTrackerView import JetTrackerView
+from gui.windows.mainWindowUi import Ui_MainWindow
+from gui.windows.simulationWindow import SimWindow
 from PyQt5.Qt import Qt
 from PyQt5.QtCore import QCoreApplication
-from PyQt5.QtWidgets import QTabWidget, QAction, QMainWindow, QLabel, QSizePolicy
-from context import Context
-from gui.views.jetTrackerView import JetTrackerView
-from gui.views.jetImageView import JetImageView
-from gui.windows.mainWindowUi import Ui_MainWindow
+from PyQt5.QtWidgets import (QAction, QLabel, QMainWindow, QSizePolicy,
+                             QTabWidget)
 from signals import Signals
-from gui.windows.simulationWindow import SimWindow
-import logging
 
 log = logging.getLogger(__name__)
 
@@ -29,11 +31,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def setup_window_tabs(self):
         self.setDockNestingEnabled(True)
         self.tabWidget = QTabWidget()
-        self.tabWidget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.tabWidget.setSizePolicy(QSizePolicy.Expanding,
+                                     QSizePolicy.Expanding)
         self.setCentralWidget(self.tabWidget)
         self.tabWidget.addTab(self.jetTrackerView, "Jet Tracker")
         self.tabWidget.addTab(self.jetImageView, "Jet Image")
-
 
     def create_views_and_dialogs(self):
         self.jetTrackerView = JetTrackerView(self.context, self.signals, self)
@@ -42,8 +44,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def createFileActions(self):
         ids = ["Open", "Export", "Exit"]
-        tips = ["open exported file to run in simulation mode", "export all or some data",
-                " exit the application"]
+        tips = ["open exported file to run in simulation mode",
+                "export all or some data",
+                "exit the application"]
         shortcuts = ['Ctrl+O', 'Ctrl+Shift+E', 'Ctrl+Q']
         connects = [self.openFile, self.exportData, self.close]
         L = []
@@ -52,7 +55,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             a.setShortcut(shortcuts[i])
             a.setStatusTip(tips[i])
             a.triggered.connect(self.restoreFocus)
-            if connects[i] != 0: a.triggered.connect(connects[i])
+            if connects[i] != 0:
+                a.triggered.connect(connects[i])
             L.append(a)
 
         L.insert(3, 0)
@@ -69,7 +73,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             a.setShortcut(shortcuts[i])
             a.setStatusTip(tips[i])
             a.triggered.connect(self.restoreFocus)
-            if connects[i] != 0: a.triggered.connect(connects[i])
+            if connects[i] != 0:
+                a.triggered.connect(connects[i])
             L.append(a)
 
         L.insert(2, 0)
@@ -84,7 +89,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             a = QAction(ids[i], self)
             a.setShortcut(shortcuts[i])
             a.triggered.connect(self.restoreFocus)
-            if connects[i] != 0: a.triggered.connect(connects[i])
+            if connects[i] != 0:
+                a.triggered.connect(connects[i])
             L.append(a)
 
         L.insert(1, 0)
@@ -99,7 +105,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             a = QAction(ids[i], self)
             a.setShortcut(shortcuts[i])
             a.triggered.connect(self.restoreFocus)
-            if connects[i] != 0: a.triggered.connect(connects[i])
+            if connects[i] != 0:
+                a.triggered.connect(connects[i])
             L.append(a)
 
         L.insert(1, 0)
@@ -145,7 +152,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def connect_signals(self):
         pass
-        #self.helpDialog.s_windowClose.connect(lambda: self.setEnabled(True))
+        # self.helpDialog.s_windowClose.connect(lambda: self.setEnabled(True))
 
     def setup_statusBar(self):
         self.statusbarMessage = QLabel()
@@ -156,44 +163,40 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setEnabled(False)
         self.helpDialog.exec_()
 
-    def openFile(self):
+    def openFile(self):  # Unused, needs to be removed elsewhere
         print("open file")
-        #fileName = QtWidgets.QFileDialog.getOpenFileName(self,
-        #            self.context.getText("dialog_open", "title"),
-        #            "/home",
-        #            self.context.getText("dialog_open", "images") + u" (*.bmp *.gif *.png *.xpm *.jpg);;" + self.context.getText("dialog_open", "all_files") + u" (*)")
-        #if fileName:
-        #    self.context.loadImage(fileName)
 
     def exportData(self):
         print("you tried to export data")
 
     def close(self):
-
         pass
 
-    def undo(self):
+    def undo(self):  # Possible future addition
         print("undo")
-        #if self.context.currentImage().posHistory > 0:
-        #    self.context.currentImage().posHistory -= 1
-        #    self.context.currentImage().image = QtWidgets.QImage(self.context.currentImage().history[self.context.currentImage().posHistory])
-        #    self.signals.updateCanvas.emit()
-        #    self.signals.resizeCanvas.emit()
+        # if self.context.currentImage().posHistory > 0:
+        #     self.context.currentImage().posHistory -= 1
+        #     self.context.currentImage().image = QtWidgets.QImage(
+        #         self.context.currentImage().history[
+        #             self.context.currentImage().posHistory])
+        #     self.signals.updateCanvas.emit()
+        #     self.signals.resizeCanvas.emit()
 
-    def redo(self):
+    def redo(self):  # Possible future addition
         print("redo")
-        #if self.context.currentImage().posHistory < len(self.context.currentImage().history)-1:
-        #    self.context.currentImage().posHistory += 1
-        #    self.context.currentImage().image = QtWidgets.QImage(self.context.currentImage().history[self.context.currentImage().posHistory])
-        #    self.signals.updateCanvas.emit()
-        #    self.signals.resizeCanvas.emit()
+        # if (self.context.currentImage().posHistory <
+        #         len(self.context.currentImage().history) - 1):
+        #     self.context.currentImage().posHistory += 1
+        #     self.context.currentImage().image = QtWidgets.QImage(
+        #         self.context.currentImage().history[
+        #             self.context.currentImage().posHistory])
+        #     self.signals.updateCanvas.emit()
+        #     self.signals.resizeCanvas.emit()
 
     def showHelp(self):
-
         pass
 
     def showAboutDialog(self):
-
         pass
 
     def showSimToolbar(self):

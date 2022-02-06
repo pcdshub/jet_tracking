@@ -1,8 +1,13 @@
+from dataclasses import dataclass
+
 from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSignal, QParallelAnimationGroup, QPropertyAnimation, Qt, QAbstractAnimation
-from PyQt5.QtGui import QDoubleValidator
-from PyQt5.QtWidgets import QGraphicsView, QGraphicsScene, QComboBox, QPushButton, QLineEdit, QToolButton, QWidget, \
-    QScrollArea, QVBoxLayout, QLabel, QMessageBox, QFrame
+from PyQt5.QtCore import (QAbstractAnimation, QParallelAnimationGroup,
+                          QPropertyAnimation, QRect, Qt, pyqtSignal)
+from PyQt5.QtGui import QBrush, QColor, QDoubleValidator, QPainter, QPalette
+from PyQt5.QtWidgets import (QComboBox, QFrame, QGraphicsScene, QGraphicsView,
+                             QLabel, QLineEdit, QMessageBox, QPushButton,
+                             QScrollArea, QSizePolicy, QToolButton,
+                             QVBoxLayout, QWidget)
 
 
 class GraphicsView(QGraphicsView):
@@ -52,8 +57,8 @@ class LineEdit(QLineEdit):
                 self.setText(str(self.validator.top()))
             elif float(self.text()) < self.validator.bottom():
                 self.setText(str(self.validator.bottom()))
-        except:
-            mssg = QMessageBox.about(self, "Error", "Input can only be a number")
+        except ValueError:
+            QMessageBox.about(self, "Error", "Input can only be a number")
             self.setText(self.ntext)
         self.checkVal.emit(float(self.ntext))
 
@@ -210,12 +215,6 @@ class QVLine(QFrame):
         self.setFrameShape(QFrame.VLine)
         self.setFrameShadow(QFrame.Sunken)
 
-from dataclasses import dataclass
-
-from PyQt5.QtCore import Qt, QRect, QSize, pyqtSignal
-from PyQt5.QtWidgets import (QWidget, QSizePolicy)
-from PyQt5.QtGui import QPainter, QBrush, QColor, QPalette
-
 
 def _left_thumb_adjuster(value, min_value):
     if value < min_value:
@@ -240,7 +239,8 @@ class QRangeSlider(QWidget):
     """
         QtRangeSlider is a class which implements a slider with 2 thumbs.
         Methods
-            * __init__ (self, QWidget parent, left_value, right_value, left_thumb_value=0, right_thumb_value=None)
+            * __init__ (self, QWidget parent, left_value, right_value,
+                        left_thumb_value=0, right_thumb_value=None)
             * set_left_thumb_value (self, int value):
             * set_right_thumb_value (self, int value):
             * (int) get_left_thumb_value (self):
@@ -265,7 +265,8 @@ class QRangeSlider(QWidget):
     valueMoving = pyqtSignal(list)
     sliderReleased = pyqtSignal()
 
-    def __init__(self, parent=None, left_value=0, right_value=255, left_thumb_value=0, right_thumb_value=255):
+    def __init__(self, parent=None, left_value=0, right_value=255,
+                 left_thumb_value=0, right_thumb_value=255):
         super(QRangeSlider, self).__init__(parent)
 
         self.setSizePolicy(
@@ -279,10 +280,11 @@ class QRangeSlider(QWidget):
         self._right_value = right_value
 
         self._left_thumb = Thumb(left_thumb_value, None, False)
-        _right_thumb_value = right_thumb_value if right_thumb_value is not None \
-            else self._right_value
+        _right_thumb_value = (right_thumb_value if right_thumb_value
+                              is not None else self._right_value)
         if _right_thumb_value < left_thumb_value + 1:
-            raise ValueError("Right thumb value is less or equal left thumb value.")
+            raise ValueError("Right thumb value is less or equal to left thumb"
+                             " value.")
         self._right_thumb = Thumb(_right_thumb_value, None, False)
 
         self._canvas_width = None
@@ -311,10 +313,14 @@ class QRangeSlider(QWidget):
         painter.setRenderHint(QPainter.Antialiasing)
 
         self.__draw_track(self._canvas_width, self._canvas_height, painter)
-        self.__draw_track_fill(self._canvas_width, self._canvas_height, painter)
-        self.__draw_ticks(self._canvas_width, self._canvas_height, painter, self._ticks_count)
-        self.__draw_left_thumb(self._canvas_width, self._canvas_height, painter)
-        self.__draw_right_thumb(self._canvas_width, self._canvas_height, painter)
+        self.__draw_track_fill(self._canvas_width, self._canvas_height,
+                               painter)
+        self.__draw_ticks(self._canvas_width, self._canvas_height, painter,
+                          self._ticks_count)
+        self.__draw_left_thumb(self._canvas_width, self._canvas_height,
+                               painter)
+        self.__draw_right_thumb(self._canvas_width, self._canvas_height,
+                                painter)
 
         painter.end()
 
@@ -327,7 +333,7 @@ class QRangeSlider(QWidget):
         brush.setColor(self.TRACK_COLOR)
         brush.setStyle(Qt.SolidPattern)
 
-        rect = QRect(self.TRACK_PADDING, self.__get_track_y_position(), \
+        rect = QRect(self.TRACK_PADDING, self.__get_track_y_position(),
                      canvas_width - 2 * self.TRACK_PADDING, self.TRACK_HEIGHT)
         painter.fillRect(rect, brush)
 
@@ -338,9 +344,11 @@ class QRangeSlider(QWidget):
         brush.setStyle(Qt.SolidPattern)
 
         available_width = canvas_width - 2 * self.TRACK_PADDING
-        x1 = self._left_thumb.value / self._right_value * available_width + self.TRACK_PADDING
-        x2 = self._right_thumb.value / self._right_value * available_width + self.TRACK_PADDING
-        rect = QRect(round(x1), self.__get_track_y_position(), \
+        x1 = (self._left_thumb.value / self._right_value * available_width
+              + self.TRACK_PADDING)
+        x2 = (self._right_thumb.value / self._right_value * available_width
+              + self.TRACK_PADDING)
+        rect = QRect(round(x1), self.__get_track_y_position(),
                      round(x2) - round(x1), self.TRACK_HEIGHT)
         painter.fillRect(rect, brush)
 
@@ -359,8 +367,10 @@ class QRangeSlider(QWidget):
 
         painter.setBrush(brush)
 
-        thumb_rect = QRect(round(x) - self.THUMB_WIDTH // 2 + self.TRACK_PADDING, \
-                           y + self.TRACK_HEIGHT // 2 - self.THUMB_HEIGHT // 2, self.THUMB_WIDTH, self.THUMB_HEIGHT)
+        thumb_rect = QRect(round(x) - self.THUMB_WIDTH // 2
+                           + self.TRACK_PADDING, y + self.TRACK_HEIGHT // 2
+                           - self.THUMB_HEIGHT // 2, self.THUMB_WIDTH,
+                           self.THUMB_HEIGHT)
         painter.drawEllipse(thumb_rect)
         return thumb_rect
 
@@ -410,44 +420,48 @@ class QRangeSlider(QWidget):
         if self._right_thumb.rect.contains(event.x(), event.y()):
             self._right_thumb.pressed = True
         super().mousePressEvent(event)
-        self.valueMoving.emit([self.get_left_thumb_value(), self.get_right_thumb_value()])
+        self.valueMoving.emit([self.get_left_thumb_value(),
+                               self.get_right_thumb_value()])
 
     # override Qt event
     def mouseReleaseEvent(self, event):
         # print("mouseReleaseEvent")
         self._left_thumb.pressed = False
         self._right_thumb.pressed = False
-        self.valueChanged.emit([self.get_left_thumb_value(), self.get_right_thumb_value()])
+        self.valueChanged.emit([self.get_left_thumb_value(),
+                                self.get_right_thumb_value()])
         super().mouseReleaseEvent(event)
         self.sliderReleased.emit()
 
     # pylint: disable=no-self-use
     def __get_thumb_value(self, x, canvas_width, right_value):
-        # print(f"x {x} canvas_width {canvas_width} left_value {self._left_thumb.value} right_value {right_value}")
+        # print(f"x {x} canvas_width {canvas_width} left_value "
+        #       f"{self._left_thumb.value} right_value {right_value}")
         return round(x / canvas_width * right_value)
 
     # override Qt event
     def mouseMoveEvent(self, event):
         # print("mouseMoveEvent")
 
-        thumb = self._left_thumb if self._left_thumb.pressed else self._right_thumb
+        thumb = (self._left_thumb if self._left_thumb.pressed
+                 else self._right_thumb)
 
         if thumb.pressed:
+            new_val = self.__get_thumb_value(event.x(), self._canvas_width,
+                                             self._right_value)
             if thumb == self._left_thumb:
                 value_setter = self.set_left_thumb_value
-                value_adjuster = lambda val: _left_thumb_adjuster(val, 0)
+                _left_thumb_adjuster(new_val, 0)
             else:
                 value_setter = self.set_right_thumb_value
-                value_adjuster = lambda val: _right_thumb_adjuster(val, self._right_value)
-
-            new_val = self.__get_thumb_value(event.x(), self._canvas_width, self._right_value)
-            value_adjuster(new_val)
+                _right_thumb_adjuster(new_val, self._right_value)
             value_changed = new_val != thumb.value
             if value_changed:
                 value_setter(new_val)
 
         super().mouseMoveEvent(event)
-        self.valueMoving.emit([self.get_left_thumb_value(), self.get_right_thumb_value()])
+        self.valueMoving.emit([self.get_left_thumb_value(),
+                               self.get_right_thumb_value()])
 
     def get_left_thumb_value(self):
         return self._left_thumb.value

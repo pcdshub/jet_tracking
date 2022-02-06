@@ -1,12 +1,12 @@
-from PyQt5.Qt import Qt
-from PyQt5.QtWidgets import QWidget, QDockWidget, QSizePolicy, QHBoxLayout, QMainWindow
+import logging
 
 from gui.widgets.controlWidget import ControlsWidget
 from gui.widgets.graphWidget import GraphsWidget
-import logging
+from PyQt5.Qt import Qt
+from PyQt5.QtWidgets import QDockWidget, QHBoxLayout, QSizePolicy, QWidget
 
-log = logging.getLogger('pydm')
-log.setLevel('CRITICAL')
+pydm_log = logging.getLogger('pydm')
+pydm_log.setLevel('CRITICAL')
 
 
 class JetTrackerView(QWidget):
@@ -26,17 +26,20 @@ class JetTrackerView(QWidget):
         self.setLayout(self.mainLayout)
 
     def createGraphWidget(self):
-        self.graphWidget = GraphsWidget(context=self.context, signals=self.signals)
-        self.graphWidget.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred) 
+        self.graphWidget = GraphsWidget(context=self.context,
+                                        signals=self.signals)
+        self.graphWidget.setSizePolicy(QSizePolicy.Preferred,
+                                       QSizePolicy.Preferred)
 
     def createDockWidgets(self):
         self.parent.setDockNestingEnabled(True)
         self.controlsDock = QDockWidget("Controls", self)
-        self.controlsDock.setAllowedAreas(Qt.RightDockWidgetArea | Qt.BottomDockWidgetArea)
+        self.controlsDock.setAllowedAreas(Qt.RightDockWidgetArea
+                                          | Qt.BottomDockWidgetArea)
         self.controlsDock.setFeatures(QDockWidget.DockWidgetFloatable)
 
         self.controlsWidget = ControlsWidget(self.context, self.signals)
         self.controlsDock.setWidget(self.controlsWidget)
-        self.controlsDock.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        self.controlsDock.setSizePolicy(QSizePolicy.Preferred,
+                                        QSizePolicy.Preferred)
 #        self.mainLayout.addWidget(self.controlsDock)
-

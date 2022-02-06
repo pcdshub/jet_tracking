@@ -1,22 +1,5 @@
 import math
 import random
-import matplotlib.pyplot as plt
-
-"""
-Questions for Frank
-
--How would we make the values better reflect "real" values we should see for i0 and diffraction?
--right now if you change the amount of dropped shots, the ratio also goes down. As I understand it, that 
-shouldn't be the case which is why i look for dropped shots separately. Can we change that?
-- do we need "update vals" to update anything in data stream? if so, we should have those values update in "Context"
-instead.
-
-"""
-
-
-def sinwv(x, shift):
-    a = random.random()
-    return (a * (math.sin(x) ** 2 + shift))
 
 
 class SimulationGenerator(object):
@@ -35,7 +18,8 @@ class SimulationGenerator(object):
         self.percent = 0
         # get current simulated motor position
         self.signals.update.connect(self.updateVals)
-        self.signals.changeMotorPosition.connect(self.change_position) # self.change_motor)
+        # self.signals.changeMotorPosition.connect(self.change_motor)
+        self.signals.changeMotorPosition.connect(self.change_position)
         self.signals.changeDroppedShots.connect(self.change_dropped)
         self.signals.changePeakIntensity.connect(self.change_intensity)
         self.signals.changeJetRadius.connect(self.change_radius)
@@ -92,28 +76,31 @@ class SimulationGenerator(object):
         val["dropped"] = False
 
         a = random.random()
-        # dropped shots. for input percentage of shots, 0 is returned for the scattering intensity
+        # dropped shots. for input percentage of shots, 0 is returned for the
+        # scattering intensity
         b = random.random()
         c = random.random()
         self.percent = self.percent_dropped/100
 
-# dropped shots
+        # dropped shots
         if b < self.percent:
-#            val["diff"] = 0
+            # val["diff"] = 0
             val["dropped"] = True
             val["diff"] = (self.bg / 10) * (1 + (a - 0.5))
             val["i0"] = self.bg * (1 + (c - 0.5))
 
-# on jet
+        # on jet
         else:
-            # calculates length of chord of a circle if on jet or sets diff to 0 (plus noise) if off jet
+            # calculates length of chord of a circle if on jet or sets diff
+            # to 0 (plus noise) if off jet
             if abs(self.motor_position - self.center) < self.radius:
-                val["diff"] = self.max * ((2 * math.sqrt(self.radius ** 2 - abs(self.motor_position - self.center) ** 2)) / (2 * self.radius)) * (
-                            1 + self.bg * (a - 0.5))
+                val["diff"] = (self.max * ((2 * math.sqrt(self.radius ** 2 -
+                               abs(self.motor_position - self.center) ** 2)) /
+                               (2 * self.radius)) * (1 + self.bg * (a - 0.5)))
                 val["dropped"] = False
                 val["i0"] = self.peak_intensity * 1 + self.bg * (c - 0.5)
 
-#off jet
+            # off jet
             else:
                 val["diff"] = self.bg * (1 + (a - 0.5))
                 val["dropped"] = False

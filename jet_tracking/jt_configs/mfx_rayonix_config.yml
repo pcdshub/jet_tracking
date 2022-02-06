@@ -22,9 +22,9 @@ pv_map:
   3: 'MFX:JTRK:REQ:RATIO'
   4: 'MFX:JTRK:REQ:DROPPED'
 
-ipm: 
+ipm:
   name: 'MFX-DG2-BMMON'
-  det: 'TotalIntensity' 
+  det: 'TotalIntensity'
 
 jet_cam:
   name: 'None'

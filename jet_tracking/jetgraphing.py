@@ -1,8 +1,6 @@
 import pyqtgraph as pg
 from PyQt5 import QtCore
 
-# PUT THESE FLOATING FUNCTION INSIDE A FILE IN THE TOOLS FOLDER
-# SET SCROLLINGTIMEWIDGET TO ITS OWN WIDGET IN THE WIDGET FOLDER
 
 def graph_setup(graph, title, y_axis, pen):
     graph.setTitle(title=title)
@@ -13,12 +11,16 @@ def graph_setup(graph, title, y_axis, pen):
     graph.addPlot(plot)
     graph.addAvePlot(plot_average)
 
-def add_calibration_graph(graph): 
-    plot_mean = pg.PlotCurveItem(pen=pg.mkPen(width=1, color=(255, 165, 0)), size=1)
-    plot_sigma_low = pg.PlotCurveItem(pen=pg.mkPen(width=1, color=(255, 255, 0)), \
-                                          size=1, style=QtCore.Qt.DashLine)
-    plot_sigma_high = pg.PlotCurveItem(pen=pg.mkPen(width=1, color=(255, 255, 0)), \
-                                          size=1, style=QtCore.Qt.DashLine)
+
+def add_calibration_graph(graph):
+    plot_mean = pg.PlotCurveItem(
+        pen=pg.mkPen(width=1, color=(255, 165, 0)), size=1)
+    plot_sigma_low = pg.PlotCurveItem(
+        pen=pg.mkPen(width=1, color=(255, 255, 0)),
+        size=1, style=QtCore.Qt.DashLine)
+    plot_sigma_high = pg.PlotCurveItem(
+        pen=pg.mkPen(width=1, color=(255, 255, 0)),
+        size=1, style=QtCore.Qt.DashLine)
     graph.addMeanPlot(plot_mean)
     graph.addSigmaPlots(plot_sigma_low, plot_sigma_high)
 
@@ -46,7 +48,8 @@ class ScrollingTimeWidget(pg.PlotWidget):
     def addSigmaPlots(self, plt1, plt2):
         self.percent_low = plt1
         self.percent_high = plt2
-        self.pfill = pg.FillBetweenItem(self.percent_high, self.percent_low, brush=(50, 50, 200, 50))
+        self.pfill = pg.FillBetweenItem(self.percent_high, self.percent_low,
+                                        brush=(50, 50, 200, 50))
         self.addItem(self.percent_low)
         self.addItem(self.percent_high)
         self.addItem(self.pfill)
@@ -64,4 +67,3 @@ class ScrollingTimeWidget(pg.PlotWidget):
         self.setXRange(0, self.context.display_time)
         self.addPlot(self.plt)
         self.addAvePlot(self.avg_plt)
-

@@ -22,9 +22,9 @@ pv_map:
   3: 'MFX:JTRK:REQ:RATIO'
   4: 'MFX:JTRK:REQ:DROPPED'
 
-ipm: 
+ipm:
   name: 'FEEGasDetEnergy'
-  det: 'f_12_ENRC' 
+  det: 'f_12_ENRC'
 #  name: 'MFX-DG2-BMMON'
 #  det: 'TotalIntensity'
 #  det: None

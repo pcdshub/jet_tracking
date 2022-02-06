@@ -54,4 +54,3 @@ echo $CONFIG
 
 `which mpirun` -n $PROC python -u $MYDIR/mpi_scripts/mpi_driver.py --cfg_file $CONFIG
 #`which mpirun` -n $PROC python -u $MYDIR/mpi_driver.py --cfg_file $CONFIG
-

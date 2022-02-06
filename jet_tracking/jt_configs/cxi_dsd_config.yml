@@ -26,7 +26,7 @@ pv_map:
   #4: 'XCS:JTRK:REQ:JET_PEAK'
   #5: 'XCS:JTRK:REQ:JET_LOC'
 
-ipm: 
+ipm:
   #name: 'CXI-SB2-BMMON'
   #det: 'TotalIntensity'
   name: 'FEEGasDetEnergy'

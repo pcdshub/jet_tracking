@@ -3,9 +3,9 @@
 usage()
 {
 cat << EOF
-$(basename "$0"): 
+$(basename "$0"):
 	Script to launch a smalldata_tools run analysis
-	
+
 	OPTIONS:
 		-h|--help
 			Definition of options
@@ -68,7 +68,7 @@ do
         *)
             POSITIONAL+=("$1")
 			shift
-			;;                     
+			;;
 	esac
 done
 set -- "${POSITIONAL[@]}"
