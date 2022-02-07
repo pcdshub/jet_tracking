@@ -350,6 +350,7 @@ if __name__ == '__main__':
             run = yml_dict['run']
         cal_params = yml_dict['cal_params']
         ffb = yml_dict['ffb']
+        evr_name = yml_dict['evr_name']
         event_code = yml_dict['event_code']
 
     if jet_cam_name == 'None' or jet_cam_name == 'none':
@@ -390,7 +391,7 @@ if __name__ == '__main__':
         ipm = psana.Detector(ipm_name)
         if jet_cam_name is not None:
             jet_cam = psana.Detector(jet_cam_name)
-        evr = get_evr_w_codes(psana.DetNames())
+        evr = psana.Detector(evr_name)
         masks = get_r_masks(det_map['shape'], cal_params['azav_bins'])
     except Exception as e:
         logger.warning('Unable to create psana detectors: {}'.format(e))
@@ -439,7 +440,7 @@ if __name__ == '__main__':
         except Exception as e:
             logger.info('Unable to process event {}: {}'.format(evt_idx, e))
 
-        if evt_idx == num_events:
+        if evt_idx > num_events:
             break
 
     smd.save()

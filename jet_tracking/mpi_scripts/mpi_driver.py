@@ -42,6 +42,7 @@ with open(args.cfg_file) as f:
     hutch = yml_dict['hutch']
     exp = yml_dict['experiment']
     run = yml_dict['run']
+    evr_name = yml_dict['evr_name']
     event_code = yml_dict['event_code']
     # wf_length = yml_dict['wf_length']
 
@@ -81,9 +82,7 @@ if jet_cam_name is not None:
     jet_cam = psana.Detector(jet_cam_name)
 else:
     jet_cam = None
-evr = get_evr_w_codes(psana.DetNames())
-print(evr.name)
-print(pv_map)
+evr = psana.Detector(evr_name)
 r_mask = get_r_masks(det_map['shape'])
 
 if rank == 0:
