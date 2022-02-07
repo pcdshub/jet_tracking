@@ -6,6 +6,7 @@ experiment: 'cxip21119'
 run: '1'
 sim: false
 ffb: true
+evr_name: 'evr1'
 event_code: 40 # x-ray on event code
 
 det_map:

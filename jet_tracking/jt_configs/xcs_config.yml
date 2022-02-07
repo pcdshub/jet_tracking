@@ -6,6 +6,7 @@ experiment: 'xcsx47519'
 run: '10'
 sim: true
 ffb: false
+evr_name: 'evr0'
 event_code: 137 # x-ray on event code
 
 det_map:
