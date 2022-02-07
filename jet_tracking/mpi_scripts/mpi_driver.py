@@ -83,8 +83,6 @@ if jet_cam_name is not None:
 else:
     jet_cam = None
 evr = psana.Detector(evr_name)
-print(evr.name)
-print(pv_map)
 r_mask = get_r_masks(det_map['shape'])
 
 if rank == 0:
