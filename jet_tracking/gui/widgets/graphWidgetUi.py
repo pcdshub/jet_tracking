@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QVBoxLayout
 import pyqtgraph as pg
-from jetgraphing import ScrollingTimeWidget, graph_setup, add_calibration_graph
+from jetGraphing import ScrollingTimeWidget, graph_setup, add_calibration_graph
 
 
 class Graphs_Ui(object):

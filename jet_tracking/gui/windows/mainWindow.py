@@ -20,6 +20,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.signals = Signals()
         self.context = Context(self.signals)
         self.setupUi(self)
+        self.simWindow = None
+        self.tabWidget = None
+        self.jetTrackerView = None
+        self.jetImageView = None
         self.create_views_and_dialogs()
         self.setup_window_tabs()
         self.createMenuBarActions()
@@ -34,8 +38,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tabWidget.addTab(self.jetTrackerView, "Jet Tracker")
         self.tabWidget.addTab(self.jetImageView, "Jet Image")
 
-
     def create_views_and_dialogs(self):
+        self.simWindow = SimWindow(self.context, self.signals)
         self.jetTrackerView = JetTrackerView(self.context, self.signals, self)
         self.jetImageView = JetImageView(self.context, self.signals)
         # self.helpDialog = HelpDialog()
@@ -189,17 +193,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #    self.signals.resizeCanvas.emit()
 
     def showHelp(self):
-
         pass
 
     def showAboutDialog(self):
-
         pass
 
     def showSimToolbar(self):
-        self.simWindow = SimWindow(self.context, self.signals)
         self.simWindow.show()
-        self.context.update_live_motor(False)
 
     def showImageToolbar(self):
         log.info("Image toolbar")

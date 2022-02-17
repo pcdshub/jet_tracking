@@ -24,7 +24,6 @@ class SimWidget(QFrame, SimUi):
         self.context.update_jet_center(float(self.box_jet_center.text()))
         self.context.update_max_intensity(float(self.box_max_int.text()))
         self.context.update_background(float(self.box_bg.text()))
-        self.context.update_algorithm(self.cbox_sim_algorithm.currentText())
 
     def make_connections(self):
         self.box_motor_pos.checkVal.connect(self.context.update_motor_position)
@@ -34,30 +33,8 @@ class SimWidget(QFrame, SimUi):
         self.box_jet_center.checkVal.connect(self.context.update_jet_center)
         self.box_max_int.checkVal.connect(self.context.update_max_intensity)
         self.box_bg.checkVal.connect(self.context.update_background)
-        self.cbox_sim_algorithm.currentTextChanged.connect(self.context.update_algorithm)
-        self.bttn_start_tracking.clicked.connect(self.start_tracking)
-        self.bttn_stop_tracking.clicked.connect(self.stop_tracking)
 
-    def start_tracking(self):
-        self.context.update_tracking(True)
-        self.signals.trackingStatus.emit("Sim Tracking", "green")
-
-    def stop_tracking(self):
-        self.context.update_tracking(False)
-        # maybe need to stop the motor if stop tracking is pressed??
-        self.signals.trackingStatus.emit("Not Tracking", "red")
-
-#        self.bttn_start_tracking.clicked.connect(self._start_sim)
-
-#    def _start_sim(self):
-#        self.sim_status.start()
-
-#    def _enable_tracking(self):
-#        self.update_tracking_status("enabled", green)
-#        self.context.update_tracking(True)
-#        self._start_motor()
-
-#    def set_tracking_status(self, status, color):
-#        self.lbl_tracking_status.setText(status)
-#        self.lbl_tracking_status.setStyleSheet(f"\
-#                background-color: {color};")
+    def send_values(self, live):
+        if not live:
+            self.context.update_motor_position(float(self.box_motor_pos.text()))
+            self.context.update_jet_center(float(self.box_jet_center.text()))

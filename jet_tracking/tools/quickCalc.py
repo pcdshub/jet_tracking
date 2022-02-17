@@ -8,10 +8,3 @@ def skimmer(key, oldlist, checklist):
     return skimlist
 
 
-def div_with_try(v1, v2):
-    try:
-        a = v1 / v2
-    except (TypeError, ZeroDivisionError) as e:
-        a = 0
-    return a
-

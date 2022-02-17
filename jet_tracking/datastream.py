@@ -5,13 +5,14 @@ from scipy import stats
 import numpy as np
 import collections
 from ophyd import EpicsSignal
-#from epics import caget
+# from epics import caget
 from PyQt5.QtCore import QThread
-#from pcdsdevices.epics_motor import IMS
-from sketch.num_gen import SimulationGenerator
-from sketch.motorMoving import MotorAction
-from sketch.sim_motorMoving import SimulatedMotor
-from tools.quick_calc import skimmer
+# from pcdsdevices.epics_motor import IMS
+from tools.numGen import SimulationGenerator
+from motorMoving import MotorAction
+from tools.simMotorMoving import SimulatedMotor
+from sketch.simJetImage import SimulatedImage
+from tools.quickCalc import skimmer
 from collections import deque
 import cv2
 import threading
@@ -113,7 +114,7 @@ class ValueReader(metaclass=Singleton):
         self.diff = self.sim_vals["diff"]
         self.ratio = self.sim_vals["ratio"]
         self.dropped = self.sim_vals["dropped"]
-        #self.motor_position = self.sim_vals["motor_position"]
+        # self.motor_position = self.sim_vals["motor_position"]
 
     def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.context.live_data:
@@ -170,8 +171,10 @@ class StatusThread(QThread):
                                    'ratio': {'mean': 0, 'stddev': 0, 'range': (0, 0)}}
         self.averages = {}
         self.buffers = {}
-        self.current_values= {}
+        self.current_values = {}
         self.flagged_events = {}
+        self.reader = None
+        self.processor_worker = None
         self.create_value_reader()
         self.create_event_processor()
         self.create_vars()
@@ -199,7 +202,7 @@ class StatusThread(QThread):
         self.reader = ValueReader(self.context, self.signals)
 
     def create_event_processor(self):
-        self.processor_worker = EventProcessor(self.context, self.signals)
+        self.processor_worker = EventProcessor(self.signals)
 
     def initialize_buffers(self):
         # buffers and data collection
@@ -209,9 +212,9 @@ class StatusThread(QThread):
                          "ratio": deque([0], self.averaging_size),
                          "time": deque([0], self.averaging_size)}
         self.flagged_events = {"high intensity": collections.deque([0] * self.buffer_size, self.buffer_size),
-                              "missed shot": collections.deque([0] * self.buffer_size, self.buffer_size),
-                              "dropped shot": collections.deque([0] * self.buffer_size, self.buffer_size)}
-        self.current_values = {"i0": 0,"diff": 0,"ratio": 0,"dropped": 0}
+                               "missed shot": collections.deque([0] * self.buffer_size, self.buffer_size),
+                               "dropped shot": collections.deque([0] * self.buffer_size, self.buffer_size)}
+        self.current_values = {"i0": 0, "diff": 0, "ratio": 0, "dropped": 0}
         self.buffers = {"i0": deque([0], self.buffer_size),
                         "diff": deque([0], self.buffer_size),
                         "ratio": deque([0], self.buffer_size),
@@ -538,23 +541,23 @@ class StatusThread(QThread):
         """
         if self.calibration_source == "calibration from results":
             results, cal_file = self.context.get_cal_results()  # change the experiment
-            if results == None:
+            if results is None:
                 self.signals.message.emit("no calibration file there")
                 self.calibrated = False
-                self.mode= 'running'
+                self.mode = 'running'
             else:
                 self.set_calibration_values('i0', 
-                                        float(results['i0_median']),
-                                        float(results['i0_low'])
-                                        )
-                #self.set_calibration_values('ratio', 
-                #                        float(results['med_ratio']),
-                #                        float(results['ratio_low'])
-                #                        )
+                                            float(results['i0_median']),
+                                            float(results['i0_low'])
+                                            )
+                # self.set_calibration_values('ratio',
+                #                             float(results['med_ratio']),
+                #                             float(results['ratio_low'])
+                #                             )
                 self.set_calibration_values('diff', 
-                                        float(results['int_median']),
-                                        float(results['int_low'])
-                                        )
+                                            float(results['int_median']),
+                                            float(results['int_low'])
+                                            )
                 # this should be removed
                 ratio_low = float(results['int_low'])/float(results['i0_low'])
                 self.set_calibration_values('ratio', float(results['med_ratio']), ratio_low)
@@ -563,7 +566,7 @@ class StatusThread(QThread):
                 self.signals.message.emit('calibration file: ' + str(cal_file))
 
         elif self.calibration_source == 'calibration in GUI':
-            if v.get('dropped') != True:
+            if not v.get('dropped'):
                 self.cal_vals[0].append(v.get('i0'))
                 self.cal_vals[1].append(v.get('diff'))
                 self.cal_vals[2].append(v.get('ratio'))
@@ -593,13 +596,15 @@ class StatusThread(QThread):
             self.signals.message.emit('i0 median: ' + str(self.calibration_values['i0']['mean']))
             self.signals.message.emit('i0 low: ' + str(self.calibration_values['i0']['stddev']))
             self.signals.message.emit('mean ratio: ' + str(self.calibration_values['ratio']['mean']))
-            self.signals.message.emit('standard deviation of the ratio: ' + str(self.calibration_values['ratio']['stddev']))
+            self.signals.message.emit('standard deviation of the ratio: '
+                                      + str(self.calibration_values['ratio']['stddev']))
 
     def send_info_to_motor(self):
         self.signals.intensitiesForMotor.emit(self.current_values)
 
     def recalibrate(self):
-        self.signals.message.emit("The data may need to be recalibrated. There is consistently higher I/I0 than the calibration..")
+        self.signals.message.emit("The data may need to be recalibrated. "
+                                  "There is consistently higher I/I0 than the calibration..")
  
     def missed_shots(self):
         if self.context.motor_running:
@@ -652,7 +657,7 @@ class StatusThread(QThread):
 
 
 class EventProcessor(QThread):
-    def __init__(self, context, signals):
+    def __init__(self, signals):
         super(EventProcessor, self).__init__()
         self.SIGNALS = signals
         self.flag_type = {}
@@ -686,7 +691,7 @@ class JetImageFeed(QThread):
         self.cam_name = ''
         self.dilate = None
         self.erode = None
-        self.opene = None
+        self.opener = None
         self.close = None
         self.contrast = None
         self.brightness = None
@@ -709,21 +714,32 @@ class JetImageFeed(QThread):
         self.signals.imageProcessing.connect(self.update_editor_vals)
 
     def connect_cam(self):
-        self.cam_name = self.context.PV_DICT.get('camera', None)
-        self.array_size_x_data = caget(self.cam_name + ':IMAGE1:ArraySize0_RBV')
-        self.array_size_y_data = caget(self.cam_name + ':IMAGE1:ArraySize1_RBV')
-        self.array_size_x_viewer = caget(self.cam_name + ':IMAGE2:ArraySize0_RBV')
-        self.array_size_y_viewer = caget(self.cam_name + ':IMAGE2:ArraySize1_RBV')
-        if self.array_size_x_data != self.array_size_x_viewer or \
-                self.array_size_y_data != self.array_size_y_viewer:
-            self.signals.message.emit("ROI defined with markers in canViewer won't make sense because of "
-                                      "different resolutions between the camera and camViewer")
-        image = caget(self.cam_name + ':IMAGE1:ArrayData')
-        if len(image) == 0:
-            self.signals.message.emit("Can't read camera...")
-            self.connected = False
+        if self.context.live_data:
+            self.cam_name = self.context.PV_DICT.get('camera', None)
+            self.array_size_x_data = caget(self.cam_name + ':IMAGE1:ArraySize0_RBV')
+            self.array_size_y_data = caget(self.cam_name + ':IMAGE1:ArraySize1_RBV')
+            self.array_size_x_viewer = caget(self.cam_name + ':IMAGE2:ArraySize0_RBV')
+            self.array_size_y_viewer = caget(self.cam_name + ':IMAGE2:ArraySize1_RBV')
+            if self.array_size_x_data != self.array_size_x_viewer or \
+                    self.array_size_y_data != self.array_size_y_viewer:
+                self.signals.message.emit("ROI defined with markers in canViewer won't make sense because of "
+                                          "different resolutions between the camera and camViewer")
+            image = caget(self.cam_name + ':IMAGE1:ArrayData')
+            if len(image) == 0:
+                self.signals.message.emit("Can't read camera...")
+                self.connected = False
+            else:
+                self.connected = True
         else:
-            self.connected = True
+            self.cam_name = SimulatedImage(self.context, self.signals)
+            self.array_size_y_viewer = self.cam_name.y_size
+            self.array_size_x_viewer = self.cam_name.x_size
+            image = self.cam_name.jet_im
+            if not len(image):
+                self.signals.message.emit("Simulated Image not working...")
+                self.connected = False
+            else:
+                self.connected = True
 
     @staticmethod
     def fix_image(im, x, y):
@@ -733,7 +749,7 @@ class JetImageFeed(QThread):
     def update_editor_vals(self, e):
         self.dilate = e['dilate'][-1]
         self.erode = e['erode'][-1]
-        self.opene = e['open'][-1]
+        self.opener = e['open'][-1]
         self.close = e['close'][-1]
         self.contrast = e['contrast'][-1]
         self.brightness = e['brightness'][-1]
@@ -746,8 +762,8 @@ class JetImageFeed(QThread):
             im = cv2.dilate(im, self.kernel, iterations=self.dilate)
         if self.erode:
             im = cv2.erode(im, self.kernel, iterations=self.erode)
-        if self.opene:
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.opene, self.opene))
+        if self.opener:
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.opener, self.opener))
             im = cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
         if self.close:
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.close, self.close))
@@ -759,20 +775,25 @@ class JetImageFeed(QThread):
         if self.blur:
             pass
         ret, im = cv2.threshold(im, self.left_threshold, self.right_threshold, cv2.THRESH_BINARY)
-        return(im)
+        return im
 
     def run(self):
         while not self.isInterruptionRequested():
             if self.connected:
-                image = caget(self.cam_name + ':IMAGE2:ArrayData')
-                image = self.fix_image(image, self.array_size_x_viewer, self.array_size_y_viewer)
+                if self.context.live_data:
+                    image = caget(self.cam_name + ':IMAGE2:ArrayData')
+                    image = self.fix_image(image, self.array_size_x_viewer, self.array_size_y_viewer)
+                else:
+                    image = self.cam_name.jet_im
                 image = self.editor(image)
                 qimage = array2qimage(image)
                 self.signals.camImage.emit(qimage)
-                time.sleep(1/self.refresh_rate)
+                time.sleep(1 / self.refresh_rate)
+
             else:
                 print("you are not connected")
                 time.sleep(1/self.refresh_rate)
+
         print("Interruption was requested: Image Thread")
 
 
@@ -870,9 +891,11 @@ class MotorThread(QThread):
             self.motor_name = self.context.PV_DICT.get('motor', None)
             print("connecting to: ", self.motor_name)
             self.motor = IMS(self.motor_name, name='jet_x')
+            self.context.update_motor_position(self.motor.position)
             self.wait = True
         elif not self.live:
             self.motor = SimulatedMotor(self.context, self.signals)
+            self.context.update_motor_position(self.motor.position)
             self.wait = False
 
     def clear_values(self):

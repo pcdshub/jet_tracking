@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QVBoxLayout, QGraphicsView, QGraphicsScene
 import pyqtgraph as pg
-from jetgraphing import ScrollingTimeWidget, graph_setup
+from jetGraphing import ScrollingTimeWidget, graph_setup
 
 
 class Image_Ui(object):

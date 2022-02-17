@@ -9,6 +9,7 @@ class SimWindow(QMainWindow, SimWindow_Ui):
         self.signals = signals
         self.context = context
         self.setupUi(self)
+        self.simulationView = None
         self.create_views_and_dialogs()
         self.setCentralWidget(self.simulationView)
 
@@ -16,4 +17,4 @@ class SimWindow(QMainWindow, SimWindow_Ui):
         self.simulationView = SimulationView(self.context, self.signals, self)
 
     def closeEvent(self, e):
-        self.context.update_live_motor(True)
+        pass

@@ -16,6 +16,8 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.signals = signals
         self.context = context
         self.setupUi(self)
+        self.worker_status = None
+        self.worker_motor = None
         self.initialize_threads()
         self.set_thread_options()
         self.set_motor_options()
@@ -67,6 +69,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.signals.plotMotorMoves.connect(self.plot_motor_moves)
         self.signals.changeMotorPosition.connect(self.update_motor)
         self.signals.message.connect(self.receive_message)
+        self.signals.updateRunValues.connect(self.send_values)
 
     def start_processes(self):
         self.worker_status.start()
@@ -147,6 +150,14 @@ class ControlsWidget(QFrame, Controls_Ui):
     def update_motor(self, mp):
         self.lbl_motor_status.display(mp)
 
+    def send_values(self, live):
+        if live:
+            self.context.update_limits(float(self.le_motor_hl.text()),
+                                       float(self.le_motor_ll.text()))
+            self.context.step_size = self.le_size.text()
+            self.context.motor_averaging = self.le_ave_motor.text()
+            self.context.connect_motor()
+
     def clearLayout(self, layout):
         for i in reversed(range(layout.count())):
             widgetToRemove = layout.itemAt(i).widget()
@@ -167,7 +178,6 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.worker_motor = None
 
     def update_limits(self, limit):
-        print(self.le_motor_hl.text(), self.le_motor_ll.text())
         self.context.update_limits(float(self.le_motor_hl.text()), float(self.le_motor_ll.text()))
 
     def receive_message(self, message):
@@ -181,7 +191,6 @@ class ControlsWidget(QFrame, Controls_Ui):
         bttn = button.text()
         if bttn == "simulated data":
             self.rdbttn_manual.click()
-            self.rdbttn_auto.setEnabled(False)
             self.context.update_live_graphing(False)
             self.context.update_live_motor(False)
         elif bttn == "live data":
