@@ -18,7 +18,6 @@ requirements:
   run:
     - python {{PY_VER}}*,>=3.6
     - pcdsdevices >=2.6.0
-    - hutch-python >=1.2.3
     - matplotlib
     - numpy
     - ophyd >=1.5.0

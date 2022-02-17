@@ -1,21 +1,23 @@
-import logging
-import time
-from statistics import mean, stdev, StatisticsError
-from scipy import stats
-import numpy as np
 import collections
-from ophyd import EpicsSignal
+import logging
+import threading
+import time
+from collections import deque
+from statistics import StatisticsError, mean, stdev
+
+import cv2
+import numpy as np
 from epics import caget
+from ophyd import EpicsSignal
 from PyQt5.QtCore import QThread
-from pcdsdevices.epics_motor import IMS
-from sketch.num_gen import SimulationGenerator
+from qimage2ndarray import array2qimage
+from scipy import stats
 from sketch.motorMoving import MotorAction
+from sketch.num_gen import SimulationGenerator
 from sketch.sim_motorMoving import SimulatedMotor
 from tools.quick_calc import skimmer
-from collections import deque
-import cv2
-import threading
-from qimage2ndarray import array2qimage
+
+from pcdsdevices.epics_motor import IMS
 
 ologging = logging.getLogger('ophyd')
 ologging.setLevel('DEBUG')
@@ -32,7 +34,8 @@ class Singleton(type):
         if cls not in cls._instances:
             with lock:
                 if cls not in cls._instances:
-                    cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+                    cls._instances[cls] = super(Singleton, cls).__call__(
+                        *args, **kwargs)
         return cls._instances[cls]
 
 
@@ -85,6 +88,9 @@ class ValueReader(metaclass=Singleton):
 
     def sim_data_stream(self):
         """Run with offline data"""
+        # Adam's code for running simulations offline data
+        # TODO: Add flag to enable this
+        #
         # context_data = zmq.Context()
         # socket_data = context_data.socket(zmq.SUB)
         # socket_data.connect(''.join(['tcp://localhost:', '8123']))
@@ -98,48 +104,42 @@ class ValueReader(metaclass=Singleton):
         # self.i0 = data[0]
         # self.diff = data[1]
 
-        # Used for generating random simulated data
-        # x = 0.8
-        # y = 0.1
-        # self.i0 = sinwv(x, 5000)
-        # self.diff = sinwv(y, 2000)
-        # try:
-        #     self.ratio = self.i0/self.diff
-        # except:
-        #     self.ratio = self.ratio
-
         self.sim_vals = self.simgen.sim()
         self.i0 = self.sim_vals["i0"]
         self.diff = self.sim_vals["diff"]
         self.ratio = self.sim_vals["ratio"]
         self.dropped = self.sim_vals["dropped"]
-        #self.motor_position = self.sim_vals["motor_position"]
+        # self.motor_position = self.sim_vals["motor_position"]
 
     def read_value(self):  # needs to initialize first maybe using a decorator?
         if self.context.live_data:
             self.live_data_stream()
-            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio, 'dropped': self.dropped}
+            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio,
+                    'dropped': self.dropped}
         else:
             self.sim_data_stream()
-            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio, 'dropped': self.dropped}
+            return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio,
+                    'dropped': self.dropped}
 
- 
+
 class StatusThread(QThread):
 
     def __init__(self, context, signals):
         super(StatusThread, self).__init__()
-        """Child class of QThread which processes data and hands it to the main thread
-        
-        After checking whether the current mode is either calibrating or running,
-        values are obtained from the ValueReader. Dictionaries for buffers,
-        buffer averages, and notable events for the initial intensity, 
-        diffraction intensity, and the ratio of these is built. 
+        """
+        QThread which processes data and hands it to the main thread.
+
+        After checking whether the current mode is either calibrating or
+        running, values are obtained from the ValueReader. Dictionaries for
+        buffers, buffer averages, and notable events for the initial intensity,
+        diffraction intensity, and the ratio of these is built.
 
         parameters:
         ----------
         signals : object
         context : object
         """
+
         self.signals = signals
         self.context = context
         self.calibration_source = ''
@@ -165,12 +165,15 @@ class StatusThread(QThread):
         self.status = ''
         self.display_flag = []
         self.cal_vals = [[], [], []]
-        self.calibration_values = {'i0': {'mean': 0, 'stddev': 0, 'range': (0, 0)},
-                                   'diff': {'mean': 0, 'stddev': 0, 'range': (0, 0)},
-                                   'ratio': {'mean': 0, 'stddev': 0, 'range': (0, 0)}}
+        self.calibration_values = {'i0': {'mean': 0, 'stddev': 0,
+                                          'range': (0, 0)},
+                                   'diff': {'mean': 0, 'stddev': 0,
+                                            'range': (0, 0)},
+                                   'ratio': {'mean': 0, 'stddev': 0,
+                                             'range': (0, 0)}}
         self.averages = {}
         self.buffers = {}
-        self.current_values= {}
+        self.current_values = {}
         self.flagged_events = {}
         self.create_value_reader()
         self.create_event_processor()
@@ -208,10 +211,14 @@ class StatusThread(QThread):
                          "diff": deque([0], self.averaging_size),
                          "ratio": deque([0], self.averaging_size),
                          "time": deque([0], self.averaging_size)}
-        self.flagged_events = {"high intensity": collections.deque([0] * self.buffer_size, self.buffer_size),
-                              "missed shot": collections.deque([0] * self.buffer_size, self.buffer_size),
-                              "dropped shot": collections.deque([0] * self.buffer_size, self.buffer_size)}
-        self.current_values = {"i0": 0,"diff": 0,"ratio": 0,"dropped": 0}
+        self.flagged_events = {
+            "high intensity": collections.deque([0] * self.buffer_size,
+                                                self.buffer_size),
+            "missed shot": collections.deque([0] * self.buffer_size,
+                                             self.buffer_size),
+            "dropped shot": collections.deque([0] * self.buffer_size,
+                                              self.buffer_size)}
+        self.current_values = {"i0": 0, "diff": 0, "ratio": 0, "dropped": 0}
         self.buffers = {"i0": deque([0], self.buffer_size),
                         "diff": deque([0], self.buffer_size),
                         "ratio": deque([0], self.buffer_size),
@@ -221,7 +228,8 @@ class StatusThread(QThread):
         self.signals.mode.connect(self.update_mode)
         self.signals.changeDisplayFlag.connect(self.change_display_flag)
         self.signals.changePercent.connect(self.set_percent)
-        self.signals.changeCalibrationSource.connect(self.set_calibration_source)
+        self.signals.changeCalibrationSource.connect(
+            self.set_calibration_source)
         self.signals.enableTracking.connect(self.tracking)
         self.signals.valuesRequest.connect(self.send_info_to_motor)
 
@@ -242,9 +250,11 @@ class StatusThread(QThread):
     @staticmethod
     def append_or_set(choice, d, vals, idx):
         """
-        send in a list of vals in the order 'i0', 'diff', 'ratio' and 'time' and
-        the choice to either "append" or "set" and
-        the dictionary d and then execute the action
+        Appends or assigns values to a dictionary.
+
+        Send in a list of vals in the order 'i0', 'diff', 'ratio' and 'time'
+        and the choice to either "append" or "set" and the dictionary d and
+        then execute the action.
 
         Keyword arguments:
         choice -- either "append" or "set"
@@ -252,6 +262,7 @@ class StatusThread(QThread):
         vals -- the values or value to be added
         idx -- the current x_cycle value
         """
+
         keys = list(d.keys())
         if choice == "append":
             for key, val in list(zip(keys, vals)):
@@ -288,9 +299,13 @@ class StatusThread(QThread):
             self.ave_cycle = self.context.ave_cycle
             self.x_cycle = self.context.x_cycle
             self.ave_idx = self.context.ave_idx
-            self.averages = self.fix_size(current_ave_size, self.averaging_size, self.averages)
-            self.buffers = self.fix_size(current_buff_size, self.buffer_size, self.buffers)
-            self.flagged_events = self.fix_size(current_buff_size, self.buffer_size, self.flagged_events)
+            self.averages = self.fix_size(current_ave_size,
+                                          self.averaging_size, self.averages)
+            self.buffers = self.fix_size(current_buff_size, self.buffer_size,
+                                         self.buffers)
+            self.flagged_events = self.fix_size(current_buff_size,
+                                                self.buffer_size,
+                                                self.flagged_events)
             self.display_flag = None
 
         elif self.display_flag == "just average":
@@ -300,7 +315,8 @@ class StatusThread(QThread):
             self.naverage = self.context.naverage
             self.ave_cycle = self.context.ave_cycle
             self.ave_idx = self.context.ave_idx
-            self.averages = self.fix_size(current_ave_size, self.averaging_size, self.averages)
+            self.averages = self.fix_size(current_ave_size,
+                                          self.averaging_size, self.averages)
             self.display_flag = None
 
     def change_display_flag(self, culprit):
@@ -343,7 +359,10 @@ class StatusThread(QThread):
         graph widget and notice that it says "connect='finite' and look
         that up for more info
         """
-        location_info = self.check_cycle(x_idx, ave_cycle)  # returns info to inform what to plot
+
+        # returns info to inform what to plot
+        location_info = self.check_cycle(x_idx, ave_cycle)
+
         i0 = list(self.buffers['i0'])
         diff = list(self.buffers['diff'])
         ratio = list(self.buffers['ratio'])
@@ -370,13 +389,17 @@ class StatusThread(QThread):
         else:
             choice = "set"
         try:
-            if self.calibrated and len(self.flagged_events['dropped shot']) == len(self.buffers['i0']):
+            if self.calibrated and len(self.flagged_events[
+                    'dropped shot']) == len(self.buffers['i0']):
                 avei0 = mean(skimmer('dropped shot',
-                                     list(self.buffers['i0']), self.flagged_events)[:-self.naverage])
+                                     list(self.buffers['i0']),
+                                     self.flagged_events)[:-self.naverage])
                 avediff = mean(skimmer('dropped shot',
-                                       list(self.buffers['diff']), self.flagged_events)[:-self.naverage])
+                                       list(self.buffers['diff']),
+                                       self.flagged_events)[:-self.naverage])
                 averatio = mean(skimmer('dropped shot',
-                                        list(self.buffers['ratio']), self.flagged_events)[:-self.naverage])
+                                        list(self.buffers['ratio']),
+                                        self.flagged_events)[:-self.naverage])
             else:
                 avei0 = mean(list(self.buffers['i0'])[:-self.naverage])
                 avediff = mean(list(self.buffers['diff'])[:-self.naverage])
@@ -407,9 +430,11 @@ class StatusThread(QThread):
             choice = "append"
         else:
             choice = "set"
-        v = [vals.get('i0'), vals.get('diff'), vals.get('ratio'), self.x_axis[idx]]
+        v = [vals.get('i0'), vals.get('diff'), vals.get('ratio'),
+             self.x_axis[idx]]
         self.append_or_set(choice, self.buffers, v, idx)
-        v = [vals.get('i0'), vals.get('diff'), vals.get('ratio'), vals.get('dropped')]
+        v = [vals.get('i0'), vals.get('diff'), vals.get('ratio'),
+             vals.get('dropped')]
         if self.calibrated and choice == "set":
             self.event_flagging(v, idx)
 
@@ -438,42 +463,56 @@ class StatusThread(QThread):
 
     def check_status_update(self):
         if self.calibrated:
-            if np.count_nonzero(self.flagged_events['missed shot']) > self.notification_tolerance:
+            if np.count_nonzero(self.flagged_events[
+                    'missed shot']) > self.notification_tolerance:
                 self.signals.changeStatus.emit("Warning, missed shots", "red")
-                self.processor_worker.flag_counter('missed shot', 50, self.missed_shots)
-            elif np.count_nonzero(self.flagged_events['dropped shot']) > self.notification_tolerance:
-                self.signals.changeStatus.emit("Lots of dropped shots", "yellow")
-                self.processor_worker.flag_counter('dropped shot', 50, self.dropped_shots)
-            elif np.count_nonzero(self.flagged_events['high intensity']) > self.notification_tolerance:
+                self.processor_worker.flag_counter('missed shot', 50,
+                                                   self.missed_shots)
+            elif np.count_nonzero(self.flagged_events[
+                    'dropped shot']) > self.notification_tolerance:
+                self.signals.changeStatus.emit("Lots of dropped shots",
+                                               "yellow")
+                self.processor_worker.flag_counter('dropped shot', 50,
+                                                   self.dropped_shots)
+            elif np.count_nonzero(self.flagged_events[
+                    'high intensity']) > self.notification_tolerance:
                 self.signals.changeStatus.emit("High Intensity", "orange")
-                self.processor_worker.flag_counter('high intensity', 50, self.high_intensity)
+                self.processor_worker.flag_counter('high intensity', 50,
+                                                   self.high_intensity)
             else:
                 if not self.processor_worker.isCounting:
-                    self.signals.changeStatus.emit("Everything is good", "green")
+                    self.signals.changeStatus.emit("Everything is good",
+                                                   "green")
                     self.everything_is_good()
                 if self.processor_worker.isCounting:
-                    self.processor_worker.flag_counter('everything is good', 50, self.everything_is_good)
+                    self.processor_worker.flag_counter("everything is good",
+                                                       50,
+                                                       self.everything_is_good)
         elif not self.calibrated:
             self.signals.changeStatus.emit("not calibrated", "orange")
 
     @staticmethod
     def normal_range(percent, sigma, vmean):
-        """ Used to find the upper and lower values on a normal distribution curve
+        """
+        Used to find the upper and lower values on a normal distribution curve.
+
         Parameters
         ----------
-        percent:
-                 the percent represents the range of allowed values from the mean
-        sigma:
-                 sigma as provided by the calibration
-        vmean:
-                 mean as provided by the calibration
-        returns
+        percent : int
+            The percent represents the range of allowed values from the mean.
+        sigma : float
+            Sigma as provided by the calibration.
+        vmean : float
+            Mean as provided by the calibration.
+
+        Returns
         -------
-        a: float
-                 the lower value percent/2 away from the mean
-        b: float
-                 the upper value percent/2 away from the mean
+        a : float
+            The lower value percent/2 away from the mean.
+        b : float
+            The upper value percent/2 away from the mean.
         """
+
         left = (1. - (percent/100.)) / 2.
         right = 1. - left
         zleft = stats.norm.ppf(left)
@@ -483,15 +522,20 @@ class StatusThread(QThread):
         return [a, b]
 
     def event_flagging(self, vals, idx):
-        """ The method of flagging values that are outside of the values indicated
-        from the gui. Values that fall within the allowed range receive a value of
-        zero in self.flagged_events deque. Otherwise, that position gets updated with
-        the current value in the buffer.
-
-        Keyword arguments:
-        vals -- the values from the ValueReader in the order i0, diff, ratio, x-axis
-        idx -- the current x index from the x_cycle list variable
         """
+        Flags values that are outside of the values indicated from the gui.
+
+        Values that fall within the allowed range receive a value
+        of zero in self.flagged_events deque. Otherwise, that position gets
+        updated with the current value in the buffer.
+
+        Parameters:
+        vals
+            Values from the ValueReader in the order i0, diff, ratio, x-axis.
+        idx
+            Current x index from the x_cycle list variable.
+        """
+
         if self.calibrated:
             if vals[2] > self.calibration_values['ratio']['range'][1]:
                 high_intensity = vals[2]
@@ -501,6 +545,12 @@ class StatusThread(QThread):
                 self.flagged_events['high intensity'][idx] = high_intensity
             if vals[2] < self.calibration_values['ratio']['range'][0]:
                 missed_shot = vals[2]
+
+                # added to fix issue with dropped shots
+                # revisit if there's anything weird
+                if missed_shot == 0:
+                    missed_shot = 0.01
+                # print("missed shot: ", missed_shot)
                 self.flagged_events['missed shot'][idx] = missed_shot
             else:
                 missed_shot = 0
@@ -514,56 +564,60 @@ class StatusThread(QThread):
 
     def update_calibration_range(self):
         for name in ['i0', 'diff', 'ratio']:
-            self.calibration_values[name]['range'] = self.normal_range(self.percent,
-                                                                       self.calibration_values[name]['stddev'],
-                                                                       self.calibration_values[name]['mean'])
+            self.calibration_values[name]['range'] = self.normal_range(
+                self.percent, self.calibration_values[name]['stddev'],
+                self.calibration_values[name]['mean'])
         self.signals.changeCalibrationValues.emit(self.calibration_values)
 
     def set_calibration_values(self, name, vmean, std):
         self.calibration_values[name]['mean'] = vmean
         self.calibration_values[name]['stddev'] = std
-        self.calibration_values[name]['range'] = self.normal_range(self.percent,
-                                                                   self.calibration_values[name]['stddev'],
-                                                                   self.calibration_values[name]['mean'])
+        self.calibration_values[name]['range'] = self.normal_range(
+            self.percent, self.calibration_values[name]['stddev'],
+            self.calibration_values[name]['mean'])
         self.signals.changeCalibrationValues.emit(self.calibration_values)
         self.context.set_calibration_values(self.calibration_values)
 
     def calibrate(self, v):
         """
-        Either gets the calibration values from the file created by the calibration shared memory process
-        or it runs a calibration itself by averaging over a length of time (number of new events) and updates
-        the calibration_values dictionary with the mean (or median), standard deviation, and range.
-        If the calibration is successful, then the calibration is set to True, mode is set to running,
-        and the calibration_values are updated.
+        Attempt to get new calibration values.
+
+        Either gets the calibration values from the file created by the
+        calibration shared memory process or it runs a calibration itself by
+        averaging over a length of time (number of new events) and updates the
+        calibration_values dictionary with the mean (or median), standard
+        deviation, and range. If the calibration is successful, then the
+        calibration is set to True, mode is set to running, and the
+        calibration_values are updated.
         """
+
         if self.calibration_source == "calibration from results":
-            results, cal_file = self.context.get_cal_results()  # change the experiment
-            if results == None:
+            results, cal_file = self.context.get_cal_results()
+            if results is None:
                 self.signals.message.emit("no calibration file there")
                 self.calibrated = False
-                self.mode= 'running'
+                self.mode = 'running'
             else:
-                self.set_calibration_values('i0', 
-                                        float(results['i0_median']),
-                                        float(results['i0_low'])
-                                        )
-                #self.set_calibration_values('ratio', 
-                #                        float(results['med_ratio']),
-                #                        float(results['ratio_low'])
-                #                        )
-                self.set_calibration_values('diff', 
-                                        float(results['int_median']),
-                                        float(results['int_low'])
-                                        )
+                self.set_calibration_values('i0',
+                                            float(results['i0_median']),
+                                            float(results['i0_low']))
+                # self.set_calibration_values('ratio',
+                #                             float(results['med_ratio']),
+                #                             float(results['ratio_low']))
+                self.set_calibration_values('diff',
+                                            float(results['int_median']),
+                                            float(results['int_low']))
                 # this should be removed
                 ratio_low = float(results['int_low'])/float(results['i0_low'])
-                self.set_calibration_values('ratio', float(results['med_ratio']), ratio_low)
+                self.set_calibration_values('ratio',
+                                            float(results['med_ratio']),
+                                            ratio_low)
                 self.calibrated = True
                 self.mode = 'running'
                 self.signals.message.emit('calibration file: ' + str(cal_file))
 
         elif self.calibration_source == 'calibration in GUI':
-            if v.get('dropped') != True:
+            if not v.get('dropped'):
                 self.cal_vals[0].append(v.get('i0'))
                 self.cal_vals[1].append(v.get('diff'))
                 self.cal_vals[2].append(v.get('ratio'))
@@ -572,11 +626,11 @@ class StatusThread(QThread):
                                             mean(self.cal_vals[0]),
                                             stdev(self.cal_vals[0])
                                             )
-                self.set_calibration_values('diff', 
+                self.set_calibration_values('diff',
                                             mean(self.cal_vals[1]),
                                             stdev(self.cal_vals[1])
                                             )
-                self.set_calibration_values('ratio', 
+                self.set_calibration_values('ratio',
                                             mean(self.cal_vals[2]),
                                             stdev(self.cal_vals[2])
                                             )
@@ -589,29 +643,39 @@ class StatusThread(QThread):
             self.signals.message.emit('was not able to calibrate')
             self.calibrated = False
             self.mode = 'running'
-        if self.calibrated:    
-            self.signals.message.emit('i0 median: ' + str(self.calibration_values['i0']['mean']))
-            self.signals.message.emit('i0 low: ' + str(self.calibration_values['i0']['stddev']))
-            self.signals.message.emit('mean ratio: ' + str(self.calibration_values['ratio']['mean']))
-            self.signals.message.emit('standard deviation of the ratio: ' + str(self.calibration_values['ratio']['stddev']))
+        if self.calibrated:
+            self.signals.message.emit(
+                'i0 median: ' + str(self.calibration_values['i0']['mean']))
+            self.signals.message.emit(
+                'i0 low: ' + str(self.calibration_values['i0']['stddev']))
+            self.signals.message.emit(
+                'mean ratio: ' + str(self.calibration_values['ratio']['mean']))
+            self.signals.message.emit(
+                'standard deviation of the ratio: ' +
+                str(self.calibration_values['ratio']['stddev']))
 
     def send_info_to_motor(self):
         self.signals.intensitiesForMotor.emit(self.current_values)
 
     def recalibrate(self):
-        self.signals.message.emit("The data may need to be recalibrated. There is consistently higher I/I0 than the calibration..")
- 
+        self.signals.message.emit("The data may need to be recalibrated. "
+                                  "There is consistently higher I/I0 than the "
+                                  "calibration..")
+        self.signals.sleepMotor.emit()
+
     def missed_shots(self):
         if self.isTracking and not self.context.motor_running:
             if self.badScanCounter < self.badScanLimit:
-                self.signals.message.emit("lots of missed shots.. starting motor")
-                self.context.update_motor_mode('run')
+                self.signals.message.emit("lots of missed shots.. "
+                                          "starting motor")
+                self.signals.wakeMotor.emit()
                 self.badScanCounter += 1
             else:
                 self.signals.enableTracking.emit(False)
                 self.signals.trackingStatus.emit('disabled', "red")
         elif not self.isTracking and not self.context.motor_running:
-            self.signals.message.emit("lots of missed shots.. consider running a search")
+            self.signals.message.emit("lots of missed shots.. consider running"
+                                      " a search")
         if self.context.motor_running:
             if self.status == "everything is good":
                 self.signals.notifyMotor.emit("missed shots")
@@ -664,7 +728,7 @@ class EventProcessor(QThread):
             self.flag_type[new_flag] += 1
             if num_flagged == self.flag_type[new_flag]:
                 del(self.flag_type[new_flag])
-                func_to_execute() 
+                func_to_execute()
         else:
             self.flag_type[new_flag] = 1
         for key in self.flag_type.copy():
@@ -672,7 +736,7 @@ class EventProcessor(QThread):
                 self.flag_type[key] -= 1
                 if self.flag_type[key] <= 0:
                     del(self.flag_type[key])
-    
+
     def stop_count(self):
         self.flag_type = {}
         self.isCounting = False
@@ -710,14 +774,20 @@ class JetImageFeed(QThread):
 
     def connect_cam(self):
         self.cam_name = self.context.PV_DICT.get('camera', None)
-        self.array_size_x_data = caget(self.cam_name + ':IMAGE1:ArraySize0_RBV')
-        self.array_size_y_data = caget(self.cam_name + ':IMAGE1:ArraySize1_RBV')
-        self.array_size_x_viewer = caget(self.cam_name + ':IMAGE2:ArraySize0_RBV')
-        self.array_size_y_viewer = caget(self.cam_name + ':IMAGE2:ArraySize1_RBV')
-        if self.array_size_x_data != self.array_size_x_viewer or \
-                self.array_size_y_data != self.array_size_y_viewer:
-            self.signals.message.emit("ROI defined with markers in canViewer won't make sense because of "
-                                      "different resolutions between the camera and camViewer")
+        self.array_size_x_data = caget(self.cam_name +
+                                       ':IMAGE1:ArraySize0_RBV')
+        self.array_size_y_data = caget(self.cam_name +
+                                       ':IMAGE1:ArraySize1_RBV')
+        self.array_size_x_viewer = caget(self.cam_name +
+                                         ':IMAGE2:ArraySize0_RBV')
+        self.array_size_y_viewer = caget(self.cam_name +
+                                         ':IMAGE2:ArraySize1_RBV')
+        if (self.array_size_x_data != self.array_size_x_viewer or
+                self.array_size_y_data != self.array_size_y_viewer):
+            self.signals.message.emit("ROI defined with markers in canViewer "
+                                      "won't make sense because of different "
+                                      "resolutions between the camera and "
+                                      "camViewer")
         image = caget(self.cam_name + ':IMAGE1:ArrayData')
         if len(image) == 0:
             self.signals.message.emit("Can't read camera...")
@@ -747,10 +817,12 @@ class JetImageFeed(QThread):
         if self.erode:
             im = cv2.erode(im, self.kernel, iterations=self.erode)
         if self.opene:
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.opene, self.opene))
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
+                                               (self.opene, self.opene))
             im = cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
         if self.close:
-            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (self.close, self.close))
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
+                                               (self.close, self.close))
             im = cv2.morphologyEx(im, cv2.MORPH_CLOSE, kernel)
         if self.contrast:
             pass
@@ -758,14 +830,16 @@ class JetImageFeed(QThread):
             pass
         if self.blur:
             pass
-        ret, im = cv2.threshold(im, self.left_threshold, self.right_threshold, cv2.THRESH_BINARY)
+        ret, im = cv2.threshold(im, self.left_threshold, self.right_threshold,
+                                cv2.THRESH_BINARY)
         return(im)
 
     def run(self):
         while not self.isInterruptionRequested():
             if self.connected:
                 image = caget(self.cam_name + ':IMAGE2:ArrayData')
-                image = self.fix_image(image, self.array_size_x_viewer, self.array_size_y_viewer)
+                image = self.fix_image(image, self.array_size_x_viewer,
+                                       self.array_size_y_viewer)
                 image = self.editor(image)
                 qimage = array2qimage(image)
                 self.signals.camImage.emit(qimage)
@@ -863,7 +937,6 @@ class MotorThread(QThread):
 
     def connect_to_motor(self):
         if self.live:
-            # should have a catch here for if this doesn't connect
             self.motor_name = self.context.PV_DICT.get('motor', None)
             print("connecting to: ", self.motor_name)
             self.motor = IMS(self.motor_name, name='jet_x')
@@ -881,30 +954,38 @@ class MotorThread(QThread):
         self.max_value = 0
 
     def impart_knowledge(self, info):
-        # ["resume", "everything is good", "you downgraded", "you upgraded", "pause", "missed shots", "high intensity"]
+        # ["resume", "everything is good", "you downgraded", "you upgraded",
+        #  "pause", "missed shots", "high intensity"]
         print(info)
         if info == "everything is good":
-            # if this info is passed then the status was changed from missed shots to everything is good
+            # if this info is passed then the status was changed from missed
+            # shots to everything is good
             if len(self.moves) > 0:
                 self.good_edge_points.append(self.moves[-1])
         if info == "resume":
-            # if this info is passed then the status was changed from dropped shots and the motor should resume
+            # if this info is passed then the status was changed from dropped
+            # shots and the motor should resume
             self.pause = False
         if info == "you downgraded":
-            # this is when the status is changed from high intensity to missed shots
+            # this is when the status is changed from high intensity to missed
+            # shots
             pass
         if info == "you upgraded":
-            # this is when the status is changed from missed shots to high intensity
+            # this is when the status is changed from missed shots to high
+            # intensity
             pass
         if info == "pause":
-            # if this info is passed then the status was changed to dropped shots and the motor should pause
+            # if this info is passed then the status was changed to dropped
+            # shots and the motor should pause
             self.pause = True
         if info == "missed shots":
-            # this is when the status changes from everything is good to missed shots
+            # this is when the status changes from everything is good to missed
+            # shots
             if len(self.moves) > 0:
                 self.bad_edge_points.append(self.moves[-1])
         if info == "high intensity":
-            # this is when the status changes from everything is good to high intensity
+            # this is when the status changes from everything is good to high
+            # intensity
             self.sweet_spot.append(self.moves[-1])
 
     def next_calibration_position(self):
@@ -925,16 +1006,28 @@ class MotorThread(QThread):
 
     def average_intensity(self):
         self.intensities += [self.vals['ratio']]
+<<<<<<< HEAD
         # this is where we set the integration time for each motor position in the scan
         if len(self.intensities) == 20:
             self.check_motor_options()
             self.moves.append([mean(self.intensities), self.motor.position])  # this should be the same either way
+=======
+        # this is where we set the integration time for each motor position
+        # in the scan
+        if len(self.intensities) == 20:
+            self.check_motor_options()
+            print(self.moves)
+
+            # this should be the same either way
+            self.moves.append([mean(self.intensities), self.motor.position])
+>>>>>>> 6e0240e8fe3b216f1a040e93baea288f8d9e0f84
             self.intensities = []
             if not self.pause:
                 self.done, self.max_value = self.action.execute()
 
     def run(self):
         while not self.isInterruptionRequested():
+<<<<<<< HEAD
             if self.mode == 'run':
                 if self.done:
                     if len(self.moves) > 4:
@@ -969,15 +1062,39 @@ class MotorThread(QThread):
             elif self.mode == 'sleep':
                 self.clear_values()
                 pass
+=======
+            if self.done:
+                if len(self.moves) > 4:
+                    x = [a[1] for a in self.moves]
+                    y = [b[0] for b in self.moves]
+                    self.signals.plotMotorMoves.emit(self.motor.position,
+                                                     self.max_value, x, y)
+                    print("go to sleep now..")
+                    time.sleep(7)
+                    self.signals.message.emit(f"Found peak intensity "
+                                              f"{self.max_value} at motor "
+                                              f"position: "
+                                              f"{self.motor.position}")
+                    self.signals.sleepMotor.emit()
+            else:
+                if self.request_new_values and self.got_new_values:
+                    self.request_new_values = False
+                    self.got_new_values = False
+                if not self.request_new_values:
+                    self.signals.valuesRequest.emit()
+                    self.request_new_values = True
+>>>>>>> 6e0240e8fe3b216f1a040e93baea288f8d9e0f84
             time.sleep(1/self.refresh_rate)
         print("Interruption was requested: Motor Thread")
 
 
+# What is this?
 """
         if self.motor_options['scanning algorithm'] == "search":
             while not done:
                 self.motor_position = self.motor.position
-                self.motor_position, self.ratio_intensity = self._search(self.motor_position, -.01, .01, .0005, 60)
+                self.motor_position, self.ratio_intensity = self._search(
+                    self.motor_position, -.01, .01, .0005, 60)
             fig = plt.figure()
             plt.xlabel('motor position')
             plt.ylabel('I/I0 intensity')
@@ -987,10 +1104,12 @@ class MotorThread(QThread):
             plt.scatter(x, y)
             plt.show()
             self.signals.update_calibration.emit('ratio', self.ratio_intensity)
-            self.signals.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
+            self.signals.finished.emit({'position': self.motor_position,
+                                        'ratio': self.ratio_intensity})
         elif self.motor_options['scanning algorithm'] == "scan":
             print("scanning :", self.tol, self.motor_ll, self.motor_hl)
-            self.motor_position = self._scan(self.motor_ll, self.motor_hl, self.tol, self.motor_options['averaging'])
+            self.motor_position = self._scan(self.motor_ll, self.motor_hl,
+                self.tol, self.motor_options['averaging'])
             self.ratio_intensity = self.moves[-1][1]
             fig = plt.figure()
             plt.xlabel('motor position')
@@ -1001,11 +1120,16 @@ class MotorThread(QThread):
             plt.scatter(x, y)
             plt.show()
             self.signals.update_calibration.emit('ratio', self.ratio_intensity)
-            self.signals.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
-        elif self.move_type == "track": ### these should be inside of each of the scanning algorithms? need to check if were moving once or "Tracking"
-            self.signals.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
+            self.signals.finished.emit({'position': self.motor_position,
+                                        'ratio': self.ratio_intensity})
+        # these should be inside of each of the scanning algorithms?
+        # need to check if were moving once or "Tracking"
+        elif self.move_type == "track":
+            self.signals.finished.emit({'position': self.motor_position,
+                                        'ratio': self.ratio_intensity})
             #### look up how to exit safely here
         elif self.move_type == "stop tracking":
-            self.signals.finished.emit({'position': self.motor_position, 'ratio': self.ratio_intensity})
-            #### again, exit safely  
-"""        
+            self.signals.finished.emit({'position': self.motor_position,
+                                        'ratio': self.ratio_intensity})
+            #### again, exit safely
+"""

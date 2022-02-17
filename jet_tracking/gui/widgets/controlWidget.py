@@ -1,10 +1,11 @@
+import logging
+
+import matplotlib.pyplot as plt
+import numpy as np
+from datastream import MotorThread, StatusThread
+from gui.widgets.controlWidgetUi import Controls_Ui
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QFrame
-from datastream import StatusThread, MotorThread
-from gui.widgets.controlWidgetUi import Controls_Ui
-import logging
-import numpy as np
-import matplotlib.pyplot as plt
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +47,8 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.le_x_axis.checkVal.connect(self.context.update_display_time)
         self.le_size.checkVal.connect(self.context.update_step_size)
         self.le_ave_motor.checkVal.connect(self.context.update_motor_averaging)
-        self.cbox_algorithm.currentTextChanged.connect(self.context.update_algorithm)
+        self.cbox_algorithm.currentTextChanged.connect(
+            self.context.update_algorithm)
         self.bttngrp1.buttonClicked.connect(self.checkBttn)
         self.bttngrp2.buttonClicked.connect(self.checkBttn)
         self.bttngrp3.buttonClicked.connect(self.checkBttn)
@@ -97,7 +99,8 @@ class ControlsWidget(QFrame, Controls_Ui):
                 self.context.update_motor_mode('sleep')
                 self.worker_motor.start()
             else:
-                self.signals.message.emit("You must start getting points first!")
+                self.signals.message.emit("You must start getting points "
+                                          "first!")
         else:
             if not self.worker_motor.isInterruptionRequested():
                 self.worker_motor.start()
@@ -119,8 +122,9 @@ class ControlsWidget(QFrame, Controls_Ui):
         else:
             self.signals.message.emit("You aren't scanning!")
 
-    def plot_motor_moves(self, position, maximum, positions, intensities, save=False):
-        fig = plt.figure()
+    def plot_motor_moves(self, position, maximum, positions, intensities,
+                         save=False):
+        plt.figure()
         plt.xlabel('motor position')
         plt.ylabel('I/I0 intensity')
         plt.plot(position, maximum, 'ro')
@@ -129,20 +133,23 @@ class ControlsWidget(QFrame, Controls_Ui):
         plt.scatter(x, y)
         plt.show()
         if save:
-            folder = self.context.SAVEFOLDER.format(self.context.HUTCH, self.context.EXPERIMENT)
-            plotfile = folder+f'/motor_figure_%s.png'
-            datafile = folder+f'/motor_data_%s.csv'
+            folder = self.context.SAVEFOLDER.format(self.context.HUTCH,
+                                                    self.context.EXPERIMENT)
+            plotfile = folder+'/motor_figure_%s.png'
+            datafile = folder+'/motor_data_%s.csv'
             try:
                 plt.savefig(plotfile)
                 np.savetxt(datafile, *[positions, intensities])
-            except:
-                log.warning("Saving files failed!")
+            except Exception as e:
+                log.warning("Saving files failed!\n%s", e)
 
     def set_calibration(self):
         """Updates the display when a successful calibration is complete."""
-        self.lbl_i0_status.display(self.context.calibration_values['i0']['mean'])
-        self.lbl_diff_status.display(self.context.calibration_values['diff']['mean'])
-    
+        self.lbl_i0_status.display(
+            self.context.calibration_values['i0']['mean'])
+        self.lbl_diff_status.display(
+            self.context.calibration_values['diff']['mean'])
+
     def update_motor(self, mp):
         self.lbl_motor_status.display(mp)
 
@@ -167,7 +174,8 @@ class ControlsWidget(QFrame, Controls_Ui):
 
     def update_limits(self, limit):
         print(self.le_motor_hl.text(), self.le_motor_ll.text())
-        self.context.update_limits(float(self.le_motor_hl.text()), float(self.le_motor_ll.text()))
+        self.context.update_limits(float(self.le_motor_hl.text()),
+                                   float(self.le_motor_ll.text()))
 
     def receive_message(self, message):
         pt = self.text_area.toPlainText()

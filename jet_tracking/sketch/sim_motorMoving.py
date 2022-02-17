@@ -1,9 +1,5 @@
-import math
-import statistics
-import random
-import matplotlib.pyplot as plt
-import time
 import logging
+import time
 
 log = logging.getLogger(__name__)
 
@@ -22,8 +18,8 @@ class SimulatedMotor(object):
         self.step = 0.01
         self.wait = 5
         # get current simulated motor position
-#        self.signals.update.connect(self.updateVals)
-        #self.signals.changeMotorPosition.connect(self.change_motor)
+        # self.signals.update.connect(self.updateVals)
+        # self.signals.changeMotorPosition.connect(self.change_motor)
 
 #        self.make_connections()
 #        self.set_sim_options()
@@ -40,8 +36,8 @@ class SimulatedMotor(object):
             time.sleep(self.wait)
         self.signals.changeMotorPosition.emit(self.position)
 
-"""
 
+"""
     def change_motor(self, motor_position):
         self.motor_position = motor_position
 

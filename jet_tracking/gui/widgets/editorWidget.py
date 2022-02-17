@@ -1,9 +1,10 @@
-import cv2
-from PyQt5.QtWidgets import QFrame
-from gui.widgets.editorWidgetUi import Editor_Ui
-from datastream import JetImageFeed
 import logging
 from collections import deque
+
+# import cv2
+from datastream import JetImageFeed
+from gui.widgets.editorWidgetUi import Editor_Ui
+from PyQt5.QtWidgets import QFrame
 
 log = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ class EditorWidget(QFrame, Editor_Ui):
         self.context = context
         self.setupUi(self)
         self.image_stream = JetImageFeed(self.context, self.signals)
-        self.sliders = {'dilate': deque([None], 5), 
+        self.sliders = {'dilate': deque([None], 5),
                         'erode': deque([None], 5),
                         'open': deque([None], 5),
                         'close': deque([None], 5),
@@ -44,8 +45,10 @@ class EditorWidget(QFrame, Editor_Ui):
         self.slider_brightness.sliderMoved.connect(self.set_brightness)
         self.slider_contrast.sliderMoved.connect(self.set_contrast)
         self.slider_blur.sliderMoved.connect(self.set_blur)
-        self.range_slider_thresh.left_thumb_value_changed.connect(self.set_left_threshold)
-        self.range_slider_thresh.right_thumb_value_changed.connect(self.set_right_threshold)
+        self.range_slider_thresh.left_thumb_value_changed.connect(
+            self.set_left_threshold)
+        self.range_slider_thresh.right_thumb_value_changed.connect(
+            self.set_right_threshold)
 
     def start_cam(self):
         self.context.open_cam_connection()
@@ -148,6 +151,3 @@ class EditorWidget(QFrame, Editor_Ui):
         self.slider_open.setEnabled(not enabled)
         self.sliders['open'].append(None)
         self.signals.imageProcessing.emit(self.sliders)
-
-
-

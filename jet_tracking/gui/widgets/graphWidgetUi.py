@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QVBoxLayout
 import pyqtgraph as pg
-from jetgraphing import ScrollingTimeWidget, graph_setup, add_calibration_graph
+from jetgraphing import ScrollingTimeWidget, add_calibration_graph, graph_setup
+from PyQt5.QtWidgets import QVBoxLayout
 
 
 class Graphs_Ui(object):
@@ -15,12 +15,12 @@ class Graphs_Ui(object):
         obj.ratio_graph = ScrollingTimeWidget(self.context, self.signals)
         obj.i0_graph = ScrollingTimeWidget(self.context, self.signals)
         obj.diff_graph = ScrollingTimeWidget(self.context, self.signals)
-        graph_setup(obj.ratio_graph, "Intensity Ratio", f"I/I\N{SUBSCRIPT ZERO}", \
-                        pg.mkPen(width=5, color='r'))
-        graph_setup(obj.i0_graph, "Initial Intensity", f"I\N{SUBSCRIPT ZERO}", \
-                        pg.mkPen(width=5, color='b'))
-        graph_setup(obj.diff_graph, "Intensity at the Detector", "Diffraction Intensity", \
-                        pg.mkPen(width=5, color='g'))
+        graph_setup(obj.ratio_graph, "Intensity Ratio",
+                    "I/I\N{SUBSCRIPT ZERO}", pg.mkPen(width=5, color='r'))
+        graph_setup(obj.i0_graph, "Initial Intensity", "I\N{SUBSCRIPT ZERO}",
+                    pg.mkPen(width=5, color='b'))
+        graph_setup(obj.diff_graph, "Intensity at the Detector",
+                    "Diffraction Intensity", pg.mkPen(width=5, color='g'))
         add_calibration_graph(self.ratio_graph)
         add_calibration_graph(self.i0_graph)
         add_calibration_graph(self.diff_graph)
