@@ -35,23 +35,6 @@ class SimUi(object):
         obj.box_bg = LineEdit("0.05")
         # obj.box_bg.valRange(0, 1)
 
-        obj.cbox_sim_algorithm = ComboBox()
-        obj.cbox_sim_algorithm.setSizePolicy(QSizePolicy.Expanding,
-                                             QSizePolicy.Preferred)
-        obj.cbox_sim_algorithm.addItem("Ternary Search")
-        obj.cbox_sim_algorithm.addItem("Basic Scan")
-        obj.cbox_sim_algorithm.addItem("Linear Scan")
-        obj.bttn_start_tracking = QPushButton("Start Tracking")
-        obj.bttn_start_tracking.setStyleSheet("\
-            background-color: green;\
-            font-size:16px;\
-            ")
-        obj.bttn_stop_tracking = QPushButton("Stop Tracking")
-        obj.bttn_stop_tracking.setStyleSheet("\
-            background-color: red;\
-            font-size:16px;\
-            ")
-
         obj.layout_percent_drop = QHBoxLayout()
         obj.layout_percent_drop.addWidget(obj.lbl_percent_drop, 75)
         obj.layout_percent_drop.addWidget(obj.box_percent_drop)
@@ -74,13 +57,6 @@ class SimUi(object):
         obj.layout_bg.addWidget(obj.lbl_bg, 75)
         obj.layout_bg.addWidget(obj.box_bg)
 
-        obj.layout_algorithm = QHBoxLayout()
-        obj.layout_algorithm.addWidget(obj.cbox_sim_algorithm)
-        obj.layout_start = QHBoxLayout()
-        obj.layout_start.addWidget(obj.bttn_start_tracking)
-        obj.layout_stop = QHBoxLayout()
-        obj.layout_stop.addWidget(obj.bttn_stop_tracking)
-
         obj.layout.addLayout(obj.layout_percent_drop)
         obj.layout.addLayout(obj.layout_int)
         obj.layout.addLayout(obj.layout_motor_pos)
@@ -88,7 +64,3 @@ class SimUi(object):
         obj.layout.addLayout(obj.layout_jet_center)
         obj.layout.addLayout(obj.layout_max_int)
         obj.layout.addLayout(obj.layout_bg)
-
-        obj.layout.addLayout(obj.layout_algorithm)
-        obj.layout.addLayout(obj.layout_start)
-        obj.layout.addLayout(obj.layout_stop)

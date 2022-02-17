@@ -121,15 +121,15 @@ class Context(object):
         self.percent_dropped = 10
         self.peak_intensity = 10
         self.radius = 0.025
-        self.center = 0.03
+        self.jet_center = 0.03
         self.max = 10
         self.bg = 0.05
-
         self.cam_refresh_rate = 3
 
     def update_live_graphing(self, live):
         self.live_data = live
         self.signals.changeRunLive.emit(self.live_data)
+        self.signals.updateRunValues.emit(self.live_data)
 
     def update_calibration_source(self, cal_src):
         self.calibration_source = cal_src
@@ -287,7 +287,6 @@ class Context(object):
             self.update_motor_mode('calibrate')
 
     def update_motor_mode(self, mode):
-        print(mode)
         self.motor_mode = mode
         self.signals.motorMode.emit(self.motor_mode)
         if self.motor_mode == 'run':
@@ -321,8 +320,8 @@ class Context(object):
         self.signals.changeJetRadius.emit(self.radius)
 
     def update_jet_center(self, jc):
-        self.center = jc
-        self.signals.changeJetCenter.emit(self.center)
+        self.jet_center = jc
+        self.signals.changeJetCenter.emit(self.jet_center)
 
     def update_max_intensity(self, mi):
         self.max = mi

@@ -25,7 +25,6 @@ class SimWidget(QFrame, SimUi):
         self.context.update_jet_center(float(self.box_jet_center.text()))
         self.context.update_max_intensity(float(self.box_max_int.text()))
         self.context.update_background(float(self.box_bg.text()))
-        self.box_motor_pos.setText(str(self.context.motor_position))
 
     def make_connections(self):
         # self.box_motor_pos.checkVal.connect(self.context.update_motor_position)
@@ -36,15 +35,8 @@ class SimWidget(QFrame, SimUi):
         self.box_jet_center.checkVal.connect(self.context.update_jet_center)
         self.box_max_int.checkVal.connect(self.context.update_max_intensity)
         self.box_bg.checkVal.connect(self.context.update_background)
-        self.cbox_sim_algorithm.currentTextChanged.connect(self.context.update_algorithm)
-        self.bttn_start_tracking.clicked.connect(self.start_tracking)
-        self.bttn_stop_tracking.clicked.connect(self.stop_tracking)
 
-    def start_tracking(self):
-        self.context.update_tracking(True)
-        self.signals.trackingStatus.emit("Sim Tracking", "green")
-
-    def stop_tracking(self):
-        self.context.update_tracking(False)
-        # maybe need to stop the motor if stop tracking is pressed??
-        self.signals.trackingStatus.emit("Not Tracking", "red")
+    def send_values(self, live):
+        if not live:
+            self.context.update_motor_position(float(self.box_motor_pos.text()))
+            self.context.update_jet_center(float(self.box_jet_center.text()))

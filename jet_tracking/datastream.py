@@ -175,6 +175,8 @@ class StatusThread(QThread):
         self.buffers = {}
         self.current_values = {}
         self.flagged_events = {}
+        self.reader = None
+        self.processor_worker = None
         self.create_value_reader()
         self.create_event_processor()
         self.create_vars()
@@ -202,7 +204,7 @@ class StatusThread(QThread):
         self.reader = ValueReader(self.context, self.signals)
 
     def create_event_processor(self):
-        self.processor_worker = EventProcessor(self.context, self.signals)
+        self.processor_worker = EventProcessor(self.signals)
 
     def initialize_buffers(self):
         # buffers and data collection
@@ -723,7 +725,7 @@ class StatusThread(QThread):
 
 
 class EventProcessor(QThread):
-    def __init__(self, context, signals):
+    def __init__(self, signals):
         super(EventProcessor, self).__init__()
         self.SIGNALS = signals
         self.flag_type = {}
@@ -757,7 +759,7 @@ class JetImageFeed(QThread):
         self.cam_name = ''
         self.dilate = None
         self.erode = None
-        self.opene = None
+        self.opener = None
         self.close = None
         self.contrast = None
         self.brightness = None
@@ -780,27 +782,38 @@ class JetImageFeed(QThread):
         self.signals.imageProcessing.connect(self.update_editor_vals)
 
     def connect_cam(self):
-        self.cam_name = self.context.PV_DICT.get('camera', None)
-        self.array_size_x_data = caget(self.cam_name +
-                                       ':IMAGE1:ArraySize0_RBV')
-        self.array_size_y_data = caget(self.cam_name +
-                                       ':IMAGE1:ArraySize1_RBV')
-        self.array_size_x_viewer = caget(self.cam_name +
-                                         ':IMAGE2:ArraySize0_RBV')
-        self.array_size_y_viewer = caget(self.cam_name +
-                                         ':IMAGE2:ArraySize1_RBV')
-        if (self.array_size_x_data != self.array_size_x_viewer or
-                self.array_size_y_data != self.array_size_y_viewer):
-            self.signals.message.emit("ROI defined with markers in canViewer "
-                                      "won't make sense because of different "
-                                      "resolutions between the camera and "
-                                      "camViewer")
-        image = caget(self.cam_name + ':IMAGE1:ArrayData')
-        if len(image) == 0:
-            self.signals.message.emit("Can't read camera...")
-            self.connected = False
+        if self.context.live_data:
+            self.cam_name = self.context.PV_DICT.get('camera', None)
+            self.array_size_x_data = caget(self.cam_name +
+                                           ':IMAGE1:ArraySize0_RBV')
+            self.array_size_y_data = caget(self.cam_name +
+                                           ':IMAGE1:ArraySize1_RBV')
+            self.array_size_x_viewer = caget(self.cam_name +
+                                             ':IMAGE2:ArraySize0_RBV')
+            self.array_size_y_viewer = caget(self.cam_name +
+                                             ':IMAGE2:ArraySize1_RBV')
+            if (self.array_size_x_data != self.array_size_x_viewer or
+                    self.array_size_y_data != self.array_size_y_viewer):
+                self.signals.message.emit("ROI defined with markers in canViewer "
+                                          "won't make sense because of different "
+                                          "resolutions between the camera and "
+                                          "camViewer")
+            image = caget(self.cam_name + ':IMAGE1:ArrayData')
+            if len(image) == 0:
+                self.signals.message.emit("Can't read camera...")
+                self.connected = False
+            else:
+                self.connected = True
         else:
-            self.connected = True
+            self.cam_name = SimulatedImage(self.context, self.signals)
+            self.array_size_y_viewer = self.cam_name.y_size
+            self.array_size_x_viewer = self.cam_name.x_size
+            image = self.cam_name.jet_im
+            if not len(image):
+                self.signals.message.emit("Simulated Image not working...")
+                self.connected = False
+            else:
+                self.connected = True
 
     @staticmethod
     def fix_image(im, x, y):
@@ -810,7 +823,7 @@ class JetImageFeed(QThread):
     def update_editor_vals(self, e):
         self.dilate = e['dilate'][-1]
         self.erode = e['erode'][-1]
-        self.opene = e['open'][-1]
+        self.opener = e['open'][-1]
         self.close = e['close'][-1]
         self.contrast = e['contrast'][-1]
         self.brightness = e['brightness'][-1]
@@ -823,9 +836,9 @@ class JetImageFeed(QThread):
             im = cv2.dilate(im, self.kernel, iterations=self.dilate)
         if self.erode:
             im = cv2.erode(im, self.kernel, iterations=self.erode)
-        if self.opene:
+        if self.opener:
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
-                                               (self.opene, self.opene))
+                                               (self.opener, self.opener))
             im = cv2.morphologyEx(im, cv2.MORPH_OPEN, kernel)
         if self.close:
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
@@ -839,21 +852,26 @@ class JetImageFeed(QThread):
             pass
         ret, im = cv2.threshold(im, self.left_threshold, self.right_threshold,
                                 cv2.THRESH_BINARY)
-        return(im)
+        return im
 
     def run(self):
         while not self.isInterruptionRequested():
             if self.connected:
-                image = caget(self.cam_name + ':IMAGE2:ArrayData')
-                image = self.fix_image(image, self.array_size_x_viewer,
-                                       self.array_size_y_viewer)
+                if self.context.live_data:
+                    image = caget(self.cam_name + ':IMAGE2:ArrayData')
+                    image = self.fix_image(image, self.array_size_x_viewer,
+                                           self.array_size_y_viewer)
+                else:
+                    image = self.cam_name.jet_im
                 image = self.editor(image)
                 qimage = array2qimage(image)
                 self.signals.camImage.emit(qimage)
-                time.sleep(1/self.refresh_rate)
+                time.sleep(1 / self.refresh_rate)
+
             else:
                 print("you are not connected")
                 time.sleep(1/self.refresh_rate)
+
         print("Interruption was requested: Image Thread")
 
 
@@ -950,9 +968,11 @@ class MotorThread(QThread):
             self.motor_name = self.context.PV_DICT.get('motor', None)
             print("connecting to: ", self.motor_name)
             self.motor = IMS(self.motor_name, name='jet_x')
+            self.context.update_motor_position(self.motor.position)
             self.wait = True
         elif not self.live:
             self.motor = SimulatedMotor(self.context, self.signals)
+            self.context.update_motor_position(self.motor.position)
             self.wait = False
 
     def clear_values(self):

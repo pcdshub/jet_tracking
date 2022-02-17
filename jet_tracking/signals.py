@@ -17,6 +17,9 @@ class Signals(QtCore.QObject):
     # emit in ControlsWidget
     # connect in StatusThread
     mode = QtCore.pyqtSignal(str)
+    # emit in Context
+    # connect in simWidget and controlWidget
+    updateRunValues = QtCore.pyqtSignal(bool)
     # emit in StatusThread
     # connect in StatusThread
     message = QtCore.pyqtSignal(str)
@@ -98,6 +101,8 @@ class Signals(QtCore.QObject):
 
     # added when adding simulator
     update = QtCore.pyqtSignal(dict)
+    # emit in motor algorithms and simMotorMoving
+    # connect in controlwidget and numgen
     changeMotorPosition = QtCore.pyqtSignal(float)
     # emit in Context
     # connect in num_gen

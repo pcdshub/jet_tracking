@@ -1,6 +1,5 @@
 from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout
 
-
 class Image_Ui(object):
 
     def setupUi(self, obj):
