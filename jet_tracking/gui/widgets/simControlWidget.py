@@ -1,5 +1,5 @@
 from datastream import MotorThread, StatusThread
-from gui.widgets.simControlWidgetUi import Sim_Ui
+from gui.widgets.simControlWidgetUi import SimUi
 from PyQt5.QtWidgets import QFrame
 
 class SimWidget(QFrame, SimUi):

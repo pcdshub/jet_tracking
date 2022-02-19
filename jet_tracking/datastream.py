@@ -7,17 +7,17 @@ from statistics import StatisticsError, mean, stdev
 
 import cv2
 import numpy as np
-from epics import caget
+#from epics import caget
 from ophyd import EpicsSignal
 from PyQt5.QtCore import QThread
 from qimage2ndarray import array2qimage
 from scipy import stats
-from sketch.motorMoving import MotorAction
-from sketch.num_gen import SimulationGenerator
-from sketch.sim_motorMoving import SimulatedMotor
-from tools.quick_calc import skimmer
+from motorMoving import MotorAction
+from tools.numGen import SimulationGenerator
+from tools.simMotorMoving import SimulatedMotor
+from tools.quickCalc import skimmer
 
-from pcdsdevices.epics_motor import IMS
+#from pcdsdevices.epics_motor import IMS
 
 ologging = logging.getLogger('ophyd')
 ologging.setLevel('DEBUG')
@@ -677,7 +677,7 @@ class StatusThread(QThread):
             if self.badScanCounter < self.badScanLimit:
                 self.signals.message.emit("lots of missed shots.. "
                                           "starting motor")
-                self.signals.wakeMotor.emit()
+                self.context.update_motor_mode('run')
                 self.badScanCounter += 1
             else:
                 self.signals.enableTracking.emit(False)

@@ -42,30 +42,30 @@ class Context(object):
                      'jet_tracking/jt_configs/')
         self.JT_CFG = ''.join([self.JT_LOC, self.args.cfg])
 
-        with open(self.JT_CFG) as f:
-            yml_dict = yaml.load(f, Loader=yaml.FullLoader)
-            self.ipm_name = yml_dict['ipm']['name']
-            self.motor = yml_dict['motor']['name']
-            self.jet_cam_name = yml_dict['jet_cam']['name']
-            self.jet_cam_axis = yml_dict['jet_cam']['axis']
-            self.HUTCH = yml_dict['hutch']
-            self.EXPERIMENT = os.environ.get('EXPERIMENT',
-                                             yml_dict['experiment'])
-            self.pv_map = yml_dict['pv_map']
+        #with open(self.JT_CFG) as f:
+        #    yml_dict = yaml.load(f, Loader=yaml.FullLoader)
+        #    self.ipm_name = yml_dict['ipm']['name']
+        #    self.motor = yml_dict['motor']['name']
+        #    self.jet_cam_name = yml_dict['jet_cam']['name']
+        #    self.jet_cam_axis = yml_dict['jet_cam']['axis']
+        #    self.HUTCH = yml_dict['hutch']
+        #    self.EXPERIMENT = os.environ.get('EXPERIMENT',
+        #                                     yml_dict['experiment'])
+        #    self.pv_map = yml_dict['pv_map']
 
-        if self.jet_cam_name == 'None' or self.jet_cam_name == 'none':
-            self.jet_came_name = None
+        #if self.jet_cam_name == 'None' or self.jet_cam_name == 'none':
+        #    self.jet_came_name = None
 
-        if self.motor == 'None' or self.motor == 'none':
-            print('Please provide a motor PV in the config file')
+        #if self.motor == 'None' or self.motor == 'none':
+        #    print('Please provide a motor PV in the config file')
 
-        self.pv_map['diff'] = self.pv_map.pop(1)
-        self.pv_map['i0'] = self.pv_map.pop(2)
-        self.pv_map['ratio'] = self.pv_map.pop(3)
-        self.pv_map['dropped'] = self.pv_map.pop(4)
-        self.pv_map['camera'] = self.jet_cam_name
-        self.pv_map['motor'] = self.motor
-        self.PV_DICT = self.pv_map
+        #self.pv_map['diff'] = self.pv_map.pop(1)
+        #self.pv_map['i0'] = self.pv_map.pop(2)
+        #self.pv_map['ratio'] = self.pv_map.pop(3)
+        #self.pv_map['dropped'] = self.pv_map.pop(4)
+        #self.pv_map['camera'] = self.jet_cam_name
+        #self.pv_map['motor'] = self.motor
+        #self.PV_DICT = self.pv_map
 
         self.live_data = True
         self.calibration_source = "calibration from results"

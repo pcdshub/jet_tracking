@@ -4,6 +4,7 @@ import logging
 from gui.widgets.jetImageWidgetUi import Image_Ui
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QGraphicsPixmapItem, QWidget
+from sketch.jetAction import JetImageAction
 
 log = logging.getLogger(__name__)
 
