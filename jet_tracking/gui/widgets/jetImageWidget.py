@@ -1,3 +1,12 @@
+<<<<<<< HEAD
+from PyQt5.QtWidgets import QFrame, QWidget, QGraphicsPixmapItem, QGraphicsView, QGraphicsScene
+from PyQt5.QtGui import QPixmap
+from gui.widgets.jetImageWidgetUi import Image_Ui
+from sketch.jetAction import JetImageAction
+#from epics import caget
+import cv2
+=======
+>>>>>>> 6e0240e8fe3b216f1a040e93baea288f8d9e0f84
 import logging
 
 # from epics import caget
@@ -7,7 +16,6 @@ from PyQt5.QtWidgets import QGraphicsPixmapItem, QWidget
 from sketch.jetAction import JetImageAction
 
 log = logging.getLogger(__name__)
-
 
 class JetImageWidget(QWidget, Image_Ui):
 

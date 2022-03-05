@@ -957,8 +957,11 @@ class MotorThread(QThread):
             self.signals.message.emit('run while the mode is calibrate should not be possible!!!')
         if m == 'run' and self.mode == 'sleep':
             self.signals.message.emit('starting the algorithm you selected :)')
+<<<<<<< HEAD
             self.mode = m
             self.connect_to_motor()
+=======
+>>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
 
     def live_motor(self, live):
         self.live = live
@@ -974,8 +977,11 @@ class MotorThread(QThread):
             self.wait = True
         elif not self.live:
             self.motor = SimulatedMotor(self.context, self.signals)
+<<<<<<< HEAD
             self.context.update_motor_position(self.motor.position)
             self.wait = False
+=======
+>>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
 
     def clear_values(self):
         self.moves = []
@@ -1040,6 +1046,12 @@ class MotorThread(QThread):
 
     def average_intensity(self):
         self.intensities += [self.vals['ratio']]
+<<<<<<< HEAD
+        # this is where we set the integration time for each motor position in the scan
+        if len(self.intensities) == 20:
+            self.check_motor_options()
+            self.moves.append([mean(self.intensities), self.motor.position])  # this should be the same either way
+=======
         # this is where we set the integration time for each motor position
         # in the scan
         if len(self.intensities) == 20:
@@ -1049,12 +1061,17 @@ class MotorThread(QThread):
 
             # this should be the same either way
             self.moves.append([mean(self.intensities), self.motor.position])
+>>>>>>> 6e0240e8fe3b216f1a040e93baea288f8d9e0f84
             self.intensities = []
             if not self.pause:
                 self.done, self.max_value = self.action.execute()
 
     def run(self):
         while not self.isInterruptionRequested():
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+>>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
             if self.mode == 'run':
                 if self.done:
                     if len(self.moves) > 4:
@@ -1066,7 +1083,10 @@ class MotorThread(QThread):
                         self.signals.message.emit(f"Found peak intensity {self.max_value} "
                                                   f"at motor position: {self.motor.position}")
                         self.mode = 'sleep'
+<<<<<<< HEAD
                         self.context.update_motor_mode('sleep')
+=======
+>>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
                 else:
                     if self.request_new_values and self.got_new_values:
                         self.request_new_values = False
@@ -1080,7 +1100,10 @@ class MotorThread(QThread):
                     self.motor.move(self.initial_position)
                     self.calibration_steps = 1
                     self.mode = 'sleep'
+<<<<<<< HEAD
                     self.context.update_motor_mode('sleep')
+=======
+>>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
                 else:
                     if self.request_image_processor and self.complete_image_processor:
                         self.request_image_processor = False
@@ -1091,5 +1114,30 @@ class MotorThread(QThread):
             elif self.mode == 'sleep':
                 self.clear_values()
                 pass
+<<<<<<< HEAD
+=======
+=======
+            if self.done:
+                if len(self.moves) > 4:
+                    x = [a[1] for a in self.moves]
+                    y = [b[0] for b in self.moves]
+                    self.signals.plotMotorMoves.emit(self.motor.position,
+                                                     self.max_value, x, y)
+                    print("go to sleep now..")
+                    time.sleep(7)
+                    self.signals.message.emit(f"Found peak intensity "
+                                              f"{self.max_value} at motor "
+                                              f"position: "
+                                              f"{self.motor.position}")
+                    self.signals.sleepMotor.emit()
+            else:
+                if self.request_new_values and self.got_new_values:
+                    self.request_new_values = False
+                    self.got_new_values = False
+                if not self.request_new_values:
+                    self.signals.valuesRequest.emit()
+                    self.request_new_values = True
+>>>>>>> 6e0240e8fe3b216f1a040e93baea288f8d9e0f84
+>>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
             time.sleep(1/self.refresh_rate)
         print("Interruption was requested: Motor Thread")
