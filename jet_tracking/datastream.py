@@ -16,6 +16,8 @@ from motorMoving import MotorAction
 from tools.numGen import SimulationGenerator
 from tools.simMotorMoving import SimulatedMotor
 from tools.quickCalc import skimmer
+from sketch.simJetImage import SimulatedImage
+
 
 #from pcdsdevices.epics_motor import IMS
 

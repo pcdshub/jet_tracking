@@ -1,12 +1,12 @@
 import logging
 
-from gui.widgets.graphWidgetUi import Graphs_Ui
+from gui.widgets.graphWidgetUi import GraphsUi
 from PyQt5.QtWidgets import QFrame
 
 log = logging.getLogger(__name__)
 
 
-class GraphsWidget(QFrame, Graphs_Ui):
+class GraphsWidget(QFrame, GraphsUi):
 
     def __init__(self, context, signals):
         super(GraphsWidget, self).__init__()
