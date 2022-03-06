@@ -74,8 +74,19 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.signals.updateRunValues.connect(self.send_values)
 
     def start_processes(self):
-        self.worker_status.start()
-        self._start_motor()
+        self.worker_motor.connect_to_motor()
+        self.worker_status.reader.initialize_connections()
+        if self.worker_status.reader.connected:
+            self.worker_status.start()
+            if self.worker_motor.connected:
+                self._start_motor()
+            else:
+                self.signals.message.emit("Motor is not connected.\n"
+                                          "fix motor connection settings"
+                                          "and try again")
+        else:
+            self.signals.message.emit("The Value reader is not connecting"
+                                      "properly. Check settings.")
 
     def start_algorithm(self):
         self.context.update_motor_mode("run")
@@ -190,6 +201,7 @@ class ControlsWidget(QFrame, Controls_Ui):
     def update_limits(self, limit):
         self.context.update_limits(float(self.le_motor_hl.text()),
                                    float(self.le_motor_ll.text()))
+
     def receive_message(self, message):
         pt = self.text_area.toPlainText()
         if pt.split('\n')[-1] == message.split('\n')[-1]:

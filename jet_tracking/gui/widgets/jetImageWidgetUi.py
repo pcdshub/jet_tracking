@@ -1,4 +1,5 @@
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QVBoxLayout
+from PyQt5.QtWidgets import QVBoxLayout, QGraphicsView, QGraphicsScene
+
 
 class Image_Ui(object):
 

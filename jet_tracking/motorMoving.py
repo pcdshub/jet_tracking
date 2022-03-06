@@ -51,7 +51,6 @@ class MotorAction(object):
         if self.motor_thread.algorithm == "Ternary Search":
             if self.stop_search:
                 self.stop_search = False
-                # self.ternary_search.move_to_max()
                 return True, self.ternary_search.max_value
             self.ternary_search.search()
             if self.ternary_search.done:

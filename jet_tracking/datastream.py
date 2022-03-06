@@ -1,15 +1,15 @@
 import collections
 import logging
-import threading
 import time
-from collections import deque
 from statistics import StatisticsError, mean, stdev
-
-import cv2
 import numpy as np
-#from epics import caget
 from ophyd import EpicsSignal
+# from epics import caget
 from PyQt5.QtCore import QThread
+# from pcdsdevices.epics_motor import IMS
+from collections import deque
+import cv2
+import threading
 from qimage2ndarray import array2qimage
 from scipy import stats
 from motorMoving import MotorAction
@@ -18,8 +18,6 @@ from tools.simMotorMoving import SimulatedMotor
 from tools.quickCalc import skimmer
 from sketch.simJetImage import SimulatedImage
 
-
-#from pcdsdevices.epics_motor import IMS
 
 ologging = logging.getLogger('ophyd')
 ologging.setLevel('DEBUG')
@@ -48,11 +46,12 @@ class ValueReader(metaclass=Singleton):
         self.context = context
         self.live_data = True
         self.live_initialized = False
+        self.connected = False
         self.signal_diff = None
         self.signal_i0 = None
         self.signal_ratio = None
         self.signal_dropped = None
-        self.simgen = SimulationGenerator(self.context, self.signals)
+        self.simgen = None
         self.sim_vals = {"i0": 1, "diff": 1, "ratio": 1}
         self.diff = 1
         self.i0 = 1
@@ -63,27 +62,38 @@ class ValueReader(metaclass=Singleton):
     def make_connections(self):
         self.signals.changeRunLive.connect(self.run_live_data)
 
-    def initialize_live_connections(self):
+    def initialize_connections(self):
         """  Function for making connections when running in live mode.
         It should also handle the error that happens when you try to
         click start when the PVs are not active
         """
-        i0 = self.context.PV_DICT.get('i0', None)
-        self.signal_i0 = EpicsSignal(i0)
-        diff = self.context.PV_DICT.get('diff', None)
-        self.signal_diff = EpicsSignal(diff)
-        ratio = self.context.PV_DICT.get('ratio', None)
-        self.signal_ratio = EpicsSignal(ratio)
-        dropped = self.context.PV_DICT.get('dropped', None)
-        self.signal_dropped = EpicsSignal(dropped)
-        self.live_initialized = True
+        if self.live_data:
+            try:
+                i0 = self.context.PV_DICT.get('i0', None)
+                self.signal_i0 = EpicsSignal(i0)
+                diff = self.context.PV_DICT.get('diff', None)
+                self.signal_diff = EpicsSignal(diff)
+                ratio = self.context.PV_DICT.get('ratio', None)
+                self.signal_ratio = EpicsSignal(ratio)
+                dropped = self.context.PV_DICT.get('dropped', None)
+                self.signal_dropped = EpicsSignal(dropped)
+            except NotImplementedError:
+                pass
+            else:
+                self.live_initialized = True
+                self.connected = True
+        elif not self.live_data:
+            self.simgen = SimulationGenerator(self.context, self.signals)
+            self.connected = True
 
     def run_live_data(self, live):
         self.live_data = live
 
     def live_data_stream(self):
         if not self.live_initialized:
-            self.initialize_live_connections()
+            # should not ever get here
+            self.signals.message.emit("The live data"
+                                      "stream is not working")
         self.i0 = self.signal_i0.get()
         self.diff = self.signal_diff.get()
         self.ratio = self.signal_ratio.get()
@@ -679,7 +689,7 @@ class StatusThread(QThread):
             if self.badScanCounter < self.badScanLimit:
                 self.signals.message.emit("lots of missed shots.. "
                                           "starting motor")
-                self.context.update_motor_mode('run')
+                self.signals.wakeMotor.emit()
                 self.badScanCounter += 1
             else:
                 self.signals.enableTracking.emit(False)
@@ -869,11 +879,9 @@ class JetImageFeed(QThread):
                 qimage = array2qimage(image)
                 self.signals.camImage.emit(qimage)
                 time.sleep(1 / self.refresh_rate)
-
             else:
                 print("you are not connected")
                 time.sleep(1/self.refresh_rate)
-
         print("Interruption was requested: Image Thread")
 
 
@@ -957,31 +965,29 @@ class MotorThread(QThread):
             self.signals.message.emit('run while the mode is calibrate should not be possible!!!')
         if m == 'run' and self.mode == 'sleep':
             self.signals.message.emit('starting the algorithm you selected :)')
-<<<<<<< HEAD
             self.mode = m
             self.connect_to_motor()
-=======
->>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
 
     def live_motor(self, live):
         self.live = live
-        if self.connected:
-            self.connect_to_motor()
+        self.connect_to_motor()
 
     def connect_to_motor(self):
         if self.live:
             self.motor_name = self.context.PV_DICT.get('motor', None)
             print("connecting to: ", self.motor_name)
-            self.motor = IMS(self.motor_name, name='jet_x')
-            self.context.update_motor_position(self.motor.position)
-            self.wait = True
+            try:
+                self.motor = IMS(self.motor_name, name='jet_x')
+            except NameError or NotImplementedError:
+                self.connected = False
+            else:
+                self.context.update_motor_position(self.motor.position)
+                self.connected = True
+                self.wait = True
         elif not self.live:
             self.motor = SimulatedMotor(self.context, self.signals)
-<<<<<<< HEAD
             self.context.update_motor_position(self.motor.position)
             self.wait = False
-=======
->>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
 
     def clear_values(self):
         self.moves = []
@@ -1046,12 +1052,6 @@ class MotorThread(QThread):
 
     def average_intensity(self):
         self.intensities += [self.vals['ratio']]
-<<<<<<< HEAD
-        # this is where we set the integration time for each motor position in the scan
-        if len(self.intensities) == 20:
-            self.check_motor_options()
-            self.moves.append([mean(self.intensities), self.motor.position])  # this should be the same either way
-=======
         # this is where we set the integration time for each motor position
         # in the scan
         if len(self.intensities) == 20:
@@ -1061,17 +1061,12 @@ class MotorThread(QThread):
 
             # this should be the same either way
             self.moves.append([mean(self.intensities), self.motor.position])
->>>>>>> 6e0240e8fe3b216f1a040e93baea288f8d9e0f84
             self.intensities = []
             if not self.pause:
                 self.done, self.max_value = self.action.execute()
 
     def run(self):
         while not self.isInterruptionRequested():
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
             if self.mode == 'run':
                 if self.done:
                     if len(self.moves) > 4:
@@ -1083,10 +1078,7 @@ class MotorThread(QThread):
                         self.signals.message.emit(f"Found peak intensity {self.max_value} "
                                                   f"at motor position: {self.motor.position}")
                         self.mode = 'sleep'
-<<<<<<< HEAD
                         self.context.update_motor_mode('sleep')
-=======
->>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
                 else:
                     if self.request_new_values and self.got_new_values:
                         self.request_new_values = False
@@ -1100,10 +1092,7 @@ class MotorThread(QThread):
                     self.motor.move(self.initial_position)
                     self.calibration_steps = 1
                     self.mode = 'sleep'
-<<<<<<< HEAD
                     self.context.update_motor_mode('sleep')
-=======
->>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
                 else:
                     if self.request_image_processor and self.complete_image_processor:
                         self.request_image_processor = False
@@ -1114,9 +1103,6 @@ class MotorThread(QThread):
             elif self.mode == 'sleep':
                 self.clear_values()
                 pass
-<<<<<<< HEAD
-=======
-=======
             if self.done:
                 if len(self.moves) > 4:
                     x = [a[1] for a in self.moves]
@@ -1137,7 +1123,5 @@ class MotorThread(QThread):
                 if not self.request_new_values:
                     self.signals.valuesRequest.emit()
                     self.request_new_values = True
->>>>>>> 6e0240e8fe3b216f1a040e93baea288f8d9e0f84
->>>>>>> ff540992901ed7eade0265cfd6be560489c956f7
             time.sleep(1/self.refresh_rate)
         print("Interruption was requested: Motor Thread")

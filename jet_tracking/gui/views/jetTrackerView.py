@@ -16,24 +16,26 @@ class JetTrackerView(QWidget):
         self.signals = signals
         self.context = context
         self.parent = parent
+        self.graphWidget = None
+        self.controlsDock= None
+        self.controlsWidget = None
         self.mainLayout = QHBoxLayout()
-        self.createGraphWidget()
-        self.createDockWidgets()
+        self.create_graph_widget()
+        self.create_dock_widgets()
         self.mainLayout.addWidget(self.controlsDock)
         self.mainLayout.addWidget(self.graphWidget)
 #        self.parent.resizeDocks([self.controlsDock], [45], Qt.Horizontal)
-        print(self.parent)
         self.setLayout(self.mainLayout)
 
-    def createGraphWidget(self):
+    def create_graph_widget(self):
         self.graphWidget = GraphsWidget(context=self.context,
                                         signals=self.signals)
         self.graphWidget.setSizePolicy(QSizePolicy.Preferred,
                                        QSizePolicy.Preferred)
 
-    def createDockWidgets(self):
+    def create_dock_widgets(self):
         # maybe the dock needs to be in a frame?? still not able to pop it back in.
-        #self.parent.setDockNestingEnabled(True)
+        # self.parent.setDockNestingEnabled(True)
         self.controlsDock = QDockWidget("Controls", self)
         self.controlsDock.setAllowedAreas(Qt.RightDockWidgetArea
                                           | Qt.BottomDockWidgetArea)
@@ -43,4 +45,4 @@ class JetTrackerView(QWidget):
         self.controlsDock.setWidget(self.controlsWidget)
         self.controlsDock.setSizePolicy(QSizePolicy.Preferred,
                                         QSizePolicy.Preferred)
-#        self.mainLayout.addWidget(self.controlsDock)
+        # self.mainLayout.addWidget(self.controlsDock)
