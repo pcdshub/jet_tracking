@@ -42,6 +42,12 @@ class Signals(QtCore.QObject):
     # connect in StatusThread
     changeCalibrationSource = QtCore.pyqtSignal(str)
     # emit in Context
+    # connect in StatusThread
+    changeNumberCalibration = QtCore.pyqtSignal(int)
+    # emit in Context
+    # connect in StatusThread
+    changeScanLimit = QtCore.pyqtSignal(int)
+    # emit in Context
     # connect in StatusThead
     changePercent = QtCore.pyqtSignal(float)
     # emit in Context

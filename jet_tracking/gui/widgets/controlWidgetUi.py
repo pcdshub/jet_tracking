@@ -92,13 +92,24 @@ class Controls_Ui(object):
                                  ' the plots have reached the current maximum '
                                  'time on the plots.')
 
+        obj.lbl_number_calibration = Label("Number of calibration points "
+                                           "\n(10 - 250)")
+        obj.le_number_calibration = LineEdit("50")
+        obj.le_number_calibration.valRange(10, 250)
+        obj.le_number_calibration.setToolTip('Sets the number of points '
+                                             'to use for averaging to find '
+                                             'new calibration values')
+
         # setup layout
         ##############
+        obj.layout_number_calibration = QHBoxLayout()
         obj.layout_percent = QHBoxLayout()
         obj.layout_tol = QHBoxLayout()
         obj.layout_ave = QHBoxLayout()
         obj.layout_refresh = QHBoxLayout()
         obj.layout_x_axis = QHBoxLayout()
+        obj.layout_number_calibration.addWidget(obj.lbl_number_calibration)
+        obj.layout_number_calibration.addWidget(obj.le_number_calibration)
         obj.layout_percent.addWidget(obj.lbl_percent, 75)
         obj.layout_percent.addWidget(obj.le_percent)
         obj.layout_tol.addWidget(obj.lbl_notification_tol, 75)
@@ -109,10 +120,13 @@ class Controls_Ui(object):
         obj.layout_refresh.addWidget(obj.le_refresh_rate)
         obj.layout_x_axis.addWidget(obj.lbl_x_axis, 75)
         obj.layout_x_axis.addWidget(obj.le_x_axis)
+        obj.hline1 = QHLine()
+        obj.hline2 = QHLine()
+        obj.layout_graph.addLayout(obj.layout_number_calibration)
+        obj.layout_graph.addWidget(obj.hline1)
         obj.layout_graph.addLayout(obj.layout_percent)
         obj.layout_graph.addLayout(obj.layout_tol)
-        obj.hline = QHLine()
-        obj.layout_graph.addWidget(obj.hline)
+        obj.layout_graph.addWidget(obj.hline2)
         obj.layout_graph.addLayout(obj.layout_ave)
         obj.layout_graph.addLayout(obj.layout_refresh)
         obj.layout_graph.addLayout(obj.layout_x_axis)
@@ -140,6 +154,7 @@ class Controls_Ui(object):
         obj.lbl_motor_size = Label("Step Size (mm)")
         obj.lbl_motor_average = Label("Average Intensity")
         obj.lbl_algorithm = Label("Algorithm")
+        obj.lbl_bad_scan = Label("Bad Scan Limit")
 
         obj.le_motor_hl = LineEdit("-0.1")
         obj.le_motor_hl.valRange(-100, 100)
@@ -158,6 +173,11 @@ class Controls_Ui(object):
         obj.le_ave_motor.valRange(1, 300)
         obj.le_ave_motor.setToolTip('Number of points to average before moving'
                                     ' motor')
+
+        obj.le_bad_scan = LineEdit("3")
+        obj.le_bad_scan.valRange(1, 10)
+        obj.le_bad_scan.setToolTip('Number of bad scans that can be attempted'
+                                   ' before automatically turning off tracking')
 
         obj.cbox_algorithm = ComboBox()
         obj.cbox_algorithm.setSizePolicy(QSizePolicy.Expanding,
@@ -212,6 +232,7 @@ class Controls_Ui(object):
         obj.layout_motor_manual = QHBoxLayout()
         obj.layout_motor_input = QGridLayout()
         obj.layout_scan_settings = QHBoxLayout()
+        obj.layout_bad_scan = QHBoxLayout()
         obj.layout_motor_bttns = QHBoxLayout()
         obj.layout_single_scan = QHBoxLayout()
         obj.layout_tracking = QHBoxLayout()
@@ -219,6 +240,7 @@ class Controls_Ui(object):
         obj.layout_motor.addLayout(obj.layout_motor_manual)
         obj.layout_motor.addLayout(obj.layout_motor_input)
         obj.layout_motor.addLayout(obj.layout_scan_settings)
+        obj.layout_motor.addLayout(obj.layout_bad_scan)
         obj.layout_motor.addLayout(obj.layout_single_scan)
         obj.layout_motor.addLayout(obj.layout_motor_bttns)
         obj.layout_motor.addWidget(obj.bttn_connect_motor)
@@ -238,6 +260,8 @@ class Controls_Ui(object):
         obj.layout_scan_settings.addWidget(obj.le_tolerance)
         obj.layout_scan_settings.addWidget(obj.lbl_int_time)
         obj.layout_scan_settings.addWidget(obj.le_int_time)
+        obj.layout_bad_scan.addWidget(obj.lbl_bad_scan)
+        obj.layout_bad_scan.addWidget(obj.le_bad_scan)
         obj.layout_single_scan.addWidget(obj.bttn_search)
         obj.layout_single_scan.addWidget(obj.bttn_stop_current_scan)
         obj.layout_motor_bttns.addWidget(obj.bttn_tracking)

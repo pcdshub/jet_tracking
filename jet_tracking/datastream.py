@@ -155,6 +155,7 @@ class StatusThread(QThread):
         self.signals = signals
         self.context = context
         self.calibration_source = ''
+        self.num_cali = 0
         self.flag_message = None
         self.refresh_rate = 0
         self.display_time = 0
@@ -171,8 +172,8 @@ class StatusThread(QThread):
         self.x_axis = []
         self.calibrated = False
         self.isTracking = False
-        self.badScanCounter = 0
-        self.badScanLimit = 2
+        self.bad_scan_counter = 0
+        self.bad_scan_limit = 2
         self.mode = ''
         self.status = ''
         self.display_flag = []
@@ -200,6 +201,7 @@ class StatusThread(QThread):
     def create_vars(self):
         self.mode = "running"
         self.calibration_source = self.context.calibration_source
+        self.num_cali = self.context.num_cali
         self.refresh_rate = self.context.refresh_rate
         self.percent = self.context.percent
         self.buffer_size = self.context.buffer_size
@@ -211,6 +213,7 @@ class StatusThread(QThread):
         self.ave_cycle = self.context.ave_cycle
         self.x_cycle = self.context.x_cycle
         self.ave_idx = self.context.ave_idx
+        self.bad_scan_limit = self.context.bad_scan_limit
 
     def create_value_reader(self):
         self.reader = ValueReader(self.context, self.signals)
@@ -244,6 +247,10 @@ class StatusThread(QThread):
         self.signals.changePercent.connect(self.set_percent)
         self.signals.changeCalibrationSource.connect(
             self.set_calibration_source)
+        self.signals.changeNumberCalibration.connect(
+            self.set_num_cali)
+        self.signals.changeScanLimit.connect(
+            self.set_scan_limit)
         self.signals.enableTracking.connect(self.tracking)
         self.signals.valuesRequest.connect(self.send_info_to_motor)
 
@@ -297,6 +304,12 @@ class StatusThread(QThread):
 
     def set_calibration_source(self, c):
         self.calibration_source = c
+    
+    def set_num_cali(self, n):
+        self.num_cali = n
+
+    def set_scan_limit(self, sl):
+        self.bad_scan_limit = sl
 
     def update_buffers_and_cycles(self):
         if self.display_flag == "all":
@@ -635,7 +648,7 @@ class StatusThread(QThread):
                 self.cal_vals[0].append(v.get('i0'))
                 self.cal_vals[1].append(v.get('diff'))
                 self.cal_vals[2].append(v.get('ratio'))
-            if len(self.cal_vals[0]) > 50:
+            if len(self.cal_vals[0]) > self.num_cali:
                 self.set_calibration_values('i0',
                                             mean(self.cal_vals[0]),
                                             stdev(self.cal_vals[0])
@@ -686,11 +699,11 @@ class StatusThread(QThread):
             elif self.status == "high intensity":
                 self.signals.notifyMotor.emit("you downgraded")
         if self.isTracking and not self.context.motor_running:
-            if self.badScanCounter < self.badScanLimit:
+            if self.bad_scan_counter < self.bad_scan_limit:
                 self.signals.message.emit("lots of missed shots.. "
                                           "starting motor")
-                self.signals.wakeMotor.emit()
-                self.badScanCounter += 1
+                self.context.update_motor_mode("run")
+                self.bad_scan_counter += 1
             else:
                 self.signals.enableTracking.emit(False)
                 self.signals.trackingStatus.emit('disabled', "red")
@@ -713,7 +726,7 @@ class StatusThread(QThread):
         self.status = "dropped shots"
 
     def high_intensity(self):
-        self.badScanCounter = 0
+        self.bad_scan_counter = 0
         if self.context.motor_running:
             if self.status == "dropped shots":
                 self.notifyMotor("resume")
@@ -724,7 +737,7 @@ class StatusThread(QThread):
         self.status = "high intensity"
 
     def everything_is_good(self):
-        self.badScanCounter = 0
+        self.bad_scan_counter = 0
         self.processor_worker.stop_count()
         if self.context.motor_running:
             if self.status == "dropped shots":
@@ -987,6 +1000,7 @@ class MotorThread(QThread):
         elif not self.live:
             self.motor = SimulatedMotor(self.context, self.signals)
             self.context.update_motor_position(self.motor.position)
+            self.connected = True
             self.wait = False
 
     def clear_values(self):
@@ -1103,25 +1117,5 @@ class MotorThread(QThread):
             elif self.mode == 'sleep':
                 self.clear_values()
                 pass
-            if self.done:
-                if len(self.moves) > 4:
-                    x = [a[1] for a in self.moves]
-                    y = [b[0] for b in self.moves]
-                    self.signals.plotMotorMoves.emit(self.motor.position,
-                                                     self.max_value, x, y)
-                    print("go to sleep now..")
-                    time.sleep(7)
-                    self.signals.message.emit(f"Found peak intensity "
-                                              f"{self.max_value} at motor "
-                                              f"position: "
-                                              f"{self.motor.position}")
-                    self.signals.sleepMotor.emit()
-            else:
-                if self.request_new_values and self.got_new_values:
-                    self.request_new_values = False
-                    self.got_new_values = False
-                if not self.request_new_values:
-                    self.signals.valuesRequest.emit()
-                    self.request_new_values = True
             time.sleep(1/self.refresh_rate)
         print("Interruption was requested: Motor Thread")

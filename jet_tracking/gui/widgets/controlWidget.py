@@ -33,6 +33,8 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.le_ave_graph.setText(str(self.context.graph_ave_time))
         self.le_refresh_rate.setText(str(self.context.refresh_rate))
         self.le_x_axis.setText(str(self.context.display_time))
+        self.le_number_calibration.setText(str(self.context.num_cali))
+        self.le_bad_scan.setText(str(self.context.bad_scan_limit))
 
     def set_motor_options(self):
         self.le_motor_ll.setText(str(self.context.low_limit))
@@ -41,9 +43,11 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.cbox_algorithm.setCurrentText(self.context.algorithm)
 
     def make_connections(self):
+        self.le_number_calibration.checkVal.connect(self.context.update_num_cali)
         self.le_percent.checkVal.connect(self.context.update_percent)
         self.le_refresh_rate.checkVal.connect(self.context.update_refresh_rate)
         self.le_ave_graph.checkVal.connect(self.context.update_graph_averaging)
+        self.le_bad_scan.checkVal.connect(self.context.update_scan_limit)
         self.le_motor_ll.checkVal.connect(self.update_limits)
         self.le_motor_hl.checkVal.connect(self.update_limits)
         self.le_x_axis.checkVal.connect(self.context.update_display_time)

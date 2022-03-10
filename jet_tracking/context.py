@@ -69,6 +69,7 @@ class Context(object):
 
         self.live_data = True
         self.calibration_source = "calibration from results"
+        self.num_cali = 50
         self.percent = 50
         self.refresh_rate = 5
         self.graph_ave_time = 2
@@ -84,6 +85,7 @@ class Context(object):
         self.ave_cycle = list(range(1, self.naverage + 1))
         self.x_cycle = list(range(0, self.buffer_size))
         self.ave_idx = list(range(0, self.averaging_size + 1))  # +1 for NaN value added at the end
+        self.bad_scan_limit = 3
 
         # motor variables
         self.manual_motor = True
@@ -118,6 +120,10 @@ class Context(object):
     def update_calibration_source(self, cal_src):
         self.calibration_source = cal_src
         self.signals.changeCalibrationSource.emit(self.calibration_source)
+
+    def update_num_cali(self, nc):
+        self.num_cali = nc
+        self.signals.changeNumberCalibration.emit(self.num_cali)
 
     def update_percent(self, p):
         """
@@ -182,6 +188,10 @@ class Context(object):
             self.ave_cycle = list(range(1, self.naverage+1))
             self.ave_idx = list(range(0, self.averaging_size+1))
             self.signals.changeDisplayFlag.emit("just average")
+
+    def update_scan_limit(self, sl):
+        self.bad_scan_limit = sl
+        self.signals.changeScanLimit.emit(self.bad_scan_limit)
 
     def update_manual_motor(self, manual):
         """
