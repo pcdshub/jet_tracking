@@ -141,6 +141,9 @@ class MpiWorker(object):
 
                     # Detector images
                     calib = self.detector.calib(evt)
+                    if calib is None:
+                        print(f'No data in shot #{evt_idx}')
+                        continue
                     calib = calib*psana_mask
                     det_image = self.detector.image(evt, calib)
                     az_bins = (np.array([np.mean(det_image[mask])
