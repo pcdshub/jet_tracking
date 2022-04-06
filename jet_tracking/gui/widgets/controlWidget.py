@@ -5,12 +5,13 @@ import numpy as np
 from datastream import MotorThread, StatusThread
 from gui.widgets.controlWidgetUi import Controls_Ui
 from PyQt5.QtCore import QThread
-from PyQt5.QtWidgets import QFrame
+from PyQt5.QtWidgets import QFrame, QMessageBox
 
 log = logging.getLogger(__name__)
 
 
 class ControlsWidget(QFrame, Controls_Ui):
+
     def __init__(self, context, signals):
         super(ControlsWidget, self).__init__()
         log.info("Main Thread: %d" % QThread.currentThreadId())
@@ -19,6 +20,9 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.setupUi(self)
         self.worker_status = None
         self.worker_motor = None
+        self.msg = QMessageBox()
+        self.msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        self.msg.setDefaultButton(QMessageBox.No)
         self.initialize_threads()
         self.set_thread_options()
         self.set_motor_options()
@@ -37,6 +41,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.le_bad_scan.setText(str(self.context.bad_scan_limit))
 
     def set_motor_options(self):
+        self.le_motor_pos.setText(str(self.context.motor_position))
         self.le_motor_ll.setText(str(self.context.low_limit))
         self.le_motor_hl.setText(str(self.context.high_limit))
         self.le_size.setText(str(self.context.step_size))
@@ -50,6 +55,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.le_bad_scan.checkVal.connect(self.context.update_scan_limit)
         self.le_motor_ll.checkVal.connect(self.update_limits)
         self.le_motor_hl.checkVal.connect(self.update_limits)
+        self.le_motor_pos.checkVal.connect(self.move_motor)
         self.le_x_axis.checkVal.connect(self.context.update_display_time)
         self.le_size.checkVal.connect(self.context.update_step_size)
         self.le_ave_motor.checkVal.connect(self.context.update_motor_averaging)
@@ -58,6 +64,8 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.bttngrp1.buttonClicked.connect(self.checkBttn)
         self.bttngrp2.buttonClicked.connect(self.checkBttn)
         self.bttngrp3.buttonClicked.connect(self.checkBttn)
+        self.signals.showMessageBox.connect(self.show_dialog)
+        self.msg.buttonClicked.connect(self.popup_clicked)
 
         self.bttn_connect_motor.clicked.connect(self.context.connect_motor)
         self.bttn_search.clicked.connect(self.start_algorithm)
@@ -73,7 +81,8 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.signals.changeStatus.connect(self.set_monitor_status)
         self.signals.changeCalibrationDisplay.connect(self.set_calibration)
         self.signals.plotMotorMoves.connect(self.plot_motor_moves)
-        self.signals.changeMotorPosition.connect(self.update_motor)
+        self.signals.changeReadPosition.connect(self.update_read_motor)
+        self.signals.changeMotorPosition.connect(self.update_motor_position)
         self.signals.message.connect(self.receive_message)
         self.signals.updateRunValues.connect(self.send_values)
 
@@ -96,12 +105,13 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.context.update_motor_mode("run")
 
     def _stop(self):
-        if self.worker_motor.isRunning():
-            self.worker_motor.requestInterruption()
-            self.worker_motor.wait()
         if self.worker_status.isRunning():
             self.worker_status.requestInterruption()
             self.worker_status.wait()
+        if self.worker_motor.isRunning():
+            self._stop_motor()
+            #self.worker_motor.requestInterruption()
+            #self.worker_motor.wait()
 
     def _calibrate(self):
         if not self.worker_status.isRunning():
@@ -117,7 +127,7 @@ class ControlsWidget(QFrame, Controls_Ui):
     def _start_motor(self):
         if not self.worker_motor.isRunning():
             if self.worker_status.isRunning():
-                self.context.update_motor_running(True)
+                self.context.update_motor_running(False)
                 self.context.update_motor_mode('sleep')
                 self.worker_motor.start()
             else:
@@ -132,17 +142,37 @@ class ControlsWidget(QFrame, Controls_Ui):
     def _stop_motor(self):
         if self.worker_motor.isRunning():
             self.context.update_motor_running(False)
+            print(self.worker_motor.isRunning())
             self.worker_motor.requestInterruption()
-            self.worker_motor.wait()
-        if self.sender() is self.bttn_stop_motor:
+            print(self.worker_motor.isRunning())
+            self.worker_motor.quit()
+            print(self.worker_motor.isRunning())
+            self.signals.message.emit("The motor was stopped"
+                                      "either press start or connect motor")
             self.context.update_tracking(False)
             self.set_tracking_status('disabled', "red")
+        else:
+            self.signals.message.emit("The motor is not running")
 
     def _stop_scanning(self):
         if self.worker_motor.isRunning():
             self.signals.endEarly.emit()
         else:
             self.signals.message.emit("You aren't scanning!")
+
+    def move_motor(self, mp):
+        if mp > self.context.high_limit or mp < self.context.low_limit:
+            self.le_motor_pos.setText(str(self.context.motor_position))
+            self.signals.message.emit("You tried to input a motor position \n"
+                                      "outside of the range set by the limits."
+                                      " Either set new limits or try a different\n"
+                                      " value.")
+        elif self.worker_motor.connected:
+            self.worker_motor.move_to_input_position(mp)
+        else:
+            self.le_motor_pos.setText(str(self.context.motor_position))
+            self.signals.message.emit("The motor is not connected \n"
+                                      "so the position cannot be changed")
 
     def plot_motor_moves(self, position, maximum, positions, intensities,
                          save=False):
@@ -172,7 +202,10 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.lbl_diff_status.display(
             self.context.calibration_values['diff']['mean'])
 
-    def update_motor(self, mp):
+    def update_motor_position(self, p):
+        self.le_motor_pos.setText(str(p))
+
+    def update_read_motor(self, mp):
         self.lbl_motor_status.display(mp)
 
     def send_values(self, live):
@@ -213,25 +246,52 @@ class ControlsWidget(QFrame, Controls_Ui):
         else:
             self.text_area.append(message)
 
+    def show_dialog(self, go_from, go_to):
+        self.msg.setWindowTitle("Data Viewing Changes")
+        self.msg.setText(f"Would you like to change the \n"
+                    f"data from {go_from} to {go_to}?")
+        self.msg.show()
+
+    def popup_clicked(self, i):
+        if i.text() == "&Yes":
+            self._stop()
+            self.signals.message.emit("Must press start to run in this new mode")
+            if self.bttngrp1.checkedId() == 1: # live
+                self.context.update_live_graphing(True)
+                self.context.update_live_motor(True)
+            if self.bttngrp1.checkedId() == 0: # simulated
+                self.context.update_live_graphing(False)
+                self.context.update_live_motor(False)
+        else:
+            print("here")
+            if self.bttngrp1.checkedId() == 1:
+                self.rdbttn_sim.setChecked(True)
+            elif self.bttngrp1.checkedId() == 0:
+                self.rdbttn_live.setChecked(True)
+
     def checkBttn(self, button):
         bttn = button.text()
         if bttn == "simulated data":
-            self.rdbttn_manual.click()
-            self.context.update_live_graphing(False)
-            self.context.update_live_motor(False)
+            if self.worker_status.isRunning():
+                print("worker running and trying to change to simulated")
+                self.signals.showMessageBox.emit("live", "simulated")
+            else:
+                self.context.update_live_graphing(False)
+                self.context.update_live_motor(False)
         elif bttn == "live data":
-            self.rdbttn_auto.setEnabled(True)
-            self.context.update_live_graphing(True)
-            self.context.update_live_motor(True)
+            print("worker running and trying to change to live")
+            if self.worker_status.isRunning():
+                self.signals.showMessageBox.emit("simulated", "live")
+            else:
+                self.context.update_live_graphing(True)
+                self.context.update_live_motor(True)
         elif bttn == "manual \nmotor moving":
             self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(False)
-            self.bttn_stop_motor.setEnabled(False)
             self.context.update_manual_motor(True)
         elif bttn == "automated \nmotor moving":
             self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(True)
-            self.bttn_stop_motor.setEnabled(True)
             self.context.update_manual_motor(False)
         elif bttn == "calibration in GUI":
             self.context.update_calibration_source(bttn)

@@ -18,7 +18,6 @@ class SimulatedMotor(object):
         self.position = position
         if wait:
             time.sleep(self.wait)
-        self.signals.changeMotorPosition.emit(self.position)
 
     def update_position(self):
         self.position = self.context.motor_position

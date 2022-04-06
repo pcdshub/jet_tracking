@@ -25,7 +25,6 @@ def read_noise(image, amount, gain=1):
 def jet_display(img, mp, jet_center, pix_per_mm, x_size):
     diff = ((mp - jet_center)/2)*pix_per_mm  # negative - mp is left of jc
     pix_position = int((x_size/2) + (diff))
-    print(pix_position)
     for i in range(len(img)):
         img[i][pix_position] = 255
     kernel = np.ones((5, 5), np.uint8)

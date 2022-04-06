@@ -4,7 +4,9 @@ from PyQt5.QtGui import QImage
 
 
 class Signals(QtCore.QObject):
-
+    # emit in ControlWidget
+    # connect in ControlWidget
+    showMessageBox = QtCore.pyqtSignal(str, str)
     # emit in StatusThread
     # connect in ControlsWidget
     changeStatus = QtCore.pyqtSignal(str, str)
@@ -110,6 +112,9 @@ class Signals(QtCore.QObject):
     # emit in motor algorithms and simMotorMoving
     # connect in controlwidget and numgen
     changeMotorPosition = QtCore.pyqtSignal(float)
+    # emit in
+    # connect in
+    changeReadPosition = QtCore.pyqtSignal(float)
     # emit in Context
     # connect in num_gen
     changeDroppedShots = QtCore.pyqtSignal(float)
@@ -139,7 +144,7 @@ class Signals(QtCore.QObject):
     connectCam = QtCore.pyqtSignal()
     # emit in jetimagefeed
     # connect in jetimagewidget
-    camImage = QtCore.pyqtSignal(QImage)
+    camImager = QtCore.pyqtSignal(QImage)
     # emit in editorWidget
     # connect in jetImageWidget
     updateImage = QtCore.pyqtSignal(np.ndarray)

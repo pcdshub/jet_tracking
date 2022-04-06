@@ -17,7 +17,7 @@ class JetTrackerView(QWidget):
         self.context = context
         self.parent = parent
         self.graphWidget = None
-        self.controlsDock= None
+        self.controlsDock = None
         self.controlsWidget = None
         self.mainLayout = QHBoxLayout()
         self.create_graph_widget()

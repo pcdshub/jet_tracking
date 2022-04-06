@@ -24,7 +24,7 @@ class JetImageWidget(QWidget, Image_Ui):
         self.scene.addItem(self.pixmap_item)
 
     def make_connections(self):
-        self.signals.camImage.connect(self.update_image)
+        self.signals.camImager.connect(self.update_image)
 
     def update_image(self, im):
         self.pixmap_item.setPixmap(QPixmap.fromImage(im))

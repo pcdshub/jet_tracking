@@ -887,10 +887,11 @@ class JetImageFeed(QThread):
                     image = self.fix_image(image, self.array_size_x_viewer,
                                            self.array_size_y_viewer)
                 else:
+                    self.cam_name.gen_image()
                     image = self.cam_name.jet_im
                 image = self.editor(image)
                 qimage = array2qimage(image)
-                self.signals.camImage.emit(qimage)
+                self.signals.camImager.emit(qimage)
                 time.sleep(1 / self.refresh_rate)
             else:
                 print("you are not connected")
@@ -971,6 +972,7 @@ class MotorThread(QThread):
             self.mode = m
         if m == 'calibrate' and self.mode == 'sleep':
             self.signals.message.emit('starting image motor moving calibration')
+            self.signals.message.emit("Initial motor position: " + str(self.initial_position))
             self.mode = m
         if m == 'calibrate' and self.mode == 'run':
             self.signals.message.emit('Calibrating while the mode is run should not be possible!!!')
@@ -978,8 +980,13 @@ class MotorThread(QThread):
             self.signals.message.emit('run while the mode is calibrate should not be possible!!!')
         if m == 'run' and self.mode == 'sleep':
             self.signals.message.emit('starting the algorithm you selected :)')
+            self.signals.message.emit("Initial motor position: " + str(self.motor.position))
             self.mode = m
             self.connect_to_motor()
+
+    def move_to_input_position(self, mp):
+        self.motor.move(mp, self.wait)
+        self.signals.changeMotorPosition.emit(self.motor.position)
 
     def live_motor(self, live):
         self.live = live
@@ -1051,7 +1058,8 @@ class MotorThread(QThread):
     def next_calibration_position(self):
         if self.calibration_steps == 1:
             self.initial_position = self.motor.position
-        self.motor.move(self.initial_position + (self.step_size*self.calibration_steps))
+        self.motor.move(self.initial_position + (self.step_size*self.calibration_steps), self.wait)
+        self.context.read_motor_position(self.motor.position)
         self.calibration_steps += 1
 
     def update_values(self, vals):
@@ -1091,6 +1099,7 @@ class MotorThread(QThread):
                         time.sleep(7)
                         self.signals.message.emit(f"Found peak intensity {self.max_value} "
                                                   f"at motor position: {self.motor.position}")
+                        self.context.update_motor_position(self.motor.position)
                         self.mode = 'sleep'
                         self.context.update_motor_mode('sleep')
                 else:
@@ -1104,6 +1113,7 @@ class MotorThread(QThread):
                 if self.calibration_steps == 5:
                     self.signals.displayMotorCalibration.emit()
                     self.motor.move(self.initial_position)
+                    self.context.motor_read_position(self.motor.position)
                     self.calibration_steps = 1
                     self.mode = 'sleep'
                     self.context.update_motor_mode('sleep')
@@ -1116,6 +1126,5 @@ class MotorThread(QThread):
                         self.request_image_processor = True
             elif self.mode == 'sleep':
                 self.clear_values()
-                pass
             time.sleep(1/self.refresh_rate)
         print("Interruption was requested: Motor Thread")

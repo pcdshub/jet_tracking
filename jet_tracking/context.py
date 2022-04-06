@@ -99,6 +99,7 @@ class Context(object):
         self.motor_mode = ''
         self.live_motor = True
         self.motor_position = 0
+        self.read_motor_position = 0
         self.isTracking = False
         self.live_data = True
         self.display_flag = None
@@ -301,6 +302,11 @@ class Context(object):
 
     def update_motor_position(self, p):
         self.motor_position = p
+        self.signals.changeMotorPosition.emit(self.motor_position)
+
+    def update_read_motor_position(self, p):
+        self.read_motor_position = p
+        self.signals.changeReadPosition.emit(self.read_motor_position)
 
     def update_motor_running(self, running):
         self.motor_running = running
