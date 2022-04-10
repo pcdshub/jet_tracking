@@ -1,10 +1,9 @@
 import logging
 from collections import deque
-
-# import cv2
+import cv2
 from datastream import JetImageFeed
 from gui.widgets.editorWidgetUi import Editor_Ui
-from PyQt5.QtWidgets import QFrame
+from PyQt5.QtWidgets import QFrame, QFileDialog
 
 log = logging.getLogger(__name__)
 
@@ -26,11 +25,13 @@ class EditorWidget(QFrame, Editor_Ui):
                         'blur': deque([None], 5),
                         'left threshold': deque([0], 5),
                         'right threshold': deque([255], 5)}
+        self.generate_image = True
         self.make_connections()
         self.dilate_off_on(True)
         self.open_off_on(True)
 
     def make_connections(self):
+        self.bttngrp1.buttonClicked.connect(self.check_button)
         self.bttn_cam_connect.clicked.connect(self.start_cam)
         self.bttn_cam_disconnect.clicked.connect(self.stop_cam)
         self.bttn_cam_calibrate.clicked.connect(self.calibrate)
@@ -60,6 +61,18 @@ class EditorWidget(QFrame, Editor_Ui):
     def stop_cam(self):
         self.image_stream.requestInterruption()
         self.image_stream.wait()
+
+    def check_button(self, bttn):
+        bttn = bttn.text()
+        if bttn == "Generate Image":
+            self.generate_image = True
+        if bttn == "Select Image":
+            self.generate_image = False
+            fname = QFileDialog.getOpenFileName(self, 'Open file',
+                                                'c:\\', "Image files (*.jpg *.gif)")
+            im = cv2.imread(fname[0])
+            self.context.update_jet_image(im)
+        self.context.update_generate_image(self.generate_image)
 
     def calibrate(self):
         if self.image_stream.connected:

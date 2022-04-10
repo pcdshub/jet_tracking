@@ -151,3 +151,9 @@ class Signals(QtCore.QObject):
     # emit in simcontrolwidget
     # connect in controlwidget
     trackingStatus = QtCore.pyqtSignal(str, str)
+    # emit in editorWidget
+    # connect in SimulatedImage
+    generateImage = QtCore.pyqtSignal(bool)
+    # emit in editorWidget
+    # connect in SimulatedImage
+    imageFile = QtCore.pyqtSignal(str)

@@ -113,6 +113,9 @@ class Context(object):
         self.bg = 0.05
         self.cam_refresh_rate = 3
 
+        self.generate_image = True
+        self.jet_image_from_file = ""
+
     def update_live_graphing(self, live):
         self.live_data = live
         self.signals.changeRunLive.emit(self.live_data)
@@ -334,3 +337,9 @@ class Context(object):
     def update_dropped_shots(self, ds):
         self.percent_dropped = ds
         self.signals.changeDroppedShots.emit(self.percent_dropped)
+
+    def update_generate_image(self, gen_im):
+        self.generate_image = gen_im
+
+    def update_jet_image(self, im):
+        self.jet_image_from_file = im

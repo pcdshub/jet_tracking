@@ -1,7 +1,7 @@
 from gui.widgets.basicWidgets import QHLine, QRangeSlider
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QRadioButton,
-                             QSlider, QVBoxLayout)
+                             QSlider, QVBoxLayout, QButtonGroup)
 
 
 class Editor_Ui(object):
@@ -10,9 +10,16 @@ class Editor_Ui(object):
         """
         used to setup the layout and initialize graphs
         """
-
         obj.layout = QVBoxLayout()
         obj.setLayout(obj.layout)
+
+        obj.bttngrp1 = QButtonGroup()
+        obj.rd_bttn_gen_im = QRadioButton("Generate Image")
+        obj.rd_bttn_gen_im.setChecked(True)
+        obj.rd_bttn_sel_im = QRadioButton("Select Image")
+        obj.bttngrp1.addButton(obj.rd_bttn_gen_im, id=0)
+        obj.bttngrp1.addButton(obj.rd_bttn_sel_im, id=1)
+        obj.bttngrp1.setExclusive(True)
 
         obj.bttn_cam_connect = QPushButton("Connect to Jet Cam")
         obj.bttn_cam_disconnect = QPushButton("Disconnect")
@@ -28,6 +35,7 @@ class Editor_Ui(object):
         obj.slider_dilate.setTickInterval(1)
 
         obj.rd_bttn_dilate = QRadioButton("Dilate On/Off")
+        obj.rd_bttn_dilate.setChecked(True)
         obj.rd_bttn_dilate.setAutoExclusive(False)
 
         obj.lbl_erode = QLabel("Erode edges")
@@ -55,6 +63,7 @@ class Editor_Ui(object):
         obj.slider_open.setTickInterval(1)
 
         obj.rd_bttn_open = QRadioButton("Open On/Off")
+        obj.rd_bttn_open.setChecked(True)
         obj.rd_bttn_open.setAutoExclusive(False)
 
         obj.lbl_close = QLabel("Close")
@@ -83,6 +92,10 @@ class Editor_Ui(object):
         obj.bttn_clear = QPushButton("Clear")
         obj.bttn_reset_all = QPushButton("Reset All")
 
+        obj.layout_image = QHBoxLayout()
+        obj.layout_image.addWidget(obj.rd_bttn_gen_im)
+        obj.layout_image.addWidget(obj.rd_bttn_sel_im)
+
         obj.layout_cam1 = QHBoxLayout()
         obj.layout_cam1.addWidget(obj.bttn_cam_connect)
 
@@ -90,20 +103,20 @@ class Editor_Ui(object):
         obj.layout_cam2.addWidget(obj.bttn_cam_disconnect)
 
         obj.layout_dilate = QHBoxLayout()
-        obj.layout_dilate.addWidget(self.slider_dilate)
-        obj.layout_dilate.addWidget(self.rd_bttn_dilate)
+        obj.layout_dilate.addWidget(obj.slider_dilate)
+        obj.layout_dilate.addWidget(obj.rd_bttn_dilate)
 
         obj.layout_erode = QHBoxLayout()
-        obj.layout_erode.addWidget(self.slider_erode)
-        obj.layout_erode.addWidget(self.rd_bttn_erode)
+        obj.layout_erode.addWidget(obj.slider_erode)
+        obj.layout_erode.addWidget(obj.rd_bttn_erode)
 
         obj.layout_close = QHBoxLayout()
-        obj.layout_close.addWidget(self.slider_close)
-        obj.layout_close.addWidget(self.rd_bttn_close)
+        obj.layout_close.addWidget(obj.slider_close)
+        obj.layout_close.addWidget(obj.rd_bttn_close)
 
         obj.layout_open = QHBoxLayout()
-        obj.layout_open.addWidget(self.slider_open)
-        obj.layout_open.addWidget(self.rd_bttn_open)
+        obj.layout_open.addWidget(obj.slider_open)
+        obj.layout_open.addWidget(obj.rd_bttn_open)
 
         obj.layout_thresh = QHBoxLayout()
         obj.layout_thresh.addWidget(obj.lbl_thresh)
@@ -127,6 +140,7 @@ class Editor_Ui(object):
         obj.layout_bttns.addWidget(obj.bttn_reset_all)
 
         obj.layout.addStretch()
+        obj.layout.addLayout(obj.layout_image)
         obj.layout.addLayout(obj.layout_cam1)
         obj.layout.addLayout(obj.layout_cam2)
         obj.layout.addWidget(obj.bttn_cam_calibrate)
