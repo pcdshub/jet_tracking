@@ -6,10 +6,6 @@ class JetImageAction(QPixmap):
         super(JetImageAction, self).__init__()
         self.context = context
         self.signals = signals
-        self.make_connections()
 
-    def make_connections(self):
-        self.signals.imageProcessingRequest.connect(self.find_center)
 
-    def find_center(self):
-        pass
+

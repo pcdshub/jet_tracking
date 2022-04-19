@@ -1,9 +1,9 @@
 import logging
-from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsScene, QGraphicsView, QGraphicsLineItem
-from sketch.jetAction import JetImageAction
+from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsScene, QGraphicsView
 from tools.ROI import HLineItem, VLineItem
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPen
+from PyQt5.QtGui import QPixmap
+import numpy as np
 
 log = logging.getLogger(__name__)
 
@@ -15,7 +15,7 @@ class JetImageWidget(QGraphicsView):
         self.signals = signals
         self.context = context
         self.scene = QGraphicsScene()
-        self.Pixmap = JetImageAction(self.context, self.signals)
+        self.image = np.zeros([500,500,3],dtype=np.uint8)
         self.pixmap_item = QGraphicsPixmapItem()
         self.line_item_hor_top = HLineItem()
         self.line_item_hor_bot = HLineItem()
@@ -35,10 +35,27 @@ class JetImageWidget(QGraphicsView):
     def make_connections(self):
         self.signals.camImager.connect(self.update_image)
         self.scene.sceneRectChanged.connect(self.capture_scene_change)
+        self.signals.imageProcessingRequest.connect(self.find_center)
+
+    def find_center(self, mp):
+        upper_left = (self.line_item_vert_left.scenePos().x(),
+                      self.line_item_hor_top.scenePos().y())
+        upper_right = (self.line_item_vert_right.scenePos().x(),
+                       self.line_item_hor_top.scenePos().y())
+        lower_left = (self.line_item_vert_left.scenePos().x(),
+                      self.line_item_hor_bot.scenePos().y())
+        lower_right = (self.line_item_vert_right.scenePos().x(),
+                       self.line_item_hor_bot.scenePos().y())
+        center = self.locate_jet(upper_left, upper_right, lower_left,
+                                        lower_right)
+
+    def locate_jet(self, ul, ur, ll, lr):
+
+        return
 
     def update_image(self, im):
-        pixmap = self.Pixmap.fromImage(im)
-        self.pixmap_item.setPixmap(pixmap)
+        self.image = im
+        self.pixmap_item.setPixmap(QPixmap.fromImage(self.image))
 
     def capture_scene_change(self, qrect):
         self.scene.setSceneRect(qrect)
