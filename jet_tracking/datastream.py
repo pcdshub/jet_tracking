@@ -4,9 +4,9 @@ import time
 from statistics import StatisticsError, mean, stdev
 import numpy as np
 from ophyd import EpicsSignal
-# from epics import caget
+from epics import caget
 from PyQt5.QtCore import QThread
-# from pcdsdevices.epics_motor import IMS
+from pcdsdevices.epics_motor import Motor
 from collections import deque
 import cv2
 import threading
@@ -791,7 +791,7 @@ class JetImageFeed(QThread):
         self.blur = None
         self.left_threshold = None
         self.right_threshold = None
-        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+        self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         self.array_size_x_data = 0
         self.array_size_y_data = 0
         self.array_size_x_viewer = 0
@@ -840,11 +840,6 @@ class JetImageFeed(QThread):
             else:
                 self.connected = True
 
-    @staticmethod
-    def fix_image(im, x, y):
-        im = np.reshape(im, (x, y))
-        return im
-
     def update_editor_vals(self, e):
         self.dilate = e['dilate'][-1]
         self.erode = e['erode'][-1]
@@ -874,7 +869,7 @@ class JetImageFeed(QThread):
         if self.brightness:
             pass
         if self.blur:
-            pass
+            im = cv2.GaussianBlur(im, (3, 3), self.blur)
         ret, im = cv2.threshold(im, self.left_threshold, self.right_threshold,
                                 cv2.THRESH_BINARY)
         return im
@@ -883,15 +878,14 @@ class JetImageFeed(QThread):
         while not self.isInterruptionRequested():
             if self.connected:
                 if self.context.live_data:
-                    image = caget(self.cam_name + ':IMAGE2:ArrayData')
-                    image = self.fix_image(image, self.array_size_x_viewer,
-                                           self.array_size_y_viewer)
+                    image_array = caget(self.cam_name + ':IMAGE2:ArrayData')
+                    image = np.reshape(image_array, (self.array_size_y_viewer,
+                                           self.array_size_x_viewer))
                 else:
                     self.cam_name.gen_image()
                     image = self.cam_name.jet_im
                 image = self.editor(image)
-                qimage = array2qimage(image)
-                self.signals.camImager.emit(qimage)
+                self.signals.camImager.emit(image)
                 time.sleep(1 / self.refresh_rate)
             else:
                 print("you are not connected")
@@ -997,7 +991,10 @@ class MotorThread(QThread):
             self.motor_name = self.context.PV_DICT.get('motor', None)
             print("connecting to: ", self.motor_name)
             try:
-                self.motor = IMS(self.motor_name, name='jet_x')
+                self.motor = Motor(self.motor_name, name='jet_x')
+                time.sleep(1)
+                #for i in self.motor.component_names:
+                #    print(f"{i} {getattr(self.motor, i).connected}")
             except NameError or NotImplementedError:
                 self.connected = False
             else:
@@ -1122,6 +1119,7 @@ class MotorThread(QThread):
                         self.request_image_processor = False
                         self.complete_image_processor = False
                     if not self.request_image_processor:
+                        print("asking for image processing")
                         self.signals.imageProcessingRequest.emit(self.motor.position)
                         self.request_image_processor = True
             elif self.mode == 'sleep':

@@ -1,6 +1,5 @@
 import numpy as np
 from PyQt5 import QtCore
-from PyQt5.QtGui import QImage
 
 
 class Signals(QtCore.QObject):
@@ -144,7 +143,7 @@ class Signals(QtCore.QObject):
     connectCam = QtCore.pyqtSignal()
     # emit in jetimagefeed
     # connect in jetimagewidget
-    camImager = QtCore.pyqtSignal(QImage)
+    camImager = QtCore.pyqtSignal(np.ndarray)
     # emit in editorWidget
     # connect in jetImageWidget
     updateImage = QtCore.pyqtSignal(np.ndarray)

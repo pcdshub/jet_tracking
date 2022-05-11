@@ -4,6 +4,10 @@ from tools.ROI import HLineItem, VLineItem
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 import numpy as np
+from qimage2ndarray import array2qimage
+import cv2
+from scipy import stats
+import matplotlib.pyplot as plt 
 
 log = logging.getLogger(__name__)
 
@@ -15,12 +19,17 @@ class JetImageWidget(QGraphicsView):
         self.signals = signals
         self.context = context
         self.scene = QGraphicsScene()
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.image = np.zeros([500,500,3],dtype=np.uint8)
         self.pixmap_item = QGraphicsPixmapItem()
         self.line_item_hor_top = HLineItem()
         self.line_item_hor_bot = HLineItem()
         self.line_item_vert_left = VLineItem()
         self.line_item_vert_right = VLineItem()
+        self.contours = []
+        self.best_fit_line = []
+        self.com = []
         self.make_connections()
         self.connect_scene()
 
@@ -40,22 +49,84 @@ class JetImageWidget(QGraphicsView):
     def find_center(self, mp):
         upper_left = (self.line_item_vert_left.scenePos().x(),
                       self.line_item_hor_top.scenePos().y())
-        upper_right = (self.line_item_vert_right.scenePos().x(),
-                       self.line_item_hor_top.scenePos().y())
-        lower_left = (self.line_item_vert_left.scenePos().x(),
-                      self.line_item_hor_bot.scenePos().y())
         lower_right = (self.line_item_vert_right.scenePos().x(),
                        self.line_item_hor_bot.scenePos().y())
-        center = self.locate_jet(upper_left, upper_right, lower_left,
-                                        lower_right)
+        self.locate_jet(int(upper_left[0]), int(lower_right[0]), 
+                        int(upper_left[1]), int(lower_right[1]))
 
-    def locate_jet(self, ul, ur, ll, lr):
+    def locate_jet(self, x_start, x_end, y_start, y_end):
+        crop = self.image[y_start:y_end, x_start:x_end]
+        crop = cv2.convertScaleAbs(crop)
+        self.contours, hierarchy = cv2.findContours(crop, cv2.RETR_EXTERNAL,
+                                                    cv2.CHAIN_APPROX_SIMPLE, 
+                                                    offset=(x_start, y_start)) 
+        if len(self.contours) == 0:
+            self.signals.message.emit("Was not able to find any contours. \n"
+                                       "Try changing the ROI or image editing" 
+                                       "parameters")
+        else:
+            contours = []
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+            empty = False
+            while empty == False:
+                crop = cv2.erode(crop, kernel, iterations=1)
+                c, h = cv2.findContours(crop, cv2.RETR_EXTERNAL,
+                                        cv2.CHAIN_APPROX_SIMPLE,
+                                        offset=(x_start, y_start))
+                for cont in c:
+                    contours.append(cont)
+                if len(c) == 0:
+                    empty = True
+            self.com = self.find_com(contours)
+            slope, intercept, self.best_fit_line, r, p, se = self.form_line(self.com) 
+            
+        self.update_image(self.image)
 
-        return
+    def find_com(self, contours):
+        centers = []
+        for i in range(len(contours)):
+            M = cv2.moments(contours[i])
+            if M['m00'] != 0:
+                centers.append((int(M['m10']/M['m00']), int(M['m01']/M['m00'])))
+        return(centers)
+
+    def form_line(self, com):
+        xypoints = list(zip(*com))
+        x = np.asarray(list(xypoints[1]))
+        y = np.asarray(list(xypoints[0]))
+        res = stats.linregress(x, y)
+        self.signals.message.emit(f"Slope: {res.slope:.6f}")
+        self.signals.message.emit(f"Intercept: {res.intercept:.6f}")
+        self.signals.message.emit(f"R-squared: {res.rvalue**2:.6f}")
+        y_model = res.intercept + res.slope*x
+        plt.plot(x, y, 'o', label='original data')
+        plt.plot(x, y_model, 'r', label='fitted line')
+        plt.legend()
+        plt.show()
+        xl = list(x)
+        yl = list(y_model)
+        i_max = yl.index(max(yl))
+        i_min = yl.index(min(yl))
+        return(res.slope, res.intercept, 
+               [(int(np.amin(y_model)), int(xl[i_min])),
+                (int(np.amax(y_model)), int(xl[i_max]))],
+               res.rvalue, res.pvalue, res.stderr)
 
     def update_image(self, im):
         self.image = im
-        self.pixmap_item.setPixmap(QPixmap.fromImage(self.image))
+        self.image = cv2.convertScaleAbs(self.image)
+        self.color_image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
+        self.color_image = cv2.drawContours(self.color_image, 
+                                      self.contours, -1, (0, 255, 0), 3)
+        for point in self.com:
+            self.color_image = cv2.circle(self.color_image, tuple(point), 1, (0, 255, 255))
+        if len(self.best_fit_line):    
+            self.color_image = cv2.line(self.color_image, self.best_fit_line[0],
+                                    self.best_fit_line[1], (0, 255, 255), 5)
+        self.qimage = array2qimage(self.color_image)
+        pixmap = QPixmap.fromImage(self.qimage) 
+        self.pixmap_item.setPixmap(pixmap)
+        self.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
 
     def capture_scene_change(self, qrect):
         self.scene.setSceneRect(qrect)
@@ -70,6 +141,7 @@ class JetImageWidget(QGraphicsView):
 
     def resizeEvent(self, event):
         if not self.pixmap_item.pixmap().isNull():
+            self.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
             self.fitInView(self.pixmap_item, Qt.KeepAspectRatio)
             self.fitInView(self.line_item_hor_top, Qt.KeepAspectRatio)
             self.fitInView(self.line_item_vert_left, Qt.KeepAspectRatio)
