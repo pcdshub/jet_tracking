@@ -922,6 +922,8 @@ class MotorThread(QThread):
         self.got_new_values = False
         self.request_image_processor = False
         self.complete_image_processor = False
+        self.image_calibration_positions = []
+        self.pix_per_mm = 0
         self.good_edge_points = []
         self.bad_edge_points = []
         self.sweet_spot = []
@@ -1052,12 +1054,32 @@ class MotorThread(QThread):
             # intensity
             self.sweet_spot.append(self.moves[-1])
 
-    def next_calibration_position(self):
+    def next_calibration_position(self, line_best_fit):
+        g = (self.motor.position, line_best_fit)
+        self.image_calibration_positions.append(g)
         if self.calibration_steps == 1:
             self.initial_position = self.motor.position
-        self.motor.move(self.initial_position + (self.step_size*self.calibration_steps), self.wait)
-        self.context.read_motor_position(self.motor.position)
+        if self.calibration_steps >= 6:
+            self.motor.move(self.initial_position - (self.step_size*(self.calibration_steps-5)), self.wait)
+        else:
+            self.motor.move(self.initial_position + (self.step_size * self.calibration_steps), self.wait)
+        self.context.update_read_motor_position(self.motor.position)
+        if not self.live:
+            time.sleep((1/self.refresh_rate)*2)
         self.calibration_steps += 1
+        self.complete_image_processor = True
+
+    def update_image_calibration(self):
+        # Assuming that the step size is in mm
+        pix_per_mm = []
+        for i in range(len(self.image_calibration_positions)-1):
+            motor_pos_diff = abs(self.image_calibration_positions[i+1][0] - \
+                             self.image_calibration_positions[i][0])
+            image_pos_diff = abs(self.image_calibration_positions[i+1][1][0][0] - \
+                             self.image_calibration_positions[i][1][0][0])
+            pix_per_mm.append(image_pos_diff/motor_pos_diff)
+        self.pix_per_mm = mean(pix_per_mm)
+        print(f"pix per mm: {self.pix_per_mm}")
 
     def update_values(self, vals):
         if not self.done:
@@ -1103,14 +1125,18 @@ class MotorThread(QThread):
                     if self.request_new_values and self.got_new_values:
                         self.request_new_values = False
                         self.got_new_values = False
-                    if not self.request_new_values:
+                    elif not self.request_new_values:
                         self.signals.valuesRequest.emit()
                         self.request_new_values = True
             elif self.mode == 'calibrate':
-                if self.calibration_steps == 5:
-                    self.signals.displayMotorCalibration.emit()
+                if self.calibration_steps == 11:
                     self.motor.move(self.initial_position)
-                    self.context.motor_read_position(self.motor.position)
+                    self.context.update_read_motor_position(self.motor.position)
+                    time.sleep(1/self.refresh_rate*3)
+                    self.signals.imageProcessingRequest.emit(False)
+                    self.update_image_calibration()
+                    self.context.update_image_calibration_steps(self.image_calibration_positions)
+                    self.image_calibration_positions = []
                     self.calibration_steps = 1
                     self.mode = 'sleep'
                     self.context.update_motor_mode('sleep')
@@ -1118,9 +1144,10 @@ class MotorThread(QThread):
                     if self.request_image_processor and self.complete_image_processor:
                         self.request_image_processor = False
                         self.complete_image_processor = False
-                    if not self.request_image_processor:
-                        print("asking for image processing")
-                        self.signals.imageProcessingRequest.emit(self.motor.position)
+                    elif not self.request_image_processor:
+                        if not self.live:
+                            time.sleep((1 / self.refresh_rate)*3)
+                        self.signals.imageProcessingRequest.emit(True)
                         self.request_image_processor = True
             elif self.mode == 'sleep':
                 self.clear_values()

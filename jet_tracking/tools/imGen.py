@@ -17,8 +17,9 @@ def read_noise(image, amount, gain=1):
         gain of te camera, in units of electrons/ADU.
     """
     shape = image.shape
-    noise = np.random.normal(scale=amount/gain, size=shape)
-    noise_image = image + noise
+    noise = np.random.randint(0, 255, size=shape, dtype=np.uint8)
+    ret, thresh = cv2.threshold(noise, 240, 255, cv2.THRESH_BINARY)
+    noise_image = image + thresh
     return noise_image
 
 
@@ -28,7 +29,13 @@ def jet_display(img, mp, jet_center, pix_per_mm, x_size):
     for i in range(len(img)):
         img[i][pix_position] = 255
     kernel = np.ones((5, 5), np.uint8)
-    dilation = cv2.dilate(img, kernel, iterations=2)
-
-    return dilation
+    img = cv2.dilate(img, kernel, iterations=2)
+    img = read_noise(img, 500, 1)
+    kernel = np.ones((5, 5), np.uint8)
+    erode = cv2.erode(img, kernel, iterations=2)
+    kernel = np.ones((3, 3), np.uint8)
+    blackhat = cv2.morphologyEx(img, cv2.MORPH_BLACKHAT, kernel)
+    final_image = img + blackhat + erode
+    #final_image = img
+    return final_image
 

@@ -115,6 +115,7 @@ class Context(object):
 
         self.generate_image = True
         self.jet_image_from_file = ""
+        self.image_calibration_steps = []
 
     def update_live_graphing(self, live):
         self.live_data = live
@@ -310,6 +311,9 @@ class Context(object):
     def update_read_motor_position(self, p):
         self.read_motor_position = p
         self.signals.changeReadPosition.emit(self.read_motor_position)
+
+    def update_image_calibration_steps(self, cs):
+        self.image_calibration_steps = cs
 
     def update_motor_running(self, running):
         self.motor_running = running
