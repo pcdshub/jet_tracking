@@ -70,7 +70,8 @@ class JetImageWidget(QGraphicsView):
     def locate_jet(self, x_start, x_end, y_start, y_end):
         crop = self.image[y_start:y_end, x_start:x_end]
         crop = cv2.convertScaleAbs(crop)
-        self.contours, hierarchy = cv2.findContours(crop, cv2.RETR_EXTERNAL,
+        crop_rotated = cv2.rotate(crop, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        self.contours, hierarchy = cv2.findContours(crop_rotated, cv2.RETR_EXTERNAL,
                                                     cv2.CHAIN_APPROX_SIMPLE, 
                                                     offset=(x_start, y_start)) 
         if len(self.contours) == 0:
@@ -92,7 +93,7 @@ class JetImageWidget(QGraphicsView):
                     empty = True
             self.com = self.find_com(contours)
             self.best_fit_line, self.best_fit_line_plus,\
-                self.best_fit_line_minus = self.form_line(self.com)
+                self.best_fit_line_minus = self.form_line(self.com, y_start, y_end)
             
         self.update_image(self.image)
 
@@ -102,9 +103,10 @@ class JetImageWidget(QGraphicsView):
             M = cv2.moments(contours[i])
             if M['m00'] != 0:
                 centers.append((int(M['m10']/M['m00']), int(M['m01']/M['m00'])))
+                print(centers)
         return centers
 
-    def form_line(self, com):
+    def form_line(self, com, y_min, y_max):
         xypoints = list(zip(*com))
         x = np.asarray(list(xypoints[1]))
         y = np.asarray(list(xypoints[0]))
@@ -124,27 +126,42 @@ class JetImageWidget(QGraphicsView):
         degrees_of_freedom = len(com) - 2
         tinv = lambda p, df: abs(stats.t.ppf(p/2., df))
         ts = tinv(alpha, degrees_of_freedom)
-        y_model = intercept + slope*x
-        y_model_plus = (intercept + ts*intercept_err) + (slope + ts*slope_err)*x
-        y_model_minus = (intercept - ts*intercept_err) + (slope - ts*slope_err)*x
+        y = np.append(y, [y_min, y_max])
+        print(y, slope, intercept)
+        if slope:
+            x_model = (y - intercept)*(1/slope)
+            x_model_plus = (y - intercept - ts*intercept_err)*(1 / (slope + ts*slope_err))
+            x_model_minus = (y - intercept + ts * intercept_err) * (1 / (slope - ts * slope_err))
+            yl = list(y)
+            i_max = yl.index(max(yl))
+            i_min = yl.index(min(yl))
+            print(i_min, i_max)
+            return ([(int(yl[i_min]), int(x_model[i_min])),
+                     (int(yl[i_max]), int(x_model[i_max]))],
+                    [(int(yl[i_min]), int(x_model_plus[i_min])),
+                     (int(yl[i_max]), int(x_model_plus[i_max]))],
+                    [(int(yl[i_min]), int(x_model_minus[i_min])),
+                     (int(yl[i_max]), int(x_model_minus[i_max]))])
+        else:
+            return([(int(yl[i_min]), int(x_model[i_min])),
+                     (int(yl[i_max]), int(x_model[i_max]))],
+                    [(int(yl[i_min]), int(x_model_plus[i_min])),
+                     (int(yl[i_max]), int(x_model_plus[i_max]))],
+                    [(int(yl[i_min]), int(x_model_minus[i_min])),
+                     (int(yl[i_max]), int(x_model_minus[i_max]))])
+
         # plt.plot(x, y, 'o', label='original data')
         # plt.plot(x, y_model, 'r', label='fitted line')
         # plt.plot(x, y_model_plus, 'b', label='fitted line error plus')
         # plt.plot(x, y_model_minus, 'g', label='fitted line error minus')
         # plt.legend()
         # plt.show()
-        xl = list(x)
-        # ymodel does not have to give y values all the way to the top/bottom of the ROI
-        # because its based on the COMs - need to extrapolate
-        yl = list(y_model)
-        i_max = yl.index(max(yl))
-        i_min = yl.index(min(yl))
-        return([(int(np.amin(y_model)), int(xl[i_min])),
-                (int(np.amax(y_model)), int(xl[i_max]))],
-               [(int(np.amin(y_model_plus)), int(xl[i_min])),
-                (int(np.amax(y_model_plus)), int(xl[i_max]))],
-               [(int(np.amin(y_model_minus)), int(xl[i_min])),
-                (int(np.amax(y_model_minus)), int(xl[i_max]))])
+        #return([(int(yl[i_min]), int(np.amin(x_model))),
+        #        (int(yl[i_max]), int(np.amax(x_model)))],
+        #       [(int(yl[i_min]), int(np.amin(x_model_plus))),
+        #        (int(yl[i_max]), int(np.amax(x_model_plus)))],
+        #       [(int(yl[i_min]), int(np.amin(x_model_minus))),
+        #        (int(yl[i_max]), int(np.amax(x_model_minus)))])
 
     def update_image(self, im):
         self.image = im
@@ -155,14 +172,14 @@ class JetImageWidget(QGraphicsView):
         for point in self.com:
             self.color_image = cv2.circle(self.color_image, tuple(point), 1, (0, 255, 255))
         if len(self.best_fit_line):    
-            self.color_image = cv2.line(self.color_image, self.best_fit_line[0],
-                                        self.best_fit_line[1], (0, 255, 255), 5)
+            self.color_image = cv2.line(self.color_image, self.best_fit_line[1],
+                                        self.best_fit_line[0], (0, 255, 255), 5)
         if len(self.best_fit_line_plus):
-            self.color_image = cv2.line(self.color_image, self.best_fit_line_plus[0],
-                                        self.best_fit_line_plus[1], (220,20,60), 2)
+            self.color_image = cv2.line(self.color_image, self.best_fit_line_plus[1],
+                                        self.best_fit_line_plus[0], (220,20,60), 2)
         if len(self.best_fit_line_minus):
-            self.color_image = cv2.line(self.color_image, self.best_fit_line_minus[0],
-                                        self.best_fit_line_minus[1], (220,20,60), 2)
+            self.color_image = cv2.line(self.color_image, self.best_fit_line_minus[1],
+                                        self.best_fit_line_minus[0], (220,20,60), 2)
         self.qimage = array2qimage(self.color_image)
         pixmap = QPixmap.fromImage(self.qimage) 
         self.pixmap_item.setPixmap(pixmap)
