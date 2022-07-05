@@ -62,16 +62,18 @@ class JetImageWidget(QGraphicsView):
                       self.line_item_hor_top.scenePos().y())
         lower_right = (self.line_item_vert_right.scenePos().x(),
                        self.line_item_hor_bot.scenePos().y())
-        self.locate_jet(int(upper_left[0]), int(lower_right[0]), 
+        success = self.locate_jet(int(upper_left[0]), int(lower_right[0]),
                         int(upper_left[1]), int(lower_right[1]))
-        if calibration:
-            self.signals.imageProcessingComplete.emit(self.best_fit_line)
+        if calibration and not success:
+            self.signals.imageProcessingComplete.emit(False)
+        elif calibration and success:
+            self.context.image_calibration_position(self.best_fit_line)
+            self.signals.imageProcessingComplete.emit(True)
 
     def locate_jet(self, x_start, x_end, y_start, y_end):
         crop = self.image[y_start:y_end, x_start:x_end]
         crop = cv2.convertScaleAbs(crop)
-        crop_rotated = cv2.rotate(crop, cv2.ROTATE_90_COUNTERCLOCKWISE)
-        self.contours, hierarchy = cv2.findContours(crop_rotated, cv2.RETR_EXTERNAL,
+        self.contours, hierarchy = cv2.findContours(crop, cv2.RETR_EXTERNAL,
                                                     cv2.CHAIN_APPROX_SIMPLE, 
                                                     offset=(x_start, y_start)) 
         if len(self.contours) == 0:
@@ -82,7 +84,7 @@ class JetImageWidget(QGraphicsView):
             contours = []
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
             empty = False
-            while empty == False:
+            while not empty:
                 crop = cv2.erode(crop, kernel, iterations=1)
                 c, h = cv2.findContours(crop, cv2.RETR_EXTERNAL,
                                         cv2.CHAIN_APPROX_SIMPLE,
@@ -92,12 +94,10 @@ class JetImageWidget(QGraphicsView):
                 if len(c) == 0:
                     empty = True
             self.com = self.find_com(contours)
-            self.best_fit_line, self.best_fit_line_plus,\
-                self.best_fit_line_minus = self.form_line(self.com, y_start, y_end)
-            
-        self.update_image(self.image)
+            return self.form_line(self.com, y_start, y_end)
 
-    def find_com(self, contours):
+    @staticmethod
+    def find_com(contours):
         centers = []
         for i in range(len(contours)):
             M = cv2.moments(contours[i])
@@ -108,8 +108,8 @@ class JetImageWidget(QGraphicsView):
 
     def form_line(self, com, y_min, y_max):
         xypoints = list(zip(*com))
-        x = np.asarray(list(xypoints[1]))
         y = np.asarray(list(xypoints[0]))
+        x = np.asarray(list(xypoints[1]))
         res = stats.linregress(x, y)
         self.signals.message.emit(f"Slope: {res.slope:.6f}")
         self.signals.message.emit(f"Intercept: {res.intercept:.6f}")
@@ -127,7 +127,7 @@ class JetImageWidget(QGraphicsView):
         tinv = lambda p, df: abs(stats.t.ppf(p/2., df))
         ts = tinv(alpha, degrees_of_freedom)
         y = np.append(y, [y_min, y_max])
-        print(y, slope, intercept)
+        print(x, y, slope, intercept)
         if slope:
             x_model = (y - intercept)*(1/slope)
             x_model_plus = (y - intercept - ts*intercept_err)*(1 / (slope + ts*slope_err))
@@ -135,20 +135,19 @@ class JetImageWidget(QGraphicsView):
             yl = list(y)
             i_max = yl.index(max(yl))
             i_min = yl.index(min(yl))
-            print(i_min, i_max)
-            return ([(int(yl[i_min]), int(x_model[i_min])),
-                     (int(yl[i_max]), int(x_model[i_max]))],
-                    [(int(yl[i_min]), int(x_model_plus[i_min])),
-                     (int(yl[i_max]), int(x_model_plus[i_max]))],
-                    [(int(yl[i_min]), int(x_model_minus[i_min])),
-                     (int(yl[i_max]), int(x_model_minus[i_max]))])
+            self.best_fit_line = [(int(yl[i_min]), int(x_model[i_min])),
+                                  (int(yl[i_max]), int(x_model[i_max]))]
+            self.best_fit_line_plus = [(int(yl[i_min]), int(x_model_plus[i_min])),
+                                       (int(yl[i_max]), int(x_model_plus[i_max]))]
+            self.best_fit_line_minus = [(int(yl[i_min]), int(x_model_minus[i_min])),
+                                        (int(yl[i_max]), int(x_model_minus[i_max]))]
+            return True
         else:
-            return([(int(yl[i_min]), int(x_model[i_min])),
-                     (int(yl[i_max]), int(x_model[i_max]))],
-                    [(int(yl[i_min]), int(x_model_plus[i_min])),
-                     (int(yl[i_max]), int(x_model_plus[i_max]))],
-                    [(int(yl[i_min]), int(x_model_minus[i_min])),
-                     (int(yl[i_max]), int(x_model_minus[i_max]))])
+            print("clearing best fit line... try again")
+            self.best_fit_line = []
+            self.best_fit_line_plus = []
+            self.best_fit_line_minus = []
+            return False
 
         # plt.plot(x, y, 'o', label='original data')
         # plt.plot(x, y_model, 'r', label='fitted line')
@@ -171,7 +170,7 @@ class JetImageWidget(QGraphicsView):
         #                                    self.contours, -1, (0, 255, 0), 3)
         for point in self.com:
             self.color_image = cv2.circle(self.color_image, tuple(point), 1, (0, 255, 255))
-        if len(self.best_fit_line):    
+        if len(self.best_fit_line):
             self.color_image = cv2.line(self.color_image, self.best_fit_line[1],
                                         self.best_fit_line[0], (0, 255, 255), 5)
         if len(self.best_fit_line_plus):

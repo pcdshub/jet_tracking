@@ -116,6 +116,7 @@ class Context(object):
         self.generate_image = True
         self.jet_image_from_file = ""
         self.image_calibration_steps = []
+        self.image_calibration_positions = []
 
     def update_live_graphing(self, live):
         self.live_data = live
@@ -347,3 +348,7 @@ class Context(object):
 
     def update_jet_image(self, im):
         self.jet_image_from_file = im
+
+    def image_calibration_position(self, line_best_fit):
+        g = (self.read_motor_position, line_best_fit)
+        self.image_calibration_positions.append(g)

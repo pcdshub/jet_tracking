@@ -104,7 +104,7 @@ class Signals(QtCore.QObject):
     imageProcessingRequest = QtCore.pyqtSignal(bool)
     # emit in jetImageWidget
     # connect in motorthread
-    imageProcessingComplete = QtCore.pyqtSignal(list)
+    imageProcessingComplete = QtCore.pyqtSignal(bool)
 
     # added when adding simulator
     update = QtCore.pyqtSignal(dict)
