@@ -30,6 +30,8 @@ class JetImageWidget(QGraphicsView):
         self.line_item_hor_bot = HLineItem()
         self.line_item_vert_left = VLineItem()
         self.line_item_vert_right = VLineItem()
+        self.counter = 0
+        self.calibration_running = False
         self.contours = []
         self.best_fit_line = []
         self.best_fit_line_plus = []
@@ -49,26 +51,30 @@ class JetImageWidget(QGraphicsView):
     def make_connections(self):
         self.signals.camImager.connect(self.update_image)
         self.scene.sceneRectChanged.connect(self.capture_scene_change)
-        self.signals.imageProcessingRequest.connect(self.find_center)
+        self.signals.imageProcessingRequest.connect(self.new_request)
 
-    def clear_contours(self):
-        self.contours = []
-        self.best_fit_line = []
-        self.com = []
+    def new_request(self, calibration):
+        self.calibration_running = calibration
 
-    def find_center(self, calibration):
-        self.clear_contours()
+    def find_center(self):
         upper_left = (self.line_item_vert_left.scenePos().x(),
                       self.line_item_hor_top.scenePos().y())
         lower_right = (self.line_item_vert_right.scenePos().x(),
                        self.line_item_hor_bot.scenePos().y())
-        success = self.locate_jet(int(upper_left[0]), int(lower_right[0]),
+        self.locate_jet(int(upper_left[0]), int(lower_right[0]),
                         int(upper_left[1]), int(lower_right[1]))
-        if calibration and not success:
-            self.signals.imageProcessingComplete.emit(False)
-        elif calibration and success:
-            self.context.image_calibration_position(self.best_fit_line)
-            self.signals.imageProcessingComplete.emit(True)
+        if self.counter != 20:
+            self.counter += 1
+        elif self.counter == 20:
+            self.counter = 0
+            self.best_fit_line = []
+            success = self.form_line(self.com, int(upper_left[1]), int(lower_right[1]))
+            self.com = []
+            if success and self.calibration_running:
+                self.context.image_calibration_position(self.best_fit_line)
+                self.signals.imageProcessingComplete.emit(True)
+            elif not success and self.calibration_done:
+                self.signals.imageProcessingComplete.emit(False)
 
     def locate_jet(self, x_start, x_end, y_start, y_end):
         crop = self.image[y_start:y_end, x_start:x_end]
@@ -93,8 +99,8 @@ class JetImageWidget(QGraphicsView):
                     contours.append(cont)
                 if len(c) == 0:
                     empty = True
-            self.com = self.find_com(contours)
-            return self.form_line(self.com, y_start, y_end)
+            self.com += self.find_com(contours)
+            return
 
     @staticmethod
     def find_com(contours):
@@ -103,7 +109,6 @@ class JetImageWidget(QGraphicsView):
             M = cv2.moments(contours[i])
             if M['m00'] != 0:
                 centers.append((int(M['m10']/M['m00']), int(M['m01']/M['m00'])))
-                print(centers)
         return centers
 
     def form_line(self, com, y_min, y_max):
@@ -118,7 +123,7 @@ class JetImageWidget(QGraphicsView):
         slope = res.slope
         intercept = res.intercept
         confidence_interval = 95
-        pvalue = res.pvalue # if p-value is > .1 get another image and try again
+        pvalue = res.pvalue  # if p-value is > .1 get another image and try again
         slope_err = res.stderr
         intercept_err = res.intercept_stderr
         alpha = 1 - (confidence_interval / 100)
@@ -127,7 +132,6 @@ class JetImageWidget(QGraphicsView):
         tinv = lambda p, df: abs(stats.t.ppf(p/2., df))
         ts = tinv(alpha, degrees_of_freedom)
         y = np.append(y, [y_min, y_max])
-        print(x, y, slope, intercept)
         if slope:
             x_model = (y - intercept)*(1/slope)
             x_model_plus = (y - intercept - ts*intercept_err)*(1 / (slope + ts*slope_err))
@@ -163,11 +167,15 @@ class JetImageWidget(QGraphicsView):
         #        (int(yl[i_max]), int(np.amax(x_model_minus)))])
 
     def update_image(self, im):
+        # need to do something so that at the end of the calibration it also collects
+        # multiple images.. also it just needs to be regularly finding the line if you want to
+        # try to automate shut offs and such
         self.image = im
         self.image = cv2.convertScaleAbs(self.image)
         self.color_image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
         # self.color_image = cv2.drawContours(self.color_image,
         #                                    self.contours, -1, (0, 255, 0), 3)
+        self.find_center()
         for point in self.com:
             self.color_image = cv2.circle(self.color_image, tuple(point), 1, (0, 255, 255))
         if len(self.best_fit_line):
