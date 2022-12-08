@@ -407,12 +407,13 @@ if __name__ == '__main__':
         if evt_idx % 10 == 0:
             print('Event: {}'.format(evt_idx))
         try:
-            print(event_code)
-            print(type(event_code))
             if event_code not in evr.eventCodes(evt):
                 continue
             # Get image and azav
             calib = detector.calib(evt)
+            if calib is None:
+                print(f'No data in shot #{evt_idx}')
+                continue
             calib = calib * psana_mask
             det_image = detector.image(evt, calib)
             azav = np.array([np.mean(det_image[mask]) for mask in masks])
