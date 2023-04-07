@@ -11,13 +11,14 @@ from PyQt5.QtWidgets import (QAction, QLabel, QMainWindow, QSizePolicy,
                              QTabWidget)
 from signals import Signals
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("jet_tracker")
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
 
     def __init__(self):
         super(MainWindow, self).__init__()
+        log.debug("Supplying Thread information from init of MainWindow.")
         self.setAttribute(Qt.WA_AlwaysStackOnTop)
         self.signals = Signals()
         self.context = Context(self.signals)
@@ -174,8 +175,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def exportData(self):
         print("you tried to export data")
 
-    def close(self):
-        pass
+    def closeEvent(self, event):
+        self.signals.terminateAll.emit()
+        event.accept()
 
     def undo(self):  # Possible future addition
         print("undo")

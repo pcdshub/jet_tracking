@@ -3,6 +3,9 @@ from PyQt5 import QtCore
 
 
 class Signals(QtCore.QObject):
+    # emit in mainWindow
+    # connect in many places??
+    terminateAll = QtCore.pyqtSignal()
     # emit in ControlWidget
     # connect in ControlWidget
     showMessageBox = QtCore.pyqtSignal(str, str)

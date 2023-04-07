@@ -5,7 +5,7 @@ from statistics import StatisticsError, mean, stdev
 import numpy as np
 from ophyd import EpicsSignal
 from epics import caget
-from PyQt5.QtCore import QThread
+from PyQt5.QtCore import QThread, QObject, QRunnable
 from pcdsdevices.epics_motor import Motor
 from collections import deque
 import cv2
@@ -22,8 +22,7 @@ from sketch.simJetImage import SimulatedImage
 ologging = logging.getLogger('ophyd')
 ologging.setLevel('DEBUG')
 
-log = logging.getLogger(__name__)
-log.setLevel('DEBUG')
+log = logging.getLogger("jet_tracker")
 lock = threading.Lock()
 
 
@@ -124,6 +123,7 @@ class ValueReader(metaclass=Singleton):
         # self.motor_position = self.sim_vals["motor_position"]
 
     def read_value(self):  # needs to initialize first maybe using a decorator?
+        log.debug("read value from ValueReader")
         if self.context.live_data:
             self.live_data_stream()
             return {'i0': self.i0, 'diff': self.diff, 'ratio': self.ratio,
@@ -134,7 +134,7 @@ class ValueReader(metaclass=Singleton):
                     'dropped': self.dropped}
 
 
-class StatusThread(QThread):
+class StatusThread(QObject):
 
     def __init__(self, context, signals):
         super(StatusThread, self).__init__()
@@ -196,7 +196,7 @@ class StatusThread(QThread):
         self.connect_signals()
         self.initialize_buffers()
 
-        log.info("__init__ of StatusThread: %d" % QThread.currentThreadId())
+        log.info("Initializing StatusThread")
 
     def create_vars(self):
         self.mode = "running"
@@ -254,6 +254,30 @@ class StatusThread(QThread):
         self.signals.enableTracking.connect(self.tracking)
         self.signals.valuesRequest.connect(self.send_info_to_motor)
 
+    def run_data_thread(self):
+        """Long-running task to collect data points"""
+        log.info("Inside of the run method of StatusThread.")
+        while not self.thread().isInterruptionRequested():
+            new_values = self.reader.read_value()
+            self.current_values = new_values
+            x_idx = self.x_cycle[0]
+            ave_cycle = self.ave_cycle[0]
+            ave_idx = self.ave_idx[0]
+            self.ave_cycle.append(self.ave_cycle.pop(0))
+            self.x_cycle.append(self.x_cycle.pop(0))
+            if self.mode == "running":
+                self.update_buffer(new_values, x_idx)
+                self.check_status_update()
+                self.points_to_plot(x_idx, ave_cycle, ave_idx)
+                time.sleep(1/self.refresh_rate)
+            elif self.mode == "calibrate":
+                self.calibrated = False
+                self.update_buffer(new_values, x_idx)
+                self.points_to_plot(x_idx, ave_cycle, ave_idx)
+                self.calibrate(new_values)
+                time.sleep(1 / self.refresh_rate)
+        print("Interruption request: %d" % QThread.currentThreadId())
+
     @staticmethod
     def fix_size(old_size, new_size, b):
         d = new_size - old_size
@@ -296,6 +320,7 @@ class StatusThread(QThread):
         self.isTracking = b
 
     def update_mode(self, mode):
+        log.info("Inside of the update_mode method of StatusThread.")
         self.mode = mode
 
     def set_percent(self, p):
@@ -306,6 +331,7 @@ class StatusThread(QThread):
         self.calibration_source = c
     
     def set_num_cali(self, n):
+        log.info("Inside of the set_num_cali method of StatusThread.")
         self.num_cali = n
 
     def set_scan_limit(self, sl):
@@ -465,28 +491,6 @@ class StatusThread(QThread):
         if self.calibrated and choice == "set":
             self.event_flagging(v, idx)
 
-    def run(self):
-        """Long-running task to collect data points"""
-        while not self.isInterruptionRequested():
-            new_values = self.reader.read_value()
-            self.current_values = new_values
-            x_idx = self.x_cycle[0]
-            ave_cycle = self.ave_cycle[0]
-            ave_idx = self.ave_idx[0]
-            self.ave_cycle.append(self.ave_cycle.pop(0))
-            self.x_cycle.append(self.x_cycle.pop(0))
-            if self.mode == "running":
-                self.update_buffer(new_values, x_idx)
-                self.check_status_update()
-                self.points_to_plot(x_idx, ave_cycle, ave_idx)
-                time.sleep(1/self.refresh_rate)
-            elif self.mode == "calibrate":
-                self.calibrated = False
-                self.update_buffer(new_values, x_idx)
-                self.points_to_plot(x_idx, ave_cycle, ave_idx)
-                self.calibrate(new_values)
-                time.sleep(1 / self.refresh_rate)
-        print("Interruption request: %d" % QThread.currentThreadId())
 
     def check_status_update(self):
         if self.calibrated:
@@ -893,7 +897,7 @@ class JetImageFeed(QThread):
         print("Interruption was requested: Image Thread")
 
 
-class MotorThread(QThread):
+class MotorThread(QObject):
     def __init__(self, context, signals):
         super(MotorThread, self).__init__()
         self.signals = signals
@@ -1105,7 +1109,7 @@ class MotorThread(QThread):
             if not self.pause:
                 self.done, self.max_value = self.action.execute()
 
-    def run(self):
+    def run_motor_thread(self):
         while not self.isInterruptionRequested():
             if self.mode == 'run':
                 if self.done:

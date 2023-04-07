@@ -7,30 +7,27 @@ from gui.widgets.controlWidgetUi import Controls_Ui
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QFrame, QMessageBox
 
-log = logging.getLogger(__name__)
+log = logging.getLogger('jet_tracker')
 
 
 class ControlsWidget(QFrame, Controls_Ui):
 
     def __init__(self, context, signals):
         super(ControlsWidget, self).__init__()
-        log.info("Main Thread: %d" % QThread.currentThreadId())
+        log.debug("Supplying Thread information from init of Controls Widget")
         self.signals = signals
         self.context = context
         self.setupUi(self)
-        self.worker_status = None
-        self.worker_motor = None
+        self.thread1 = QThread(self)
+        self.thread2 = QThread(self)
+        self.worker_status = StatusThread(context, signals)
+        self.worker_motor = MotorThread(context, signals)
         self.msg = QMessageBox()
         self.msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         self.msg.setDefaultButton(QMessageBox.No)
-        self.initialize_threads()
         self.set_thread_options()
         self.set_motor_options()
         self.make_connections()
-
-    def initialize_threads(self):
-        self.worker_status = StatusThread(self.context, self.signals)
-        self.worker_motor = MotorThread(self.context, self.signals)
 
     def set_thread_options(self):
         self.le_percent.setText(str(self.context.percent))
@@ -48,6 +45,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.cbox_algorithm.setCurrentText(self.context.algorithm)
 
     def make_connections(self):
+        self.signals.terminateAll.connect(self.terminate_all)
         self.le_number_calibration.checkVal.connect(self.context.update_num_cali)
         self.le_percent.checkVal.connect(self.context.update_percent)
         self.le_refresh_rate.checkVal.connect(self.context.update_refresh_rate)
@@ -59,8 +57,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.le_x_axis.checkVal.connect(self.context.update_display_time)
         self.le_size.checkVal.connect(self.context.update_step_size)
         self.le_ave_motor.checkVal.connect(self.context.update_motor_averaging)
-        self.cbox_algorithm.currentTextChanged.connect(
-            self.context.update_algorithm)
+        self.cbox_algorithm.currentTextChanged.connect(self.context.update_algorithm)
         self.bttngrp1.buttonClicked.connect(self.checkBttn)
         self.bttngrp2.buttonClicked.connect(self.checkBttn)
         self.bttngrp3.buttonClicked.connect(self.checkBttn)
@@ -74,10 +71,6 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.bttn_stop_motor.clicked.connect(self._stop_motor)
         self.signals.trackingStatus.connect(self.set_tracking_status)
 
-        self.bttn_stop.clicked.connect(self._stop)
-        self.bttn_calibrate.clicked.connect(self._calibrate)
-        self.bttn_start.clicked.connect(self.start_processes)
-
         self.signals.changeStatus.connect(self.set_monitor_status)
         self.signals.changeCalibrationDisplay.connect(self.set_calibration)
         self.signals.plotMotorMoves.connect(self.plot_motor_moves)
@@ -86,35 +79,49 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.signals.message.connect(self.receive_message)
         self.signals.updateRunValues.connect(self.send_values)
 
+        self.bttn_stop.clicked.connect(self._stop)
+        self.bttn_calibrate.clicked.connect(self._calibrate)
+        self.bttn_start.clicked.connect(self.start_processes)
+
+        self.worker_status.moveToThread(self.thread1)
+        self.worker_motor.moveToThread(self.thread2)
+
+        #self.worker_status.finished.connect(self.thread1.quit)
+        #self.worker_motor.finished.connect(self.thread2.quit)
+
+        self.thread1.started.connect(self.worker_status.run_data_thread)
+        self.thread2.started.connect(self.worker_motor.run_motor_thread)
+
     def start_processes(self):
-        self.worker_motor.connect_to_motor()
+        # self.worker_motor.connect_to_motor()
         self.worker_status.reader.initialize_connections()
-        if self.worker_status.reader.connected:
-            self.worker_status.start()
-            if self.worker_motor.connected:
-                self._start_motor()
-            else:
-                self.signals.message.emit("Motor is not connected.\n"
-                                          "fix motor connection settings"
-                                          "and try again")
-        else:
-            self.signals.message.emit("The Value reader is not connecting"
-                                      "properly. Check settings.")
+        # if self.worker_status.reader.connected:
+        #     self.worker_status.start()
+        #     if self.worker_motor.connected:
+        #         self._start_motor()
+        #     else:
+        #         self.signals.message.emit("Motor is not connected.\n"
+        #                                   "fix motor connection settings"
+        #                                   "and try again")
+        # else:
+        #     self.signals.message.emit("The Value reader is not connecting"
+        #                               "properly. Check settings.")
+        self.thread1.start()
 
     def start_algorithm(self):
         self.context.update_motor_mode("run")
 
     def _stop(self):
-        if self.worker_status.isRunning():
-            self.worker_status.requestInterruption()
-            self.worker_status.wait()
-        if self.worker_motor.isRunning():
+        if self.thread1.isRunning():
+            self.thread1.requestInterruption()
+            self.thread1.quit()
+        if self.thread2.isRunning():
             self._stop_motor()
             #self.worker_motor.requestInterruption()
             #self.worker_motor.wait()
 
     def _calibrate(self):
-        if not self.worker_status.isRunning():
+        if not self.thread1.isRunning():
             self.text_area.append("You are not running so there's \
                   nothing to calibrate.. hit start first")
         else:
@@ -125,28 +132,25 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.context.update_tracking(True)
 
     def _start_motor(self):
-        if not self.worker_motor.isRunning():
-            if self.worker_status.isRunning():
+        if not self.thread2.isRunning():
+            if self.thread1.isRunning():
                 self.context.update_motor_running(False)
                 self.context.update_motor_mode('sleep')
-                self.worker_motor.start()
+                self.thread2.start()
             else:
                 self.signals.message.emit("You must start getting points "
                                           "first!")
         else:
-            if not self.worker_motor.isInterruptionRequested():
-                self.worker_motor.start()
+            if not self.thread2.isInterruptionRequested():
+                self.thread2.start()
             else:
                 self.signals.message.emit("The motor thread is already started")
 
     def _stop_motor(self):
-        if self.worker_motor.isRunning():
+        if self.thread2.isRunning():
             self.context.update_motor_running(False)
-            print(self.worker_motor.isRunning())
-            self.worker_motor.requestInterruption()
-            print(self.worker_motor.isRunning())
-            self.worker_motor.quit()
-            print(self.worker_motor.isRunning())
+            self.thread2.requestInterruption()
+            self.thread2.quit()
             self.signals.message.emit("The motor was stopped"
                                       "either press start or connect motor")
             self.context.update_tracking(False)
@@ -155,7 +159,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.signals.message.emit("The motor is not running")
 
     def _stop_scanning(self):
-        if self.worker_motor.isRunning():
+        if self.thread2.isRunning():
             self.signals.endEarly.emit()
         else:
             self.signals.message.emit("You aren't scanning!")
@@ -272,7 +276,7 @@ class ControlsWidget(QFrame, Controls_Ui):
     def checkBttn(self, button):
         bttn = button.text()
         if bttn == "simulated data":
-            if self.worker_status.isRunning():
+            if self.thread2.isRunning():
                 print("worker running and trying to change to simulated")
                 self.signals.showMessageBox.emit("live", "simulated")
             else:
@@ -280,7 +284,7 @@ class ControlsWidget(QFrame, Controls_Ui):
                 self.context.update_live_motor(False)
         elif bttn == "live data":
             print("worker running and trying to change to live")
-            if self.worker_status.isRunning():
+            if self.thread1.isRunning():
                 self.signals.showMessageBox.emit("simulated", "live")
             else:
                 self.context.update_live_graphing(True)
@@ -313,3 +317,13 @@ class ControlsWidget(QFrame, Controls_Ui):
                 max-height: 35px;\
                 font-size: 14px;\
             }")
+
+    def terminate_all(self):
+        if self.thread1.isRunning():
+            self.thread1.requestInterruption()
+            self.thread1.terminate()
+            self.thread1.wait()
+        if self.thread2.isRunning():
+            self.thread2.requestInterruption()
+            self.thread2.terminate()
+            self.thread2.wait()

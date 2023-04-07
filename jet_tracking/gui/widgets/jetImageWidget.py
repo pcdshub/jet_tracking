@@ -10,20 +10,21 @@ from scipy import stats
 import time
 import matplotlib.pyplot as plt 
 
-log = logging.getLogger(__name__)
+log = logging.getLogger("jet_tracker")
 
 
 class JetImageWidget(QGraphicsView):
 
     def __init__(self, context, signals):
         super(JetImageWidget, self).__init__()
+        log.debug("Supplying Thread information from init of jetImageWidget")
         self.signals = signals
         self.context = context
         self.scene = QGraphicsScene()
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.qimage = QImage()
-        self.image = np.zeros([500,500,3],dtype=np.uint8)
+        self.image = np.zeros([500,500,3], dtype=np.uint8)
         self.color_image = np.zeros([500, 500, 3], dtype=np.uint8)
         self.pixmap_item = QGraphicsPixmapItem()
         self.line_item_hor_top = HLineItem()

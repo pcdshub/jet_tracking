@@ -8,13 +8,13 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-log = logging.getLogger(__name__)
-lock = threading.Lock()
+log = logging.getLogger("jet_tracker")
 
 
 class Context(object):
 
     def __init__(self, signals):
+        log.debug("Supplying Thread information from init of Context")
         self.signals = signals
         self.JT_LOC = ('/cds/group/pcds/epics-dev/espov/jet_tracking_all/'
                        'jet_tracking/')

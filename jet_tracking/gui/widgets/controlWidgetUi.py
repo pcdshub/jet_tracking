@@ -189,6 +189,7 @@ class Controls_Ui(object):
         obj.cbox_algorithm.addItem("Basic Scan")
         obj.cbox_algorithm.addItem("Linear + Ternary")
         obj.cbox_algorithm.addItem("Dynamic Linear Scan")
+        obj.cbox_algorithm.addItem("Course + fine")
 
         obj.le_tolerance = LineEdit("0.001")
         obj.le_tolerance.setToolTip('Tolerance for ternary search, stops when '
