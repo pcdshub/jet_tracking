@@ -100,7 +100,6 @@ class Context(object):
         self.live_motor = True
         self.motor_position = 0
         self.read_motor_position = 0
-        self.isTracking = False
         self.live_data = True
         self.display_flag = None
 
@@ -277,6 +276,9 @@ class Context(object):
     def set_calibration_values(self, cal):
         self.calibration_values = cal
 
+    def update_calibration_priority(self, p):
+        self.signals.changeCalibrationPriority.emit(p)
+
     def open_cam_connection(self):
         self.signals.connectCam.emit()
 
@@ -293,10 +295,6 @@ class Context(object):
             self.motor_running = True
         else:
             self.motor_running = False
-
-    def update_tracking(self, tracking):
-        self.isTracking = tracking
-        self.signals.enableTracking.emit(self.isTracking)
 
     def connect_motor(self):
         self.signals.connectMotor.emit()

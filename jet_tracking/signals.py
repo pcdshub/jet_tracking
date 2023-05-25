@@ -20,6 +20,12 @@ class Signals(QtCore.QObject):
     refreshAveValueGraphs = QtCore.pyqtSignal(dict)
     # emit in ControlsWidget
     # connect in StatusThread
+    startStatusThread = QtCore.pyqtSignal()
+    # emit in ControlsWidget
+    # connect in StatusThread
+    stopStatusThread = QtCore.pyqtSignal(bool)
+    # emit in ControlsWidget
+    # connect in StatusThread
     mode = QtCore.pyqtSignal(str)
     # emit in Context
     # connect in simWidget and controlWidget
@@ -39,6 +45,9 @@ class Signals(QtCore.QObject):
     # emit in StatusThread
     # connect in GraphsWidget
     changeCalibrationValues = QtCore.pyqtSignal(dict)
+    # emit in context
+    # connect in StatusThread
+    changeCalibrationPriority = QtCore.pyqtSignal(str)
     # emit in Context
     # connect in ValueReader
     changeRunLive = QtCore.pyqtSignal(bool)
@@ -75,6 +84,12 @@ class Signals(QtCore.QObject):
     # emit in Context
     # connect in
     changeMotorAveraging = QtCore.pyqtSignal(float)
+    # emit in ControlsWidget
+    # connect in MotorThread
+    startMotorThread = QtCore.pyqtSignal()
+    # emit in ControlsWidget
+    # connect in MotorThread
+    stopMotorThread = QtCore.pyqtSignal(bool)
     # emit in statusthread
     # connect in motorthread
     intensitiesForMotor = QtCore.pyqtSignal(dict)
@@ -99,6 +114,9 @@ class Signals(QtCore.QObject):
     # emit in controlWidget
     # connect in all motor algorithms
     endEarly = QtCore.pyqtSignal()
+    # emit in motorThread
+    # connect in statusThread
+    finishedMotorAlgorithm = QtCore.pyqtSignal()
     # emit in editorwidget
     # connect in jetimagefeed
     imageProcessing = QtCore.pyqtSignal(dict)

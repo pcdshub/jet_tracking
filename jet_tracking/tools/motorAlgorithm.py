@@ -187,8 +187,27 @@ class BasicScan(object):
         else:
             return self.motor_thread.motor.position
 
+    def find_calibration_location(self):
+        cal = self.motor_thread.calibration_values['ratio']['mean']
+        if self.motor_thread.moves:
+            moves_reorg = list(map(list, (zip(*self.motor_thread.moves))))
+            intensities = moves_reorg[0]
+            intensities_dist = [x-cal for x in intensities]
+            self.max_value = max(intensities_dist)
+            self.min_value = min(intensities_dist)
+            index = intensities.index(self.min_value)
+            min_location = moves_reorg[1][index]
+            return min_location
+        else:
+            return self.motor_thread.motor.position
+
     def move_to_max(self):
         max_location = self.find_max_location()
+        self.motor_thread.motor.move(max_location, self.motor_thread.wait)
+        self.context.update_read_motor_position(self.motor_thread.motor.position)
+
+    def move_to_calibration_val(self):
+        max_location = self.find_calibration_pos()
         self.motor_thread.motor.move(max_location, self.motor_thread.wait)
         self.context.update_read_motor_position(self.motor_thread.motor.position)
 

@@ -6,10 +6,11 @@ from gui.views.jetTrackerView import JetTrackerView
 from gui.windows.mainWindowUi import Ui_MainWindow
 from gui.windows.simulationWindow import SimWindow
 from PyQt5.Qt import Qt
-from PyQt5.QtCore import QCoreApplication
+from PyQt5.QtCore import QCoreApplication, QSize
 from PyQt5.QtWidgets import (QAction, QLabel, QMainWindow, QSizePolicy,
                              QTabWidget)
 from signals import Signals
+import pyqtcss
 
 log = logging.getLogger("jet_tracker")
 
@@ -20,6 +21,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__()
         log.debug("Supplying Thread information from init of MainWindow.")
         self.setAttribute(Qt.WA_AlwaysStackOnTop)
+        self.setMinimumSize(QSize(700, 300))
+        self.resize(QSize(1800, 1100))
+        self.setStyleSheet(pyqtcss.get_style("dark_orange"))
         self.signals = Signals()
         self.context = Context(self.signals)
         self.setupUi(self)

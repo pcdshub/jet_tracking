@@ -2,22 +2,11 @@ import ctypes
 import logging
 import os
 import sys
+import pathlib
 
 from gui.windows.mainWindow import MainWindow
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import QThread
-
-"""handler = logging.StreamHandler()
-handler.setLevel(logging.CRITICAL)
-formatter = logging.Formatter(
-            "%(asctime)s\t (%(name)-25.25s) (thread:%(thread)d) "
-            "(line:%(lineno)5d)\t[%(levelname)-5.5s] %(message)s")
-handler.setFormatter(formatter)
-logging.basicConfig(level=logging.DEBUG)
-log = logging.getLogger("jet_tracker")
-log.setLevel('DEBUG')
-log.addHandler(handler)"""
 
 # create logger
 log = logging.getLogger('jet_tracker')
@@ -46,21 +35,12 @@ class App(QApplication):
         self.setStyle("Fusion")
         self.mainWindow = MainWindow()
         self.mainWindow.setWindowTitle("jet-tracker")
+        #__location__ = os.getcwd()
+        #File = open(__location__ + '\jt_configs\Geoo.qss', 'r')
+        #with File:
+        #    qss = File.read()
+        #    self.setStyleSheet(qss)
         self.mainWindow.show()
-
-    @staticmethod
-    def init_logging():
-        logger = logging.getLogger()
-        logger.setLevel(logging.INFO)
-
-        # Console Handler
-        handler = logging.StreamHandler()
-        handler.setLevel(logging.CRITICAL)
-        formatter = logging.Formatter(
-            "%(asctime)s\t (%(name)-25.25s) (thread:%(thread)d) "
-            "(line:%(lineno)5d)\t[%(levelname)-5.5s] %(message)s")
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
 
     @staticmethod
     def handle_exception(exc_type, exc_value, exc_traceback):

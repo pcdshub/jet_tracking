@@ -74,20 +74,20 @@ class CollapsibleBox(QWidget):
         self.toggle_button = QToolButton(
             text=title, checkable=True, checked=False
         )
-        self.toggle_button.setStyleSheet("QToolButton {border: none;\
-                border: 1px solid #FF17365D;\
-                border-top-left-radius: 15px;\
-                border-top-right-radius: 15px;\
-                background-color: #FF17365D;\
-                padding: 5px 0px;\
-                color: rgb(255, 255, 255);\
-                max-height: 30px;\
-                font-size: 14px;\
-            }\
-            QToolButton:hover {\
-                background-color: lightgreen;\
-                color: black;\
-            }")
+        # self.toggle_button.setStyleSheet("QToolButton {border: none;\
+        #         border: 1px solid #FF17365D;\
+        #         border-top-left-radius: 15px;\
+        #         border-top-right-radius: 15px;\
+        #         background-color: #FF17365D;\
+        #         padding: 5px 0px;\
+        #         color: rgb(255, 255, 255);\
+        #         max-height: 30px;\
+        #         font-size: 14px;\
+        #     }\
+        #     QToolButton:hover {\
+        #         background-color: lightgreen;\
+        #         color: black;\
+        #     }")
         self.toggle_button.setToolButtonStyle(
             Qt.ToolButtonTextBesideIcon
         )

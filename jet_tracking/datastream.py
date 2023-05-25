@@ -5,7 +5,7 @@ from statistics import StatisticsError, mean, stdev
 import numpy as np
 from ophyd import EpicsSignal
 from epics import caget
-from PyQt5.QtCore import QThread, QObject, QRunnable
+from PyQt5.QtCore import QThread, QObject, QCoreApplication, QEventLoop
 from pcdsdevices.epics_motor import Motor
 from collections import deque
 import cv2
@@ -135,9 +135,7 @@ class ValueReader(metaclass=Singleton):
 
 
 class StatusThread(QObject):
-
-    def __init__(self, context, signals):
-        super(StatusThread, self).__init__()
+    def init_after_move(self, context, signals):
         """
         QThread which processes data and hands it to the main thread.
 
@@ -154,76 +152,32 @@ class StatusThread(QObject):
 
         self.signals = signals
         self.context = context
-        self.calibration_source = ''
-        self.num_cali = 0
-        self.flag_message = None
-        self.refresh_rate = 0
-        self.display_time = 0
-        self.buffer_size = 0
-        self.percent = 1
-        self.averaging_size = 0
-        self.notification_tolerance = 0
-        self.graph_ave_time = 0
-        self.count = 0
-        self.naverage = 0
-        self.ave_cycle = []
-        self.ave_idx = []
-        self.x_cycle = []
-        self.x_axis = []
-        self.calibrated = False
-        self.isTracking = False
-        self.bad_scan_counter = 0
-        self.bad_scan_limit = 2
-        self.mode = ''
-        self.status = ''
-        self.display_flag = []
-        self.cal_vals = [[], [], []]
-        self.calibration_values = {'i0': {'mean': 0, 'stddev': 0,
-                                          'range': (0, 0)},
-                                   'diff': {'mean': 0, 'stddev': 0,
-                                            'range': (0, 0)},
-                                   'ratio': {'mean': 0, 'stddev': 0,
-                                             'range': (0, 0)}}
-        self.averages = {}
-        self.buffers = {}
-        self.current_values = {}
-        self.flagged_events = {}
-        self.reader = None
-        self.processor_worker = None
-        self.create_value_reader()
-        self.create_event_processor()
-        self.create_vars()
-        self.connect_signals()
-        self.initialize_buffers()
-
-        log.info("Initializing StatusThread")
-
-    def create_vars(self):
         self.mode = "running"
+        self.paused = True
         self.calibration_source = self.context.calibration_source
+        self.calibration_priority = "recalibrate"
         self.num_cali = self.context.num_cali
         self.refresh_rate = self.context.refresh_rate
         self.percent = self.context.percent
         self.buffer_size = self.context.buffer_size
         self.graph_ave_time = self.context.graph_ave_time
         self.naverage = self.context.naverage
-        self.averaging_size = self.context.averaging_size+1
+        self.averaging_size = self.context.averaging_size + 1
         self.notification_tolerance = self.context.notification_tolerance
         self.x_axis = self.context.x_axis
         self.ave_cycle = self.context.ave_cycle
         self.x_cycle = self.context.x_cycle
         self.ave_idx = self.context.ave_idx
         self.bad_scan_limit = self.context.bad_scan_limit
-
-    def create_value_reader(self):
-        self.reader = ValueReader(self.context, self.signals)
-
-    def create_event_processor(self):
-        self.processor_worker = EventProcessor(self.signals)
-
-    def initialize_buffers(self):
-        # buffers and data collection
-
+        self.flag_message = None
+        self.display_time = 0
+        self.count = 0
+        self.calibrated = False
+        self.isTracking = False
+        self.bad_scan_counter = 0
+        self.status = ''
+        self.display_flag = []
+        self.cal_vals = [[], [], []]
         self.averages = {"i0": deque([0], self.averaging_size),
                          "diff": deque([0], self.averaging_size),
                          "ratio": deque([0], self.averaging_size),
@@ -240,6 +194,16 @@ class StatusThread(QObject):
                         "diff": deque([0], self.buffer_size),
                         "ratio": deque([0], self.buffer_size),
                         "time": deque([0], self.buffer_size)}
+        self.calibration_values = {'i0': {'mean': 0, 'stddev': 0,
+                                          'range': (0, 0)},
+                                   'diff': {'mean': 0, 'stddev': 0,
+                                            'range': (0, 0)},
+                                   'ratio': {'mean': 0, 'stddev': 0,
+                                             'range': (0, 0)}}
+        self.reader = ValueReader(self.context, self.signals)
+        self.processor_worker = EventProcessor(self.signals)
+        self.connect_signals()
+        log.info("Initializing StatusThread")
 
     def connect_signals(self):
         self.signals.mode.connect(self.update_mode)
@@ -249,15 +213,37 @@ class StatusThread(QObject):
             self.set_calibration_source)
         self.signals.changeNumberCalibration.connect(
             self.set_num_cali)
+        self.signals.changeCalibrationPriority.connect(
+            self.set_calibration_priority)
         self.signals.changeScanLimit.connect(
             self.set_scan_limit)
         self.signals.enableTracking.connect(self.tracking)
         self.signals.valuesRequest.connect(self.send_info_to_motor)
+        self.signals.startStatusThread.connect(self.start_it)
+        self.signals.stopStatusThread.connect(self.stop_it)
+        self.signals.finishedMotorAlgorithm.connect(self.recalibrate)
+
+    def start_com(self):
+        while not self.thread().isInterruptionRequested():
+            self.run_data_thread()
+            QCoreApplication.processEvents(QEventLoop.AllEvents,
+                                           int(self.refresh_rate*1000))
+
+    def start_it(self):
+        log.info("Inside of the start_it method of StatusThread.")
+        self.paused = False
+
+    def stop_it(self, abort):
+        self.paused = True
+        if abort:
+            print('abort')
+            self.thread().requestInterruption()
+        else:
+            print('Pause')
 
     def run_data_thread(self):
         """Long-running task to collect data points"""
-        log.info("Inside of the run method of StatusThread.")
-        while not self.thread().isInterruptionRequested():
+        if not self.paused:
             new_values = self.reader.read_value()
             self.current_values = new_values
             x_idx = self.x_cycle[0]
@@ -269,14 +255,12 @@ class StatusThread(QObject):
                 self.update_buffer(new_values, x_idx)
                 self.check_status_update()
                 self.points_to_plot(x_idx, ave_cycle, ave_idx)
-                time.sleep(1/self.refresh_rate)
             elif self.mode == "calibrate":
                 self.calibrated = False
                 self.update_buffer(new_values, x_idx)
                 self.points_to_plot(x_idx, ave_cycle, ave_idx)
                 self.calibrate(new_values)
-                time.sleep(1 / self.refresh_rate)
-        print("Interruption request: %d" % QThread.currentThreadId())
+        time.sleep(1 / self.refresh_rate)
 
     @staticmethod
     def fix_size(old_size, new_size, b):
@@ -316,6 +300,15 @@ class StatusThread(QObject):
             for key, val in list(zip(keys, vals)):
                 d[key][idx] = val
 
+    def recalibrate(self):
+        if self.calibration_priority == "recalibrate":
+            self.mode = "calibrate"
+        elif self.calibration_priority == "keep calibration":
+            self.signals.message.emit("Calibration will not change. "
+                                      "If you would like it to override this, "
+                                      "select \"calibrate in gui\" and hit the "
+                                      "calibrate button")
+
     def tracking(self, b):
         self.isTracking = b
 
@@ -333,6 +326,9 @@ class StatusThread(QObject):
     def set_num_cali(self, n):
         log.info("Inside of the set_num_cali method of StatusThread.")
         self.num_cali = n
+
+    def set_calibration_priority(self, p):
+        self.calibration_priority = p
 
     def set_scan_limit(self, sl):
         self.bad_scan_limit = sl
@@ -490,7 +486,6 @@ class StatusThread(QObject):
              vals.get('dropped')]
         if self.calibrated and choice == "set":
             self.event_flagging(v, idx)
-
 
     def check_status_update(self):
         if self.calibrated:
@@ -689,10 +684,12 @@ class StatusThread(QObject):
         self.signals.intensitiesForMotor.emit(self.current_values)
 
     def recalibrate(self):
-        self.signals.message.emit("The data may need to be recalibrated. "
-                                  "There is consistently higher I/I0 than the "
-                                  "calibration..")
-        self.signals.sleepMotor.emit()
+        if self.calibration_priority == "keep calibration":
+            self.signals.message.emit("The data may need to be recalibrated. "
+                                      "There is consistently higher I/I0 than the "
+                                      "calibration..")
+        elif self.calibration_priority == "recalibrate":
+            self.update_mode("calibrate")
 
     def missed_shots(self):
         if self.context.motor_running:
@@ -898,10 +895,17 @@ class JetImageFeed(QThread):
 
 
 class MotorThread(QObject):
-    def __init__(self, context, signals):
-        super(MotorThread, self).__init__()
+    def init_after_move(self, context, signals):
         self.signals = signals
         self.context = context
+        self.algorithm = self.context.algorithm
+        self.low_limit = self.context.low_limit
+        self.high_limit = self.context.high_limit
+        self.step_size = self.context.step_size
+        self.tolerance = self.context.position_tolerance
+        self.calibration_values = self.context.calibration_values
+        self.calibration_priority = "recalibrate"
+        self.refresh_rate = self.context.refresh_rate
         self.moves = []
         self.intensities = []
         self.calibration_steps = 1
@@ -913,15 +917,8 @@ class MotorThread(QObject):
         self.connected = False
         self.wait = True
         self.mode = 'sleep'
-        self.calibration_values = {}
-        self.algorithm = ''
-        self.low_limit = 0
-        self.high_limit = 0
-        self.step_size = 0
         self.initial_position = 0
-        self.tolerance = 0
         self.averaging = 0
-        self.refresh_rate = 0
         self.request_new_values = False
         self.got_new_values = False
         self.request_image_processor = False
@@ -931,20 +928,21 @@ class MotorThread(QObject):
         self.bad_edge_points = []
         self.sweet_spot = []
         self.max_value = 0
-        self.pause = False
+        self.paused = True
         self.action = MotorAction(self, self.context, self.signals)
-        self.create_vars()
         self.make_connections()
 
-    def create_vars(self):
-        """ sets the motor options from Context"""
-        self.algorithm = self.context.algorithm
-        self.low_limit = self.context.low_limit
-        self.high_limit = self.context.high_limit
-        self.step_size = self.context.step_size
-        self.tolerance = self.context.position_tolerance
-        self.calibration_values = self.context.calibration_values
-        self.refresh_rate = self.context.refresh_rate
+    def make_connections(self):
+        self.signals.changeCalibrationPriority.connect(self.update_cp)
+        self.signals.changeCalibrationValues.connect(self.update_cali)
+        self.signals.intensitiesForMotor.connect(self.update_values)
+        self.signals.connectMotor.connect(self.connect_to_motor)
+        self.signals.liveMotor.connect(self.live_motor)
+        self.signals.notifyMotor.connect(self.impart_knowledge)
+        self.signals.motorMode.connect(self.change_motor_mode)
+        self.signals.imageProcessingComplete.connect(self.next_calibration_position)
+        self.signals.startMotorThread.connect(self.start_it)
+        self.signals.stopMotorThread.connect(self.stop_it)
 
     def check_motor_options(self):
         self.algorithm = self.context.algorithm
@@ -954,25 +952,45 @@ class MotorThread(QObject):
         self.calibration_values = self.context.calibration_values
         self.refresh_rate = self.context.refresh_rate
 
-    def make_connections(self):
-        self.signals.intensitiesForMotor.connect(self.update_values)
-        self.signals.connectMotor.connect(self.connect_to_motor)
-        self.signals.liveMotor.connect(self.live_motor)
-        self.signals.notifyMotor.connect(self.impart_knowledge)
-        self.signals.motorMode.connect(self.change_motor_mode)
-        self.signals.imageProcessingComplete.connect(self.next_calibration_position)
+    def start_com(self):
+        log.info("Inside of the start_com method of MotorThread.")
+        while not self.thread().isInterruptionRequested():
+            self.run_motor_thread()
+            QCoreApplication.processEvents(QEventLoop.AllEvents,
+                                           int(self.refresh_rate*1000))
+
+    def start_it(self):
+        log.info("Inside of the start_it method of MotorThread.")
+        self.paused = False
+
+    def stop_it(self, abort):
+        self.paused = True
+        if abort:
+            print('abort')
+            self.thread().requestInterruption()
+        else:
+            print('Pause')
+
+    def update_cp(self, p):
+        self.calibration_priority = p
+
+    def update_cali(self, cal):
+        self.calibration_values = cal
 
     def change_motor_mode(self, m):
         if m == 'sleep' and self.mode == 'run':
             self.signals.message.emit('Canceling motor moving immediately, going to sleep')
             self.mode = m
+            self.paused = True
         if m == 'sleep' and self.mode == 'calibrate':
             self.signals.message.emit('calibration finished')
             self.mode = m
+            self.paused = True
         if m == 'calibrate' and self.mode == 'sleep':
             self.signals.message.emit('starting image motor moving calibration')
             self.signals.message.emit("Initial motor position: " + str(self.initial_position))
             self.mode = m
+            self.paused = False
         if m == 'calibrate' and self.mode == 'run':
             self.signals.message.emit('Calibrating while the mode is run should not be possible!!!')
         if m == 'run' and self.mode == 'calibrate':
@@ -980,8 +998,10 @@ class MotorThread(QObject):
         if m == 'run' and self.mode == 'sleep':
             self.signals.message.emit('starting the algorithm you selected :)')
             self.signals.message.emit("Initial motor position: " + str(self.motor.position))
+            if not self.connected:
+                self.connect_to_motor()
             self.mode = m
-            self.connect_to_motor()
+            self.paused = False
 
     def move_to_input_position(self, mp):
         self.motor.move(mp, self.wait)
@@ -1034,7 +1054,7 @@ class MotorThread(QObject):
         if info == "resume":
             # if this info is passed then the status was changed from dropped
             # shots and the motor should resume
-            self.pause = False
+            self.paused = False
         if info == "you downgraded":
             # this is when the status is changed from high intensity to missed
             # shots
@@ -1046,7 +1066,7 @@ class MotorThread(QObject):
         if info == "pause":
             # if this info is passed then the status was changed to dropped
             # shots and the motor should pause
-            self.pause = True
+            self.paused = True
         if info == "missed shots":
             # this is when the status changes from everything is good to missed
             # shots
@@ -1106,11 +1126,11 @@ class MotorThread(QObject):
             # this should be the same either way
             self.moves.append([mean(self.intensities), self.motor.position])
             self.intensities = []
-            if not self.pause:
+            if not self.paused:
                 self.done, self.max_value = self.action.execute()
 
     def run_motor_thread(self):
-        while not self.isInterruptionRequested():
+        if not self.paused:
             if self.mode == 'run':
                 if self.done:
                     if len(self.moves) > 4:
@@ -1122,8 +1142,8 @@ class MotorThread(QObject):
                         self.signals.message.emit(f"Found peak intensity {self.max_value} "
                                                   f"at motor position: {self.motor.position}")
                         self.context.update_motor_position(self.motor.position)
-                        self.mode = 'sleep'
                         self.context.update_motor_mode('sleep')
+                        self.signals.finishedMotorAlgorithm.emit()
                 else:
                     if self.request_new_values and self.got_new_values:
                         self.request_new_values = False
@@ -1153,5 +1173,4 @@ class MotorThread(QObject):
                         self.request_image_processor = True
             elif self.mode == 'sleep':
                 self.clear_values()
-            time.sleep(1/self.refresh_rate)
-        print("Interruption was requested: Motor Thread")
+        time.sleep(1/self.refresh_rate)

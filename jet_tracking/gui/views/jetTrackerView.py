@@ -22,8 +22,8 @@ class JetTrackerView(QWidget):
         self.mainLayout = QHBoxLayout()
         self.create_graph_widget()
         self.create_dock_widgets()
-        self.mainLayout.addWidget(self.controlsDock)
-        self.mainLayout.addWidget(self.graphWidget)
+        self.mainLayout.addWidget(self.controlsDock, 30)
+        self.mainLayout.addWidget(self.graphWidget, 70)
 #        self.parent.resizeDocks([self.controlsDock], [45], Qt.Horizontal)
         self.setLayout(self.mainLayout)
 

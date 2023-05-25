@@ -2,7 +2,7 @@ from gui.widgets.basicWidgets import (CollapsibleBox, ComboBox, Label,
                                       LineEdit, QHLine)
 from PyQt5.QtWidgets import (QButtonGroup, QFrame, QGridLayout, QHBoxLayout,
                              QLCDNumber, QPushButton, QRadioButton,
-                             QSizePolicy, QTextEdit, QVBoxLayout)
+                             QSizePolicy, QTextEdit, QVBoxLayout, QSpacerItem)
 
 
 class Controls_Ui(object):
@@ -30,7 +30,7 @@ class Controls_Ui(object):
 
         obj.bttngrp3 = QButtonGroup()
         obj.rdbttn_cali_live = QRadioButton("calibration in GUI")
-        obj.rdbttn_cali_live.setMinimumSize(10, 10)
+        obj.rdbttn_cali_live.setMinimumSize(15, 10)
         obj.rdbttn_cali = QRadioButton("calibration from results")
         obj.rdbttn_cali.setMinimumSize(10, 10)
         obj.rdbttn_cali.setChecked(True)
@@ -38,19 +38,26 @@ class Controls_Ui(object):
         obj.bttngrp3.addButton(obj.rdbttn_cali_live, id=1)
         obj.bttngrp3.setExclusive(True)
 
+        obj.bttngrp4 = QButtonGroup()
+        obj.rdbttn_cali_after = QRadioButton("calibrate after completed")
+        obj.rdbttn_cali_after.setMinimumSize(10, 10)
+        obj.rdbttn_keep_cali = QRadioButton("keep current calibration")
+        obj.rdbttn_keep_cali.setMinimumSize(10, 10)
+        obj.rdbttn_cali_after.setChecked(True)
+        obj.bttngrp4.addButton(obj.rdbttn_cali_after, id=0)
+        obj.bttngrp4.addButton(obj.rdbttn_keep_cali, id=1)
+        obj.bttngrp4.setExclusive(True)
+
         # setup layout
         ##############
         obj.layout_graph = QVBoxLayout()
         obj.layout_allrdbttns = QGridLayout()
-        obj.layout_allrdbttns.setColumnStretch(0, 6)
-        obj.layout_allrdbttns.setColumnStretch(1, 1)
-        obj.layout_allrdbttns.setRowStretch(1, 5)
         obj.layout_allrdbttns.addWidget(obj.rdbttn_live, 0, 0)
         obj.layout_allrdbttns.addWidget(obj.rdbttn_sim, 0, 1)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali, 1, 0, 1, 2)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali_live, 1, 1, 1, 2)
-        obj.layout_allrdbttns.setRowMinimumHeight(0, 20)
-        obj.layout_allrdbttns.setRowMinimumHeight(1, 30)
+        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali, 1, 0)
+        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali_live, 1, 1)
+        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali_after, 2, 0)
+        obj.layout_allrdbttns.addWidget(obj.rdbttn_keep_cali, 2, 1)
         obj.layout_graph.addLayout(obj.layout_allrdbttns)
         obj.layout_graph.addSpacing(5)
 
@@ -286,14 +293,21 @@ class Controls_Ui(object):
         #####################################################################
 
         obj.lbl_status = Label("Status")
-        obj.lbl_status.setTitleStylesheet()
+        obj.lbl_status.setStyleSheet("qproperty-alignment: AlignCenter;"
+                                     "border: 1px solid #FF17365D;"
+                                     "background-color: #FF17365D;"
+                                     "font-size: 28px;")
 
         obj.lbl_monitor = Label("Monitor")
-        obj.lbl_monitor.setSubtitleStyleSheet()
+        obj.lbl_monitor.setStyleSheet("qproperty-alignment: AlignCenter;"
+                                      "border: 1px solid #FF17365D;"
+                                      "background-color: #FF17365D;")
         obj.lbl_monitor_status = Label("Not Started")
 
         obj.lbl_tracking = Label("Tracking")
-        obj.lbl_tracking.setSubtitleStyleSheet()
+        obj.lbl_tracking.setStyleSheet("qproperty-alignment: AlignCenter;"
+                                      "border: 1px solid #FF17365D;"
+                                      "background-color: #FF17365D;")
         obj.lbl_tracking_status = Label("False")
         obj.lbl_tracking_status.setStyleSheet("background-color: red;")
 
@@ -359,17 +373,17 @@ class Controls_Ui(object):
         obj.bttn_calibrate = QPushButton("Calibrate")
         obj.bttn_calibrate.setStyleSheet("\
             background-color: yellow;\
-            font-size:12px;\
+            font-size:28px;\
             ")
         obj.bttn_start = QPushButton("Start")
         obj.bttn_start.setStyleSheet("\
             background-color: green;\
-            font-size:12px;\
+            font-size:28px;\
             ")
         obj.bttn_stop = QPushButton("Stop")
         obj.bttn_stop.setStyleSheet("\
             background-color: red;\
-            font-size:12px;\
+            font-size:28px;\
             ")
 
         # setup layout
