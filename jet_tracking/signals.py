@@ -178,3 +178,9 @@ class Signals(QtCore.QObject):
     # emit in editorWidget
     # connect in SimulatedImage
     imageFile = QtCore.pyqtSignal(str)
+    # emit in editorWidget
+    # connect in imageWidget
+    comOFF = QtCore.pyqtSignal(bool)
+    # emit in editorWidget
+    # connect in imageThread
+    initializeCamValues = QtCore.pyqtSignal()

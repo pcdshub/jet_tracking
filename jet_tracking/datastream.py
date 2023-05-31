@@ -654,8 +654,8 @@ class JetImageFeed(QThread):
         self.contrast = None
         self.brightness = None
         self.blur = None
-        self.left_threshold = None
-        self.right_threshold = None
+        self.left_threshold = 110
+        self.right_threshold = 255
         self.kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
         self.array_size_x_data = 0
         self.array_size_y_data = 0
@@ -670,6 +670,10 @@ class JetImageFeed(QThread):
     def connect_signals(self):
         self.signals.connectCam.connect(self.connect_cam)
         self.signals.imageProcessing.connect(self.update_editor_vals)
+        self.signals.initializeCamValues.connect(self.update_cam_vals)
+
+    def update_cam_vals(self):
+        self.left_threshold = self.context.threshold
 
     def connect_cam(self):
         if self.context.live_data:
@@ -743,13 +747,13 @@ class JetImageFeed(QThread):
         while not self.isInterruptionRequested():
             if self.connected:
                 if self.context.live_data:
-                    image_array = caget(self.cam_name + ':IMAGE2:ArrayData')
+                    image_array = caget(self.cam_name + ':IMAGE1:ArrayData')
                     image = np.reshape(image_array, (self.array_size_y_viewer,
                                            self.array_size_x_viewer))
                 else:
                     self.cam_name.gen_image()
                     image = self.cam_name.jet_im
-                print(image, type(image))
+                image = cv2.convertScaleAbs(image)
                 image = self.editor(image)
                 self.signals.camImager.emit(image)
                 time.sleep(1 / self.refresh_rate)
