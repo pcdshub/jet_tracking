@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import threading
 from argparse import ArgumentParser
 from pathlib import Path
 
