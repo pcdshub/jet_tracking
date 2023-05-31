@@ -54,7 +54,6 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.le_motor_ll.checkVal.connect(self.update_limits)
         self.le_motor_hl.checkVal.connect(self.update_limits)
         self.le_motor_pos.checkVal.connect(self.move_motor)
-        self.le_x_axis.checkVal.connect(self.context.update_display_time)
         self.le_size.checkVal.connect(self.context.update_step_size)
         self.le_ave_motor.checkVal.connect(self.context.update_motor_averaging)
         self.cbox_algorithm.currentTextChanged.connect(self.context.update_algorithm)
@@ -93,6 +92,7 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.thread2.started.connect(self.worker_motor.start_com)
         self.thread1.start()
         self.thread2.start()
+        self.le_x_axis.checkVal.connect(self.context.update_display_time)
 
     def start_processes(self):
         self.worker_motor.connect_to_motor()

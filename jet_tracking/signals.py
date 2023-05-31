@@ -14,10 +14,7 @@ class Signals(QtCore.QObject):
     changeStatus = QtCore.pyqtSignal(str, str)
     # emit in StatusThread
     # connect in GraphsWidget
-    refreshGraphs = QtCore.pyqtSignal(dict)
-    # emit in StatusThread
-    # connect in GraphsWidget
-    refreshAveValueGraphs = QtCore.pyqtSignal(dict)
+    refreshGraphs = QtCore.pyqtSignal(dict, int)
     # emit in ControlsWidget
     # connect in StatusThread
     startStatusThread = QtCore.pyqtSignal()
@@ -72,6 +69,10 @@ class Signals(QtCore.QObject):
     # emit in Context
     # connect in
     changeDisplayTime = QtCore.pyqtSignal(int)
+    # emit in graphWidget
+    # connect in statusthread and graphWidget
+    # this double connection is so that they update at the same time
+    setNewXAxis = QtCore.pyqtSignal(int, int)
     # emit in Context
     # connect in
     changeManual = QtCore.pyqtSignal(bool)

@@ -78,12 +78,12 @@ class Context(object):
         self.calibrated = False
         self.calibration_values = {}
         self.naverage = self.graph_ave_time * self.refresh_rate  # number of points over the time wanted for averaging
-        self.buffer_size = self.display_time * self.refresh_rate  # number of points over the graph time
-        self.averaging_size = int(self.buffer_size / self.naverage)  # how many averages can fit within the time window
-        self.x_axis = list(np.linspace(0, self.display_time, self.buffer_size))
+        self.num_points = self.display_time * self.refresh_rate  # number of points over the graph time
+        self.averaging_size = int(self.num_points / self.naverage)  # how many averages can fit within the time window
+        self.x_axis = list(np.linspace(0, self.display_time, self.num_points))
         self.notification_tolerance = self.notification_time * self.refresh_rate
         self.ave_cycle = list(range(1, self.naverage + 1))
-        self.x_cycle = list(range(0, self.buffer_size))
+        self.x_cycle = list(range(0, self.num_points))
         self.ave_idx = list(range(0, self.averaging_size + 1))  # +1 for NaN value added at the end
         self.bad_scan_limit = 3
 
@@ -161,38 +161,7 @@ class Context(object):
         updates the display time or the x-axis window
         """
         self.display_time = int(dis_t)
-        self.update_buffers_and_cycles("all")
-
-    def update_buffers_and_cycles(self, who):
-        if who == "all":
-            # if the display time, or refresh rate is changed then these should
-            # also change:
-            # 1. x_axis
-            # 2. buffer_size
-            # 3. averaging_size
-            # 4. x_cycle
-            # 5. ave_idx
-            # 6. ave_cycle (the number of points to average has changed to
-            #    achieve the same amount of time)
-            # 7. naverage
-            self.buffer_size = int(self.display_time * self.refresh_rate)
-            self.naverage = int(self.graph_ave_time * self.refresh_rate)
-            self.averaging_size = int(self.buffer_size / self.naverage)
-            self.x_axis = list(np.linspace(0, self.display_time,
-                               self.buffer_size))
-            self.notification_tolerance = int(self.notification_time *
-                                              self.refresh_rate)
-            self.ave_cycle = list(range(1, self.naverage+1))
-            self.x_cycle = list(range(0, self.buffer_size))
-            self.ave_idx = list(range(0, self.averaging_size+1))
-            self.signals.changeDisplayFlag.emit("all")
-
-        if who == "just average":
-            self.naverage = int(self.graph_ave_time * self.refresh_rate)
-            self.averaging_size = int(self.buffer_size / self.naverage)
-            self.ave_cycle = list(range(1, self.naverage+1))
-            self.ave_idx = list(range(0, self.averaging_size+1))
-            self.signals.changeDisplayFlag.emit("just average")
+        self.signals.changeDisplayTime.emit(self.display_time)
 
     def update_scan_limit(self, sl):
         self.bad_scan_limit = sl
@@ -269,9 +238,6 @@ class Context(object):
     def set_mode(self, mode):
         self.mode = mode
         self.signals.mode.emit(self.mode)
-
-    def set_calibrated(self, c):
-        self.calibrated = c
 
     def set_calibration_values(self, cal):
         self.calibration_values = cal
