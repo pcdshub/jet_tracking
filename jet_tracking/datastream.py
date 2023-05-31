@@ -356,11 +356,9 @@ class StatusThread(QObject):
             miss = np.array(self.flagged_events['missed shot'])[-p:]
             drop = np.array(self.flagged_events['dropped shot'])[-p:]
             high = np.array(self.flagged_events['high intensity'])[-p:]
-            print(miss, drop, high)
             n_miss = np.count_nonzero(miss[~np.isnan(miss)])
             n_drop = np.count_nonzero(drop[~np.isnan(drop)])
             n_high = np.count_nonzero(high[~np.isnan(high)])
-            print(n_miss, n_drop, n_high)
             if n_miss > self.notification_tolerance:
                 self.signals.changeStatus.emit("Warning, missed shots", "red")
                 self.processor_worker.flag_counter('missed shot', 50,
@@ -880,8 +878,8 @@ class MotorThread(QObject):
             try:
                 self.motor = Motor(self.motor_name, name='jet_x')
                 time.sleep(1)
-                #for i in self.motor.component_names:
-                #    print(f"{i} {getattr(self.motor, i).connected}")
+                for i in self.motor.component_names:
+                    print(f"{i} {getattr(self.motor, i).connected}")
             except NameError or NotImplementedError:
                 self.connected = False
             else:
