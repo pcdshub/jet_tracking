@@ -29,9 +29,11 @@ class EditorWidget(QFrame, Editor_Ui):
         self.make_connections()
         self.dilate_off_on(True)
         self.open_off_on(True)
+        self.signals.initializeCamValues.emit()
 
     def make_connections(self):
         self.bttngrp1.buttonClicked.connect(self.check_button)
+        self.bttngrp5.buttonClicked.connect(self.check_button)
         self.bttn_cam_connect.clicked.connect(self.start_cam)
         self.bttn_cam_disconnect.clicked.connect(self.stop_cam)
         self.bttn_cam_calibrate.clicked.connect(self.calibrate)
@@ -72,6 +74,10 @@ class EditorWidget(QFrame, Editor_Ui):
                                                 'c:\\', "Image files (*.jpg *.gif)")
             im = cv2.imread(fname[0])
             self.context.update_jet_image(im)
+        if bttn == "COM detection off":
+            self.signals.comOFF.emit(True)
+        if bttn == "COM detection on":
+            self.signals.comOFF.emit(False)
         self.context.update_generate_image(self.generate_image)
 
     def calibrate(self):

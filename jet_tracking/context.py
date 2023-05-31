@@ -25,8 +25,8 @@ class Context(object):
                         'i0': 'CXI:JTRK:REQ:I0',
                         'ratio': 'CXI:JTRK:REQ:RATIO',
                         'dropped': 'CXI:JTRK:REQ:DROPPED',
-                        'camera': 'MFX:GIGE:05',
-                        'motor': 'XCS:LJH:JET:X'}
+                        'camera': 'XCS:GIGE:LJ2',
+                        'motor': 'XCS:LJH:JET:Y'}
         #self.CFG_FILE = 'jt_configs/cxi_config.yml'
         self.HUTCH = 'cxi'
         self.EXPERIMENT = 'cxix53419'
@@ -116,6 +116,15 @@ class Context(object):
         self.jet_image_from_file = ""
         self.image_calibration_steps = []
         self.image_calibration_positions = []
+        self.comOFF = True
+        self.dilate = None
+        self.erode = None
+        self.open_operation = None
+        self.close_operation = None
+        self.brightness = None
+        self.contrast = None
+        self.blur = None
+        self.threshold = 110
 
     def update_live_graphing(self, live):
         self.live_data = live

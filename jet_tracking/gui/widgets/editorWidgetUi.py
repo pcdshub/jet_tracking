@@ -24,6 +24,13 @@ class Editor_Ui(object):
         obj.bttn_cam_connect = QPushButton("Connect to Jet Cam")
         obj.bttn_cam_disconnect = QPushButton("Disconnect")
         obj.bttn_cam_calibrate = QPushButton("Calibrate")
+        obj.bttngrp5 = QButtonGroup()
+        obj.rd_bttn_com_off = QRadioButton("COM detection off")
+        obj.rd_bttn_com_off.setChecked(True)
+        obj.rd_bttn_com_on = QRadioButton("COM detection on")
+        obj.bttngrp5.addButton(obj.rd_bttn_com_off, id=0)
+        obj.bttngrp5.addButton(obj.rd_bttn_com_on, id=1)
+        obj.bttngrp5.setExclusive(True)
 
         obj.lbl_morph = QLabel("Morphological Operations")
 
@@ -86,7 +93,7 @@ class Editor_Ui(object):
         obj.slider_blur = QSlider(Qt.Horizontal)
 
         obj.lbl_thresh = QLabel("Threshold")
-        obj.range_slider_thresh = QRangeSlider(obj)
+        obj.range_slider_thresh = QRangeSlider(obj, left_thumb_value=110)
 
         obj.bttn_search = QPushButton("Search")
         obj.bttn_clear = QPushButton("Clear")
@@ -101,6 +108,10 @@ class Editor_Ui(object):
 
         obj.layout_cam2 = QHBoxLayout()
         obj.layout_cam2.addWidget(obj.bttn_cam_disconnect)
+
+        obj.layout_com = QHBoxLayout()
+        obj.layout_com.addWidget(obj.rd_bttn_com_off)
+        obj.layout_com.addWidget(obj.rd_bttn_com_on)
 
         obj.layout_dilate = QHBoxLayout()
         obj.layout_dilate.addWidget(obj.slider_dilate)
@@ -144,6 +155,9 @@ class Editor_Ui(object):
         obj.layout.addLayout(obj.layout_cam1)
         obj.layout.addLayout(obj.layout_cam2)
         obj.layout.addWidget(obj.bttn_cam_calibrate)
+
+        obj.layout.addLayout(obj.layout_com)
+        
         obj.hline0 = QHLine()
         obj.layout.addWidget(obj.hline0)
         obj.layout.addWidget(obj.lbl_dilate)

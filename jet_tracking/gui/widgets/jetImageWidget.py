@@ -33,6 +33,7 @@ class JetImageWidget(QGraphicsView):
         self.line_item_vert_right = VLineItem()
         self.counter = 0
         self.calibration_running = False
+        self.find_com_bool = False
         self.contours = []
         self.best_fit_line = []
         self.best_fit_line_plus = []
@@ -53,6 +54,13 @@ class JetImageWidget(QGraphicsView):
         self.signals.camImager.connect(self.update_image)
         self.scene.sceneRectChanged.connect(self.capture_scene_change)
         self.signals.imageProcessingRequest.connect(self.new_request)
+        self.signals.comOFF.connect(self.set_com_off)
+
+    def set_com_off(self, o):
+        if o:
+            self.find_com_bool = False
+        else:
+            self.find_com_bool = True
 
     def new_request(self, calibration):
         self.calibration_running = calibration
@@ -174,20 +182,21 @@ class JetImageWidget(QGraphicsView):
         self.image = im
         self.image = cv2.convertScaleAbs(self.image)
         self.color_image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
-        # self.color_image = cv2.drawContours(self.color_image,
-        #                                    self.contours, -1, (0, 255, 0), 3)
-        self.find_center()
-        for point in self.com:
-            self.color_image = cv2.circle(self.color_image, tuple(point), 1, (0, 255, 255))
-        if len(self.best_fit_line):
-            self.color_image = cv2.line(self.color_image, self.best_fit_line[1],
-                                        self.best_fit_line[0], (0, 255, 255), 5)
-        if len(self.best_fit_line_plus):
-            self.color_image = cv2.line(self.color_image, self.best_fit_line_plus[1],
-                                        self.best_fit_line_plus[0], (220,20,60), 2)
-        if len(self.best_fit_line_minus):
-            self.color_image = cv2.line(self.color_image, self.best_fit_line_minus[1],
-                                        self.best_fit_line_minus[0], (220,20,60), 2)
+        self.color_image = cv2.drawContours(self.color_image,
+                                            self.contours, -1, (0, 255, 0), 3)
+        if self.find_com_bool:    
+            self.find_center()
+            for point in self.com:
+                self.color_image = cv2.circle(self.color_image, tuple(point), 1, (0, 255, 255))
+            if len(self.best_fit_line):
+                self.color_image = cv2.line(self.color_image, self.best_fit_line[1],
+                                            self.best_fit_line[0], (0, 255, 255), 5)
+            if len(self.best_fit_line_plus):
+                self.color_image = cv2.line(self.color_image, self.best_fit_line_plus[1],
+                                            self.best_fit_line_plus[0], (220,20,60), 2)
+            if len(self.best_fit_line_minus):
+                self.color_image = cv2.line(self.color_image, self.best_fit_line_minus[1],
+                                            self.best_fit_line_minus[0], (220,20,60), 2)
         self.qimage = array2qimage(self.color_image)
         pixmap = QPixmap.fromImage(self.qimage) 
         self.pixmap_item.setPixmap(pixmap)
