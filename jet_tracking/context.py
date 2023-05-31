@@ -26,7 +26,7 @@ class Context(object):
                         'ratio': 'CXI:JTRK:REQ:RATIO',
                         'dropped': 'CXI:JTRK:REQ:DROPPED',
                         'camera': 'MFX:GIGE:05',
-                        'motor': 'MFX:HRA:MMN:29'}
+                        'motor': 'XCS:LJH:JET:X'}
         #self.CFG_FILE = 'jt_configs/cxi_config.yml'
         self.HUTCH = 'cxi'
         self.EXPERIMENT = 'cxix53419'
