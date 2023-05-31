@@ -749,6 +749,7 @@ class JetImageFeed(QThread):
                 else:
                     self.cam_name.gen_image()
                     image = self.cam_name.jet_im
+                print(image, type(image))
                 image = self.editor(image)
                 self.signals.camImager.emit(image)
                 time.sleep(1 / self.refresh_rate)

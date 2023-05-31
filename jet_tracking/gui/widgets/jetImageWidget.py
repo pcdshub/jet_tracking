@@ -25,6 +25,7 @@ class JetImageWidget(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.qimage = QImage()
         self.image = np.zeros([500,500,3], dtype=np.uint8)
+        self.find_center = False
         self.color_image = np.zeros([500, 500, 3], dtype=np.uint8)
         self.pixmap_item = QGraphicsPixmapItem()
         self.line_item_hor_top = HLineItem()
@@ -176,18 +177,19 @@ class JetImageWidget(QGraphicsView):
         self.color_image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
         # self.color_image = cv2.drawContours(self.color_image,
         #                                    self.contours, -1, (0, 255, 0), 3)
-        self.find_center()
-        for point in self.com:
-            self.color_image = cv2.circle(self.color_image, tuple(point), 1, (0, 255, 255))
-        if len(self.best_fit_line):
-            self.color_image = cv2.line(self.color_image, self.best_fit_line[1],
-                                        self.best_fit_line[0], (0, 255, 255), 5)
-        if len(self.best_fit_line_plus):
-            self.color_image = cv2.line(self.color_image, self.best_fit_line_plus[1],
-                                        self.best_fit_line_plus[0], (220,20,60), 2)
-        if len(self.best_fit_line_minus):
-            self.color_image = cv2.line(self.color_image, self.best_fit_line_minus[1],
-                                        self.best_fit_line_minus[0], (220,20,60), 2)
+        if self.find_center:
+            self.find_center()
+            for point in self.com:
+                self.color_image = cv2.circle(self.color_image, tuple(point), 1, (0, 255, 255))
+            if len(self.best_fit_line):
+                self.color_image = cv2.line(self.color_image, self.best_fit_line[1],
+                                            self.best_fit_line[0], (0, 255, 255), 5)
+            if len(self.best_fit_line_plus):
+                self.color_image = cv2.line(self.color_image, self.best_fit_line_plus[1],
+                                            self.best_fit_line_plus[0], (220,20,60), 2)
+            if len(self.best_fit_line_minus):
+                self.color_image = cv2.line(self.color_image, self.best_fit_line_minus[1],
+                                            self.best_fit_line_minus[0], (220,20,60), 2)
         self.qimage = array2qimage(self.color_image)
         pixmap = QPixmap.fromImage(self.qimage) 
         self.pixmap_item.setPixmap(pixmap)
