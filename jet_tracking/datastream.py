@@ -975,7 +975,7 @@ class MotorThread(QObject):
                 pass
 
     def average_intensity(self):
-        self.intensities += [self.vals['ratio']]
+        self.intensities += [self.vals['ratio'][0]]
         # this is where we set the integration time for each motor position
         # in the scan
         if len(self.intensities) == 20:
