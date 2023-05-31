@@ -344,7 +344,7 @@ class StatusThread(QObject):
         """
         v = [vals.get('diff'), vals.get('i0'),
              vals.get('ratio'), vals.get('dropped')]
-        if self._count > int(self.num_points*3/4) and self.calibrated:
+        if self.calibrated:
             self.event_flagging(v)
         for k in self.buffers.keys():
             self.buffers[k].append(vals.get(k))
@@ -352,13 +352,15 @@ class StatusThread(QObject):
     def check_status_update(self):
         if self.calibrated:
             p = int(self.notification_tolerance + \
-                 (self.notification_tolerance*0.1)) # plus 10% of notification tolerance
+                 (self.notification_tolerance*0.5)) # plus 10% of notification tolerance
             miss = np.array(self.flagged_events['missed shot'])[-p:]
             drop = np.array(self.flagged_events['dropped shot'])[-p:]
             high = np.array(self.flagged_events['high intensity'])[-p:]
+            print(miss, drop, high)
             n_miss = np.count_nonzero(miss[~np.isnan(miss)])
             n_drop = np.count_nonzero(drop[~np.isnan(drop)])
             n_high = np.count_nonzero(high[~np.isnan(high)])
+            print(n_miss, n_drop, n_high)
             if n_miss > self.notification_tolerance:
                 self.signals.changeStatus.emit("Warning, missed shots", "red")
                 self.processor_worker.flag_counter('missed shot', 50,
@@ -525,9 +527,9 @@ class StatusThread(QObject):
                                             stdev(self.cal_vals[2])
                                             )
                 self.update_calibration_range()
+                self.mode = "running"
                 self.calibrated = True
                 self.cal_vals = [[], [], []]
-                self.mode = "running"
 
         else:
             self.signals.message.emit('was not able to calibrate')
@@ -798,7 +800,6 @@ class MotorThread(QObject):
 
     def make_connections(self):
         self.signals.changeCalibrationPriority.connect(self.update_cp)
-        self.signals.changeCalibrationValues.connect(self.update_cali)
         self.signals.intensitiesForMotor.connect(self.update_values)
         self.signals.connectMotor.connect(self.connect_to_motor)
         self.signals.liveMotor.connect(self.live_motor)
@@ -837,9 +838,6 @@ class MotorThread(QObject):
 
     def update_cp(self, p):
         self.calibration_priority = p
-
-    def update_cali(self, cal):
-        self.calibration_values = cal
 
     def change_motor_mode(self, m):
         if m == 'sleep' and self.mode == 'run':

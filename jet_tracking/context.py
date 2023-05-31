@@ -241,6 +241,7 @@ class Context(object):
 
     def set_calibration_values(self, cal):
         self.calibration_values = cal
+        self.calibrated = True
 
     def update_calibration_priority(self, p):
         self.signals.changeCalibrationPriority.emit(p)

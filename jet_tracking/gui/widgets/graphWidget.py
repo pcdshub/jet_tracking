@@ -2,8 +2,10 @@ import logging
 
 from gui.widgets.graphWidgetUi import GraphsUi
 from PyQt5.QtWidgets import QFrame
+from PyQt5.QtCore import Qt
 import numpy as np
 from collections import deque
+import pyqtgraph as pg
 
 log = logging.getLogger(__name__)
 
@@ -39,15 +41,30 @@ class GraphsWidget(QFrame, GraphsUi):
         self.line_diff = self.graph1.plot(self.x_axis, list(self.y_diff))
         self.line_i0 = self.graph2.plot(self.x_axis, list(self.y_i0))
         self.line_ratio = self.graph3.plot(self.x_axis, list(self.y_ratio))
-        self.line_diff_low = self.graph1.plot(self.x_axis, list(self.diff_low_range))
-        self.line_diff_high = self.graph1.plot(self.x_axis, list(self.diff_high_range))
-        self.line_diff_mean = self.graph1.plot(self.x_axis, list(self.diff_mean))
-        self.line_i0_low = self.graph2.plot(self.x_axis, list(self.i0_low_range))
-        self.line_i0_high = self.graph2.plot(self.x_axis, list(self.i0_high_range))
-        self.line_i0_mean = self.graph2.plot(self.x_axis, list(self.i0_mean))
-        self.line_ratio_low = self.graph3.plot(self.x_axis, list(self.ratio_low_range))
-        self.line_ratio_high = self.graph3.plot(self.x_axis, list(self.ratio_high_range))
-        self.line_ratio_mean = self.graph3.plot(self.x_axis, list(self.ratio_mean))
+        self.line_diff_low = self.graph1.plot(self.x_axis, list(self.diff_low_range),
+                                              pen=pg.mkPen(width=1, color=(255, 255, 0)),
+                                              size=1, style=Qt.DashLine)
+        self.line_diff_high = self.graph1.plot(self.x_axis, list(self.diff_high_range),
+                                               pen=pg.mkPen(width=1, color=(255, 255, 0)),
+                                               size=1, style=Qt.DashLine)
+        self.line_diff_mean = self.graph1.plot(self.x_axis, list(self.diff_mean),
+                                               pen=pg.mkPen(width=1, color=(255, 165, 0)), size=1)
+        self.line_i0_low = self.graph2.plot(self.x_axis, list(self.i0_low_range),
+                                            pen=pg.mkPen(width=1, color=(255, 255, 0)),
+                                            size=1, style=Qt.DashLine)
+        self.line_i0_high = self.graph2.plot(self.x_axis, list(self.i0_high_range),
+                                             pen=pg.mkPen(width=1, color=(255, 255, 0)),
+                                             size=1, style=Qt.DashLine)
+        self.line_i0_mean = self.graph2.plot(self.x_axis, list(self.i0_mean),
+                                             pen=pg.mkPen(width=1, color=(255, 165, 0)), size=1)
+        self.line_ratio_low = self.graph3.plot(self.x_axis, list(self.ratio_low_range),
+                                               pen=pg.mkPen(width=1, color=(255, 255, 0)),
+                                               size=1, style=Qt.DashLine)
+        self.line_ratio_high = self.graph3.plot(self.x_axis, list(self.ratio_high_range),
+                                                pen=pg.mkPen(width=1, color=(255, 255, 0)),
+                                                size=1, style=Qt.DashLine)
+        self.line_ratio_mean = self.graph3.plot(self.x_axis, list(self.ratio_mean),
+                                                pen=pg.mkPen(width=1, color=(255, 165, 0)), size=1)
         self.line_ave = self.graph3.plot(self.x_axis, list(self.y_ave))
         self.calibration_values = {}
         self.display_flag = None
