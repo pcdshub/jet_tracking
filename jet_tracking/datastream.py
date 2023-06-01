@@ -885,6 +885,7 @@ class MotorThread(QObject):
                 time.sleep(1)
                 for i in self.motor.component_names:
                     print(f"{i} {getattr(self.motor, i).connected}")
+                self.context.update_read_motor_position(self.motor.position)
             except NameError or NotImplementedError:
                 self.connected = False
             else:
@@ -960,12 +961,15 @@ class MotorThread(QObject):
         # Assuming that the step size is in mm
         pix_per_mm = []
         image_calibration_positions = self.context.image_calibration_positions
+        print(image_calibration_positions, len(image_calibration_positions))
         for i in range(len(image_calibration_positions)-1):
             motor_pos_diff = abs(image_calibration_positions[i+1][0] -
                                  image_calibration_positions[i][0])
-            image_pos_diff = abs(image_calibration_positions[i+1][1][0][0] -
-                                 image_calibration_positions[i][1][0][0])
+            image_pos_diff = abs(image_calibration_positions[i+1][1][0][1] -
+                                 image_calibration_positions[i][1][0][1])
+            print(motor_pos_diff, image_pos_diff)
             pix_per_mm.append(image_pos_diff/motor_pos_diff)
+        print(pix_per_mm)
         self.pix_per_mm = mean(pix_per_mm)
         print(f"pix per mm: {self.pix_per_mm}")
 

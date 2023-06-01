@@ -323,5 +323,5 @@ class Context(object):
         self.jet_image_from_file = im
 
     def image_calibration_position(self, line_best_fit):
-        g = (self.read_motor_position, line_best_fit)
+        g = [self.read_motor_position, line_best_fit]
         self.image_calibration_positions.append(g)

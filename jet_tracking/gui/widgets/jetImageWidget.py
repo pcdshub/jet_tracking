@@ -148,12 +148,12 @@ class JetImageWidget(QGraphicsView):
             yl = list(y)
             i_max = yl.index(max(yl))
             i_min = yl.index(min(yl))
-            self.best_fit_line = [(int(yl[i_min]), int(x_model[i_min])),
-                                  (int(yl[i_max]), int(x_model[i_max]))]
-            self.best_fit_line_plus = [(int(yl[i_min]), int(x_model_plus[i_min])),
-                                       (int(yl[i_max]), int(x_model_plus[i_max]))]
-            self.best_fit_line_minus = [(int(yl[i_min]), int(x_model_minus[i_min])),
-                                        (int(yl[i_max]), int(x_model_minus[i_max]))]
+            self.best_fit_line = [[int(yl[i_min]), int(x_model[i_min])],
+                                  [int(yl[i_max]), int(x_model[i_max])]]
+            self.best_fit_line_plus = [[int(yl[i_min]), int(x_model_plus[i_min])],
+                                       [int(yl[i_max]), int(x_model_plus[i_max])]]
+            self.best_fit_line_minus = [[int(yl[i_min]), int(x_model_minus[i_min])],
+                                        [int(yl[i_max]), int(x_model_minus[i_max])]]
             return True
         else:
             print("clearing best fit line... try again")
