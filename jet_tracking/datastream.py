@@ -686,7 +686,6 @@ class JetImageFeed(QThread):
                                              ':IMAGE2:ArraySize0_RBV')
             self.array_size_y_viewer = caget(self.cam_name +
                                              ':IMAGE2:ArraySize1_RBV')
-            print(self.array_size_x_data, self.array_size_y_data, self.array_size_x_viewer)
             if (self.array_size_x_data != self.array_size_x_viewer or
                     self.array_size_y_data != self.array_size_y_viewer):
                 self.signals.message.emit("ROI defined with markers in canViewer "
@@ -694,13 +693,11 @@ class JetImageFeed(QThread):
                                           "resolutions between the camera and "
                                           "camViewer")
             image = caget(self.cam_name + ':IMAGE1:ArrayData')
-            print(image, type(image))
             if len(image) == 0:
                 self.signals.message.emit("Can't read camera...")
                 self.connected = False
             else:
                 self.connected = True
-            print(self.connected)
         else:
             self.cam_name = SimulatedImage(self.context, self.signals)
             self.array_size_y_viewer = self.cam_name.y_size
@@ -888,6 +885,7 @@ class MotorThread(QObject):
                 time.sleep(1)
                 for i in self.motor.component_names:
                     print(f"{i} {getattr(self.motor, i).connected}")
+                self.context.update_read_motor_position(self.motor.position)
             except NameError or NotImplementedError:
                 self.connected = False
             else:
@@ -963,13 +961,14 @@ class MotorThread(QObject):
         # Assuming that the step size is in mm
         pix_per_mm = []
         image_calibration_positions = self.context.image_calibration_positions
-        print(image_calibration_positions)
         for i in range(len(image_calibration_positions)-1):
             motor_pos_diff = abs(image_calibration_positions[i+1][0] -
                                  image_calibration_positions[i][0])
-            image_pos_diff = abs(image_calibration_positions[i+1][1][0][0] -
-                                 image_calibration_positions[i][1][0][0])
+            image_pos_diff = abs(image_calibration_positions[i+1][1][0][1] -
+                                 image_calibration_positions[i][1][0][1])
+            print(motor_pos_diff, image_pos_diff)
             pix_per_mm.append(image_pos_diff/motor_pos_diff)
+        print(pix_per_mm)
         self.pix_per_mm = mean(pix_per_mm)
         print(f"pix per mm: {self.pix_per_mm}")
 

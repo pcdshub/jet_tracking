@@ -148,12 +148,12 @@ class JetImageWidget(QGraphicsView):
             yl = list(y)
             i_max = yl.index(max(yl))
             i_min = yl.index(min(yl))
-            self.best_fit_line = [(int(yl[i_min]), int(x_model[i_min])),
-                                  (int(yl[i_max]), int(x_model[i_max]))]
-            self.best_fit_line_plus = [(int(yl[i_min]), int(x_model_plus[i_min])),
-                                       (int(yl[i_max]), int(x_model_plus[i_max]))]
-            self.best_fit_line_minus = [(int(yl[i_min]), int(x_model_minus[i_min])),
-                                        (int(yl[i_max]), int(x_model_minus[i_max]))]
+            self.best_fit_line = [[int(yl[i_min]), int(x_model[i_min])],
+                                  [int(yl[i_max]), int(x_model[i_max])]]
+            self.best_fit_line_plus = [[int(yl[i_min]), int(x_model_plus[i_min])],
+                                       [int(yl[i_max]), int(x_model_plus[i_max])]]
+            self.best_fit_line_minus = [[int(yl[i_min]), int(x_model_minus[i_min])],
+                                        [int(yl[i_max]), int(x_model_minus[i_max])]]
             return True
         else:
             print("clearing best fit line... try again")
@@ -184,7 +184,7 @@ class JetImageWidget(QGraphicsView):
         self.color_image = cv2.cvtColor(self.image, cv2.COLOR_GRAY2RGB)
         self.color_image = cv2.drawContours(self.color_image,
                                             self.contours, -1, (0, 255, 0), 3)
-        if self.find_com_bool:    
+        if self.find_com_bool:
             self.find_center()
             for point in self.com:
                 self.color_image = cv2.circle(self.color_image, tuple(point), 1, (0, 255, 255))
