@@ -963,6 +963,7 @@ class MotorThread(QObject):
         # Assuming that the step size is in mm
         pix_per_mm = []
         image_calibration_positions = self.context.image_calibration_positions
+        print(image_calibration_positions)
         for i in range(len(image_calibration_positions)-1):
             motor_pos_diff = abs(image_calibration_positions[i+1][0] -
                                  image_calibration_positions[i][0])
