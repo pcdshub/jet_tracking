@@ -189,14 +189,14 @@ class JetImageWidget(QGraphicsView):
             for point in self.com:
                 self.color_image = cv2.circle(self.color_image, tuple(point), 1, (0, 255, 255))
             if len(self.best_fit_line):
-                self.color_image = cv2.line(self.color_image, self.best_fit_line[1],
-                                            self.best_fit_line[0], (0, 255, 255), 5)
+                self.color_image = cv2.line(self.color_image, tuple(self.best_fit_line[1]),
+                                            tuple(self.best_fit_line[0]), (0, 255, 255), 5)
             if len(self.best_fit_line_plus):
-                self.color_image = cv2.line(self.color_image, self.best_fit_line_plus[1],
-                                            self.best_fit_line_plus[0], (220,20,60), 2)
+                self.color_image = cv2.line(self.color_image, tuple(self.best_fit_line_plus[1]),
+                                            tuple(self.best_fit_line_plus[0]), (220,20,60), 2)
             if len(self.best_fit_line_minus):
-                self.color_image = cv2.line(self.color_image, self.best_fit_line_minus[1],
-                                            self.best_fit_line_minus[0], (220,20,60), 2)
+                self.color_image = cv2.line(self.color_image, tuple(self.best_fit_line_minus[1]),
+                                            tuple(self.best_fit_line_minus[0]), (220,20,60), 2)
         self.qimage = array2qimage(self.color_image)
         pixmap = QPixmap.fromImage(self.qimage) 
         self.pixmap_item.setPixmap(pixmap)
