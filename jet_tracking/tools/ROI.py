@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QGraphicsLineItem
-from PyQt5.QtCore import QPointF, Qt
+from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsObject
+from PyQt5.QtCore import QPointF, Qt, pyqtSignal
 from PyQt5.QtGui import QPen
 
 
