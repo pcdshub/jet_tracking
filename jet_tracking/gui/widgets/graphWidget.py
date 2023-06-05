@@ -38,9 +38,9 @@ class GraphsWidget(QFrame, GraphsUi):
         self.ratio_low_range = [np.nan for _ in range(self.num_points)]
         self.ratio_high_range = [np.nan for _ in range(self.num_points)]
         self.ratio_mean = [np.nan for _ in range(self.num_points)]
-        self.line_diff = self.graph1.plot(self.x_axis, list(self.y_diff))
-        self.line_i0 = self.graph2.plot(self.x_axis, list(self.y_i0))
-        self.line_ratio = self.graph3.plot(self.x_axis, list(self.y_ratio))
+        self.line_diff = self.graph1.plot(self.x_axis, list(self.y_diff), pen=None, symbol='o')
+        self.line_i0 = self.graph2.plot(self.x_axis, list(self.y_i0), pen=None, symbol='o')
+        self.line_ratio = self.graph3.plot(self.x_axis, list(self.y_ratio), pen=None, symbol='o')
         self.line_diff_low = self.graph1.plot(self.x_axis, list(self.diff_low_range),
                                               pen=pg.mkPen(width=1, color=(255, 255, 0)),
                                               size=1, style=Qt.DashLine)
