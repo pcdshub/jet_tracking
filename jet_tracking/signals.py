@@ -127,6 +127,9 @@ class Signals(QtCore.QObject):
     # emit in jetImageWidget
     # connect in motorthread
     imageProcessingComplete = QtCore.pyqtSignal(bool)
+    # emit in context
+    # connect in ImageThread
+    imageSearch = QtCore.pyqtSignal()
 
     # added when adding simulator
     update = QtCore.pyqtSignal(dict)
@@ -160,9 +163,12 @@ class Signals(QtCore.QObject):
     # emit in GraphsWidget
     # connect in StatusThread
     changeAverageSize = QtCore.pyqtSignal(int)
-    # emit in context
-    # connect in datastream
-    connectCam = QtCore.pyqtSignal()
+    # emit in editorWidget
+    # connect in ImageThread
+    startImageThread = QtCore.pyqtSignal()
+    # emit in editorWidget
+    # connect in ImageThread
+    stopImageThread = QtCore.pyqtSignal(bool)
     # emit in jetimagefeed
     # connect in jetimagewidget
     camImager = QtCore.pyqtSignal(np.ndarray)
@@ -180,7 +186,8 @@ class Signals(QtCore.QObject):
     imageFile = QtCore.pyqtSignal(str)
     # emit in editorWidget
     # connect in imageWidget
-    comOFF = QtCore.pyqtSignal(bool)
+    comDetection = QtCore.pyqtSignal(bool)
     # emit in editorWidget
     # connect in imageThread
     initializeCamValues = QtCore.pyqtSignal()
+    linesInfo = QtCore.pyqtSignal(tuple, tuple)

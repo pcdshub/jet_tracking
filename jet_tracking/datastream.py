@@ -273,15 +273,6 @@ class StatusThread(QObject):
                 self._ave_count = 0
         time.sleep(1 / self.refresh_rate)
 
-    def recalibrate(self):
-        if self.calibration_priority == "recalibrate":
-            self.mode = "calibrate"
-        elif self.calibration_priority == "keep calibration":
-            self.signals.message.emit("Calibration will not change. "
-                                      "If you would like it to override this, "
-                                      "select \"calibrate in gui\" and hit the "
-                                      "calibrate button")
-
     def tracking(self, b):
         self.isTracking = b
 
@@ -549,9 +540,10 @@ class StatusThread(QObject):
 
     def recalibrate(self):
         if self.calibration_priority == "keep calibration":
-            self.signals.message.emit("The data may need to be recalibrated. "
-                                      "There is consistently higher I/I0 than the "
-                                      "calibration..")
+            self.signals.message.emit("Calibration will not change. "
+                                      "If you would like it to override this, "
+                                      "select \"calibrate in gui\" and hit the "
+                                      "calibrate button")
         elif self.calibration_priority == "recalibrate":
             self.update_mode("calibrate")
 
@@ -641,12 +633,10 @@ class EventProcessor(QThread):
         self.isCounting = False
 
 
-class JetImageFeed(QThread):
-    def __init__(self, context, signals):
-        super(JetImageFeed, self).__init__()
+class JetImageFeed(QObject):
+    def init_after_move(self, context, signals):
         self.signals = signals
         self.context = context
-        self.cam_name = ''
         self.dilate = None
         self.erode = None
         self.opener = None
@@ -661,16 +651,71 @@ class JetImageFeed(QThread):
         self.array_size_y_data = 0
         self.array_size_x_viewer = 0
         self.array_size_y_viewer = 0
-        self.cam_array = ''
         self.refresh_rate = self.context.cam_refresh_rate
-        self.signal_cam = None
+        self.counter = 0
+        self.upper_left = ()
+        self.lower_right = ()
+        self.calibration_running = False
+        self.find_com_bool = False
         self.connected = False
+        self.paused = True
         self.connect_signals()
 
     def connect_signals(self):
-        self.signals.connectCam.connect(self.connect_cam)
         self.signals.imageProcessing.connect(self.update_editor_vals)
+        self.signals.imageProcessingRequest.connect(self.new_request)
+        self.signals.imageSearch.connect(self.start_algorithm)
         self.signals.initializeCamValues.connect(self.update_cam_vals)
+        self.signals.startImageThread.connect(self.start_it)
+        self.signals.stopImageThread.connect(self.stop_it)
+        self.signals.comDetection.connect(self.set_com_on)
+        self.signals.linesInfo.connect(self.set_line_positions)
+        
+    def set_line_positions(self, ul, lr):
+        self.upper_left = ul
+        self.lower_right = lr
+
+    def set_com_on(self, o):
+        self.find_com_bool = self.context.find_com_bool
+        
+    def start_comm(self):
+        while not self.thread().isInterruptionRequested():
+            QCoreApplication.processEvents(QEventLoop.AllEvents,
+                                           int(self.refresh_rate*1000))
+            self.run_image_thread()
+            
+    def start_it(self):
+        log.info("Inside of the start_it method of StatusThread.")
+        self.paused = False
+
+    def stop_it(self, abort):
+        self.paused = True
+        if abort:
+            self.thread().requestInterruption()
+        else:
+            pass
+    
+    def start_algorithm(self):
+        if not self.connected:
+            self.connect_cam()
+            self.start_it()
+            self.signals.message.emit("Cam was not connected yet, try "
+                                      "running the algorithm again")
+        if self.connected and not self.calibrated:
+            if self.paused:
+                self.start_it()
+            self.context.update_motor_mode("calibrate")
+            self.signals.message.emit("The moves were not calibrated yet. "
+                                      "Running that first, otherwise the "
+                                      "the algorithm will not run properly. "
+                                      "Try running it again when this finishes")
+        if self.connected and self.calibrated:
+            if self.paused:
+                self.start_it()
+            self.context.update_motor_mode("run")
+
+    def new_request(self, request):
+        self.request = request
 
     def update_cam_vals(self):
         self.left_threshold = self.context.threshold
@@ -742,9 +787,99 @@ class JetImageFeed(QThread):
         ret, im = cv2.threshold(im, self.left_threshold, self.right_threshold,
                                 cv2.THRESH_BINARY)
         return im
+    
+    def find_center(self, im):
+        self.locate_jet(im, int(self.upper_left[0]), int(self.lower_right[0]), 
+                        int(self.upper_left[1], int(self.lower_right[1])))
+        if self.counter != 20:
+            self.counter += 1
+        elif self.counter == 20:
+            self.counter = 0
+            success = self.form_line(self.context.com, int(self.upper_left[1]), 
+                                     int(self.lower_right[1]))
+            self.context.com = []
+            if success and self.request:
+                self.context.image_calibration_position(self.context.best_fit_line)
+                self.signals.imageProcessingComplete.emit(True)
+            elif not success and self.calibration_done:
+                self.signals.imageProcessingComplete.emit(False)
 
-    def run(self):
-        while not self.isInterruptionRequested():
+    def locate_jet(self, im, x_start, x_end, y_start, y_end):
+        crop = im[y_start:y_end, x_start:x_end]
+        crop = cv2.convertScaleAbs(crop)
+        self.context.contours, hierarchy = cv2.findContours(crop, cv2.RETR_EXTERNAL,
+                                                    cv2.CHAIN_APPROX_SIMPLE, 
+                                                    offset=(x_start, y_start)) 
+        if len(self.context.contours) == 0:
+            self.signals.message.emit("Was not able to find any contours. \n"
+                                      "Try changing the ROI or image editing "
+                                      "parameters")
+        else:
+            contours = [] # Did I intend to leave out the first contours detected above?
+            kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+            empty = False
+            while not empty:
+                crop = cv2.erode(crop, kernel, iterations=1)
+                c, h = cv2.findContours(crop, cv2.RETR_EXTERNAL,
+                                        cv2.CHAIN_APPROX_SIMPLE,
+                                        offset=(x_start, y_start))
+                for cont in c:
+                    contours.append(cont)
+                if len(c) == 0:
+                    empty = True
+            self.context.com += self.find_com(contours)
+            return
+
+    @staticmethod
+    def find_com(contours):
+        centers = []
+        for i in range(len(contours)):
+            M = cv2.moments(contours[i])
+            if M['m00'] != 0:
+                centers.append((int(M['m10']/M['m00']), int(M['m01']/M['m00'])))
+        return centers
+
+    def form_line(self, com, y_min, y_max):
+        xypoints = list(zip(*com))
+        y = np.asarray(list(xypoints[0]))
+        x = np.asarray(list(xypoints[1]))
+        res = stats.linregress(x, y)
+        
+        #self.signals.message.emit(f"Slope: {res.slope:.6f}")
+        #self.signals.message.emit(f"Intercept: {res.intercept:.6f}")
+        #self.signals.message.emit(f"R-squared: {res.rvalue**2:.6f}")
+        # for 95% confidence
+        slope = res.slope
+        intercept = res.intercept
+        confidence_interval = 95
+        pvalue = res.pvalue  # if p-value is > .1 get another image and try again
+        slope_err = res.stderr
+        intercept_err = res.intercept_stderr
+        alpha = 1 - (confidence_interval / 100)
+        critical_prob = 1 - alpha/2
+        degrees_of_freedom = len(com) - 2
+        tinv = lambda p, df: abs(stats.t.ppf(p/2., df))
+        ts = tinv(alpha, degrees_of_freedom)
+        y = np.append(y, [y_min, y_max])
+        if slope:
+            x_model = (y - intercept)*(1/slope)
+            x_model_plus = (y - intercept - ts*intercept_err)*(1 / (slope + ts*slope_err))
+            x_model_minus = (y - intercept + ts * intercept_err) * (1 / (slope - ts * slope_err))
+            yl = list(y)
+            i_max = yl.index(max(yl))
+            i_min = yl.index(min(yl))
+            self.context.best_fit_line = [[int(yl[i_min]), int(x_model[i_min])],
+                                  [int(yl[i_max]), int(x_model[i_max])]]
+            self.context.best_fit_line_plus = [[int(yl[i_min]), int(x_model_plus[i_min])],
+                                       [int(yl[i_max]), int(x_model_plus[i_max])]]
+            self.context.best_fit_line_minus = [[int(yl[i_min]), int(x_model_minus[i_min])],
+                                        [int(yl[i_max]), int(x_model_minus[i_max])]]
+            return True
+        else:
+            return False
+
+    def run_image_thread(self):
+        if not self.paused:
             if self.connected:
                 if self.context.live_data:
                     image_array = caget(self.cam_name + ':IMAGE1:ArrayData')
@@ -753,14 +888,11 @@ class JetImageFeed(QThread):
                 else:
                     self.cam_name.gen_image()
                     image = self.cam_name.jet_im
-                image = cv2.convertScaleAbs(image)
                 image = self.editor(image)
+                if self.find_com_bool:
+                    self.find_center(image)
                 self.signals.camImager.emit(image)
-                time.sleep(1 / self.refresh_rate)
-            else:
-                print("you are not connected")
-                time.sleep(1/self.refresh_rate)
-        print("Interruption was requested: Image Thread")
+        time.sleep(1/self.refresh_rate)
 
 
 class MotorThread(QObject):
@@ -834,39 +966,44 @@ class MotorThread(QObject):
     def stop_it(self, abort):
         self.paused = True
         if abort:
-            print('abort')
             self.thread().requestInterruption()
         else:
-            print('Pause')
+            self.signals.message.emit('Pause Data Stream')
 
     def update_cp(self, p):
         self.calibration_priority = p
 
     def change_motor_mode(self, m):
-        if m == 'sleep' and self.mode == 'run':
-            self.signals.message.emit('Canceling motor moving immediately, going to sleep')
-            self.mode = m
-            self.paused = True
-        if m == 'sleep' and self.mode == 'calibrate':
-            self.signals.message.emit('calibration finished')
-            self.mode = m
-            self.paused = True
-        if m == 'calibrate' and self.mode == 'sleep':
-            self.signals.message.emit('starting image motor moving calibration')
-            self.signals.message.emit("Initial motor position: " + str(self.initial_position))
-            self.mode = m
-            self.paused = False
-        if m == 'calibrate' and self.mode == 'run':
-            self.signals.message.emit('Calibrating while the mode is run should not be possible!!!')
-        if m == 'run' and self.mode == 'calibrate':
-            self.signals.message.emit('run while the mode is calibrate should not be possible!!!')
-        if m == 'run' and self.mode == 'sleep':
-            self.signals.message.emit('starting the algorithm you selected :)')
-            self.signals.message.emit("Initial motor position: " + str(self.motor.position))
-            if not self.connected:
+        if not self.connected:
+            try:
                 self.connect_to_motor()
-            self.mode = m
-            self.paused = False
+            except:
+                self.mode = "sleep"
+        if self.connected:
+            if m == 'sleep' and self.mode == 'run':
+                self.signals.message.emit('Canceling motor moving immediately, going to sleep')
+                self.mode = m
+                self.paused = True
+            if m == 'sleep' and self.mode == 'calibrate':
+                self.signals.message.emit('calibration finished')
+                self.mode = m
+                self.paused = True
+            if m == 'calibrate' and self.mode == 'sleep':
+                self.signals.message.emit('starting image motor moving calibration')
+                self.signals.message.emit("Initial motor position: " + str(self.initial_position))
+                self.mode = m
+                self.paused = False
+            if m == 'calibrate' and self.mode == 'run':
+                self.signals.message.emit('Calibrating while the mode is run should not be possible!!!')
+            if m == 'run' and self.mode == 'calibrate':
+                self.signals.message.emit('run while the mode is calibrate should not be possible!!!')
+            if m == 'run' and self.mode == 'sleep':
+                self.signals.message.emit('starting the algorithm you selected :)')
+                self.signals.message.emit("Initial motor position: " + str(self.motor.position))
+                if not self.connected:
+                    self.connect_to_motor()
+                self.mode = m
+                self.paused = False
 
     def move_to_input_position(self, mp):
         self.motor.move(mp, self.wait)
@@ -883,12 +1020,12 @@ class MotorThread(QObject):
             try:
                 self.motor = Motor(self.motor_name, name='jet_x')
                 time.sleep(1)
-                for i in self.motor.component_names:
-                    print(f"{i} {getattr(self.motor, i).connected}")
+                # for i in self.motor.component_names: ## this is a good diagnostic
+                #    print(f"{i} {getattr(self.motor, i).connected}")
                 self.context.update_read_motor_position(self.motor.position)
             except NameError or NotImplementedError:
                 self.connected = False
-            else:
+            else: ## not sure what case this was added for so leaving it for now
                 self.context.update_motor_position(self.motor.position)
                 self.connected = True
                 self.wait = True
@@ -911,7 +1048,7 @@ class MotorThread(QObject):
     def impart_knowledge(self, info):
         # ["resume", "everything is good", "you downgraded", "you upgraded",
         #  "pause", "missed shots", "high intensity"]
-        print(info)
+        self.signals.message.emit(info)
         if info == "everything is good":
             # if this info is passed then the status was changed from missed
             # shots to everything is good
@@ -961,17 +1098,14 @@ class MotorThread(QObject):
         # Assuming that the step size is in mm
         pix_per_mm = []
         image_calibration_positions = self.context.image_calibration_positions
-        print(image_calibration_positions, len(image_calibration_positions))
         for i in range(len(image_calibration_positions)-1):
             motor_pos_diff = abs(image_calibration_positions[i+1][0] -
                                  image_calibration_positions[i][0])
             image_pos_diff = abs(image_calibration_positions[i+1][1][0][1] -
                                  image_calibration_positions[i][1][0][1])
-            print(motor_pos_diff, image_pos_diff)
             pix_per_mm.append(image_pos_diff/motor_pos_diff)
-        print(pix_per_mm)
         self.pix_per_mm = mean(pix_per_mm)
-        print(f"pix per mm: {self.pix_per_mm}")
+        self.signals.message.emit(f"pix per mm: {self.pix_per_mm}")
 
     def update_values(self, vals):
         if not self.done:
@@ -1006,11 +1140,11 @@ class MotorThread(QObject):
                         x = [a[1] for a in self.moves]
                         y = [b[0] for b in self.moves]
                         self.signals.plotMotorMoves.emit(self.motor.position, self.max_value, x, y)
-                        print("go to sleep now..")
                         time.sleep(7)
                         self.signals.message.emit(f"Found peak intensity {self.max_value} "
                                                   f"at motor position: {self.motor.position}")
                         self.context.update_motor_position(self.motor.position)
+                        self.signals.message.emit("Motor.. go to sleep now..")
                         self.context.update_motor_mode('sleep')
                         self.signals.finishedMotorAlgorithm.emit()
                 else:

@@ -148,7 +148,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.signals.stopMotorThread.emit(False)
             self.signals.message.emit("The motor was stopped"
                                       "either press start or connect motor")
-            self.context.update_tracking(False)
+            #self.context.update_tracking(False)
             self.set_tracking_status('disabled', "red")
         else:
             self.signals.message.emit("The motor is not running")

@@ -1,7 +1,7 @@
 from gui.widgets.basicWidgets import QHLine, QRangeSlider
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QRadioButton,
-                             QSlider, QVBoxLayout, QButtonGroup)
+                             QSlider, QVBoxLayout, QButtonGroup, QTextEdit)
 
 
 class Editor_Ui(object):
@@ -13,24 +13,16 @@ class Editor_Ui(object):
         obj.layout = QVBoxLayout()
         obj.setLayout(obj.layout)
 
-        obj.bttngrp1 = QButtonGroup()
-        obj.rd_bttn_gen_im = QRadioButton("Generate Image")
-        obj.rd_bttn_gen_im.setChecked(True)
-        obj.rd_bttn_sel_im = QRadioButton("Select Image")
-        obj.bttngrp1.addButton(obj.rd_bttn_gen_im, id=0)
-        obj.bttngrp1.addButton(obj.rd_bttn_sel_im, id=1)
-        obj.bttngrp1.setExclusive(True)
-
         obj.bttn_cam_connect = QPushButton("Connect to Jet Cam")
         obj.bttn_cam_disconnect = QPushButton("Disconnect")
         obj.bttn_cam_calibrate = QPushButton("Calibrate")
-        obj.bttngrp5 = QButtonGroup()
+        obj.bttngrp1 = QButtonGroup()
         obj.rd_bttn_com_off = QRadioButton("COM detection off")
         obj.rd_bttn_com_off.setChecked(True)
         obj.rd_bttn_com_on = QRadioButton("COM detection on")
-        obj.bttngrp5.addButton(obj.rd_bttn_com_off, id=0)
-        obj.bttngrp5.addButton(obj.rd_bttn_com_on, id=1)
-        obj.bttngrp5.setExclusive(True)
+        obj.bttngrp1.addButton(obj.rd_bttn_com_off, id=0)
+        obj.bttngrp1.addButton(obj.rd_bttn_com_on, id=1)
+        obj.bttngrp1.setExclusive(True)
 
         obj.lbl_morph = QLabel("Morphological Operations")
 
@@ -95,13 +87,11 @@ class Editor_Ui(object):
         obj.lbl_thresh = QLabel("Threshold")
         obj.range_slider_thresh = QRangeSlider(obj, left_thumb_value=110)
 
-        obj.bttn_search = QPushButton("Search")
-        obj.bttn_clear = QPushButton("Clear")
-        obj.bttn_reset_all = QPushButton("Reset All")
-
-        obj.layout_image = QHBoxLayout()
-        obj.layout_image.addWidget(obj.rd_bttn_gen_im)
-        obj.layout_image.addWidget(obj.rd_bttn_sel_im)
+        obj.bttn_search = QPushButton("Search for Jet")
+        obj.bttn_reset_all = QPushButton("Reset All Image Morphologies")
+        
+        obj.text_area = QTextEdit("~~~read only information for user~~~")
+        obj.text_area.setReadOnly(True)
 
         obj.layout_cam1 = QHBoxLayout()
         obj.layout_cam1.addWidget(obj.bttn_cam_connect)
@@ -147,11 +137,9 @@ class Editor_Ui(object):
 
         obj.layout_bttns = QVBoxLayout()
         obj.layout_bttns.addWidget(obj.bttn_search)
-        obj.layout_bttns.addWidget(obj.bttn_clear)
         obj.layout_bttns.addWidget(obj.bttn_reset_all)
 
         obj.layout.addStretch()
-        obj.layout.addLayout(obj.layout_image)
         obj.layout.addLayout(obj.layout_cam1)
         obj.layout.addLayout(obj.layout_cam2)
         obj.layout.addWidget(obj.bttn_cam_calibrate)
@@ -191,4 +179,8 @@ class Editor_Ui(object):
         obj.hline8 = QHLine()
         obj.layout.addWidget(obj.hline8)
         obj.layout.addLayout(obj.layout_bttns)
+        obj.layout.addStretch()
+        obj.hline9 = QHLine()
+        obj.layout.addWidget(obj.hline9)
+        obj.layout.addWidget(obj.text_area)
         obj.layout.addStretch()

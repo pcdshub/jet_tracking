@@ -111,11 +111,14 @@ class Context(object):
         self.bg = 0.05
         self.cam_refresh_rate = 3
 
-        self.generate_image = True
-        self.jet_image_from_file = ""
         self.image_calibration_steps = []
         self.image_calibration_positions = []
-        self.comOFF = True
+        self.contours = []
+        self.best_fit_line = []
+        self.best_fit_line_plus = []
+        self.best_fit_line_minus = []
+        self.com = []
+        self.find_com_bool = False
         self.dilate = None
         self.erode = None
         self.open_operation = None
@@ -254,9 +257,6 @@ class Context(object):
     def update_calibration_priority(self, p):
         self.signals.changeCalibrationPriority.emit(p)
 
-    def open_cam_connection(self):
-        self.signals.connectCam.emit()
-
     def calibrate_image(self):
         if self.motor_running:
             self.signals.message.emit("the motor is currently running an algorithm. Try stopping motor first")
@@ -316,12 +316,14 @@ class Context(object):
         self.percent_dropped = ds
         self.signals.changeDroppedShots.emit(self.percent_dropped)
 
-    def update_generate_image(self, gen_im):
-        self.generate_image = gen_im
-
-    def update_jet_image(self, im):
-        self.jet_image_from_file = im
-
     def image_calibration_position(self, line_best_fit):
         g = [self.read_motor_position, line_best_fit]
         self.image_calibration_positions.append(g)
+        
+    def run_image_search(self):
+        self.update_algorithm("image search")
+        self.signals.imageSearch.emit()
+
+    def set_com_on(self, o):
+        self.find_com_bool = o
+        self.signals.comDetection.emit()
