@@ -209,7 +209,7 @@ class Signals(QtCore.QObject):
         str: The current tracking status.
     """
 
-    comDetection = QtCore.pyqtSignal(bool)
+    comDetection = QtCore.pyqtSignal()
     """
     Signal emitted to enable or disable center-of-mass detection.
 

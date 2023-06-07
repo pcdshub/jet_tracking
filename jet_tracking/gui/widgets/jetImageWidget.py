@@ -1,6 +1,6 @@
 import logging
 from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsScene, QGraphicsView
-from tools.ROI import HLineItem, VLineItem
+from tools.ROI import HLineItem, VLineItem, GraphicsScene
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 import numpy as np
@@ -20,7 +20,7 @@ class JetImageWidget(QGraphicsView):
         log.debug("Supplying Thread information from init of jetImageWidget")
         self.signals = signals
         self.context = context
-        self.scene = QGraphicsScene()
+        self.scene = GraphicsScene()
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.qimage = QImage()
@@ -47,27 +47,31 @@ class JetImageWidget(QGraphicsView):
         self.scene.addItem(self.line_item_vert_left)
         self.scene.addItem(self.line_item_hor_bot)
         self.scene.addItem(self.line_item_hor_top)
-        upper_left = (self.line_item_vert_left.scenePos().x(), 
-                      self.line_item_hor_top.scenePos().y()), 
-        lower_right = (self.line_item_vert_right.scenePos().x(), 
-                       self.line_item_hor_bot.scenePos().y())
-        self.signals.linesInfo.emit(upper_left, lower_right)
         
     def make_connections(self):
         self.signals.camImager.connect(self.update_image)
         self.scene.sceneRectChanged.connect(self.capture_scene_change)
         self.signals.comDetection.connect(self.set_com_on)
+        self.scene.itemPos.connect(self.send_line_pos)
+
+    def change(self, c):
+        print(c)
+
+    def selection_changed(self):
+        print("Selection changed")
+
+    def focus_item(self, i):
+        print(i)
         
-    def send_line_pos(self, p):
+    def send_line_pos(self):
         upper_left = (self.line_item_vert_left.pos().x(), 
-                      self.line_item_hor_top.pos().y()), 
+                      self.line_item_hor_top.pos().y())
         lower_right = (self.line_item_vert_right.pos().x(), 
                        self.line_item_hor_bot.pos().y())
         self.signals.linesInfo.emit(upper_left, lower_right)
 
     def set_com_on(self):
         self.find_com_bool = self.context.find_com_bool
-
 
     def update_image(self, im):
         # need to do something so that at the end of the calibration it also collects
@@ -111,6 +115,7 @@ class JetImageWidget(QGraphicsView):
         self.line_item_vert_left.setPos(0, 0)
         self.line_item_vert_right.setLine(0, 0, 0, self.scene.sceneRect().height())
         self.line_item_vert_right.setPos(self.scene.sceneRect().width(), 0)
+        self.send_line_pos()
 
     def resizeEvent(self, event):
         if not self.pixmap_item.pixmap().isNull():

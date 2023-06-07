@@ -934,7 +934,19 @@ class EventProcessor(QThread):
 
 
 class JetImageFeed(QObject):
+    """
+    Class for managing and processing image feed from a jet camera.
+
+    Inherits from QObject.
+    """
     def init_after_move(self, context, signals):
+        """
+        Initialize the JetImageFeed after a motor move.
+
+        Args:
+            context (object): The context object containing various settings and values.
+            signals (object): The signals object for emitting and receiving signals.
+        """
         self.signals = signals
         self.context = context
         self.dilate = None
@@ -959,9 +971,13 @@ class JetImageFeed(QObject):
         self.find_com_bool = False
         self.connected = False
         self.paused = True
+        self.request_for_calibration = False
         self.connect_signals()
 
     def connect_signals(self):
+        """
+        Connect the signals for image processing, image search, and more.
+        """
         self.signals.imageProcessing.connect(self.update_editor_vals)
         self.signals.imageProcessingRequest.connect(self.new_request)
         self.signals.imageSearch.connect(self.start_algorithm)
@@ -972,23 +988,48 @@ class JetImageFeed(QObject):
         self.signals.linesInfo.connect(self.set_line_positions)
         
     def set_line_positions(self, ul, lr):
+        """
+        Set the upper left and lower right line positions.
+
+        Args:
+            ul (tuple): The upper left position coordinates.
+            lr (tuple): The lower right position coordinates.
+        """
         self.upper_left = ul
         self.lower_right = lr
 
-    def set_com_on(self, o):
+    def set_com_on(self):
+        """
+        Set the find_com_bool flag.
+
+        Args:
+            o (bool): The value indicating whether to find the center of mass.
+        """
         self.find_com_bool = self.context.find_com_bool
         
     def start_comm(self):
+        """
+        Start the communication process for image feed processing.
+        """
         while not self.thread().isInterruptionRequested():
             QCoreApplication.processEvents(QEventLoop.AllEvents,
                                            int(self.refresh_rate*1000))
             self.run_image_thread()
             
     def start_it(self):
+        """
+        Start the image processing thread.
+        """
         log.info("Inside of the start_it method of StatusThread.")
         self.paused = False
 
     def stop_it(self, abort):
+        """
+        Stop the image processing thread.
+
+        Args:
+            abort (bool): Whether to abort the thread or not.
+        """
         self.paused = True
         if abort:
             self.thread().requestInterruption()
@@ -996,6 +1037,9 @@ class JetImageFeed(QObject):
             pass
     
     def start_algorithm(self):
+        """
+        Start the image processing algorithm.
+        """
         if not self.connected:
             self.connect_cam()
             self.start_it()
@@ -1015,7 +1059,16 @@ class JetImageFeed(QObject):
             self.context.update_motor_mode("run")
 
     def new_request(self, request):
-        self.request = request
+        """
+        Set the new request for image processing.
+
+        Args:
+            request: The new request for image processing.
+
+        Returns:
+            None
+        """
+        self.request_for_calibration = request
 
     def update_cam_vals(self):
         self.left_threshold = self.context.threshold
@@ -1090,7 +1143,7 @@ class JetImageFeed(QObject):
     
     def find_center(self, im):
         self.locate_jet(im, int(self.upper_left[0]), int(self.lower_right[0]), 
-                        int(self.upper_left[1], int(self.lower_right[1])))
+                        int(self.upper_left[1]), int(self.lower_right[1]))
         if self.counter != 20:
             self.counter += 1
         elif self.counter == 20:
@@ -1098,11 +1151,12 @@ class JetImageFeed(QObject):
             success = self.form_line(self.context.com, int(self.upper_left[1]), 
                                      int(self.lower_right[1]))
             self.context.com = []
-            if success and self.request:
+            if success and self.request_for_calibration:
                 self.context.image_calibration_position(self.context.best_fit_line)
                 self.signals.imageProcessingComplete.emit(True)
-            elif not success and self.calibration_done:
+            elif not success and self.request_for_calibration:
                 self.signals.imageProcessingComplete.emit(False)
+            self.request_for_calibration = False
 
     def locate_jet(self, im, x_start, x_end, y_start, y_end):
         crop = im[y_start:y_end, x_start:x_end]
@@ -1210,6 +1264,7 @@ class MotorThread(QObject):
         self.moves = []
         self.intensities = []
         self.calibration_steps = 1
+        self.calibration_tries = 0
         self.vals = {}
         self.done = False
         self.motor_name = ''
@@ -1342,8 +1397,12 @@ class MotorThread(QObject):
         self.done = False
         self.request_new_values = False
         self.got_new_values = False
+        self.request_image_processor = False
+        self.complete_image_processor = False
         self.good_edge_points = []
         self.bad_edge_points = []
+        self.calibration_steps = 1
+        self.calibration_tries = 0
         self.sweet_spot = []
         self.max_value = 0
 
@@ -1394,6 +1453,12 @@ class MotorThread(QObject):
             if not self.live:
                 time.sleep((1/self.refresh_rate)*3)
             self.calibration_steps += 1
+        else:
+            self.calibration_tries += 1
+            if self.calibration_tries == 3:
+                self.motor.move(self.initial_position, self.wait)
+                self.mode = "sleep"
+                self.signals.message.emit("Image calibration failed")
         self.complete_image_processor = True
 
     def update_image_calibration(self):
