@@ -17,8 +17,33 @@ log = logging.getLogger("jet_tracker")
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
+    """
+    This class represents the main window of the GUI application and inherits from both
+    QMainWindow and Ui_MainWindow classes.
 
+    """
     def __init__(self):
+        """
+        Constructor method for the MainWindow class.
+        Initializes the main window and sets its attributes.
+        Sets the size and style sheet for the main window.
+        Creates instances of other views and dialogs.
+        Sets up the window tabs.
+        Creates the menu bar actions.
+        Connects buttons and signals.
+
+        Args:
+            signals (class): creates the instance of the signals class which every
+            widget in the application receives so that signals can be shared among classes
+            context (class): creates the instance of the context class which every
+            widget in the application receives so that when values are updated, it changes in all
+            locations and everyone gets the same information.
+            simWindow (class): the simulation window for changing simulation parameters. It can be opened
+            in the menu bar under tools
+            tabWidget (class): sets up the different tab views
+            jetTrackerView (class): connects the first tab view to the main window
+            jetImageView (class): connects the second tab view to the main window
+        """
         super(MainWindow, self).__init__()
         log.debug("Supplying Thread information from init of MainWindow.")
         self.setAttribute(Qt.WA_AlwaysStackOnTop)
@@ -39,6 +64,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.connect_signals()
 
     def setup_window_tabs(self):
+        """Sets up the window tabs in the main window."""
         self.setDockNestingEnabled(True)
         self.tabWidget = QTabWidget()
         self.tabWidget.setSizePolicy(QSizePolicy.Expanding,
@@ -48,12 +74,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tabWidget.addTab(self.jetImageView, "Jet Image")
 
     def create_views_and_dialogs(self):
+        """Creates instances of different views and dialogs used in the application."""
         self.simWindow = SimWindow(self.context, self.signals)
         self.jetTrackerView = JetTrackerView(self.context, self.signals, self)
         self.jetImageView = JetImageView(self.context, self.signals)
         # self.helpDialog = HelpDialog()
 
     def createFileActions(self):
+        """Creates actions for the File menu."""
         ids = ["Open", "Export", "Exit"]
         tips = ["open exported file to run in simulation mode",
                 "export all or some data",
@@ -74,6 +102,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return L
 
     def createEditActions(self):
+        """Creates actions for the Edit menu."""
         ids = ["undo", "redo"]
         shortcuts = ['Ctrl+Z', 'Ctrl+Y']
         connects = [self.undo, self.redo]
@@ -92,6 +121,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return L
 
     def createHelpActions(self):
+        """Creates actions for the Help menu."""
         ids = ["contents", "about"]
         shortcuts = ['F1', 'Ctrl+B']
         connects = [self.showHelp, self.showAboutDialog]
@@ -108,6 +138,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return L
 
     def createToolActions(self):
+        """Creates actions for the Tool menu."""
         ids = ["Simulation Toolbar", "Image Processing Toolbar"]
         shortcuts = ['F5', 'F7']
         connects = [self.showSimToolbar, self.showImageToolbar]
@@ -124,6 +155,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return L
 
     def createMenuBarActions(self):
+        """Creates the menu bar actions by calling the respective create*Actions
+        functions and adds them to the appropriate menus."""
         self.fileActions = self.createFileActions()
         self.editActions = self.createEditActions()
         self.helpActions = self.createHelpActions()
@@ -150,7 +183,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.toolMenu.addAction(i)
 
     def restoreFocus(self):
-
+        """Restores the focus of the main window and clears any pressed keys or mouse actions."""
         log.info("Restoring Focus")
         self.ctrlPressed = False
         self.releaseMouse()
@@ -166,10 +199,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # self.helpDialog.s_windowClose.connect(lambda: self.setEnabled(True))
 
     def setup_statusBar(self):
+        """Sets up the status bar in the main window."""
         self.statusbarMessage = QLabel()
         self.statusbar.addWidget(self.statusbarMessage)
 
     def show_helpDialog(self):
+        """Shows the help dialog when the Help action is triggered."""
         log.info('Help Dialog Opened')
         self.setEnabled(False)
         self.helpDialog.exec_()

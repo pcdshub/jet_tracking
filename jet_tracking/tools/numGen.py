@@ -17,7 +17,6 @@ class SimulationGenerator(object):
         self.bg = 0.05
         self.percent = 0
         # get current simulated motor position
-        self.signals.update.connect(self.updateVals)
         self.signals.changeReadPosition.connect(self.change_position)
         self.signals.changeDroppedShots.connect(self.change_dropped)
         self.signals.changePeakIntensity.connect(self.change_intensity)

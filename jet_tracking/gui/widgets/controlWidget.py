@@ -11,8 +11,20 @@ log = logging.getLogger('jet_tracker')
 
 
 class ControlsWidget(QFrame, Controls_Ui):
+    """
+    Widget class for controlling and monitoring a motor.
 
+    Inherits from QFrame and uses a separate UI file for setting up the user interface.
+    """
     def __init__(self, context, signals):
+        """
+        Initialize the ControlsWidget.
+
+        Args:
+            context: The context object containing various settings and values.
+            signals: The signals object for emitting and receiving signals.
+
+        """
         super(ControlsWidget, self).__init__()
         log.debug("Supplying Thread information from init of Controls Widget")
         self.signals = signals
@@ -30,6 +42,10 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.make_connections()
 
     def set_thread_options(self):
+        """
+        Update the UI elements related to thread options based on the values stored in the context.
+
+        """
         self.le_percent.setText(str(self.context.percent))
         self.le_ave_graph.setText(str(self.context.graph_ave_time))
         self.le_refresh_rate.setText(str(self.context.refresh_rate))
@@ -38,6 +54,10 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.le_bad_scan.setText(str(self.context.bad_scan_limit))
 
     def set_motor_options(self):
+        """
+        Update the UI elements related to motor options based on the values stored in the context.
+
+        """
         self.le_motor_pos.setText(str(self.context.motor_position))
         self.le_motor_ll.setText(str(self.context.low_limit))
         self.le_motor_hl.setText(str(self.context.high_limit))
@@ -45,6 +65,10 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.cbox_algorithm.setCurrentText(self.context.algorithm)
 
     def make_connections(self):
+        """
+        Set up the signal-slot connections between UI elements and methods in the class.
+
+        """
         self.signals.terminateAll.connect(self.terminate_all)
         self.le_number_calibration.checkVal.connect(self.context.update_num_cali)
         self.le_percent.checkVal.connect(self.context.update_percent)
@@ -77,7 +101,6 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.signals.changeReadPosition.connect(self.update_read_motor)
         self.signals.changeMotorPosition.connect(self.update_motor_position)
         self.signals.message.connect(self.receive_message)
-        self.signals.updateRunValues.connect(self.send_values)
 
         self.bttn_stop.clicked.connect(self._stop)
         self.bttn_calibrate.clicked.connect(self._calibrate)
@@ -95,6 +118,10 @@ class ControlsWidget(QFrame, Controls_Ui):
         self.le_x_axis.checkVal.connect(self.context.update_display_time)
 
     def start_processes(self):
+        """
+        Start the motor connection and the status thread when the "Start" button is clicked.
+
+        """
         self.worker_motor.connect_to_motor()
         self.worker_status.reader.initialize_connections()
         if self.worker_status.reader.connected:
@@ -110,15 +137,27 @@ class ControlsWidget(QFrame, Controls_Ui):
                                       "properly. Check settings.")
 
     def start_algorithm(self):
+        """
+        Update the motor mode to "run" when the "Search" button is clicked.
+
+        """
         self.context.update_motor_mode("run")
 
     def _stop(self):
+        """
+        Handle the stop button click event.
+
+        """
         if not self.worker_status.paused:
             self.signals.stopStatusThread.emit(False)
         if not self.worker_motor.paused:
             self.signals.stopMotorThread.emit(False)
 
     def _calibrate(self):
+        """
+        Handle the calibrate button click event.
+
+        """
         if self.worker_status.paused:
             self.text_area.append("You are not running so there's \
                   nothing to calibrate.. hit start first")
@@ -126,10 +165,18 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.context.set_mode("calibrate")
 
     def _enable_tracking(self):
+        """
+        Handle the enable tracking button click event.
+
+        """
         self.set_tracking_status("enabled", "green")
         self.signals.enableTracking.emit(True)
 
     def _start_motor(self):
+        """
+        Start the motor when the conditions are met.
+
+        """
         if not self.thread2.isRunning():
             if self.thread1.isRunning():
                 self.context.update_motor_running(False)
@@ -143,6 +190,10 @@ class ControlsWidget(QFrame, Controls_Ui):
                 self.signals.startMotorThread.emit()
 
     def _stop_motor(self):
+        """
+        Stop the motor when the conditions are met.
+
+        """
         if not self.worker_motor.paused:
             self.context.update_motor_running(False)
             self.signals.stopMotorThread.emit(False)
@@ -154,12 +205,23 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.signals.message.emit("The motor is not running")
 
     def _stop_scanning(self):
+        """
+        Stop the scanning process when the conditions are met.
+
+        """
         if self.thread2.isRunning():
             self.signals.endEarly.emit()
         else:
             self.signals.message.emit("You aren't scanning!")
 
     def move_motor(self, mp):
+        """
+        Move the motor to the specified position.
+
+        Args:
+            mp: The position to move the motor to.
+
+        """
         if mp > self.context.high_limit or mp < self.context.low_limit:
             self.le_motor_pos.setText(str(self.context.motor_position))
             self.signals.message.emit("You tried to input a motor position \n"
@@ -173,8 +235,18 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.signals.message.emit("The motor is not connected \n"
                                       "so the position cannot be changed")
 
-    def plot_motor_moves(self, position, maximum, positions, intensities,
-                         save=False):
+    def plot_motor_moves(self, position, maximum, positions, intensities, save=False):
+        """
+        Plot the motor positions and intensities.
+
+        Args:
+            position: The position for maximum intensity.
+            maximum: The maximum intensity value.
+            positions: The motor positions.
+            intensities: The intensities corresponding to the motor positions.
+            save: Whether to save the plot and data.
+
+        """
         plt.figure()
         plt.xlabel('motor position')
         plt.ylabel('I/I0 intensity')
@@ -202,43 +274,82 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.context.calibration_values['diff']['mean'])
 
     def update_motor_position(self, p):
+        """
+        Update the motor position display.
+
+        Args:
+            p: The new motor position.
+
+        """
         self.le_motor_pos.setText(str(p))
 
     def update_read_motor(self, mp):
+        """
+        Update the read motor display.
+
+        Args:
+            mp: The motor position.
+
+        """
         self.lbl_motor_status.display(mp)
 
-    def send_values(self, live):
-        if live:
-            self.context.update_limits(float(self.le_motor_hl.text()),
-                                       float(self.le_motor_ll.text()))
-            self.context.step_size = self.le_size.text()
-            self.context.motor_averaging = self.le_ave_motor.text()
-            self.context.connect_motor()
-
     def clearLayout(self, layout):
+        """
+        Remove all widgets from the given layout.
+
+        Args:
+            layout: The layout to clear.
+
+        """
         for i in reversed(range(layout.count())):
             widgetToRemove = layout.itemAt(i).widget()
             layout.removeWidget(widgetToRemove)
             widgetToRemove.setParent(None)
 
     def set_tracking_status(self, status, color):
+        """
+        Set the tracking status label and style.
+
+        Args:
+            status: The tracking status.
+            color: The background color of the label.
+
+        """
         self.lbl_tracking_status.setText(status)
         self.lbl_tracking_status.setStyleSheet(f"\
                 background-color: {color};")
 
     def set_monitor_status(self, status, color):
+        """
+        Set the monitor status label and style.
+
+        Args:
+            status: The monitor status.
+            color: The background color of the label.
+
+        """
         self.lbl_monitor_status.setText(status)
         self.lbl_monitor_status.setStyleSheet(f"\
                 background-color: {color};")
 
-    def cleanup_correction(self):
-        self.worker_motor = None
-
     def update_limits(self, limit):
+        """
+        Update the motor limit display.
+
+        Args:
+            limit: The new motor limit value.
+
+        """
         self.context.update_limits(float(self.le_motor_hl.text()),
                                    float(self.le_motor_ll.text()))
 
     def receive_message(self, message):
+        """
+        Receive and display a message in the text area.
+
+        Args:
+            message (str): The message to be displayed.
+        """
         pt = self.text_area.toPlainText()
         if pt.split('\n')[-1] == message.split('\n')[-1]:
             pass
@@ -246,12 +357,25 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.text_area.append(message)
 
     def show_dialog(self, go_from, go_to):
+        """
+        Show a dialog box to confirm data viewing changes.
+
+        Args:
+            go_from (str): The current data viewing option.
+            go_to (str): The new data viewing option.
+        """
         self.msg.setWindowTitle("Data Viewing Changes")
         self.msg.setText(f"Would you like to change the \n"
                     f"data from {go_from} to {go_to}?")
         self.msg.show()
 
     def popup_clicked(self, i):
+        """
+        Handle the click event on the popup message box.
+
+        Args:
+            i: The clicked item.
+        """
         if i.text() == "&Yes":
             self._stop()
             self.signals.message.emit("Must press start to run in this new mode")
@@ -269,6 +393,12 @@ class ControlsWidget(QFrame, Controls_Ui):
                 self.rdbttn_live.setChecked(True)
 
     def checkBttn(self, button):
+        """
+        Handle the button click event to change settings.
+
+        Args:
+            button: The clicked button.
+        """
         bttn = button.text()
         if bttn == "simulated data":
             if not self.worker_motor.paused:
@@ -287,11 +417,9 @@ class ControlsWidget(QFrame, Controls_Ui):
         elif bttn == "manual \nmotor moving":
             self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(False)
-            self.context.update_manual_motor(True)
         elif bttn == "automated \nmotor moving":
             self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(True)
-            self.context.update_manual_motor(False)
         elif bttn == "calibration in GUI":
             self.context.update_calibration_source(bttn)
         elif bttn == "calibration from results":
@@ -302,8 +430,9 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.context.update_calibration_priority("keep calibration")
 
     def setDefaultStyleSheet(self):
-        # This should be done with a json file
-
+        """
+        Set the default style sheet for the widget.
+        """
         self.setStyleSheet("\
             Label {\
                 qproperty-alignment: AlignCenter;\
@@ -318,6 +447,9 @@ class ControlsWidget(QFrame, Controls_Ui):
             }")
 
     def terminate_all(self):
+        """
+        Terminate all running threads and perform cleanup tasks.
+        """
         self.signals.stopStatusThread.emit(True)
         self.signals.stopMotorThread.emit(True)
         self.thread1.quit()

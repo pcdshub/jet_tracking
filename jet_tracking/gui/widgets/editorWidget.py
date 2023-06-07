@@ -145,19 +145,6 @@ class EditorWidget(QFrame, Editor_Ui):
         self.sliders['right threshold'].append(v)
         self.signals.imageProcessing.emit(self.sliders)
 
-#    def adjust_image_dilation_erosion(self, v):
-#        if self.imgray != []:
-#            if v <= 5:
-#                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
-#                editim = cv2.erode(self.imgray, kernel, iterations = v)
-#                self.signals.updateImage.emit(editim)
-#            elif v > 5:
-#                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
-#                editim = cv2.dilate(self.imgray, kernel, iterations=v-5)
-#                self.signals.updateImage.emit(editim)
-#        else:
-#            pass
-
     def dilate_off_on(self, enabled):
         self.slider_dilate.setEnabled(enabled)
         p = self.slider_dilate.sliderPosition()

@@ -30,9 +30,18 @@ log.addHandler(ch)
 
 
 class App(QApplication):
+    # This class represents the main application instance and inherits from QApplication class of PyQt.
+    # It initializes the application, sets up logging, and creates the main window for the GUI.
     def __init__(self, sys_argv):
+        """
+
+        Constructor method for the App class.
+
+        Parameters:
+            sys_argv(list): Command - line arguments passed to the application.
+
+        """
         super(App, self).__init__(sys_argv)
-        #self.init_logging()
         log.debug("Supplying Thread information from init of QApplication")
         self.setAttribute(Qt.AA_EnableHighDpiScaling)
         self.setStyle("Fusion")
@@ -47,6 +56,15 @@ class App(QApplication):
 
     @staticmethod
     def handle_exception(exc_type, exc_value, exc_traceback):
+        """
+        Static method for handling uncaught exceptions.
+
+        Parameters:
+            exc_type(type): Type of the exception.
+            exc_value(Exception): The exception instance.
+            exc_traceback(traceback): The traceback object.
+
+        """
         if issubclass(exc_type, KeyboardInterrupt):
             sys.__excepthook__(exc_type, exc_value, exc_traceback)
             return
@@ -56,6 +74,11 @@ class App(QApplication):
 
 
 def main():
+    """
+
+    The main function that starts the application and executes the event loop.
+
+    """
     # Makes the icon in the taskbar as well.
     appID = "opt-id"  # arbitrary string
     if os.name == 'nt':

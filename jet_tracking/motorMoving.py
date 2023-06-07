@@ -81,3 +81,7 @@ class MotorAction(object):
             if self.dyn_linear.done:
                 return True, self.dyn_linear.max_value
             else: return False, self.dyn_linear.max_value
+        else:
+            self.signals.message.emit("That algorithm does not exist yet..")
+            self.stop_search = True
+            return True, self.motor_thread.motor.position

@@ -39,8 +39,34 @@ class Singleton(type):
 
 
 class ValueReader(metaclass=Singleton):
+    """
+    Singleton class for reading and providing values.
 
+    Attributes:
+        signals (Signals): The signals object for emitting signals.
+        context (Context): The context object for accessing context information.
+        live_data (bool): Flag indicating whether live data is enabled.
+        live_initialized (bool): Flag indicating if live data is initialized.
+        connected (bool): Flag indicating if connections are made.
+        signal_diff (EpicsSignal): The EpicsSignal object for diff signal.
+        signal_i0 (EpicsSignal): The EpicsSignal object for i0 signal.
+        signal_ratio (EpicsSignal): The EpicsSignal object for ratio signal.
+        signal_dropped (EpicsSignal): The EpicsSignal object for dropped signal.
+        simgen (SimulationGenerator): The SimulationGenerator object for simulation data generation.
+        sim_vals (dict): Dictionary containing simulation values.
+        diff (float): The diff value.
+        i0 (float): The i0 value.
+        ratio (float): The ratio value.
+        dropped (bool): Flag indicating if data is dropped.
+    """
     def __init__(self, context, signals):
+        """
+        Initialize the ValueReader.
+
+        Args:
+            context (Context): The context object for accessing context information.
+            signals (Signals): The signals object for emitting signals.
+        """
         self.signals = signals
         self.context = context
         self.live_data = True
@@ -59,6 +85,9 @@ class ValueReader(metaclass=Singleton):
         self.make_connections()
 
     def make_connections(self):
+        """
+        Make connections for the ValueReader.
+        """
         self.signals.changeRunLive.connect(self.run_live_data)
 
     def initialize_connections(self):
@@ -86,9 +115,21 @@ class ValueReader(metaclass=Singleton):
             self.connected = True
 
     def run_live_data(self, live):
+        """
+        Set the flag for live data.
+
+        Args:
+            live (bool): Flag indicating whether live data is enabled.
+        """
         self.live_data = live
+        if self.connected:
+            self.connected = False
+            self.initialize_connections()
 
     def live_data_stream(self):
+        """
+        Stream live data and update values.
+        """
         if not self.live_initialized:
             # should not ever get here
             self.signals.message.emit("The live data"
@@ -98,31 +139,22 @@ class ValueReader(metaclass=Singleton):
         self.ratio = self.signal_ratio.get()
 
     def sim_data_stream(self):
-        """Run with offline data"""
-        # Adam's code for running simulations offline data
-        # TODO: Add flag to enable this
-        #
-        # context_data = zmq.Context()
-        # socket_data = context_data.socket(zmq.SUB)
-        # socket_data.connect(''.join(['tcp://localhost:', '8123']))
-        # socket_data.subscribe("")
-        # while True:
-        # md = socket_data.recv_json(flags=0)
-        # msg = socket_data.recv(flags=0, copy=False, track=False)
-        # buf = memoryview(msg)
-        # data = np.frombuffer(buf, dtype=md['dtype'])
-        # data = np.ndarray.tolist(data.reshape(md['shape']))
-        # self.i0 = data[0]
-        # self.diff = data[1]
-
+        """
+        Stream simulation data and update values.
+        """
         self.sim_vals = self.simgen.sim()
         self.i0 = self.sim_vals["i0"]
         self.diff = self.sim_vals["diff"]
         self.ratio = self.sim_vals["ratio"]
         self.dropped = self.sim_vals["dropped"]
-        # self.motor_position = self.sim_vals["motor_position"]
 
-    def read_value(self):  # needs to initialize first maybe using a decorator?
+    def read_value(self):
+        """
+        Read the current value.
+
+        Returns:
+            dict: Dictionary containing the current values.
+        """
         log.debug("read value from ValueReader")
         if self.context.live_data:
             self.live_data_stream()
@@ -137,17 +169,85 @@ class ValueReader(metaclass=Singleton):
 class StatusThread(QObject):
     def init_after_move(self, context, signals):
         """
-        QThread which processes data and hands it to the main thread.
+        Initialize the StatusThread.
 
-        After checking whether the current mode is either calibrating or
-        running, values are obtained from the ValueReader. Dictionaries for
-        buffers, buffer averages, and notable events for the initial intensity,
-        diffraction intensity, and the ratio of these is built.
+        This method initializes the StatusThread object with the given context and signals. It sets various attributes and initializes data buffers and dictionaries.
 
-        parameters:
+        Parameters:
+        ----------
+        context : object
+            The context object containing configuration settings.
+        signals : object
+            The signals object used for inter-thread communication.
+
+        Attributes:
         ----------
         signals : object
+            The signals object that contains different signals for communication.
         context : object
+            The context object that contains various settings and parameters.
+        mode : str
+            The current mode of the status thread.
+        paused : bool
+            Indicates whether the status thread is paused or not.
+        calibration_source : str
+            The source of calibration values (either 'calibration from results' or 'calibration in GUI').
+        calibration_priority : str
+            The priority of the calibration process.
+        num_cali : int
+            The number of calibration points.
+        refresh_rate : float
+            The refresh rate for the data collection.
+        percent : int
+            The percentage for the calibration range.
+        num_points : int
+            The number of data points to display.
+        graph_ave_time : int
+            The averaging time for the graph display.
+        naverage : int
+            The number of points to average for the calculations.
+        averaging_size : int
+            The size of the averaging buffer.
+        notification_tolerance : int
+            The tolerance for triggering notifications.
+        x_axis : int
+            The x-axis value.
+        bad_scan_limit : int
+            The limit for the number of bad scans.
+        flag_message : None
+            Placeholder for the flag message.
+        display_time : int
+            The display time for the graph.
+        _count : int
+            The current count for the x-axis index.
+        _ave_count : int
+            The current count for the averaging.
+        calibrated : bool
+            Indicates whether the status thread is calibrated or not.
+        isTracking : bool
+            Indicates whether the status thread is tracking or not.
+        bad_scan_counter : int
+            The counter for bad scans.
+        status : str
+            The current status of the status thread.
+        display_flag : list
+            The display flag list.
+        cal_vals : list
+            The calibration values list.
+        averages : dict
+            The dictionary of average values.
+        flagged_events : dict
+            The dictionary of flagged events.
+        current_values : dict
+            The dictionary of current values.
+        buffers : dict
+            The dictionary of buffers.
+        calibration_values : dict
+            The dictionary of calibration values.
+        reader : ValueReader
+            The ValueReader object for reading values.
+        processor_worker : EventProcessor
+            The EventProcessor object for processing events.
         """
 
         self.signals = signals
@@ -200,8 +300,12 @@ class StatusThread(QObject):
         log.info("Initializing StatusThread")
 
     def connect_signals(self):
-        self.signals.mode.connect(self.update_mode)
-        self.signals.changeDisplayFlag.connect(self.change_display_flag)
+        """
+        Connect signals to corresponding slots.
+
+        This method connects various signals to their corresponding slots in the StatusThread object.
+        """
+        self.signals.changeStatusMode.connect(self.update_mode)
         self.signals.changePercent.connect(self.set_percent)
         self.signals.changeCalibrationSource.connect(
             self.set_calibration_source)
@@ -218,22 +322,53 @@ class StatusThread(QObject):
         self.signals.finishedMotorAlgorithm.connect(self.recalibrate)
         self.signals.setNewXAxis.connect(self.set_new_axis)
 
-    def set_new_axis(self, axis, idx):
-        self.display_time = axis
+    def set_new_axis(self, idx):
+        """
+        Set a new x-axis for the graph.
+
+        This method sets a new x-axis for the graph based on the provided the index value of first nan.
+
+        Parameters:
+        ----------
+        idx : int
+            The current index of first nan value
+        """
+        self.display_time = self.context.display_time
+        self.refresh_rate = self.context.refresh_rate
         self.num_points = self.display_time * self.refresh_rate
         self._count = idx
 
     def start_com(self):
+        """
+        Start the communication process.
+
+        This method starts the communication process by running a continuous loop that processes events and runs the data thread.
+        """
         while not self.thread().isInterruptionRequested():
             QCoreApplication.processEvents(QEventLoop.AllEvents,
                                            int(self.refresh_rate*1000))
             self.run_data_thread()
 
     def start_it(self):
+        """
+        Start the StatusThread.
+
+        This method starts the StatusThread by setting the paused attribute to False.
+        """
         log.info("Inside of the start_it method of StatusThread.")
         self.paused = False
 
     def stop_it(self, abort):
+        """
+        Stop the StatusThread.
+
+        This method stops the StatusThread by setting the paused attribute to True. If abort is True, the thread will be interrupted.
+
+        Parameters:
+        ----------
+        abort : bool
+            A flag indicating whether the thread should be interrupted.
+        """
         self.paused = True
         if abort:
             self.thread().requestInterruption()
@@ -241,7 +376,14 @@ class StatusThread(QObject):
             pass
 
     def run_data_thread(self):
-        """Long-running task to collect data points"""
+        """
+        Run the data thread.
+
+        This method is the long-running task that collects data points. It reads values from the ValueReader,
+        updates buffers, checks status updates, calculates averages, and emits signals to refresh graphs.
+
+        Note: This method runs in a continuous loop until the thread is paused.
+        """
         if not self.paused:
             self.current_values = self.reader.read_value()
             vals = self.current_values
@@ -274,39 +416,98 @@ class StatusThread(QObject):
         time.sleep(1 / self.refresh_rate)
 
     def tracking(self, b):
+        """
+        Set the tracking mode.
+
+        This method sets the tracking mode based on the provided boolean value.
+
+        Parameters:
+        ----------
+        b : bool
+            A flag indicating whether tracking mode should be enabled.
+        """
         self.isTracking = b
 
     def update_mode(self, mode):
+        """
+        Update the mode.
+
+        This method updates the mode attribute of the StatusThread object with the provided mode.
+
+        Parameters:
+        ----------
+        mode : str
+            The new mode value.
+        """
         log.info("Inside of the update_mode method of StatusThread.")
         self.mode = mode
 
     def set_percent(self, p):
+        """
+        Set the percent value.
+
+        This method sets the percent attribute of the StatusThread object with the provided value.
+
+        Parameters:
+        ----------
+        p : int
+            The new percent value.
+        """
         self.percent = p
         self.update_calibration_range()
 
     def set_calibration_source(self, c):
+        """
+        Set the calibration source.
+
+        This method sets the calibration_source attribute of the StatusThread object with the provided value.
+
+        Parameters:
+        ----------
+        c : object
+            The new calibration source value.
+        """
         self.calibration_source = c
     
     def set_num_cali(self, n):
-        log.info("Inside of the set_num_cali method of StatusThread.")
+        """
+        Set the number of calibration.
+
+        This method sets the num_cali attribute of the StatusThread object with the provided value.
+
+        Parameters:
+        ----------
+        n : int
+            The new number of calibration value.
+        """
         self.num_cali = n
 
     def set_calibration_priority(self, p):
+        """
+        Set the calibration priority.
+
+        This method sets the calibration_priority attribute of the StatusThread object with the provided value.
+
+        Parameters:
+        ----------
+        p : object
+            The new calibration priority value.
+        """
         self.calibration_priority = p
 
     def set_scan_limit(self, sl):
+        """
+        Set the scan limit.
+
+        Parameters:
+        sl (int): The scan limit value.
+        """
         self.bad_scan_limit = sl
 
-    def change_display_flag(self, culprit):
-        if self.display_flag == "all":
-            # this is to protect against making multiple changes and not
-            # catching them
-            pass
-        else:
-            self.display_flag = culprit
-            self.signals.message.emit("updating the graph ...")
-
     def calculate_averages(self):
+        """
+        Calculate the averages of the buffer values and update the averages dictionary.
+        """
         try:
             i0 = self.buffers['i0'][-self.averaging_size:][~np.isnan(
                 list(self.flagged_events['dropped shot'])[-self.averaging_size:])]
@@ -326,12 +527,10 @@ class StatusThread(QObject):
 
     def update_buffer(self, vals):
         """
-        Add values from the ValueReader to the buffers dictionary.
-        check if the events that came in should be flagged
+        Add values from the ValueReader to the buffers dictionary and check if the events should be flagged.
 
-        Keyword arguments:
-        vals -- the values received from the ValueReader
-        idx -- the current x index from the x_cycle list variable
+        Parameters:
+        vals (dict): The values received from the ValueReader.
         """
         v = [vals.get('diff'), vals.get('i0'),
              vals.get('ratio'), vals.get('dropped')]
@@ -341,6 +540,9 @@ class StatusThread(QObject):
             self.buffers[k].append(vals.get(k))
 
     def check_status_update(self):
+        """
+        Check the status update based on the flagged events and emit signals accordingly.
+        """
         if self.calibrated:
             p = int(self.notification_tolerance + \
                  (self.notification_tolerance*0.5)) # plus 10% of notification tolerance
@@ -352,16 +554,16 @@ class StatusThread(QObject):
             n_high = np.count_nonzero(high[~np.isnan(high)])
             if n_miss > self.notification_tolerance:
                 self.signals.changeStatus.emit("Warning, missed shots", "red")
-                self.processor_worker.flag_counter('missed shot', 50,
+                self.processor_worker.count_flags_and_execute('missed shot', 50,
                                                    self.missed_shots)
             elif n_drop > self.notification_tolerance:
                 self.signals.changeStatus.emit("Lots of dropped shots",
                                                "yellow")
-                self.processor_worker.flag_counter('dropped shot', 50,
+                self.processor_worker.count_flags_and_execute('dropped shot', 50,
                                                    self.dropped_shots)
             elif n_high > self.notification_tolerance:
                 self.signals.changeStatus.emit("High Intensity", "orange")
-                self.processor_worker.flag_counter('high intensity', 50,
+                self.processor_worker.count_flags_and_execute('high intensity', 50,
                                                    self.high_intensity)
             else:
                 if not self.processor_worker.isCounting:
@@ -369,7 +571,7 @@ class StatusThread(QObject):
                                                    "green")
                     self.everything_is_good()
                 if self.processor_worker.isCounting:
-                    self.processor_worker.flag_counter("everything is good",
+                    self.processor_worker.count_flags_and_execute("everything is good",
                                                        50,
                                                        self.everything_is_good)
         elif not self.calibrated:
@@ -415,9 +617,7 @@ class StatusThread(QObject):
 
         Parameters:
         vals
-            Values from the ValueReader in the order i0, diff, ratio, x-axis.
-        idx
-            Current x index from the x_cycle list variable.
+            Values from the ValueReader in the order i0, diff, ratio
         """
 
         if self.calibrated:
@@ -443,6 +643,13 @@ class StatusThread(QObject):
             self.flagged_events['dropped shot'].append(dropped_shot)
 
     def update_calibration_range(self):
+        """
+        Update the calibration range for the 'i0', 'diff', and 'ratio' signals.
+
+        Calculates the calibration range based on the percent, standard deviation, and mean
+        values stored in the calibration_values dictionary. Updates the calibration_values
+        dictionary with the new range values. Emits a signal to notify the change in calibration_values.
+        """
         for name in ['i0', 'diff', 'ratio']:
             self.calibration_values[name]['range'] = self.normal_range(
                 self.percent, self.calibration_values[name]['stddev'],
@@ -450,6 +657,19 @@ class StatusThread(QObject):
         self.signals.changeCalibrationValues.emit(self.calibration_values)
 
     def set_calibration_values(self, name, vmean, std):
+        """
+        Set the calibration values for a given signal name.
+
+        Updates the mean, standard deviation, and range values in the calibration_values dictionary
+        for the specified signal name. Also emits signals to notify the change in calibration_values
+        and update the calibration display. Additionally, sets the calibration values in the context
+        and emits a signal to notify the change in calibration display.
+
+        Args:
+            name (str): The name of the signal.
+            vmean (float): The mean value for the calibration.
+            std (float): The standard deviation value for the calibration.
+        """
         self.calibration_values[name]['mean'] = vmean
         self.calibration_values[name]['stddev'] = std
         self.calibration_values[name]['range'] = self.normal_range(
@@ -470,6 +690,9 @@ class StatusThread(QObject):
         deviation, and range. If the calibration is successful, then the
         calibration is set to True, mode is set to running, and the
         calibration_values are updated.
+
+        Args:
+            v (dict): A dictionary containing calibration values.
         """
 
         if self.calibration_source == "calibration from results":
@@ -536,9 +759,21 @@ class StatusThread(QObject):
                 str(self.calibration_values['ratio']['stddev']))
 
     def send_info_to_motor(self):
+        """
+        Send intensities information to the motor.
+
+        Emits a signal with the current_values to send intensities information to the motor.
+        """
         self.signals.intensitiesForMotor.emit(self.current_values)
 
     def recalibrate(self):
+        """
+        Recalibrate the system based on the calibration priority.
+
+        If the calibration priority is set to "keep calibration", emits a message signal stating
+        that the calibration will not change. If the priority is set to "recalibrate", updates
+        the mode to 'calibrate' by calling the update_mode method.
+        """
         if self.calibration_priority == "keep calibration":
             self.signals.message.emit("Calibration will not change. "
                                       "If you would like it to override this, "
@@ -548,6 +783,15 @@ class StatusThread(QObject):
             self.update_mode("calibrate")
 
     def missed_shots(self):
+        """
+        Handle the case of missed shots.
+
+        Checks the motor status and tracking status to determine the appropriate action when
+        shots are missed. If the motor is running and the status is 'everything is good', emits
+        a notifyMotor signal for missed shots. If the motor is not running and tracking is enabled,
+        checks the bad_scan_counter and disables tracking if the limit is reached. If the motor is
+        not running and tracking is disabled, emits a message signal suggesting running a search.
+        """
         if self.context.motor_running:
             if self.status == "everything is good":
                 self.signals.notifyMotor.emit("missed shots")
@@ -577,12 +821,23 @@ class StatusThread(QObject):
         self.status = "missed_shots"
 
     def dropped_shots(self):
+        """
+        Handle the case of dropped shots.
+
+        Pauses the motor and emits a message signal indicating a high number of dropped shots.
+        """
         if self.context.motor_running:
             self.signals.message.emit("lots of dropped shots.. pausing motor")
             self.signals.notifyMotor.emit("pause")
         self.status = "dropped shots"
 
     def high_intensity(self):
+        """
+        Handle the case of high intensity.
+
+        Resets the bad_scan_counter and emits appropriate notifyMotor signals based on the current
+        status. Sets the status to 'high intensity'.
+        """
         self.bad_scan_counter = 0
         if self.context.motor_running:
             if self.status == "dropped shots":
@@ -594,6 +849,12 @@ class StatusThread(QObject):
         self.status = "high intensity"
 
     def everything_is_good(self):
+        """
+        Handle the case when everything is good.
+
+        Resets the bad_scan_counter and stops the processor_worker. Emits appropriate notifyMotor
+        signals based on the current status. Sets the status to 'everything is good'.
+        """
         self.bad_scan_counter = 0
         self.processor_worker.stop_count()
         if self.context.motor_running:
@@ -607,13 +868,49 @@ class StatusThread(QObject):
 
 
 class EventProcessor(QThread):
+    """
+    A class for processing events and counting flags.
+
+    Inherits from QThread to allow for multi-threading. Handles flag counting and execution
+    of associated functions based on the flags.
+
+    Attributes:
+        SIGNALS (object): The signals object for emitting signals.
+        flag_type (dict): A dictionary to store the count of different flags.
+        isCounting (bool): A flag indicating whether the processor is currently counting.
+
+    Methods:
+        count_flags_and_execute(new_flag, num_flagged, func_to_execute):
+            Count the occurrence of flags and execute a function when a specific flag count is reached.
+        stop_count():
+            Stop the flag counting by resetting the flag_type dictionary and isCounting flag.
+    """
     def __init__(self, signals):
+        """
+        Initialize the EventProcessor instance.
+
+        Args:
+            signals (object): The signals object for emitting signals.
+        """
         super(EventProcessor, self).__init__()
-        self.SIGNALS = signals
+        self.signals = signals
         self.flag_type = {}
         self.isCounting = False
 
-    def flag_counter(self, new_flag, num_flagged, func_to_execute):
+    def count_flags_and_execute(self, new_flag, num_flagged, func_to_execute):
+        """
+        Count the occurrence of flags and execute a function when a specific flag count is reached.
+
+        Updates the flag_type dictionary with the count of each flag occurrence. When the count
+        of a specific flag reaches the num_flagged value, executes the provided func_to_execute
+        function. If a flag is encountered multiple times, its count is incremented. If a flag
+        count reaches zero, it is removed from the dictionary.
+
+        Args:
+            new_flag (any): The new flag value to be counted.
+            num_flagged (int): The number of times the new_flag must occur for the function execution.
+            func_to_execute (function): The function to be executed when the flag count reaches num_flagged.
+        """
         self.isCounting = True
         if new_flag in self.flag_type.copy():
             self.flag_type[new_flag] += 1
@@ -629,6 +926,9 @@ class EventProcessor(QThread):
                     del(self.flag_type[key])
 
     def stop_count(self):
+        """
+        Stop the flag counting by resetting the flag_type dictionary and isCounting flag.
+        """
         self.flag_type = {}
         self.isCounting = False
 
@@ -783,7 +1083,7 @@ class JetImageFeed(QObject):
         if self.brightness:
             pass
         if self.blur:
-            im = cv2.GaussianBlur(im, (3, 3), self.blur)
+            im = cv2.GaussianBlur(im, (3, 3), self.blur, self.blur)
         ret, im = cv2.threshold(im, self.left_threshold, self.right_threshold,
                                 cv2.THRESH_BINARY)
         return im
@@ -934,7 +1234,7 @@ class MotorThread(QObject):
         self.make_connections()
 
     def make_connections(self):
-        self.signals.changeCalibrationPriority.connect(self.update_cp)
+        self.signals.changeCalibrationPriority.connect(self.set_calibration_priority)
         self.signals.intensitiesForMotor.connect(self.update_values)
         self.signals.connectMotor.connect(self.connect_to_motor)
         self.signals.liveMotor.connect(self.live_motor)
@@ -970,7 +1270,7 @@ class MotorThread(QObject):
         else:
             self.signals.message.emit('Pause Data Stream')
 
-    def update_cp(self, p):
+    def set_calibration_priority(self, p):
         self.calibration_priority = p
 
     def change_motor_mode(self, m):
@@ -1011,7 +1311,9 @@ class MotorThread(QObject):
 
     def live_motor(self, live):
         self.live = live
-        self.connect_to_motor()
+        if self.connected:
+            self.connected = False
+            self.connect_to_motor()
 
     def connect_to_motor(self):
         if self.live:
@@ -1147,6 +1449,10 @@ class MotorThread(QObject):
                         self.signals.message.emit("Motor.. go to sleep now..")
                         self.context.update_motor_mode('sleep')
                         self.signals.finishedMotorAlgorithm.emit()
+                    else:
+                        self.context.update_motor_position(self.motor.position)
+                        self.signals.message.emit("Motor.. go to sleep now..")
+                        self.context.update_motor_mode('sleep')
                 else:
                     if self.request_new_values and self.got_new_values:
                         self.request_new_values = False

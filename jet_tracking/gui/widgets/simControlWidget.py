@@ -35,5 +35,6 @@ class SimWidget(QFrame, SimUi):
         self.signals.updateRunValues.connect(self.send_values)
 
     def send_values(self, live):
+        # this is important because jet location for running live is determined by crosshairs
         if not live:
             self.context.update_jet_center(float(self.box_jet_center.text()))

@@ -67,7 +67,6 @@ class GraphsWidget(QFrame, GraphsUi):
                                                 pen=pg.mkPen(width=1, color=(255, 165, 0)), size=1)
         self.line_ave = self.graph3.plot(self.x_axis, list(self.y_ave))
         self.calibration_values = {}
-        self.display_flag = None
         self.calibrated = False
         self.connect_signals()
 
@@ -76,11 +75,11 @@ class GraphsWidget(QFrame, GraphsUi):
         self.signals.refreshGraphs.connect(self.plot_data)
         self.signals.changeCalibrationValues.connect(self.update_calibration_values)
         self.signals.changeDisplayTime.connect(self.set_display_time)
-        self.signals.changeGraphAve.connect(self.set_graph_ave)
         self.signals.setNewXAxis.connect(self.set_new_axis)
 
     def update_calibration_values(self, cal):
         self.calibration_values = cal
+        self.calibrated = True
         self.calibrate()
 
     def calibrate(self):
@@ -139,23 +138,18 @@ class GraphsWidget(QFrame, GraphsUi):
         self.line_ratio_high.setData(self.x_axis, self.ratio_high_range)
         self.line_ratio_mean.setData(self.x_axis, self.ratio_mean)
 
-    def change_graph_averaging(self):
-        self.ave_cycle = list(range(1, self.naverage + 1))
-        self.signals.changeAverageSize.emit(self.naverage)
-        self.display_flag = None
-
-    def set_display_time(self, v):
+    def set_display_time(self, t, rr):
         old_num_points = self.num_points
-        new_display_time = int(v)
-        new_num_points = int(new_display_time * self.refresh_rate)
-        n_nan_old = int(old_num_points * 1/4)
+        new_display_time = int(t)
+        new_rr = int(rr)
+        new_num_points = int(new_display_time * new_rr)
         n_nan_new = int(new_num_points * 1/4)
         if old_num_points < new_num_points:
             new_points_diff = list(self.y_diff)[:int(new_num_points * 3/4)+1] + \
                                  [np.nan for _ in range(n_nan_new)]
-            new_points_i0 = list(self.y_diff)[:int(new_num_points * 3/4)+1] + \
+            new_points_i0 = list(self.y_i0)[:int(new_num_points * 3/4)+1] + \
                                [np.nan for _ in range(n_nan_new)]
-            new_points_ratio = list(self.y_diff)[:int(new_num_points * 3/4)+1] + \
+            new_points_ratio = list(self.y_ratio)[:int(new_num_points * 3/4)+1] + \
                                   [np.nan for _ in range(n_nan_new)]
             n = new_num_points - len(new_points_diff)
             if len(self.old_vals_diff) >= n:
@@ -191,23 +185,19 @@ class GraphsWidget(QFrame, GraphsUi):
             new_points_diff = new_points_diff + [np.nan for _ in range(d)]
             new_points_i0 = new_points_i0 + [np.nan for _ in range(d)]
             new_points_ratio = new_points_ratio + [np.nan for _ in range(d)]
-        self.y_diff = deque(new_points_diff[-new_num_points:], new_num_points)
-        self.y_i0 = deque(new_points_i0[-new_num_points:], new_num_points)
-        self.y_ratio = deque(new_points_ratio[-new_num_points:], new_num_points)
-        idx = int(new_num_points*3/4)
-        self.signals.setNewXAxis.emit(new_display_time, idx)
+        y_diff = deque(new_points_diff[-new_num_points:], new_num_points)
+        y_i0 = deque(new_points_i0[-new_num_points:], new_num_points)
+        y_ratio = deque(new_points_ratio[-new_num_points:], new_num_points)
+        idx = np.where(np.isnan(list(self.y_diff)))[0][0]
+        self.signals.setNewXAxis.emit(idx)
+        self.y_diff = y_diff
+        self.y_i0 = y_i0
+        self.y_ratio = y_ratio
 
-    def set_new_axis(self, axis, idx):
-        self.display_time = axis
+    def set_new_axis(self, idx):
+        self.display_time = self.context.display_time
+        self.refresh_rate = self.context.refresh_rate
         self.num_points = self.display_time * self.refresh_rate
         self.x_axis = list(np.linspace(0, self.display_time, self.num_points))
         if self.calibrated:
             self.calibrate()
-
-    def set_graph_ave(self, a):
-        self.naverage = int(a)
-        self.change_display_flag('graph averaging')
-
-    def change_display_flag(self, culprit):
-        self.display_flag = culprit
-        self.signals.message.emit("updating the graph ...")
