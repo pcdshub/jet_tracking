@@ -1,14 +1,11 @@
 import logging
-from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsScene, QGraphicsView
+from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsView
 from tools.ROI import HLineItem, VLineItem, GraphicsScene
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap, QImage
 import numpy as np
 from qimage2ndarray import array2qimage
 import cv2
-from scipy import stats
-import time
-import matplotlib.pyplot as plt 
 
 log = logging.getLogger("jet_tracker")
 
@@ -24,7 +21,7 @@ class JetImageWidget(QGraphicsView):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.qimage = QImage()
-        self.image = np.zeros([500,500,3], dtype=np.uint8)
+        self.image = np.zeros([500, 500, 3], dtype=np.uint8)
         self.color_image = np.zeros([500, 500, 3], dtype=np.uint8)
         self.pixmap_item = QGraphicsPixmapItem()
         self.line_item_hor_top = HLineItem()
@@ -53,15 +50,6 @@ class JetImageWidget(QGraphicsView):
         self.scene.sceneRectChanged.connect(self.capture_scene_change)
         self.signals.comDetection.connect(self.set_com_on)
         self.scene.itemPos.connect(self.send_line_pos)
-
-    def change(self, c):
-        print(c)
-
-    def selection_changed(self):
-        print("Selection changed")
-
-    def focus_item(self, i):
-        print(i)
         
     def send_line_pos(self):
         upper_left = (self.line_item_vert_left.pos().x(), 
@@ -95,11 +83,11 @@ class JetImageWidget(QGraphicsView):
                 self.color_image = cv2.line(self.color_image, 
                                             tuple(self.context.best_fit_line_plus[1]),
                                             tuple(self.context.best_fit_line_plus[0]), 
-                                            (220,20,60), 1)
+                                            (220, 20, 60), 1)
             if len(self.context.best_fit_line_minus):
                 self.color_image = cv2.line(self.color_image, tuple(self.context.best_fit_line_minus[1]),
                                             tuple(self.context.best_fit_line_minus[0]), 
-                                            (220,20,60), 1)
+                                            (220, 20, 60), 1)
         self.qimage = array2qimage(self.color_image)
         pixmap = QPixmap.fromImage(self.qimage) 
         self.pixmap_item.setPixmap(pixmap)

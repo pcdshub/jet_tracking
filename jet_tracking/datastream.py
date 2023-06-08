@@ -1,4 +1,3 @@
-import collections
 import logging
 import time
 from statistics import StatisticsError, mean, stdev
@@ -10,12 +9,10 @@ from pcdsdevices.epics_motor import Motor
 from collections import deque
 import cv2
 import threading
-from qimage2ndarray import array2qimage
 from scipy import stats
 from motorMoving import MotorAction
 from tools.numGen import SimulationGenerator
 from tools.simMotorMoving import SimulatedMotor
-from tools.quickCalc import skimmer
 from sketch.simJetImage import SimulatedImage
 
 
@@ -171,7 +168,8 @@ class StatusThread(QObject):
         """
         Initialize the StatusThread.
 
-        This method initializes the StatusThread object with the given context and signals. It sets various attributes and initializes data buffers and dictionaries.
+        This method initializes the StatusThread object with the given context and signals.
+        It sets various attributes and initializes data buffers and dictionaries.
 
         Parameters:
         ----------
@@ -487,6 +485,7 @@ class StatusThread(QObject):
         Set the calibration priority.
 
         This method sets the calibration_priority attribute of the StatusThread object with the provided value.
+        This can either be 'recalibrate' or 'keep calibration'
 
         Parameters:
         ----------
@@ -875,7 +874,7 @@ class EventProcessor(QThread):
     of associated functions based on the flags.
 
     Attributes:
-        SIGNALS (object): The signals object for emitting signals.
+        signals (QObject): The signals object for emitting signals.
         flag_type (dict): A dictionary to store the count of different flags.
         isCounting (bool): A flag indicating whether the processor is currently counting.
 
@@ -944,8 +943,8 @@ class JetImageFeed(QObject):
         Initialize the JetImageFeed after a motor move.
 
         Args:
-            context (object): The context object containing various settings and values.
-            signals (object): The signals object for emitting and receiving signals.
+            context: The context object containing various settings and values.
+            signals (QObject): The signals object for emitting and receiving signals.
         """
         self.signals = signals
         self.context = context
@@ -1001,9 +1000,6 @@ class JetImageFeed(QObject):
     def set_com_on(self):
         """
         Set the find_com_bool flag.
-
-        Args:
-            o (bool): The value indicating whether to find the center of mass.
         """
         self.find_com_bool = self.context.find_com_bool
         
@@ -1060,7 +1056,7 @@ class JetImageFeed(QObject):
 
     def new_request(self, request):
         """
-        Set the new request for image processing.
+        Set the new request for image processing information to update calibration positions.
 
         Args:
             request: The new request for image processing.
@@ -1071,9 +1067,15 @@ class JetImageFeed(QObject):
         self.request_for_calibration = request
 
     def update_cam_vals(self):
+        """
+        Update the left threshold value based on the context threshold value.
+        """
         self.left_threshold = self.context.threshold
 
     def connect_cam(self):
+        """
+        Connect to the camera and update the necessary variables.
+        """
         if self.context.live_data:
             self.cam_name = self.context.PV_DICT.get('camera', None)
             self.array_size_x_data = caget(self.cam_name +
@@ -1108,6 +1110,12 @@ class JetImageFeed(QObject):
                 self.connected = True
 
     def update_editor_vals(self, e):
+        """
+        Update the editor values based on the provided dictionary.
+
+        Args:
+            e: A dictionary containing the image morphology values.
+        """
         self.dilate = e['dilate'][-1]
         self.erode = e['erode'][-1]
         self.opener = e['open'][-1]
@@ -1119,6 +1127,15 @@ class JetImageFeed(QObject):
         self.right_threshold = e['right threshold'][-1]
 
     def editor(self, im):
+        """
+        Apply various image editing operations to the input image.
+
+        Args:
+            im: The input image to be edited.
+
+        Returns:
+            The edited image after applying the specified operations.
+        """
         if self.dilate:
             im = cv2.dilate(im, self.kernel, iterations=self.dilate)
         if self.erode:
@@ -1142,6 +1159,12 @@ class JetImageFeed(QObject):
         return im
     
     def find_center(self, im):
+        """
+        Find the center of a jet in the given image.
+
+        Args:
+            im: The input image.
+        """
         self.locate_jet(im, int(self.upper_left[0]), int(self.lower_right[0]), 
                         int(self.upper_left[1]), int(self.lower_right[1]))
         if self.counter != 20:
@@ -1159,6 +1182,16 @@ class JetImageFeed(QObject):
             self.request_for_calibration = False
 
     def locate_jet(self, im, x_start, x_end, y_start, y_end):
+        """
+        Locate the jet in the specified region of interest (ROI) in the image.
+
+        Args:
+            im: The input image.
+            x_start: The starting x-coordinate of the ROI.
+            x_end: The ending x-coordinate of the ROI.
+            y_start: The starting y-coordinate of the ROI.
+            y_end: The ending y-coordinate of the ROI.
+        """
         crop = im[y_start:y_end, x_start:x_end]
         crop = cv2.convertScaleAbs(crop)
         self.context.contours, hierarchy = cv2.findContours(crop, cv2.RETR_EXTERNAL,
@@ -1186,6 +1219,15 @@ class JetImageFeed(QObject):
 
     @staticmethod
     def find_com(contours):
+        """
+        Find the center of mass (COM) for each contour.
+
+        Args:
+            contours: A list of contours.
+
+        Returns:
+            A list of center of mass (COM) coordinates.
+        """
         centers = []
         for i in range(len(contours)):
             M = cv2.moments(contours[i])
@@ -1194,14 +1236,21 @@ class JetImageFeed(QObject):
         return centers
 
     def form_line(self, com, y_min, y_max):
+        """
+        Form a line using the center of mass (COM) coordinates.
+
+        Args:
+            com: A list of center of mass (COM) coordinates.
+            y_min: The minimum y-value for the line.
+            y_max: The maximum y-value for the line.
+
+        Returns:
+            True if the line is successfully formed, False otherwise.
+        """
         xypoints = list(zip(*com))
         y = np.asarray(list(xypoints[0]))
         x = np.asarray(list(xypoints[1]))
         res = stats.linregress(x, y)
-        
-        #self.signals.message.emit(f"Slope: {res.slope:.6f}")
-        #self.signals.message.emit(f"Intercept: {res.intercept:.6f}")
-        #self.signals.message.emit(f"R-squared: {res.rvalue**2:.6f}")
         # for 95% confidence
         slope = res.slope
         intercept = res.intercept
@@ -1233,6 +1282,15 @@ class JetImageFeed(QObject):
             return False
 
     def run_image_thread(self):
+        """
+        Run the image processing thread.
+
+        This function processes the image if the thread is not paused and the camera is connected.
+        If live data is available, it retrieves the image from the camera. Otherwise, it generates
+        a simulated image. The image is then processed using the editor function. If the
+        find_com_bool flag is set, the center of the jet is located in the image. Finally, the
+        processed image is emitted through the camImager signal.
+        """
         if not self.paused:
             if self.connected:
                 if self.context.live_data:
@@ -1250,7 +1308,60 @@ class JetImageFeed(QObject):
 
 
 class MotorThread(QObject):
+    """
+    Represents a thread for motor control and calibration.
+
+    This class handles motor control and calibration operations. It receives signals
+    and performs the corresponding actions based on the signal received. It maintains
+    various state variables to keep track of motor settings, calibration parameters,
+    and communication status.
+
+    Attributes:
+        algorithm (str): The algorithm to use for motor control.
+        low_limit (float): The lower limit of the motor position.
+        high_limit (float): The upper limit of the motor position.
+        step_size (float): The step size for motor movement.
+        tolerance (float): The tolerance for motor position accuracy.
+        calibration_values (dict): The calibration values for motor calibration.
+        calibration_priority (str): The priority for motor calibration.
+        refresh_rate (int): The refresh rate for motor control operations.
+        moves (list): List of motor moves performed.
+        intensities (list): List of intensities for motor calibration.
+        calibration_steps (int): Number of calibration steps.
+        calibration_tries (int): Number of calibration tries.
+        vals (dict): Dictionary to store various motor values.
+        done (bool): Flag indicating if motor calibration is done.
+        motor_name (str): The name of the motor.
+        motor (object): The motor object.
+        live (bool): Flag indicating if the motor is in live mode.
+        connected (bool): Flag indicating if the motor is connected.
+        wait (bool): Flag indicating if the motor should wait.
+        mode (str): The mode of the motor.
+        initial_position (float): The initial position of the motor.
+        averaging (int): The number of values to average for motor position.
+        request_new_values (bool): Flag indicating if new motor values are requested.
+        got_new_values (bool): Flag indicating if new motor values are received.
+        request_image_processor (bool): Flag indicating if image processor is requested.
+        complete_image_processor (bool): Flag indicating if image processor is complete.
+        pix_per_mm (float): Pixels per millimeter for motor calibration.
+        good_edge_points (list): List of good edge points for motor calibration.
+        bad_edge_points (list): List of bad edge points for motor calibration.
+        sweet_spot (list): The sweet spot for motor calibration.
+        max_value (float): The maximum value for motor calibration.
+        paused (bool): Flag indicating if the motor thread is paused.
+        action (object): The MotorAction object for motor actions.
+    """
     def init_after_move(self, context, signals):
+        """
+        Initialize the MotorThread object after moving.
+
+        This method initializes the MotorThread object with the given context and signals.
+        It sets up the initial values for various attributes based on the context.
+
+        Args:
+            context: The context object containing motor settings and parameters.
+            signals: The signals object for communicating with other components.
+        """
         self.signals = signals
         self.context = context
         self.algorithm = self.context.algorithm
@@ -1289,6 +1400,15 @@ class MotorThread(QObject):
         self.make_connections()
 
     def make_connections(self):
+        """
+        Establishes signal connections for motor control.
+
+        This method establishes connections between various signals and their corresponding
+        slots for motor control and calibration. It connects signals for changing calibration
+        priority, updating intensities for motor calibration, connecting to the motor,
+        enabling live motor mode, notifying motor, changing motor mode, completing image
+        processing, starting the motor thread, and stopping the motor thread.
+        """
         self.signals.changeCalibrationPriority.connect(self.set_calibration_priority)
         self.signals.intensitiesForMotor.connect(self.update_values)
         self.signals.connectMotor.connect(self.connect_to_motor)
@@ -1300,6 +1420,14 @@ class MotorThread(QObject):
         self.signals.stopMotorThread.connect(self.stop_it)
 
     def check_motor_options(self):
+        """
+        Checks and updates motor options from the context.
+
+        This method retrieves and updates motor options such as the algorithm,
+        low limit, high limit, step size, calibration values, and refresh rate
+        from the context.
+
+        """
         self.algorithm = self.context.algorithm
         self.low_limit = self.context.low_limit
         self.high_limit = self.context.high_limit
@@ -1308,17 +1436,43 @@ class MotorThread(QObject):
         self.refresh_rate = self.context.refresh_rate
 
     def start_com(self):
-        log.info("Inside of the start_com method of MotorThread.")
+        """
+        Starts the communication loop for the motor thread.
+
+        This method starts the communication loop for the motor thread. It runs
+        the `run_motor_thread` method in a loop until the thread is interrupted.
+        It also processes events to ensure responsiveness.
+
+        """
+        log.debug("Inside of the start_com method of MotorThread.")
         while not self.thread().isInterruptionRequested():
             self.run_motor_thread()
             QCoreApplication.processEvents(QEventLoop.AllEvents,
                                            int(self.refresh_rate*1000))
 
     def start_it(self):
-        log.info("Inside of the start_it method of MotorThread.")
+        """
+        Starts the motor thread.
+
+        This method starts the motor thread by setting the `paused` attribute
+        to False.
+
+        """
+        log.debug("Inside of the start_it method of MotorThread.")
         self.paused = False
 
     def stop_it(self, abort):
+        """
+        Stops the motor thread.
+
+        This method stops the motor thread by setting the `paused` attribute
+        to True. If `abort` is True, it also requests interruption for the thread.
+        Otherwise, it emits a message to pause the data stream.
+
+        Args:
+            abort (bool): A flag indicating whether to abort the thread.
+
+        """
         self.paused = True
         if abort:
             self.thread().requestInterruption()
@@ -1326,9 +1480,28 @@ class MotorThread(QObject):
             self.signals.message.emit('Pause Data Stream')
 
     def set_calibration_priority(self, p):
+        """
+        Sets the calibration priority.
+
+        This method sets the calibration priority to .
+
+        Args:
+            p (str): The calibration priority to set.
+
+        """
         self.calibration_priority = p
 
     def change_motor_mode(self, m):
+        """
+        Changes the motor mode.
+
+        This method changes the motor mode. It handles different
+        cases based on the current mode and the requested mode.
+
+        Args:
+            m (str): The motor mode to change to.
+
+        """
         if not self.connected:
             try:
                 self.connect_to_motor()
@@ -1336,7 +1509,7 @@ class MotorThread(QObject):
                 self.mode = "sleep"
         if self.connected:
             if m == 'sleep' and self.mode == 'run':
-                self.signals.message.emit('Canceling motor moving immediately, going to sleep')
+                self.signals.message.emit('Motor.. go to sleep now..')
                 self.mode = m
                 self.paused = True
             if m == 'sleep' and self.mode == 'calibrate':
@@ -1361,16 +1534,39 @@ class MotorThread(QObject):
                 self.paused = False
 
     def move_to_input_position(self, mp):
+        """
+        Moves the motor to the input position.
+
+        This method moves the motor to the input position `mp`.
+
+        Args:
+            mp (float): The target motor position.
+
+        """
         self.motor.move(mp, self.wait)
         self.signals.changeMotorPosition.emit(self.motor.position)
 
     def live_motor(self, live):
+        """
+        Sets the motor to live or simulated mode.
+
+        This method sets the motor mode to live or simulated.
+
+        Args:
+            live (bool): A flag indicating whether to set the motor to live mode.
+
+        """
         self.live = live
         if self.connected:
             self.connected = False
             self.connect_to_motor()
 
     def connect_to_motor(self):
+        """
+        Connects to the motor.
+
+        This method connects to the motor based on whether running live or simulated.
+        """
         if self.live:
             self.motor_name = self.context.PV_DICT.get('motor', None)
             print("connecting to: ", self.motor_name)
@@ -1393,6 +1589,23 @@ class MotorThread(QObject):
             self.wait = False
 
     def clear_values(self):
+        """
+        Clears the values of various variables used in the system.
+
+        Resets the following variables:
+        - self.moves: List of moves (unclear what type of moves).
+        - self.done: Boolean indicating if a task is completed.
+        - self.request_new_values: Boolean indicating if new values are requested.
+        - self.got_new_values: Boolean indicating if new values have been received.
+        - self.request_image_processor: Boolean indicating if image processing is requested.
+        - self.complete_image_processor: Boolean indicating if image processing is completed.
+        - self.good_edge_points: List of edge points considered "good".
+        - self.bad_edge_points: List of edge points considered "bad".
+        - self.calibration_steps: Number of calibration steps.
+        - self.calibration_tries: Number of calibration attempts.
+        - self.sweet_spot: List of positions considered as the "sweet spot".
+        - self.max_value: Maximum value (unclear what it represents).
+        """
         self.moves = []
         self.done = False
         self.request_new_values = False
@@ -1407,8 +1620,19 @@ class MotorThread(QObject):
         self.max_value = 0
 
     def impart_knowledge(self, info):
-        # ["resume", "everything is good", "you downgraded", "you upgraded",
-        #  "pause", "missed shots", "high intensity"]
+        """
+        Handles the imparting of knowledge to the system.
+
+        Args:
+        - info (str): Information provided to the system. Possible values are:
+          - "resume": Indicates that the system should resume from a paused state.
+          - "everything is good": Indicates that everything is in a good state.
+          - "you downgraded": Indicates a change from high intensity to missed shots.
+          - "you upgraded": Indicates a change from missed shots to high intensity.
+          - "pause": Indicates that the system should pause.
+          - "missed shots": Indicates a change from everything is good to missed shots.
+          - "high intensity": Indicates a change from everything is good to high intensity.
+        """
         self.signals.message.emit(info)
         if info == "everything is good":
             # if this info is passed then the status was changed from missed
@@ -1442,6 +1666,12 @@ class MotorThread(QObject):
             self.sweet_spot.append(self.moves[-1])
 
     def next_calibration_position(self, success):
+        """
+        Moves the motor to the next calibration position based on the calibration step.
+
+        Args:
+        - success (bool): Indicates if the calibration attempt was successful.
+        """
         if success:
             if self.calibration_steps == 1:
                 self.initial_position = self.motor.position
@@ -1449,7 +1679,6 @@ class MotorThread(QObject):
                 self.motor.move(self.initial_position - (self.step_size*(self.calibration_steps-5)), self.wait)
             else:
                 self.motor.move(self.initial_position + (self.step_size * self.calibration_steps), self.wait)
-            self.context.update_read_motor_position(self.motor.position)
             if not self.live:
                 time.sleep((1/self.refresh_rate)*3)
             self.calibration_steps += 1
@@ -1459,10 +1688,15 @@ class MotorThread(QObject):
                 self.motor.move(self.initial_position, self.wait)
                 self.mode = "sleep"
                 self.signals.message.emit("Image calibration failed")
+        self.context.update_read_motor_position(self.motor.position)
         self.complete_image_processor = True
 
     def update_image_calibration(self):
-        # Assuming that the step size is in mm
+        """
+        Updates the image calibration values.
+
+        Calculates the pixels per millimeter value based on the image calibration positions.
+        """
         pix_per_mm = []
         image_calibration_positions = self.context.image_calibration_positions
         for i in range(len(image_calibration_positions)-1):
@@ -1475,6 +1709,18 @@ class MotorThread(QObject):
         self.signals.message.emit(f"pix per mm: {self.pix_per_mm}")
 
     def update_values(self, vals):
+        """
+        Updates the values used in the system.
+
+        Args:
+        - vals (dict): Dictionary of updated values.
+
+        The function performs the following actions:
+        - Checks if the system is not done.
+        - Sets self.got_new_values to True.
+        - Calls self.check_motor_options().
+        - Updates self.vals and triggers the self.average_intensity() function if the values have changed and 'dropped' is False.
+        """
         if not self.done:
             self.got_new_values = True
             self.check_motor_options()
@@ -1485,6 +1731,18 @@ class MotorThread(QObject):
                 pass
 
     def average_intensity(self):
+        """
+        Calculates and updates the average intensity values.
+
+        Updates the intensities list with the ratio value from self.vals.
+        When the intensities list reaches a length of 20, the following actions are performed:
+        - Prints the intensities list (for debugging purposes).
+        - Calls self.check_motor_options().
+        - Prints the moves list (for debugging purposes).
+        - Appends a new move to the moves list, consisting of the mean of intensities and the current motor position.
+        - Resets the intensities list.
+        - If not paused, calls self.action.execute() to determine if the task is completed and updates self.done and self.max_value accordingly.
+        """
         self.intensities += [self.vals['ratio'][0]]
         # this is where we set the integration time for each motor position
         # in the scan
@@ -1500,6 +1758,51 @@ class MotorThread(QObject):
                 self.done, self.max_value = self.action.execute()
 
     def run_motor_thread(self):
+        """
+        Runs the motor in a separate thread based on the current mode.
+
+        The function performs different actions depending on the current mode:
+        - If the mode is 'run':
+            - If the task is done:
+                - If the number of moves is greater than 4:
+                    - Retrieves the motor positions and intensities from the moves list.
+                    - Emits a signal to plot the motor moves.
+                    - Pauses for 7 seconds.
+                    - Emits a signal with information about the peak intensity and motor position.
+                    - Updates the motor position in the context.
+                    - Emits a signal to indicate that the motor algorithm has finished.
+                - Otherwise:
+                    - Updates the motor position in the context.
+                    - Emits a signal to indicate that the motor should go to sleep.
+                    - Updates the motor mode in the context to 'sleep'.
+            - If the task is not done:
+                - If a new values request is requested and new values have been received:
+                    - Resets the new values request and new values received flags.
+                - If a new values request is not requested:
+                    - Emits a signal to request new values.
+                    - Sets the new values request flag.
+        - If the mode is 'calibrate':
+            - If the calibration steps reach 11:
+                - Moves the motor to the initial position.
+                - Updates the read motor position in the context.
+                - Pauses for 3 times the inverse of the refresh rate.
+                - Emits a signal to request image processing with False parameter.
+                - Updates the image calibration based on the captured positions.
+                - Clears the image calibration positions list in the context.
+                - Resets the calibration steps to 1.
+                - Sets the mode to 'sleep'.
+                - Updates the motor mode in the context to 'sleep'.
+            - If the calibration steps are not 11:
+                - If an image processing request is requested and image processing is completed:
+                    - Resets the image processing request and image processing completion flags.
+                - If an image processing request is not requested:
+                    - If not in live mode, pauses for 3 times the inverse of the refresh rate.
+                    - Emits a signal to request image processing with True parameter.
+                    - Sets the image processing request flag.
+        - If the mode is 'sleep':
+            - Clears the values of various variables.
+        - Pauses for the inverse of the refresh rate.
+        """
         if not self.paused:
             if self.mode == 'run':
                 if self.done:
@@ -1511,7 +1814,6 @@ class MotorThread(QObject):
                         self.signals.message.emit(f"Found peak intensity {self.max_value} "
                                                   f"at motor position: {self.motor.position}")
                         self.context.update_motor_position(self.motor.position)
-                        self.signals.message.emit("Motor.. go to sleep now..")
                         self.context.update_motor_mode('sleep')
                         self.signals.finishedMotorAlgorithm.emit()
                     else:

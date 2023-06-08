@@ -21,8 +21,7 @@ class HLineItem(QGraphicsLineItem):
         updated_cursor_position = event.scenePos()
 
         orig_position = self.scenePos()
-        updated_cursor_y = updated_cursor_position.y() - \
-                           orig_cursor_position.y() + orig_position.y()
+        updated_cursor_y = updated_cursor_position.y() - orig_cursor_position.y() + orig_position.y()
         self.setPos(QPointF(orig_position.x(), updated_cursor_y))
 
     def mouseReleaseEvent(self, event):
@@ -43,8 +42,7 @@ class VLineItem(QGraphicsLineItem):
         updated_cursor_position = event.scenePos()
 
         orig_position = self.scenePos()
-        updated_cursor_x = updated_cursor_position.x() - \
-                           orig_cursor_position.x() + orig_position.x()
+        updated_cursor_x = updated_cursor_position.x() - orig_cursor_position.x() + orig_position.x()
         self.setPos(QPointF(updated_cursor_x, orig_position.y()))
 
     def mouseReleaseEvent(self, event):

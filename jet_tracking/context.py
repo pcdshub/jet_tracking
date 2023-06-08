@@ -397,7 +397,7 @@ class Context(object):
         Updates the calibration priority.
 
         Parameters:
-            p (int): The calibration priority value.
+            p (str): The calibration priority string - either 'recalibrate' or 'keep calibration'
 
         """
         self.signals.changeCalibrationPriority.emit(p)
