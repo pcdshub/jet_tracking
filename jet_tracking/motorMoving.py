@@ -25,7 +25,7 @@ class MotorAction(object):
         self.context = context
         self.signals = signals
         self.motor_thread = motor_thread
-        self.ternary_search = TernarySearch(self.motor_thread, signals)
+        self.ternary_search = TernarySearch(self.motor_thread, context, signals)
         self.basic_scan = BasicScan(self.motor_thread, context, signals)
         self.linear_ternary = LinearTernary(self.motor_thread, context, signals)
         self.dyn_linear = DynamicLinear(self.motor_thread, context, signals)

@@ -53,7 +53,6 @@ class Context(object):
         position_tolerance (float): Tolerance for motor position.
         motor_averaging (int): Number of points to average for motor movement.
         algorithm (str): Algorithm used for motor movement.
-        motor_running (bool): Flag indicating if the motor is currently running.
         motor_mode (str): Mode of the motor.
         live_motor (bool): Flag indicating if live motor data is enabled.
         motor_position (float): Current motor position.
@@ -162,14 +161,14 @@ class Context(object):
         self.high_limit = 0.1
         self.low_limit = -0.1
         self.step_size = 0.02
-        self.position_tolerance = 0.001
+        self.position_tolerance = 0.01
         self.motor_averaging = 10
         self.algorithm = 'Ternary Search'
-        self.motor_running = False
-        self.motor_mode = ''
+        self.motor_mode = 'sleep'
         self.live_motor = True
         self.motor_position = 0
         self.read_motor_position = 0
+        self.motor_connected = False
         self.live_data = True
         self.display_flag = None
 
@@ -406,7 +405,7 @@ class Context(object):
         """
         Initiate the image calibration process.
         """
-        if self.motor_running:
+        if self.motor_mode != "sleep":
             self.signals.message.emit("the motor is currently running an algorithm. Try stopping motor first")
         else:
             self.update_motor_mode('calibrate')
@@ -420,10 +419,6 @@ class Context(object):
         """
         self.motor_mode = mode
         self.signals.motorMode.emit(self.motor_mode)
-        if self.motor_mode == 'run':
-            self.motor_running = True
-        else:
-            self.motor_running = False
 
     def connect_motor(self):
         """
@@ -469,15 +464,6 @@ class Context(object):
             cs (int): The new number of steps for image calibration.
         """
         self.image_calibration_steps = cs
-
-    def update_motor_running(self, running):
-        """
-        Update the flag indicating if the motor is running.
-
-        Args:
-            running (bool): Flag indicating if the motor is running.
-        """
-        self.motor_running = running
 
     def update_peak_intensity(self, pi):
         """

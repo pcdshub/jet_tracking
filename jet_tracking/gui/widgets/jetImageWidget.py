@@ -1,8 +1,8 @@
 import logging
-from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsView
-from tools.ROI import HLineItem, VLineItem, GraphicsScene
+from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsView, QGraphicsEllipseItem
+from tools.ROI import HLineItem, VLineItem, GraphicsScene, GraphicsRectItem
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtGui import QPixmap, QImage, QPen
 import numpy as np
 from qimage2ndarray import array2qimage
 import cv2
@@ -28,14 +28,16 @@ class JetImageWidget(QGraphicsView):
         self.line_item_hor_bot = HLineItem()
         self.line_item_vert_left = VLineItem()
         self.line_item_vert_right = VLineItem()
+        self.rect = GraphicsRectItem(100, 100, 100, 100)
         self.find_com_bool = False
+        self.image_displayed = False
         self.contours = []
         self.best_fit_line = []
         self.best_fit_line_plus = []
         self.best_fit_line_minus = []
         self.com = []
+        self.beam_location = ()
         self.make_connections()
-        self.connect_scene()
 
     def connect_scene(self):
         self.setScene(self.scene)
@@ -44,13 +46,20 @@ class JetImageWidget(QGraphicsView):
         self.scene.addItem(self.line_item_vert_left)
         self.scene.addItem(self.line_item_hor_bot)
         self.scene.addItem(self.line_item_hor_top)
+        self.scene.addItem(self.rect)
         
     def make_connections(self):
         self.signals.camImager.connect(self.update_image)
         self.scene.sceneRectChanged.connect(self.capture_scene_change)
         self.signals.comDetection.connect(self.set_com_on)
-        self.scene.itemPos.connect(self.send_line_pos)
-        
+        self.scene.lineItemPos.connect(self.send_line_pos)
+        self.scene.rectItemPos.connect(self.rect_pos)
+
+    def rect_pos(self):
+        scene_coord = self.rect.mapToScene(self.rect.boundingRect().center())
+        pixmap_coord = self.pixmap_item.mapFromScene(scene_coord)
+        self.beam_location = (pixmap_coord.x(), pixmap_coord.y())
+
     def send_line_pos(self):
         upper_left = (self.line_item_vert_left.pos().x(), 
                       self.line_item_hor_top.pos().y())
@@ -91,6 +100,9 @@ class JetImageWidget(QGraphicsView):
         self.qimage = array2qimage(self.color_image)
         pixmap = QPixmap.fromImage(self.qimage) 
         self.pixmap_item.setPixmap(pixmap)
+        if not self.image_displayed:
+            self.image_displayed = True
+            self.connect_scene()
         self.fitInView(self.scene.sceneRect(), Qt.KeepAspectRatio)
 
     def capture_scene_change(self, qrect):

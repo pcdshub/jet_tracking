@@ -1,8 +1,8 @@
-from gui.widgets.basicWidgets import (CollapsibleBox, ComboBox, Label,
+from gui.widgets.basicWidgets import (CollapsibleBox, Label,
                                       LineEdit, QHLine)
 from PyQt5.QtWidgets import (QButtonGroup, QFrame, QGridLayout, QHBoxLayout,
                              QLCDNumber, QPushButton, QRadioButton,
-                             QSizePolicy, QTextEdit, QVBoxLayout, QSpacerItem)
+                             QSizePolicy, QTextEdit, QVBoxLayout, QComboBox)
 
 
 class Controls_Ui(object):
@@ -21,11 +21,13 @@ class Controls_Ui(object):
 
         obj.bttngrp1 = QButtonGroup()
 
-        obj.rdbttn_live = QRadioButton("live data")
-        obj.rdbttn_sim = QRadioButton("simulated data")
+        obj.rdbttn_live = QRadioButton("Live data")
+        obj.rdbttn_all_sim = QRadioButton("All simulated")
+        obj.rdbttn_part_sim = QRadioButton("Sim data + Live motor/image")
         obj.rdbttn_live.setChecked(True)
         obj.bttngrp1.addButton(obj.rdbttn_live, id=1)
-        obj.bttngrp1.addButton(obj.rdbttn_sim, id=0)
+        obj.bttngrp1.addButton(obj.rdbttn_all_sim, id=0)
+        obj.bttngrp1.addButton(obj.rdbttn_part_sim, id=2)
         obj.bttngrp1.setExclusive(True)
 
         obj.bttngrp3 = QButtonGroup()
@@ -51,14 +53,19 @@ class Controls_Ui(object):
         # setup layout
         ##############
         obj.layout_graph = QVBoxLayout()
-        obj.layout_allrdbttns = QGridLayout()
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_live, 0, 0)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_sim, 0, 1)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali, 1, 0)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali_live, 1, 1)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali_after, 2, 0)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_keep_cali, 2, 1)
-        obj.layout_graph.addLayout(obj.layout_allrdbttns)
+        obj.layout_live = QHBoxLayout()
+        obj.layout_cali_live = QHBoxLayout()
+        obj.layout_cali_after = QHBoxLayout()
+        obj.layout_live.addWidget(obj.rdbttn_live)
+        obj.layout_live.addWidget(obj.rdbttn_all_sim)
+        obj.layout_live.addWidget(obj.rdbttn_part_sim)
+        obj.layout_cali_live.addWidget(obj.rdbttn_cali)
+        obj.layout_cali_live.addWidget(obj.rdbttn_cali_live)
+        obj.layout_cali_after.addWidget(obj.rdbttn_cali_after)
+        obj.layout_cali_after.addWidget(obj.rdbttn_keep_cali)
+        obj.layout_graph.addLayout(obj.layout_live)
+        obj.layout_graph.addLayout(obj.layout_cali_live)
+        obj.layout_graph.addLayout(obj.layout_cali_after)
         obj.layout_graph.addSpacing(5)
 
         #####################################################################
@@ -189,7 +196,7 @@ class Controls_Ui(object):
         obj.le_bad_scan.setToolTip('Number of bad scans that can be attempted'
                                    ' before automatically turning off tracking')
 
-        obj.cbox_algorithm = ComboBox()
+        obj.cbox_algorithm = QComboBox()
         obj.cbox_algorithm.setSizePolicy(QSizePolicy.Expanding,
                                          QSizePolicy.Preferred)
         obj.cbox_algorithm.addItem("Ternary Search")

@@ -6,6 +6,8 @@ from PyQt5.QtCore import Qt
 import numpy as np
 from collections import deque
 import pyqtgraph as pg
+import warnings
+warnings.filterwarnings('ignore')
 
 log = logging.getLogger(__name__)
 

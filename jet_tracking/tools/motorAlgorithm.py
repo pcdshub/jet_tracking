@@ -263,10 +263,10 @@ class BasicScan(object):
 
 
 class TernarySearch(object):
-    def __init__(self, motor_thread, signals):
-        logger.info("TernarySearch object created.")
+    def __init__(self, motor_thread, context, signals):
         self.motor_thread = motor_thread
         self.signals = signals
+        self.context = context
         self.beginning = True
         self.done = False
         self.max_value = 0

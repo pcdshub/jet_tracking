@@ -130,11 +130,11 @@ class ControlsWidget(QFrame, Controls_Ui):
                 self._start_motor()
             else:
                 self.signals.message.emit("Motor is not connected.\n"
-                                          "fix motor connection settings"
-                                          "and try again")
+                                          "Fix motor connection settings"
+                                          " and try again")
         else:
             self.signals.message.emit("The Value reader is not connecting"
-                                      "properly. Check settings.")
+                                      " properly. Check settings/PVs.")
 
     def start_algorithm(self):
         """
@@ -179,7 +179,6 @@ class ControlsWidget(QFrame, Controls_Ui):
         """
         if not self.thread2.isRunning():
             if self.thread1.isRunning():
-                self.context.update_motor_running(False)
                 self.context.update_motor_mode('sleep')
                 self.signals.startMotorThread.emit()
             else:
@@ -195,7 +194,6 @@ class ControlsWidget(QFrame, Controls_Ui):
 
         """
         if not self.worker_motor.paused:
-            self.context.update_motor_running(False)
             self.signals.stopMotorThread.emit(False)
             self.signals.message.emit("The motor was stopped"
                                       "either press start or connect motor")
@@ -386,9 +384,8 @@ class ControlsWidget(QFrame, Controls_Ui):
                 self.context.update_live_graphing(False)
                 self.context.update_live_motor(False)
         else:
-            print("here")
             if self.bttngrp1.checkedId() == 1:
-                self.rdbttn_sim.setChecked(True)
+                self.rdbttn_all_sim.setChecked(True)
             elif self.bttngrp1.checkedId() == 0:
                 self.rdbttn_live.setChecked(True)
 
@@ -400,20 +397,22 @@ class ControlsWidget(QFrame, Controls_Ui):
             button: The clicked button.
         """
         bttn = button.text()
-        if bttn == "simulated data":
+        if bttn == "All simulated":
             if not self.worker_motor.paused:
                 print("Motor running and trying to change to simulated")
                 self.signals.showMessageBox.emit("live", "simulated")
             else:
                 self.context.update_live_graphing(False)
                 self.context.update_live_motor(False)
-        elif bttn == "live data":
+        elif bttn == "Live data":
             if not self.worker_motor.paused:
-                print("Motor running and trying to change to live")
                 self.signals.showMessageBox.emit("simulated", "live")
             else:
                 self.context.update_live_graphing(True)
                 self.context.update_live_motor(True)
+        elif bttn == "Sim data + Live motor/image":
+            self.context.update_live_graphing(False)
+            self.context.update_live_motor(True)
         elif bttn == "manual \nmotor moving":
             self.bttn_search.setEnabled(True)
             self.bttn_tracking.setEnabled(False)

@@ -102,11 +102,14 @@ class ValueReader(metaclass=Singleton):
                 self.signal_ratio = EpicsSignal(ratio)
                 dropped = self.context.PV_DICT.get('dropped', None)
                 self.signal_dropped = EpicsSignal(dropped)
-            except NotImplementedError:
-                pass
+            except Exception as e:
+                self.live_initialized = False
+                self.connected = False
+                self.signals.message.emit(f"Could not connect to the PVs for the data stream, {type(e).__name__}")
             else:
-                self.live_initialized = True
-                self.connected = True
+                self.live_initialized = False
+                self.connected = False
+                self.signals.message.emit("Could not connect to the PVs for the data stream")
         elif not self.live_data:
             self.simgen = SimulationGenerator(self.context, self.signals)
             self.connected = True
@@ -121,7 +124,6 @@ class ValueReader(metaclass=Singleton):
         self.live_data = live
         if self.connected:
             self.connected = False
-            self.initialize_connections()
 
     def live_data_stream(self):
         """
@@ -425,6 +427,7 @@ class StatusThread(QObject):
             A flag indicating whether tracking mode should be enabled.
         """
         self.isTracking = b
+        print(self.isTracking)
 
     def update_mode(self, mode):
         """
@@ -553,16 +556,16 @@ class StatusThread(QObject):
             n_high = np.count_nonzero(high[~np.isnan(high)])
             if n_miss > self.notification_tolerance:
                 self.signals.changeStatus.emit("Warning, missed shots", "red")
-                self.processor_worker.count_flags_and_execute('missed shot', 50,
+                self.processor_worker.count_flags_and_execute('missed shot', 20,
                                                    self.missed_shots)
             elif n_drop > self.notification_tolerance:
                 self.signals.changeStatus.emit("Lots of dropped shots",
                                                "yellow")
-                self.processor_worker.count_flags_and_execute('dropped shot', 50,
+                self.processor_worker.count_flags_and_execute('dropped shot', 20,
                                                    self.dropped_shots)
             elif n_high > self.notification_tolerance:
                 self.signals.changeStatus.emit("High Intensity", "orange")
-                self.processor_worker.count_flags_and_execute('high intensity', 50,
+                self.processor_worker.count_flags_and_execute('high intensity', 20,
                                                    self.high_intensity)
             else:
                 if not self.processor_worker.isCounting:
@@ -791,15 +794,18 @@ class StatusThread(QObject):
         checks the bad_scan_counter and disables tracking if the limit is reached. If the motor is
         not running and tracking is disabled, emits a message signal suggesting running a search.
         """
-        if self.context.motor_running:
+        print("processor worker called missed shots.. ", self.isTracking, self.context.motor_connected, self.context.motor_mode)
+        if self.context.motor_connected:
             if self.status == "everything is good":
                 self.signals.notifyMotor.emit("missed shots")
             elif self.status == "dropped shots":
                 self.signals.notifyMotor.emit("resume")
             elif self.status == "high intensity":
                 self.signals.notifyMotor.emit("you downgraded")
-        if self.isTracking and not self.context.motor_running:
+        if self.isTracking and self.context.motor_mode == "sleep":
+            print("tracking and not motor running")
             if self.bad_scan_counter < self.bad_scan_limit:
+                print(self.bad_scan_counter, self.bad_scan_limit)
                 self.signals.message.emit("lots of missed shots.. "
                                           "starting motor")
                 self.context.update_motor_mode("run")
@@ -807,16 +813,9 @@ class StatusThread(QObject):
             else:
                 self.signals.enableTracking.emit(False)
                 self.signals.trackingStatus.emit('disabled', "red")
-        elif not self.isTracking and not self.context.motor_running:
+        elif not self.isTracking and self.context.motor_mode == "sleep":
             self.signals.message.emit("lots of missed shots.. consider running"
                                       " a search")
-        if self.context.motor_running:
-            if self.status == "everything is good":
-                self.signals.notifyMotor.emit("missed shots")
-            elif self.status == "dropped shots":
-                self.signals.notifyMotor.emit("resume")
-            elif self.status == "high intensity":
-                self.signals.notifyMotor.emit("you downgraded")
         self.status = "missed_shots"
 
     def dropped_shots(self):
@@ -825,7 +824,9 @@ class StatusThread(QObject):
 
         Pauses the motor and emits a message signal indicating a high number of dropped shots.
         """
-        if self.context.motor_running:
+        print("processor worker called dropped shots.. ", self.isTracking, self.context.motor_connected,
+              self.context.motor_mode)
+        if self.context.motor_connected:
             self.signals.message.emit("lots of dropped shots.. pausing motor")
             self.signals.notifyMotor.emit("pause")
         self.status = "dropped shots"
@@ -837,8 +838,10 @@ class StatusThread(QObject):
         Resets the bad_scan_counter and emits appropriate notifyMotor signals based on the current
         status. Sets the status to 'high intensity'.
         """
+        print("processor worker called high intensity.. ", self.isTracking, self.context.motor_connected,
+              self.context.motor_mode)
         self.bad_scan_counter = 0
-        if self.context.motor_running:
+        if self.context.motor_connected:
             if self.status == "dropped shots":
                 self.notifyMotor("resume")
             elif self.status == "missed shots":
@@ -854,9 +857,11 @@ class StatusThread(QObject):
         Resets the bad_scan_counter and stops the processor_worker. Emits appropriate notifyMotor
         signals based on the current status. Sets the status to 'everything is good'.
         """
+        print("processor worker called everything is good.. ", self.isTracking, self.context.motor_connected,
+              self.context.motor_mode)
         self.bad_scan_counter = 0
         self.processor_worker.stop_count()
-        if self.context.motor_running:
+        if self.context.motor_connected:
             if self.status == "dropped shots":
                 self.signals.notifyMotor("resume")
             elif self.status == "missed shots":
@@ -1559,7 +1564,6 @@ class MotorThread(QObject):
         self.live = live
         if self.connected:
             self.connected = False
-            self.connect_to_motor()
 
     def connect_to_motor(self):
         """
@@ -1569,24 +1573,26 @@ class MotorThread(QObject):
         """
         if self.live:
             self.motor_name = self.context.PV_DICT.get('motor', None)
-            print("connecting to: ", self.motor_name)
+            self.signals.message.emit("Trying to connect to: "+ self.motor_name)
             try:
                 self.motor = Motor(self.motor_name, name='jet_x')
                 time.sleep(1)
                 # for i in self.motor.component_names: ## this is a good diagnostic
                 #    print(f"{i} {getattr(self.motor, i).connected}")
                 self.context.update_read_motor_position(self.motor.position)
-            except NameError or NotImplementedError:
+            except Exception as e:
                 self.connected = False
-            else: ## not sure what case this was added for so leaving it for now
-                self.context.update_motor_position(self.motor.position)
-                self.connected = True
-                self.wait = True
+                self.signals.message.emit(f"Could not connect to the PVs for the motor, {type(e).__name__}")
+            else:
+                self.connected = False
+                self.signals.message.emit(f"Could not connect to the PVs for the motor.")
         elif not self.live:
             self.motor = SimulatedMotor(self.context, self.signals)
             self.context.update_motor_position(self.motor.position)
             self.connected = True
             self.wait = False
+        if self.connected:
+            self.context.motor_connected = True
 
     def clear_values(self):
         """
