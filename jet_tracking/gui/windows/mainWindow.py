@@ -15,7 +15,10 @@ from signals import Signals
 # TODO: address this more completely
 sys.path.append('/cds/group/pcds/epics-dev/ajshack/jet_tracking/jet_tracking/pyqt-stylesheets/')
 
-import pyqtcss  # noqa: E402  # isort: skip
+try:
+    import pyqtcss  # noqa: E402  # isort: skip
+except ImportError:
+    pyqtcss = None
 
 
 log = logging.getLogger("jet_tracker")
@@ -54,7 +57,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setAttribute(Qt.WA_AlwaysStackOnTop)
         self.setMinimumSize(QSize(700, 300))
         self.resize(QSize(1800, 1100))
-        self.setStyleSheet(pyqtcss.get_style("dark_orange"))
+        if pyqtcss is not None:
+            self.setStyleSheet(pyqtcss.get_style("dark_orange"))
+        else:
+            log.info("Optional dependency pyqtcss is unavailable")
+
         self.signals = Signals()
         self.context = Context(self.signals)
         self.setupUi(self)

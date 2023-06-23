@@ -14,15 +14,13 @@ build:
   noarch: python
   script: {{ PYTHON }} -m pip install . -vv
 
-
-
 requirements:
   build:
-  - python {{PY_VER}}*,>=3.6
+  - python {{PY_VER}}*,>=3.9
   - setuptools_scm
   - pip
   run:
-  - python {{PY_VER}}*,>=3.6
+  - python {{PY_VER}}*,>=3.9
   - pcdsdevices >=2.6.0
   - matplotlib
   - numpy
@@ -33,13 +31,14 @@ requirements:
   - scikit-image
   - scipy
 
-
-
 test:
   imports:
   - jet_tracking
-
-
+  requires:
+  - pytest
+  - pytest-cov
+  - pytest-qt
+  - pyqt
 
 about:
   home: https://github.com/pcdshub/jet_tracking

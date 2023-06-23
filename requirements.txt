@@ -10,4 +10,5 @@ opencv-python
 matplotlib
 pyyaml
 cf-units
+PyQt5
 git+https://github.com/sommerc/pyqt-stylesheets@master
