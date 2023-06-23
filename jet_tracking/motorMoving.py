@@ -58,8 +58,9 @@ class MotorAction:
             self.ternary_search.search()
             if self.ternary_search.done:
                 return True, self.ternary_search.max_value
-            else: return False, self.ternary_search.max_value
-        elif self.motor_thread.algorithm == "Basic Scan":
+            return False, self.ternary_search.max_value
+
+        if self.motor_thread.algorithm == "Basic Scan":
             if self.stop_search:
                 self.basic_scan.move_to_max()
                 self.stop_search = False
@@ -67,24 +68,26 @@ class MotorAction:
             self.basic_scan.scan()
             if self.basic_scan.done:
                 return True, self.basic_scan.max_value
-            else: return False, self.basic_scan.max_value
-        elif self.motor_thread.algorithm == "Linear + Ternary":
+            return False, self.basic_scan.max_value
+
+        if self.motor_thread.algorithm == "Linear + Ternary":
             if self.stop_search:
                 self.stop_search = False
                 return True, self.linear_ternary.max_value
             self.linear_ternary.search()
             if self.linear_ternary.done:
                 return True, self.linear_ternary.max_value
-            else: return False, self.linear_ternary.max_value
-        elif self.motor_thread.algorithm == "Dynamic Linear Scan":
+            return False, self.linear_ternary.max_value
+
+        if self.motor_thread.algorithm == "Dynamic Linear Scan":
             if self.stop_search:
                 self.stop_search = False
                 return True, self.dyn_linear.max_value
             self.dyn_linear.scan()
             if self.dyn_linear.done:
                 return True, self.dyn_linear.max_value
-            else: return False, self.dyn_linear.max_value
-        else:
-            self.signals.message.emit("That algorithm does not exist yet..")
-            self.stop_search = True
-            return True, self.motor_thread.motor.position
+            return False, self.dyn_linear.max_value
+
+        self.signals.message.emit("That algorithm does not exist yet..")
+        self.stop_search = True
+        return True, self.motor_thread.motor.position

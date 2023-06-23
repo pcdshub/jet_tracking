@@ -123,9 +123,7 @@ class CollapsibleBox(QWidget):
         lay = self.content_area.layout()
         self.clear_layout(lay)
         self.content_area.setLayout(layout)
-        collapsed_height = (
-                self.sizeHint().height() - self.content_area.maximumHeight()
-        )
+        collapsed_height = self.sizeHint().height() - self.content_area.maximumHeight()
         content_height = layout.sizeHint().height()
         for i in range(self.toggle_animation.animationCount()):
             animation = self.toggle_animation.animationAt(i)

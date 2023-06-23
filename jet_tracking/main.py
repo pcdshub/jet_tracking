@@ -46,11 +46,11 @@ class App(QApplication):
         self.setStyle("Fusion")
         self.mainWindow = MainWindow()
         self.mainWindow.setWindowTitle("jet-tracker")
-        #__location__ = os.getcwd()
-        #File = open(__location__ + '\jt_configs\Geoo.qss', 'r')
-        #with File:
-        #    qss = File.read()
-        #    self.setStyleSheet(qss)
+        # __location__ = os.getcwd()
+        # File = open(__location__ + '\jt_configs\Geoo.qss', 'r')
+        # with File:
+        #     qss = File.read()
+        #     self.setStyleSheet(qss)
         self.mainWindow.show()
 
     @staticmethod

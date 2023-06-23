@@ -12,8 +12,11 @@ from PyQt5.QtWidgets import (QAction, QLabel, QMainWindow, QSizePolicy,
                              QTabWidget)
 from signals import Signals
 
+# TODO: address this more completely
 sys.path.append('/cds/group/pcds/epics-dev/ajshack/jet_tracking/jet_tracking/pyqt-stylesheets/')
-import pyqtcss
+
+import pyqtcss  # noqa: E402  # isort: skip
+
 
 log = logging.getLogger("jet_tracker")
 
