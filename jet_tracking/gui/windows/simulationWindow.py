@@ -18,7 +18,7 @@ class SimWindow(QMainWindow, SimWindow_Ui):
         signals: the signals class
 
         """
-        super(SimWindow, self).__init__()
+        super().__init__()
         self.signals = signals
         self.context = context
         self.setupUi(self)

@@ -25,7 +25,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             signals: The signals object for emitting and receiving signals.
 
         """
-        super(ControlsWidget, self).__init__()
+        super().__init__()
         log.debug("Supplying Thread information from init of Controls Widget")
         self.signals = signals
         self.context = context

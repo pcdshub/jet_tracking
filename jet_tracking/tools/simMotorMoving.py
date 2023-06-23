@@ -4,7 +4,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-class SimulatedMotor(object):
+class SimulatedMotor:
     def __init__(self, context, signals):
 
         # initial values from the control widget

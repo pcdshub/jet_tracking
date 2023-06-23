@@ -20,7 +20,7 @@ from tools.motorAlgorithm import TernarySearch, BasicScan, LinearTernary, Dynami
 logger = logging.getLogger(__name__)
 
 
-class MotorAction(object):
+class MotorAction:
     def __init__(self, motor_thread, context, signals):
         self.context = context
         self.signals = signals

@@ -31,7 +31,7 @@ class JetTrackerView(QWidget):
         Adds the controlsDock and graphWidget to the mainLayout.
         Sets the layout of the widget using the setLayout method.
         """
-        super(JetTrackerView, self).__init__(parent)
+        super().__init__(parent)
         self.signals = signals
         self.context = context
         self.parent = parent

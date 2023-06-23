@@ -10,7 +10,7 @@ log.setLevel('CRITICAL')
 
 class JetImageView(QWidget):
     def __init__(self, context, signals):
-        super(JetImageView, self).__init__()
+        super().__init__()
         self.signals = signals
         self.context = context
         self.camera = ""

@@ -1,7 +1,7 @@
 from PyQt5.QtCore import QSize
 
 
-class SimWindow_Ui(object):
+class SimWindow_Ui:
     def setupUi(self, obj):
         obj.setMinimumSize(self.minimumSizeHint())
         obj.setObjectName("Simulation Tools")

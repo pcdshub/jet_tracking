@@ -282,7 +282,7 @@ class HLineItem(QGraphicsLineItem):
 class VLineItem(QGraphicsLineItem):
 
     def __init__(self):
-        super(VLineItem, self).__init__()
+        super().__init__()
         self.setPen(QPen(Qt.blue, 3))
         self.setFlag(QGraphicsLineItem.ItemIsMovable)
         self.setCursor(Qt.OpenHandCursor)

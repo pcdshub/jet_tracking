@@ -3,7 +3,7 @@ from jetGraphing import ScrollingTimeWidget, graph_setup, add_calibration_graph
 from PyQt5.QtWidgets import QVBoxLayout
 
 
-class GraphsUi(object):
+class GraphsUi:
     def setupUi(self, obj):
         """
         used to setup the layout and initialize graphs

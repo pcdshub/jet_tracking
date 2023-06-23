@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 class SimWidget(QFrame, SimUi):
 
     def __init__(self, context, signals):
-        super(SimWidget, self).__init__()
+        super().__init__()
         self.signals = signals
         self.context = context
         self.setupUi(self)

@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QRadioButton,
                              QSlider, QVBoxLayout, QButtonGroup, QTextEdit)
 
 
-class Editor_Ui(object):
+class Editor_Ui:
 
     def setupUi(self, obj):
         """

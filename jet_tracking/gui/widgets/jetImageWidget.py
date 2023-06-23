@@ -13,7 +13,7 @@ log = logging.getLogger("jet_tracker")
 class JetImageWidget(QGraphicsView):
 
     def __init__(self, context, signals):
-        super(JetImageWidget, self).__init__()
+        super().__init__()
         log.debug("Supplying Thread information from init of jetImageWidget")
         self.signals = signals
         self.context = context
@@ -125,4 +125,4 @@ class JetImageWidget(QGraphicsView):
             self.fitInView(self.line_item_vert_left, Qt.KeepAspectRatio)
             self.fitInView(self.line_item_hor_bot, Qt.KeepAspectRatio)
             self.fitInView(self.line_item_vert_right, Qt.KeepAspectRatio)
-        super(JetImageWidget, self).resizeEvent(event)
+        super().resizeEvent(event)

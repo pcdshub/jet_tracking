@@ -13,7 +13,7 @@ class LineEdit(QLineEdit):
     checkVal = pyqtSignal(float)
 
     def __init__(self, *args, **kwargs):
-        super(LineEdit, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.validator = QDoubleValidator()
         self.setValidator(self.validator)
         self.textChanged.connect(self.new_text)
@@ -48,7 +48,7 @@ class LineEdit(QLineEdit):
 
 class CollapsibleBox(QWidget):
     def __init__(self, title="", parent=None):
-        super(CollapsibleBox, self).__init__(parent)
+        super().__init__(parent)
         self.toggle_button = QToolButton(
             text=title, checkable=True, checked=False
         )
@@ -143,7 +143,7 @@ class CollapsibleBox(QWidget):
 
 class Label(QLabel):
     def __init__(self, parent=None):
-        super(Label, self).__init__(parent)
+        super().__init__(parent)
 
     def setTitleStylesheet(self):
         self.setStyleSheet("\
@@ -182,14 +182,14 @@ class Label(QLabel):
 
 class QHLine(QFrame):
     def __init__(self):
-        super(QHLine, self).__init__()
+        super().__init__()
         self.setFrameShape(QFrame.HLine)
         self.setFrameShadow(QFrame.Sunken)
 
 
 class QVLine(QFrame):
     def __init__(self):
-        super(QVLine, self).__init__()
+        super().__init__()
         self.setFrameShape(QFrame.VLine)
         self.setFrameShadow(QFrame.Sunken)
 
@@ -245,7 +245,7 @@ class QRangeSlider(QWidget):
 
     def __init__(self, parent=None, left_value=0, right_value=255,
                  left_thumb_value=0, right_thumb_value=255):
-        super(QRangeSlider, self).__init__(parent)
+        super().__init__(parent)
 
         self.setSizePolicy(
             QSizePolicy.Preferred,

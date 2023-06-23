@@ -30,7 +30,7 @@ class Singleton(type):
         if cls not in cls._instances:
             with lock:
                 if cls not in cls._instances:
-                    cls._instances[cls] = super(Singleton, cls).__call__(
+                    cls._instances[cls] = super().__call__(
                         *args, **kwargs)
         return cls._instances[cls]
 
@@ -896,7 +896,7 @@ class EventProcessor(QThread):
         Args:
             signals (object): The signals object for emitting signals.
         """
-        super(EventProcessor, self).__init__()
+        super().__init__()
         self.signals = signals
         self.flag_type = {}
         self.isCounting = False

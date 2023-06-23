@@ -44,7 +44,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             jetTrackerView (class): connects the first tab view to the main window
             jetImageView (class): connects the second tab view to the main window
         """
-        super(MainWindow, self).__init__()
+        super().__init__()
         log.debug("Supplying Thread information from init of MainWindow.")
         self.setAttribute(Qt.WA_AlwaysStackOnTop)
         self.setMinimumSize(QSize(700, 300))

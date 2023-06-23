@@ -3,7 +3,7 @@ import cv2
 from tools.imGen import read_noise, jet_display
 
 
-class SimulatedImage(object):
+class SimulatedImage:
     """SimulatedImage class generates and manages a simulated image.
 
     Args:

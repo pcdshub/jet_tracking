@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 class EditorWidget(QFrame, Editor_Ui):
 
     def __init__(self, context, signals):
-        super(EditorWidget, self).__init__()
+        super().__init__()
         self.signals = signals
         self.context = context
         self.setupUi(self)

@@ -41,7 +41,7 @@ class App(QApplication):
             sys_argv(list): Command - line arguments passed to the application.
 
         """
-        super(App, self).__init__(sys_argv)
+        super().__init__(sys_argv)
         log.debug("Supplying Thread information from init of QApplication")
         self.setAttribute(Qt.AA_EnableHighDpiScaling)
         self.setStyle("Fusion")

@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import (QButtonGroup, QFrame, QGridLayout, QHBoxLayout,
                              QSizePolicy, QTextEdit, QVBoxLayout, QComboBox)
 
 
-class Controls_Ui(object):
+class Controls_Ui:
 
     def setupUi(self, obj):
         #####################################################################

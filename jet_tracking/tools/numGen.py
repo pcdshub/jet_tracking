@@ -2,7 +2,7 @@ import math
 import random
 
 
-class SimulationGenerator(object):
+class SimulationGenerator:
     def __init__(self, context, signals):
 
         # initial values from the control widget

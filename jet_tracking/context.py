@@ -10,7 +10,7 @@ import yaml
 log = logging.getLogger("jet_tracker")
 
 
-class Context(object):
+class Context:
     """
     The Context class represents the context or environment in which the application operates.
     It stores various settings, configurations, and data related to the application's functionality.

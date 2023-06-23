@@ -59,7 +59,7 @@ cal_files.sort(key=os.path.getmtime)
 if cal_files:
     cal_file_path = cal_files[-1]
     # cal_file_path = ''.join([jt_dir, cal_file])
-    print('Calibration file: {}'.format(cal_file_path))
+    print(f'Calibration file: {cal_file_path}')
     with open(cal_file_path) as f:
         cal_results = json.load(f)
 else:

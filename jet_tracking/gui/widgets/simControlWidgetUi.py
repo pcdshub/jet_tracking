@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSizePolicy,
                              QVBoxLayout)
 
 
-class SimUi(object):
+class SimUi:
 
     def setupUi(self, obj):
         """

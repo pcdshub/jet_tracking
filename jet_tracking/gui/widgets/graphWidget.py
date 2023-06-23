@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 class GraphsWidget(QFrame, GraphsUi):
 
     def __init__(self, context, signals):
-        super(GraphsWidget, self).__init__()
+        super().__init__()
         self.signals = signals
         self.context = context
         self.setupUi(self)

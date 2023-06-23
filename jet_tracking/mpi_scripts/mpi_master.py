@@ -13,7 +13,7 @@ logging.basicConfig(level=logging.DEBUG, format=f)
 logger = logging.getLogger(__name__)
 
 
-class MpiMaster(object):
+class MpiMaster:
     def __init__(self, rank, api_port, det_map, pv_map, sim=True,
                  data_port=8123, wf_length=None):
         self._rank = rank
@@ -131,11 +131,11 @@ class MpiMaster(object):
                 logger.info('aborting jet tracking data analysis process')
             elif cmd == 'peak_bin':
                 self._pub_socket.send_pyobj(message)
-                msg_string = 'Changing peak bin to {}'.format(value)
+                msg_string = f'Changing peak bin to {value}'
                 logger.info(msg_string)
             elif cmd == 'delta_bin':
                 self._pub_socket.send_pyobj(message)
-                msg_string = 'Changing delta bin to {}'.format(value)
+                msg_string = f'Changing delta bin to {value}'
                 logger.info(msg_string)
             else:
                 print('Received Message with no definition ', message)
