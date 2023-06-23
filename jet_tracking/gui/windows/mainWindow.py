@@ -12,16 +12,17 @@ from PyQt5.QtWidgets import (QAction, QLabel, QMainWindow, QSizePolicy,
                              QTabWidget)
 from signals import Signals
 
-# TODO: address this more completely
-sys.path.append('/cds/group/pcds/epics-dev/ajshack/jet_tracking/jet_tracking/pyqt-stylesheets/')
+log = logging.getLogger("jet_tracker")
+
 
 try:
-    import pyqtcss  # noqa: E402  # isort: skip
+    from ...pyqt_stylesheets import pyqtcss  # noqa: E402  # isort: skip
 except ImportError:
     pyqtcss = None
-
-
-log = logging.getLogger("jet_tracker")
+    log.exception(
+        "Failed to import pyqt-stylesheets. "
+        "Did you not clone recursively?"
+    )
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):

@@ -21,13 +21,14 @@ requirements:
   - pip
   run:
   - python {{PY_VER}}*,>=3.9
-  - pcdsdevices >=2.6.0
+  - bluesky >=1.6.0
   - matplotlib
   - numpy
-  - ophyd >=1.5.0
-  - bluesky >=1.6.0
   - opencv
+  - ophyd >=1.5.0
   - pandas
+  - pcdsdevices >=2.6.0
+  - qimage2ndarray
   - scikit-image
   - scipy
 

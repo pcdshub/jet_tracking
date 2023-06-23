@@ -3,12 +3,9 @@ import logging
 import os
 import sys
 
-from gui.windows.mainWindow import MainWindow
+from .gui.windows.mainWindow import MainWindow
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import QApplication
-
-# Append stylesheet path
-sys.path.append('/cds/group/pcds/epics-dev/ajshack/jet_tracking/jet_tracking/pyqt-stylesheets/')
 
 # create logger
 log = logging.getLogger('jet_tracker')
