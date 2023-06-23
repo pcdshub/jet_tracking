@@ -1,35 +1,45 @@
-{% set data = load_setup_py_data() %}
+{% set package_name = "jet_tracking" %}
+{% set import_name = "jet_tracking" %}
+{% set version = load_file_regex(load_file=os.path.join(import_name, "_version.py"), regex_pattern=".*version = '(\S+)'").group(1) %}
 
 package:
-  name: jet_tracking
-  version : {{ data.get('version') }}
+  name: {{ package_name }}
+  version: {{ version }}
 
 source:
   path: ..
 
 build:
-  number: 1
+  number: 0
+  noarch: python
+  script: {{ PYTHON }} -m pip install . -vv
+
+
 
 requirements:
   build:
-    - python {{PY_VER}}*,>=3.6
-    - setuptools
-
+  - python {{PY_VER}}*,>=3.6
+  - setuptools_scm
+  - pip
   run:
-    - python {{PY_VER}}*,>=3.6
-    - pcdsdevices >=2.6.0
-    - matplotlib
-    - numpy
-    - ophyd >=1.5.0
-    - bluesky >=1.6.0
-    - opencv
-    - pandas
-    - scikit-image
-    - scipy
+  - python {{PY_VER}}*,>=3.6
+  - pcdsdevices >=2.6.0
+  - matplotlib
+  - numpy
+  - ophyd >=1.5.0
+  - bluesky >=1.6.0
+  - opencv
+  - pandas
+  - scikit-image
+  - scipy
+
+
 
 test:
   imports:
-    - jet_tracking
+  - jet_tracking
+
+
 
 about:
   home: https://github.com/pcdshub/jet_tracking
