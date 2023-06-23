@@ -1,6 +1,7 @@
-from gui.views.simultationView import SimulationView
-from gui.windows.simWindowUi import SimWindow_Ui
 from PyQt5.QtWidgets import QMainWindow
+
+from ..views.simultationView import SimulationView
+from ..windows.simWindowUi import SimWindow_Ui
 
 
 class SimWindow(QMainWindow, SimWindow_Ui):

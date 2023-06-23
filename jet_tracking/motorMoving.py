@@ -17,8 +17,8 @@ following functions:
 
 import logging
 
-from tools.motorAlgorithm import (BasicScan, DynamicLinear, LinearTernary,
-                                  TernarySearch)
+from .tools.motorAlgorithm import (BasicScan, DynamicLinear, LinearTernary,
+                                   TernarySearch)
 
 logger = logging.getLogger(__name__)
 

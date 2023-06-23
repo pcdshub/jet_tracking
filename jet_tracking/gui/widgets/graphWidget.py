@@ -4,9 +4,10 @@ from collections import deque
 
 import numpy as np
 import pyqtgraph as pg
-from gui.widgets.graphWidgetUi import GraphsUi
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QFrame
+
+from ..widgets.graphWidgetUi import GraphsUi
 
 warnings.filterwarnings('ignore')
 

@@ -1,5 +1,6 @@
-from gui.widgets.simControlWidget import SimWidget
 from PyQt5.QtWidgets import QHBoxLayout, QWidget
+
+from ..widgets.simControlWidget import SimWidget
 
 
 class SimulationView(QWidget):

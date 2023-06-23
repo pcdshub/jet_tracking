@@ -1,5 +1,6 @@
 import numpy as np
-from tools.imGen import jet_display
+
+from ..tools.imGen import jet_display
 
 
 class SimulatedImage:

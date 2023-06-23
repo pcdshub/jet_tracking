@@ -2,10 +2,11 @@ import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
-from datastream import MotorThread, StatusThread
-from gui.widgets.controlWidgetUi import Controls_Ui
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QFrame, QMessageBox
+
+from ...datastream import MotorThread, StatusThread
+from ..widgets.controlWidgetUi import Controls_Ui
 
 log = logging.getLogger('jet_tracker')
 

@@ -1,5 +1,6 @@
-from gui.widgets.basicWidgets import LineEdit
 from PyQt5.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout
+
+from ..widgets.basicWidgets import LineEdit
 
 
 class SimUi:

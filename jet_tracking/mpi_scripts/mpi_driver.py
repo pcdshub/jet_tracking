@@ -8,13 +8,15 @@ from pathlib import Path
 import psana
 import yaml
 from mpi4py import MPI
-from mpi_master import MpiMaster
-from mpi_worker import MpiWorker
+
+from .mpi_master import MpiMaster
+from .mpi_worker import MpiWorker
 
 fpath = os.path.dirname(os.path.abspath(__file__))
 fpathup = '/'.join(fpath.split('/')[:-1])
 sys.path.append(fpathup)
-from utils import get_evr_w_codes, get_r_masks  # NOQA
+
+from utils import get_r_masks  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

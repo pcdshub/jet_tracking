@@ -6,7 +6,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsView
 from qimage2ndarray import array2qimage
-from tools.ROI import GraphicsRectItem, GraphicsScene, HLineItem, VLineItem
+
+from ...tools.ROI import GraphicsRectItem, GraphicsScene, HLineItem, VLineItem
 
 log = logging.getLogger("jet_tracker")
 

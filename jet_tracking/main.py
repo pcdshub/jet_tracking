@@ -3,9 +3,10 @@ import logging
 import os
 import sys
 
-from .gui.windows.mainWindow import MainWindow
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import QApplication
+
+from .gui.windows.mainWindow import MainWindow
 
 # create logger
 log = logging.getLogger('jet_tracker')

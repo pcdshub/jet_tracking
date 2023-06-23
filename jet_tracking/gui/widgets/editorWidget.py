@@ -1,10 +1,11 @@
 import logging
 from collections import deque
 
-from datastream import JetImageFeed
-from gui.widgets.editorWidgetUi import Editor_Ui
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QFrame
+
+from ...datastream import JetImageFeed
+from ..widgets.editorWidgetUi import Editor_Ui
 
 log = logging.getLogger(__name__)
 

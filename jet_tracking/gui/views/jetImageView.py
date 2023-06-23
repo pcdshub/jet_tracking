@@ -1,8 +1,9 @@
 import logging
 
-from gui.widgets.editorWidget import EditorWidget
-from gui.widgets.jetImageWidget import JetImageWidget
 from PyQt5.QtWidgets import QHBoxLayout, QWidget
+
+from ..widgets.editorWidget import EditorWidget
+from ..widgets.jetImageWidget import JetImageWidget
 
 log = logging.getLogger('pydm')
 log.setLevel('CRITICAL')

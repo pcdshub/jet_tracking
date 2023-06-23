@@ -1,7 +1,8 @@
-from gui.widgets.basicWidgets import QHLine, QRangeSlider
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import (QButtonGroup, QHBoxLayout, QLabel, QPushButton,
                              QRadioButton, QSlider, QTextEdit, QVBoxLayout)
+
+from ..widgets.basicWidgets import QHLine, QRangeSlider
 
 
 class Editor_Ui:

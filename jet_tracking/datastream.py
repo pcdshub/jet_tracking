@@ -7,15 +7,16 @@ from statistics import StatisticsError, mean, stdev
 import cv2
 import numpy as np
 from epics import caget
-from motorMoving import MotorAction
 from ophyd import EpicsSignal
 from PyQt5.QtCore import QCoreApplication, QEventLoop, QObject, QThread
 from scipy import stats
-from sketch.simJetImage import SimulatedImage
-from tools.numGen import SimulationGenerator
-from tools.simMotorMoving import SimulatedMotor
 
 from pcdsdevices.epics_motor import Motor
+
+from .motorMoving import MotorAction
+from .sketch.simJetImage import SimulatedImage
+from .tools.numGen import SimulationGenerator
+from .tools.simMotorMoving import SimulatedMotor
 
 ologging = logging.getLogger('ophyd')
 ologging.setLevel('DEBUG')
