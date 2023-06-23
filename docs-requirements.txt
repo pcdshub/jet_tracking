@@ -7,3 +7,4 @@ sphinx
 sphinx_rtd_theme
 doctr
 doctr-versions-menu
+sphinxcontrib-jquery
