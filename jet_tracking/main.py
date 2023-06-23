@@ -2,7 +2,6 @@ import ctypes
 import logging
 import os
 import sys
-import pathlib
 
 from gui.windows.mainWindow import MainWindow
 from PyQt5.Qt import Qt

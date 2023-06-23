@@ -1,9 +1,8 @@
 import logging
 from collections import deque
-import cv2
 from datastream import JetImageFeed
 from gui.widgets.editorWidgetUi import Editor_Ui
-from PyQt5.QtWidgets import QFrame, QFileDialog
+from PyQt5.QtWidgets import QFrame
 from PyQt5.QtCore import QThread
 
 log = logging.getLogger(__name__)

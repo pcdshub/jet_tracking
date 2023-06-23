@@ -1,6 +1,5 @@
 import numpy as np
-import cv2
-from tools.imGen import read_noise, jet_display
+from tools.imGen import jet_display
 
 
 class SimulatedImage:

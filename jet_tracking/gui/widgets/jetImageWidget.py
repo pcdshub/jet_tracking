@@ -1,8 +1,8 @@
 import logging
-from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsView, QGraphicsEllipseItem
+from PyQt5.QtWidgets import QGraphicsPixmapItem, QGraphicsView
 from tools.ROI import HLineItem, VLineItem, GraphicsScene, GraphicsRectItem
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QImage, QPen
+from PyQt5.QtGui import QPixmap, QImage
 import numpy as np
 from qimage2ndarray import array2qimage
 import cv2

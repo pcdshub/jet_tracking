@@ -16,7 +16,6 @@ import datetime
 import os
 import sys
 
-import sphinx_rtd_theme
 
 import jet_tracking
 

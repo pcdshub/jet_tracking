@@ -1,6 +1,5 @@
 from PyQt5.QtWidgets import QFrame
 from gui.widgets.simControlWidgetUi import SimUi
-from datastream import StatusThread, MotorThread
 import logging
 
 log = logging.getLogger(__name__)
