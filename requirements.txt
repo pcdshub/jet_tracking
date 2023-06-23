@@ -11,4 +11,4 @@ matplotlib
 pyyaml
 cf-units
 PyQt5
-git+https://github.com/sommerc/pyqt-stylesheets/@9961bc5b2024746a0f0b0a6445f13bb99e0ed5c3
+pyqtcss @ git+https://github.com/sommerc/pyqt-stylesheets/@9961bc5b2024746a0f0b0a6445f13bb99e0ed5c3
