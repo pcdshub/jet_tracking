@@ -40,7 +40,7 @@ QLabel
 
 
 /*-----QMenuBar-----*/
-QMenuBar 
+QMenuBar
 {
     background-color: #323232;
     font-size:20px;
@@ -160,7 +160,7 @@ QLineEdit{
 
 
 /*-----QTreeView-----*/
-QTreeView 
+QTreeView
 {
 	background-color: #434343;
     border: 0.5px solid rgba(108,108,108,75);
@@ -169,8 +169,8 @@ QTreeView
 }
 
 
-QTreeView::item, 
-QTreeView::branch 
+QTreeView::item,
+QTreeView::branch
 {
     background: transparent;
     color: #DDD;
@@ -178,8 +178,8 @@ QTreeView::branch
 }
 
 
-QTreeView::item:hover, 
-QTreeView::branch:hover 
+QTreeView::item:hover,
+QTreeView::branch:hover
 {
     background-color: #55aaff;
     color: #DDD;
@@ -187,8 +187,8 @@ QTreeView::branch:hover
 }
 
 
-QTreeView::item:selected, 
-QTreeView::branch:selected 
+QTreeView::item:selected,
+QTreeView::branch:selected
 {
     background-color: #55aaff;
     color: #fff;
@@ -197,7 +197,7 @@ QTreeView::branch:selected
 
 
 /*-----QScrollBar-----*/
-QScrollBar:horizontal 
+QScrollBar:horizontal
 {
     background-color: #333;
     height: 8px;
@@ -208,7 +208,7 @@ QScrollBar:horizontal
 }
 
 
-QScrollBar::handle:horizontal 
+QScrollBar::handle:horizontal
 {
     border: 1px solid #111;
     background-color: #535353;
@@ -217,7 +217,7 @@ QScrollBar::handle:horizontal
 
 
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal,
-QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal 
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
 {
     width: 0px;
     background-color: transparent;
@@ -225,7 +225,7 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
 }
 
 
-QScrollBar:vertical 
+QScrollBar:vertical
 {
     background-color: #333;
     width: 8px;
@@ -234,7 +234,7 @@ QScrollBar:vertical
 }
 
 
-QScrollBar::handle:vertical 
+QScrollBar::handle:vertical
 {
     border: 1px solid #111;
     background-color: #535353;
@@ -243,7 +243,7 @@ QScrollBar::handle:vertical
 
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
-QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical 
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical
 {
     height: 0px;
     background-color: transparent;

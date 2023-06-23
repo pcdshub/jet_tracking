@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QFrame
-from gui.widgets.simControlWidgetUi import SimUi
 import logging
+
+from gui.widgets.simControlWidgetUi import SimUi
+from PyQt5.QtWidgets import QFrame
 
 log = logging.getLogger(__name__)
 

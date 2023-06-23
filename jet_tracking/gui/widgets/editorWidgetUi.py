@@ -1,7 +1,7 @@
 from gui.widgets.basicWidgets import QHLine, QRangeSlider
 from PyQt5.Qt import Qt
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QRadioButton,
-                             QSlider, QVBoxLayout, QButtonGroup, QTextEdit)
+from PyQt5.QtWidgets import (QButtonGroup, QHBoxLayout, QLabel, QPushButton,
+                             QRadioButton, QSlider, QTextEdit, QVBoxLayout)
 
 
 class Editor_Ui:
@@ -89,7 +89,7 @@ class Editor_Ui:
 
         obj.bttn_search = QPushButton("Search for Jet")
         obj.bttn_reset_all = QPushButton("Reset All Image Morphologies")
-        
+
         obj.text_area = QTextEdit("~~~read only information for user~~~")
         obj.text_area.setReadOnly(True)
 
@@ -145,7 +145,7 @@ class Editor_Ui:
         obj.layout.addWidget(obj.bttn_cam_calibrate)
 
         obj.layout.addLayout(obj.layout_com)
-        
+
         obj.hline0 = QHLine()
         obj.layout.addWidget(obj.hline0)
         obj.layout.addWidget(obj.lbl_dilate)

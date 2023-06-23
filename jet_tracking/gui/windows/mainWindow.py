@@ -1,5 +1,6 @@
 import logging
 import sys
+
 from context import Context
 from gui.views.jetImageView import JetImageView
 from gui.views.jetTrackerView import JetTrackerView
@@ -10,6 +11,7 @@ from PyQt5.QtCore import QCoreApplication, QSize
 from PyQt5.QtWidgets import (QAction, QLabel, QMainWindow, QSizePolicy,
                              QTabWidget)
 from signals import Signals
+
 sys.path.append('/cds/group/pcds/epics-dev/ajshack/jet_tracking/jet_tracking/pyqt-stylesheets/')
 import pyqtcss
 

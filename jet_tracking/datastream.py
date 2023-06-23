@@ -1,20 +1,21 @@
 import logging
-import time
-from statistics import StatisticsError, mean, stdev
-import numpy as np
-from ophyd import EpicsSignal
-from epics import caget
-from PyQt5.QtCore import QThread, QObject, QCoreApplication, QEventLoop
-from pcdsdevices.epics_motor import Motor
-from collections import deque
-import cv2
 import threading
-from scipy import stats
+import time
+from collections import deque
+from statistics import StatisticsError, mean, stdev
+
+import cv2
+import numpy as np
+from epics import caget
 from motorMoving import MotorAction
+from ophyd import EpicsSignal
+from PyQt5.QtCore import QCoreApplication, QEventLoop, QObject, QThread
+from scipy import stats
+from sketch.simJetImage import SimulatedImage
 from tools.numGen import SimulationGenerator
 from tools.simMotorMoving import SimulatedMotor
-from sketch.simJetImage import SimulatedImage
 
+from pcdsdevices.epics_motor import Motor
 
 ologging = logging.getLogger('ophyd')
 ologging.setLevel('DEBUG')
@@ -469,7 +470,7 @@ class StatusThread(QObject):
             The new calibration source value.
         """
         self.calibration_source = c
-    
+
     def set_num_cali(self, n):
         """
         Set the number of calibration.
@@ -990,7 +991,7 @@ class JetImageFeed(QObject):
         self.signals.stopImageThread.connect(self.stop_it)
         self.signals.comDetection.connect(self.set_com_on)
         self.signals.linesInfo.connect(self.set_line_positions)
-        
+
     def set_line_positions(self, ul, lr):
         """
         Set the upper left and lower right line positions.
@@ -1007,7 +1008,7 @@ class JetImageFeed(QObject):
         Set the find_com_bool flag.
         """
         self.find_com_bool = self.context.find_com_bool
-        
+
     def start_comm(self):
         """
         Start the communication process for image feed processing.
@@ -1016,7 +1017,7 @@ class JetImageFeed(QObject):
             QCoreApplication.processEvents(QEventLoop.AllEvents,
                                            int(self.refresh_rate*1000))
             self.run_image_thread()
-            
+
     def start_it(self):
         """
         Start the image processing thread.
@@ -1036,7 +1037,7 @@ class JetImageFeed(QObject):
             self.thread().requestInterruption()
         else:
             pass
-    
+
     def start_algorithm(self):
         """
         Start the image processing algorithm.
@@ -1162,7 +1163,7 @@ class JetImageFeed(QObject):
         ret, im = cv2.threshold(im, self.left_threshold, self.right_threshold,
                                 cv2.THRESH_BINARY)
         return im
-    
+
     def find_center(self, im):
         """
         Find the center of a jet in the given image.
@@ -1170,13 +1171,13 @@ class JetImageFeed(QObject):
         Args:
             im: The input image.
         """
-        self.locate_jet(im, int(self.upper_left[0]), int(self.lower_right[0]), 
+        self.locate_jet(im, int(self.upper_left[0]), int(self.lower_right[0]),
                         int(self.upper_left[1]), int(self.lower_right[1]))
         if self.counter != 20:
             self.counter += 1
         elif self.counter == 20:
             self.counter = 0
-            success = self.form_line(self.context.com, int(self.upper_left[1]), 
+            success = self.form_line(self.context.com, int(self.upper_left[1]),
                                      int(self.lower_right[1]))
             self.context.com = []
             if success and self.request_for_calibration:
@@ -1200,8 +1201,8 @@ class JetImageFeed(QObject):
         crop = im[y_start:y_end, x_start:x_end]
         crop = cv2.convertScaleAbs(crop)
         self.context.contours, hierarchy = cv2.findContours(crop, cv2.RETR_EXTERNAL,
-                                                    cv2.CHAIN_APPROX_SIMPLE, 
-                                                    offset=(x_start, y_start)) 
+                                                    cv2.CHAIN_APPROX_SIMPLE,
+                                                    offset=(x_start, y_start))
         if len(self.context.contours) == 0:
             self.signals.message.emit("Was not able to find any contours. \n"
                                       "Try changing the ROI or image editing "

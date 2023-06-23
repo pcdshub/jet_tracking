@@ -16,6 +16,7 @@ following functions:
 """
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
@@ -369,4 +370,3 @@ class TernarySearch:
             self.low = self.mid1
             self.high = self.high
             self.max_value = i2
-

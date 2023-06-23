@@ -1,8 +1,7 @@
-from gui.widgets.basicWidgets import (CollapsibleBox, Label,
-                                      LineEdit, QHLine)
-from PyQt5.QtWidgets import (QButtonGroup, QFrame, QGridLayout, QHBoxLayout,
-                             QLCDNumber, QPushButton, QRadioButton,
-                             QSizePolicy, QTextEdit, QVBoxLayout, QComboBox)
+from gui.widgets.basicWidgets import CollapsibleBox, Label, LineEdit, QHLine
+from PyQt5.QtWidgets import (QButtonGroup, QComboBox, QFrame, QGridLayout,
+                             QHBoxLayout, QLCDNumber, QPushButton,
+                             QRadioButton, QSizePolicy, QTextEdit, QVBoxLayout)
 
 
 class Controls_Ui:

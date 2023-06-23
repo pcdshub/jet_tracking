@@ -1,12 +1,13 @@
 import logging
-
-from gui.widgets.graphWidgetUi import GraphsUi
-from PyQt5.QtWidgets import QFrame
-from PyQt5.QtCore import Qt
-import numpy as np
-from collections import deque
-import pyqtgraph as pg
 import warnings
+from collections import deque
+
+import numpy as np
+import pyqtgraph as pg
+from gui.widgets.graphWidgetUi import GraphsUi
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QFrame
+
 warnings.filterwarnings('ignore')
 
 log = logging.getLogger(__name__)

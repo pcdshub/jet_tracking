@@ -61,6 +61,3 @@ class SimulatedImage:
         self.jet_im = np.full((self.y_size, self.x_size), 0, dtype=np.uint8)
         self.jet_im = jet_display(self.jet_im, self.motor_position, self.context.jet_center,
                                   self.pix_per_mm, self.x_size)
-
-
-

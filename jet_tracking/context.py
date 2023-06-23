@@ -534,7 +534,7 @@ class Context:
         """
         g = [self.read_motor_position, line_best_fit]
         self.image_calibration_positions.append(g)
-        
+
     def run_image_search(self):
         """
         Run the image search algorithm.

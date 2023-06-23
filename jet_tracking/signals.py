@@ -125,7 +125,7 @@ class Signals(QtCore.QObject):
 
     Args:
         float: the motor position of max value.
-        float: The max value 
+        float: The max value
         list: List of X-coordinates for the motor moves.
         list: List of Y-coordinates for the motor moves.
     """
@@ -385,10 +385,3 @@ class Signals(QtCore.QObject):
     Args:
         float: The new background intensity value.
     """
-
-
-
-
-
-
-
