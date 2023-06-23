@@ -1,7 +1,7 @@
 from gui.widgets.basicWidgets import QHLine, QRangeSlider
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QRadioButton,
-                             QSlider, QVBoxLayout)
+                             QSlider, QVBoxLayout, QButtonGroup, QTextEdit)
 
 
 class Editor_Ui(object):
@@ -10,12 +10,19 @@ class Editor_Ui(object):
         """
         used to setup the layout and initialize graphs
         """
-
         obj.layout = QVBoxLayout()
         obj.setLayout(obj.layout)
 
         obj.bttn_cam_connect = QPushButton("Connect to Jet Cam")
         obj.bttn_cam_disconnect = QPushButton("Disconnect")
+        obj.bttn_cam_calibrate = QPushButton("Calibrate")
+        obj.bttngrp1 = QButtonGroup()
+        obj.rd_bttn_com_off = QRadioButton("COM detection off")
+        obj.rd_bttn_com_off.setChecked(True)
+        obj.rd_bttn_com_on = QRadioButton("COM detection on")
+        obj.bttngrp1.addButton(obj.rd_bttn_com_off, id=0)
+        obj.bttngrp1.addButton(obj.rd_bttn_com_on, id=1)
+        obj.bttngrp1.setExclusive(True)
 
         obj.lbl_morph = QLabel("Morphological Operations")
 
@@ -27,6 +34,7 @@ class Editor_Ui(object):
         obj.slider_dilate.setTickInterval(1)
 
         obj.rd_bttn_dilate = QRadioButton("Dilate On/Off")
+        obj.rd_bttn_dilate.setChecked(True)
         obj.rd_bttn_dilate.setAutoExclusive(False)
 
         obj.lbl_erode = QLabel("Erode edges")
@@ -54,6 +62,7 @@ class Editor_Ui(object):
         obj.slider_open.setTickInterval(1)
 
         obj.rd_bttn_open = QRadioButton("Open On/Off")
+        obj.rd_bttn_open.setChecked(True)
         obj.rd_bttn_open.setAutoExclusive(False)
 
         obj.lbl_close = QLabel("Close")
@@ -76,11 +85,13 @@ class Editor_Ui(object):
         obj.slider_blur = QSlider(Qt.Horizontal)
 
         obj.lbl_thresh = QLabel("Threshold")
-        obj.range_slider_thresh = QRangeSlider(obj)
+        obj.range_slider_thresh = QRangeSlider(obj, left_thumb_value=110)
 
-        obj.bttn_search = QPushButton("Search")
-        obj.bttn_clear = QPushButton("Clear")
-        obj.bttn_reset_all = QPushButton("Reset All")
+        obj.bttn_search = QPushButton("Search for Jet")
+        obj.bttn_reset_all = QPushButton("Reset All Image Morphologies")
+        
+        obj.text_area = QTextEdit("~~~read only information for user~~~")
+        obj.text_area.setReadOnly(True)
 
         obj.layout_cam1 = QHBoxLayout()
         obj.layout_cam1.addWidget(obj.bttn_cam_connect)
@@ -88,21 +99,25 @@ class Editor_Ui(object):
         obj.layout_cam2 = QHBoxLayout()
         obj.layout_cam2.addWidget(obj.bttn_cam_disconnect)
 
+        obj.layout_com = QHBoxLayout()
+        obj.layout_com.addWidget(obj.rd_bttn_com_off)
+        obj.layout_com.addWidget(obj.rd_bttn_com_on)
+
         obj.layout_dilate = QHBoxLayout()
-        obj.layout_dilate.addWidget(self.slider_dilate)
-        obj.layout_dilate.addWidget(self.rd_bttn_dilate)
+        obj.layout_dilate.addWidget(obj.slider_dilate)
+        obj.layout_dilate.addWidget(obj.rd_bttn_dilate)
 
         obj.layout_erode = QHBoxLayout()
-        obj.layout_erode.addWidget(self.slider_erode)
-        obj.layout_erode.addWidget(self.rd_bttn_erode)
+        obj.layout_erode.addWidget(obj.slider_erode)
+        obj.layout_erode.addWidget(obj.rd_bttn_erode)
 
         obj.layout_close = QHBoxLayout()
-        obj.layout_close.addWidget(self.slider_close)
-        obj.layout_close.addWidget(self.rd_bttn_close)
+        obj.layout_close.addWidget(obj.slider_close)
+        obj.layout_close.addWidget(obj.rd_bttn_close)
 
         obj.layout_open = QHBoxLayout()
-        obj.layout_open.addWidget(self.slider_open)
-        obj.layout_open.addWidget(self.rd_bttn_open)
+        obj.layout_open.addWidget(obj.slider_open)
+        obj.layout_open.addWidget(obj.rd_bttn_open)
 
         obj.layout_thresh = QHBoxLayout()
         obj.layout_thresh.addWidget(obj.lbl_thresh)
@@ -122,12 +137,15 @@ class Editor_Ui(object):
 
         obj.layout_bttns = QVBoxLayout()
         obj.layout_bttns.addWidget(obj.bttn_search)
-        obj.layout_bttns.addWidget(obj.bttn_clear)
         obj.layout_bttns.addWidget(obj.bttn_reset_all)
 
         obj.layout.addStretch()
         obj.layout.addLayout(obj.layout_cam1)
         obj.layout.addLayout(obj.layout_cam2)
+        obj.layout.addWidget(obj.bttn_cam_calibrate)
+
+        obj.layout.addLayout(obj.layout_com)
+        
         obj.hline0 = QHLine()
         obj.layout.addWidget(obj.hline0)
         obj.layout.addWidget(obj.lbl_dilate)
@@ -161,4 +179,8 @@ class Editor_Ui(object):
         obj.hline8 = QHLine()
         obj.layout.addWidget(obj.hline8)
         obj.layout.addLayout(obj.layout_bttns)
+        obj.layout.addStretch()
+        obj.hline9 = QHLine()
+        obj.layout.addWidget(obj.hline9)
+        obj.layout.addWidget(obj.text_area)
         obj.layout.addStretch()

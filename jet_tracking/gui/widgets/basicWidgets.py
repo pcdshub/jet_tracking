@@ -4,31 +4,9 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import (QAbstractAnimation, QParallelAnimationGroup,
                           QPropertyAnimation, QRect, Qt, pyqtSignal)
 from PyQt5.QtGui import QBrush, QColor, QDoubleValidator, QPainter, QPalette
-from PyQt5.QtWidgets import (QComboBox, QFrame, QGraphicsScene, QGraphicsView,
-                             QLabel, QLineEdit, QMessageBox, QPushButton,
+from PyQt5.QtWidgets import (QFrame, QLabel, QLineEdit, QMessageBox,
                              QScrollArea, QSizePolicy, QToolButton,
                              QVBoxLayout, QWidget)
-
-
-class GraphicsView(QGraphicsView):
-    def __init__(self, parent=None):
-        super(GraphicsView, self).__init__(parent)
-        self.setMouseTracking(True)
-
-
-class GraphicsScene(QGraphicsScene):
-    def __init__(self, parent=None):
-        super(GraphicsScene, self).__init__(parent)
-
-
-class ComboBox(QComboBox):
-    def __init__(self, parent=None):
-        super(ComboBox, self).__init__(parent)
-
-
-class PushButton(QPushButton):
-    def __init__(self, parent=None):
-        super(PushButton, self).__init__(parent)
 
 
 class LineEdit(QLineEdit):
@@ -74,20 +52,20 @@ class CollapsibleBox(QWidget):
         self.toggle_button = QToolButton(
             text=title, checkable=True, checked=False
         )
-        self.toggle_button.setStyleSheet("QToolButton {border: none;\
-                border: 1px solid #FF17365D;\
-                border-top-left-radius: 15px;\
-                border-top-right-radius: 15px;\
-                background-color: #FF17365D;\
-                padding: 5px 0px;\
-                color: rgb(255, 255, 255);\
-                max-height: 30px;\
-                font-size: 14px;\
-            }\
-            QToolButton:hover {\
-                background-color: lightgreen;\
-                color: black;\
-            }")
+        # self.toggle_button.setStyleSheet("QToolButton {border: none;\
+        #         border: 1px solid #FF17365D;\
+        #         border-top-left-radius: 15px;\
+        #         border-top-right-radius: 15px;\
+        #         background-color: #FF17365D;\
+        #         padding: 5px 0px;\
+        #         color: rgb(255, 255, 255);\
+        #         max-height: 30px;\
+        #         font-size: 14px;\
+        #     }\
+        #     QToolButton:hover {\
+        #         background-color: lightgreen;\
+        #         color: black;\
+        #     }")
         self.toggle_button.setToolButtonStyle(
             Qt.ToolButtonTextBesideIcon
         )

@@ -10,9 +10,10 @@ class SimulationView(QWidget):
         self.context = context
         self.parent = parent
         self.mainLayout = QHBoxLayout()
-        self.createEditorWidget()
+        self.simControlWidget = None
+        self.create_editor_widget()
         self.mainLayout.addWidget(self.simControlWidget)
         self.setLayout(self.mainLayout)
 
-    def createEditorWidget(self):
+    def create_editor_widget(self):
         self.simControlWidget = SimWidget(self.context, self.signals)

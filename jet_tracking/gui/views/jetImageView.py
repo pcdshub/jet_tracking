@@ -15,8 +15,10 @@ class JetImageView(QWidget):
         self.context = context
         self.camera = ""
         self.mainLayout = QHBoxLayout()
-        self.createImageWidget()
-        self.createEditorWidget()
+        self.imageWidget = None
+        self.editorWidget = None
+        self.create_image_widget()
+        self.create_editor_widget()
         self.mainLayout.addWidget(self.imageWidget, 75)
         self.mainLayout.addWidget(self.editorWidget, 25)
         self.setLayout(self.mainLayout)
@@ -25,8 +27,8 @@ class JetImageView(QWidget):
     def make_connections(self):
         pass
 
-    def createImageWidget(self):
+    def create_image_widget(self):
         self.imageWidget = JetImageWidget(self.context, self.signals)
 
-    def createEditorWidget(self):
+    def create_editor_widget(self):
         self.editorWidget = EditorWidget(self.context, self.signals)

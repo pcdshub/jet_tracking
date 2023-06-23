@@ -1,8 +1,8 @@
-from gui.widgets.basicWidgets import (CollapsibleBox, ComboBox, Label,
+from gui.widgets.basicWidgets import (CollapsibleBox, Label,
                                       LineEdit, QHLine)
 from PyQt5.QtWidgets import (QButtonGroup, QFrame, QGridLayout, QHBoxLayout,
                              QLCDNumber, QPushButton, QRadioButton,
-                             QSizePolicy, QTextEdit, QVBoxLayout)
+                             QSizePolicy, QTextEdit, QVBoxLayout, QComboBox)
 
 
 class Controls_Ui(object):
@@ -21,16 +21,18 @@ class Controls_Ui(object):
 
         obj.bttngrp1 = QButtonGroup()
 
-        obj.rdbttn_live = QRadioButton("live data")
-        obj.rdbttn_sim = QRadioButton("simulated data")
+        obj.rdbttn_live = QRadioButton("Live data")
+        obj.rdbttn_all_sim = QRadioButton("All simulated")
+        obj.rdbttn_part_sim = QRadioButton("Sim data + Live motor/image")
         obj.rdbttn_live.setChecked(True)
         obj.bttngrp1.addButton(obj.rdbttn_live, id=1)
-        obj.bttngrp1.addButton(obj.rdbttn_sim, id=0)
+        obj.bttngrp1.addButton(obj.rdbttn_all_sim, id=0)
+        obj.bttngrp1.addButton(obj.rdbttn_part_sim, id=2)
         obj.bttngrp1.setExclusive(True)
 
         obj.bttngrp3 = QButtonGroup()
         obj.rdbttn_cali_live = QRadioButton("calibration in GUI")
-        obj.rdbttn_cali_live.setMinimumSize(10, 10)
+        obj.rdbttn_cali_live.setMinimumSize(15, 10)
         obj.rdbttn_cali = QRadioButton("calibration from results")
         obj.rdbttn_cali.setMinimumSize(10, 10)
         obj.rdbttn_cali.setChecked(True)
@@ -38,20 +40,32 @@ class Controls_Ui(object):
         obj.bttngrp3.addButton(obj.rdbttn_cali_live, id=1)
         obj.bttngrp3.setExclusive(True)
 
+        obj.bttngrp4 = QButtonGroup()
+        obj.rdbttn_cali_after = QRadioButton("calibrate after completed")
+        obj.rdbttn_cali_after.setMinimumSize(10, 10)
+        obj.rdbttn_keep_cali = QRadioButton("keep current calibration")
+        obj.rdbttn_keep_cali.setMinimumSize(10, 10)
+        obj.rdbttn_cali_after.setChecked(True)
+        obj.bttngrp4.addButton(obj.rdbttn_cali_after, id=0)
+        obj.bttngrp4.addButton(obj.rdbttn_keep_cali, id=1)
+        obj.bttngrp4.setExclusive(True)
+
         # setup layout
         ##############
         obj.layout_graph = QVBoxLayout()
-        obj.layout_allrdbttns = QGridLayout()
-        obj.layout_allrdbttns.setColumnStretch(0, 6)
-        obj.layout_allrdbttns.setColumnStretch(1, 1)
-        obj.layout_allrdbttns.setRowStretch(1, 5)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_live, 0, 0)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_sim, 0, 1)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali, 1, 0, 1, 2)
-        obj.layout_allrdbttns.addWidget(obj.rdbttn_cali_live, 1, 1, 1, 2)
-        obj.layout_allrdbttns.setRowMinimumHeight(0, 20)
-        obj.layout_allrdbttns.setRowMinimumHeight(1, 30)
-        obj.layout_graph.addLayout(obj.layout_allrdbttns)
+        obj.layout_live = QHBoxLayout()
+        obj.layout_cali_live = QHBoxLayout()
+        obj.layout_cali_after = QHBoxLayout()
+        obj.layout_live.addWidget(obj.rdbttn_live)
+        obj.layout_live.addWidget(obj.rdbttn_all_sim)
+        obj.layout_live.addWidget(obj.rdbttn_part_sim)
+        obj.layout_cali_live.addWidget(obj.rdbttn_cali)
+        obj.layout_cali_live.addWidget(obj.rdbttn_cali_live)
+        obj.layout_cali_after.addWidget(obj.rdbttn_cali_after)
+        obj.layout_cali_after.addWidget(obj.rdbttn_keep_cali)
+        obj.layout_graph.addLayout(obj.layout_live)
+        obj.layout_graph.addLayout(obj.layout_cali_live)
+        obj.layout_graph.addLayout(obj.layout_cali_after)
         obj.layout_graph.addSpacing(5)
 
         #####################################################################
@@ -92,13 +106,24 @@ class Controls_Ui(object):
                                  ' the plots have reached the current maximum '
                                  'time on the plots.')
 
+        obj.lbl_number_calibration = Label("Number of calibration points "
+                                           "\n(10 - 250)")
+        obj.le_number_calibration = LineEdit("50")
+        obj.le_number_calibration.valRange(10, 250)
+        obj.le_number_calibration.setToolTip('Sets the number of points '
+                                             'to use for averaging to find '
+                                             'new calibration values')
+
         # setup layout
         ##############
+        obj.layout_number_calibration = QHBoxLayout()
         obj.layout_percent = QHBoxLayout()
         obj.layout_tol = QHBoxLayout()
         obj.layout_ave = QHBoxLayout()
         obj.layout_refresh = QHBoxLayout()
         obj.layout_x_axis = QHBoxLayout()
+        obj.layout_number_calibration.addWidget(obj.lbl_number_calibration)
+        obj.layout_number_calibration.addWidget(obj.le_number_calibration)
         obj.layout_percent.addWidget(obj.lbl_percent, 75)
         obj.layout_percent.addWidget(obj.le_percent)
         obj.layout_tol.addWidget(obj.lbl_notification_tol, 75)
@@ -109,10 +134,13 @@ class Controls_Ui(object):
         obj.layout_refresh.addWidget(obj.le_refresh_rate)
         obj.layout_x_axis.addWidget(obj.lbl_x_axis, 75)
         obj.layout_x_axis.addWidget(obj.le_x_axis)
+        obj.hline1 = QHLine()
+        obj.hline2 = QHLine()
+        obj.layout_graph.addLayout(obj.layout_number_calibration)
+        obj.layout_graph.addWidget(obj.hline1)
         obj.layout_graph.addLayout(obj.layout_percent)
         obj.layout_graph.addLayout(obj.layout_tol)
-        obj.hline = QHLine()
-        obj.layout_graph.addWidget(obj.hline)
+        obj.layout_graph.addWidget(obj.hline2)
         obj.layout_graph.addLayout(obj.layout_ave)
         obj.layout_graph.addLayout(obj.layout_refresh)
         obj.layout_graph.addLayout(obj.layout_x_axis)
@@ -140,6 +168,10 @@ class Controls_Ui(object):
         obj.lbl_motor_size = Label("Step Size (mm)")
         obj.lbl_motor_average = Label("Average Intensity")
         obj.lbl_algorithm = Label("Algorithm")
+        obj.lbl_bad_scan = Label("Bad Scan Limit")
+
+        obj.lbl_motor_pos = Label("Motor Position (mm)")
+        obj.le_motor_pos = LineEdit("0")
 
         obj.le_motor_hl = LineEdit("-0.1")
         obj.le_motor_hl.valRange(-100, 100)
@@ -159,13 +191,19 @@ class Controls_Ui(object):
         obj.le_ave_motor.setToolTip('Number of points to average before moving'
                                     ' motor')
 
-        obj.cbox_algorithm = ComboBox()
+        obj.le_bad_scan = LineEdit("3")
+        obj.le_bad_scan.valRange(1, 10)
+        obj.le_bad_scan.setToolTip('Number of bad scans that can be attempted'
+                                   ' before automatically turning off tracking')
+
+        obj.cbox_algorithm = QComboBox()
         obj.cbox_algorithm.setSizePolicy(QSizePolicy.Expanding,
                                          QSizePolicy.Preferred)
         obj.cbox_algorithm.addItem("Ternary Search")
         obj.cbox_algorithm.addItem("Basic Scan")
         obj.cbox_algorithm.addItem("Linear + Ternary")
         obj.cbox_algorithm.addItem("Dynamic Linear Scan")
+        obj.cbox_algorithm.addItem("Course + fine")
 
         obj.le_tolerance = LineEdit("0.001")
         obj.le_tolerance.setToolTip('Tolerance for ternary search, stops when '
@@ -198,8 +236,8 @@ class Controls_Ui(object):
                                      'below the threshold.')
 
         obj.bttn_stop_motor = QPushButton()
-        obj.bttn_stop_motor.setText("Stop Tracking")
-        obj.bttn_stop_motor.setEnabled(False)
+        obj.bttn_stop_motor.setText("Stop Motor")
+        obj.bttn_stop_motor.setEnabled(True)
         obj.bttn_stop_motor.setToolTip('Disables tracking mode.')
 
         obj.lbl_tracking = Label("Tracking")
@@ -212,13 +250,21 @@ class Controls_Ui(object):
         obj.layout_motor_manual = QHBoxLayout()
         obj.layout_motor_input = QGridLayout()
         obj.layout_scan_settings = QHBoxLayout()
+        obj.layout_bad_scan = QHBoxLayout()
+        obj.layout_motor_position = QHBoxLayout()
         obj.layout_motor_bttns = QHBoxLayout()
         obj.layout_single_scan = QHBoxLayout()
         obj.layout_tracking = QHBoxLayout()
+        obj.hline3 = QHLine()
+        obj.hline4 = QHLine()
         obj.layout_motor.addLayout(obj.layout_connect_motor)
         obj.layout_motor.addLayout(obj.layout_motor_manual)
         obj.layout_motor.addLayout(obj.layout_motor_input)
         obj.layout_motor.addLayout(obj.layout_scan_settings)
+        obj.layout_motor.addLayout(obj.layout_bad_scan)
+        obj.layout_motor.addWidget(obj.hline3)
+        obj.layout_motor.addLayout(obj.layout_motor_position)
+        obj.layout_motor.addWidget(obj.hline4)
         obj.layout_motor.addLayout(obj.layout_single_scan)
         obj.layout_motor.addLayout(obj.layout_motor_bttns)
         obj.layout_motor.addWidget(obj.bttn_connect_motor)
@@ -238,6 +284,10 @@ class Controls_Ui(object):
         obj.layout_scan_settings.addWidget(obj.le_tolerance)
         obj.layout_scan_settings.addWidget(obj.lbl_int_time)
         obj.layout_scan_settings.addWidget(obj.le_int_time)
+        obj.layout_bad_scan.addWidget(obj.lbl_bad_scan)
+        obj.layout_bad_scan.addWidget(obj.le_bad_scan)
+        obj.layout_motor_position.addWidget(obj.lbl_motor_pos)
+        obj.layout_motor_position.addWidget(obj.le_motor_pos)
         obj.layout_single_scan.addWidget(obj.bttn_search)
         obj.layout_single_scan.addWidget(obj.bttn_stop_current_scan)
         obj.layout_motor_bttns.addWidget(obj.bttn_tracking)
@@ -250,14 +300,21 @@ class Controls_Ui(object):
         #####################################################################
 
         obj.lbl_status = Label("Status")
-        obj.lbl_status.setTitleStylesheet()
+        obj.lbl_status.setStyleSheet("qproperty-alignment: AlignCenter;"
+                                     "border: 1px solid #FF17365D;"
+                                     "background-color: #FF17365D;"
+                                     "font-size: 28px;")
 
         obj.lbl_monitor = Label("Monitor")
-        obj.lbl_monitor.setSubtitleStyleSheet()
+        obj.lbl_monitor.setStyleSheet("qproperty-alignment: AlignCenter;"
+                                      "border: 1px solid #FF17365D;"
+                                      "background-color: #FF17365D;")
         obj.lbl_monitor_status = Label("Not Started")
 
         obj.lbl_tracking = Label("Tracking")
-        obj.lbl_tracking.setSubtitleStyleSheet()
+        obj.lbl_tracking.setStyleSheet("qproperty-alignment: AlignCenter;"
+                                      "border: 1px solid #FF17365D;"
+                                      "background-color: #FF17365D;")
         obj.lbl_tracking_status = Label("False")
         obj.lbl_tracking_status.setStyleSheet("background-color: red;")
 
@@ -323,17 +380,17 @@ class Controls_Ui(object):
         obj.bttn_calibrate = QPushButton("Calibrate")
         obj.bttn_calibrate.setStyleSheet("\
             background-color: yellow;\
-            font-size:12px;\
+            font-size:28px;\
             ")
         obj.bttn_start = QPushButton("Start")
         obj.bttn_start.setStyleSheet("\
             background-color: green;\
-            font-size:12px;\
+            font-size:28px;\
             ")
         obj.bttn_stop = QPushButton("Stop")
         obj.bttn_stop.setStyleSheet("\
             background-color: red;\
-            font-size:12px;\
+            font-size:28px;\
             ")
 
         # setup layout
