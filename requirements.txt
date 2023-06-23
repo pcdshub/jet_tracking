@@ -10,3 +10,4 @@ opencv-python
 matplotlib
 pyyaml
 cf-units
+git+https://github.com/sommerc/pyqt-stylesheets@master
