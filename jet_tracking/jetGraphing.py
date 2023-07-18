@@ -27,7 +27,7 @@ def add_calibration_graph(graph):
 
 class ScrollingTimeWidget(pg.PlotWidget):
     def __init__(self, context, signals, parent=None):
-        super(ScrollingTimeWidget, self).__init__(parent)
+        super().__init__(parent)
         self.context = context
         self.signals = signals
         self.setMouseEnabled(x=False, y=False)

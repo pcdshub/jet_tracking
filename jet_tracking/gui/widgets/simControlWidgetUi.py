@@ -1,9 +1,9 @@
-from gui.widgets.basicWidgets import LineEdit
-from PyQt5.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSizePolicy,
-                             QVBoxLayout)
+from PyQt5.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout
+
+from ..widgets.basicWidgets import LineEdit
 
 
-class SimUi(object):
+class SimUi:
 
     def setupUi(self, obj):
         """

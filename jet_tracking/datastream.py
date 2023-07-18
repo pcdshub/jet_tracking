@@ -1,20 +1,22 @@
 import logging
-import time
-from statistics import StatisticsError, mean, stdev
-import numpy as np
-from ophyd import EpicsSignal
-from epics import caget
-from PyQt5.QtCore import QThread, QObject, QCoreApplication, QEventLoop
-from pcdsdevices.epics_motor import Motor
-from collections import deque
-import cv2
 import threading
-from scipy import stats
-from motorMoving import MotorAction
-from tools.numGen import SimulationGenerator
-from tools.simMotorMoving import SimulatedMotor
-from sketch.simJetImage import SimulatedImage
+import time
+from collections import deque
+from statistics import StatisticsError, mean, stdev
 
+import cv2
+import numpy as np
+from epics import caget
+from ophyd import EpicsSignal
+from PyQt5.QtCore import QCoreApplication, QEventLoop, QObject, QThread
+from scipy import stats
+
+from pcdsdevices.epics_motor import Motor
+
+from .motorMoving import MotorAction
+from .sketch.simJetImage import SimulatedImage
+from .tools.numGen import SimulationGenerator
+from .tools.simMotorMoving import SimulatedMotor
 
 ologging = logging.getLogger('ophyd')
 ologging.setLevel('DEBUG')
@@ -30,7 +32,7 @@ class Singleton(type):
         if cls not in cls._instances:
             with lock:
                 if cls not in cls._instances:
-                    cls._instances[cls] = super(Singleton, cls).__call__(
+                    cls._instances[cls] = super().__call__(
                         *args, **kwargs)
         return cls._instances[cls]
 
@@ -469,7 +471,7 @@ class StatusThread(QObject):
             The new calibration source value.
         """
         self.calibration_source = c
-    
+
     def set_num_cali(self, n):
         """
         Set the number of calibration.
@@ -520,12 +522,12 @@ class StatusThread(QObject):
             avei0 = mean(list(i0))
             avediff = mean(list(diff))
             averatio = mean(list(ratio))
-            vals = [avei0, avediff, averatio]
         except StatisticsError:
-            vals = [0, 0, 0]
-        self.averages['i0'].append(avei0)
-        self.averages['diff'].append(avediff)
-        self.averages['ratio'].append(averatio)
+            ...
+        else:
+            self.averages['i0'].append(avei0)
+            self.averages['diff'].append(avediff)
+            self.averages['ratio'].append(averatio)
 
     def update_buffer(self, vals):
         """
@@ -546,8 +548,7 @@ class StatusThread(QObject):
         Check the status update based on the flagged events and emit signals accordingly.
         """
         if self.calibrated:
-            p = int(self.notification_tolerance + \
-                 (self.notification_tolerance*0.5)) # plus 10% of notification tolerance
+            p = int(1.5 * self.notification_tolerance)  # plus 10% of notification tolerance
             miss = np.array(self.flagged_events['missed shot'])[-p:]
             drop = np.array(self.flagged_events['dropped shot'])[-p:]
             high = np.array(self.flagged_events['high intensity'])[-p:]
@@ -556,26 +557,27 @@ class StatusThread(QObject):
             n_high = np.count_nonzero(high[~np.isnan(high)])
             if n_miss > self.notification_tolerance:
                 self.signals.changeStatus.emit("Warning, missed shots", "red")
-                self.processor_worker.count_flags_and_execute('missed shot', 20,
-                                                   self.missed_shots)
+                self.processor_worker.count_flags_and_execute(
+                    "missed shot", 20, self.missed_shots
+                )
             elif n_drop > self.notification_tolerance:
-                self.signals.changeStatus.emit("Lots of dropped shots",
-                                               "yellow")
-                self.processor_worker.count_flags_and_execute('dropped shot', 20,
-                                                   self.dropped_shots)
+                self.signals.changeStatus.emit("Lots of dropped shots", "yellow")
+                self.processor_worker.count_flags_and_execute(
+                    "dropped shot", 20, self.dropped_shots
+                )
             elif n_high > self.notification_tolerance:
                 self.signals.changeStatus.emit("High Intensity", "orange")
-                self.processor_worker.count_flags_and_execute('high intensity', 20,
-                                                   self.high_intensity)
+                self.processor_worker.count_flags_and_execute(
+                    "high intensity", 20, self.high_intensity
+                )
             else:
                 if not self.processor_worker.isCounting:
-                    self.signals.changeStatus.emit("Everything is good",
-                                                   "green")
+                    self.signals.changeStatus.emit("Everything is good", "green")
                     self.everything_is_good()
                 if self.processor_worker.isCounting:
-                    self.processor_worker.count_flags_and_execute("everything is good",
-                                                       50,
-                                                       self.everything_is_good)
+                    self.processor_worker.count_flags_and_execute(
+                        "everything is good", 50, self.everything_is_good
+                    )
         elif not self.calibrated:
             self.signals.changeStatus.emit("not calibrated", "orange")
 
@@ -896,7 +898,7 @@ class EventProcessor(QThread):
         Args:
             signals (object): The signals object for emitting signals.
         """
-        super(EventProcessor, self).__init__()
+        super().__init__()
         self.signals = signals
         self.flag_type = {}
         self.isCounting = False
@@ -919,7 +921,7 @@ class EventProcessor(QThread):
         if new_flag in self.flag_type.copy():
             self.flag_type[new_flag] += 1
             if num_flagged == self.flag_type[new_flag]:
-                del(self.flag_type[new_flag])
+                self.flag_type.pop(new_flag)
                 func_to_execute()
         else:
             self.flag_type[new_flag] = 1
@@ -927,7 +929,7 @@ class EventProcessor(QThread):
             if key != new_flag:
                 self.flag_type[key] -= 1
                 if self.flag_type[key] <= 0:
-                    del(self.flag_type[key])
+                    self.flag_type.pop(key)
 
     def stop_count(self):
         """
@@ -990,7 +992,7 @@ class JetImageFeed(QObject):
         self.signals.stopImageThread.connect(self.stop_it)
         self.signals.comDetection.connect(self.set_com_on)
         self.signals.linesInfo.connect(self.set_line_positions)
-        
+
     def set_line_positions(self, ul, lr):
         """
         Set the upper left and lower right line positions.
@@ -1007,7 +1009,7 @@ class JetImageFeed(QObject):
         Set the find_com_bool flag.
         """
         self.find_com_bool = self.context.find_com_bool
-        
+
     def start_comm(self):
         """
         Start the communication process for image feed processing.
@@ -1016,7 +1018,7 @@ class JetImageFeed(QObject):
             QCoreApplication.processEvents(QEventLoop.AllEvents,
                                            int(self.refresh_rate*1000))
             self.run_image_thread()
-            
+
     def start_it(self):
         """
         Start the image processing thread.
@@ -1036,7 +1038,7 @@ class JetImageFeed(QObject):
             self.thread().requestInterruption()
         else:
             pass
-    
+
     def start_algorithm(self):
         """
         Start the image processing algorithm.
@@ -1162,7 +1164,7 @@ class JetImageFeed(QObject):
         ret, im = cv2.threshold(im, self.left_threshold, self.right_threshold,
                                 cv2.THRESH_BINARY)
         return im
-    
+
     def find_center(self, im):
         """
         Find the center of a jet in the given image.
@@ -1170,13 +1172,13 @@ class JetImageFeed(QObject):
         Args:
             im: The input image.
         """
-        self.locate_jet(im, int(self.upper_left[0]), int(self.lower_right[0]), 
+        self.locate_jet(im, int(self.upper_left[0]), int(self.lower_right[0]),
                         int(self.upper_left[1]), int(self.lower_right[1]))
         if self.counter != 20:
             self.counter += 1
         elif self.counter == 20:
             self.counter = 0
-            success = self.form_line(self.context.com, int(self.upper_left[1]), 
+            success = self.form_line(self.context.com, int(self.upper_left[1]),
                                      int(self.lower_right[1]))
             self.context.com = []
             if success and self.request_for_calibration:
@@ -1199,22 +1201,28 @@ class JetImageFeed(QObject):
         """
         crop = im[y_start:y_end, x_start:x_end]
         crop = cv2.convertScaleAbs(crop)
-        self.context.contours, hierarchy = cv2.findContours(crop, cv2.RETR_EXTERNAL,
-                                                    cv2.CHAIN_APPROX_SIMPLE, 
-                                                    offset=(x_start, y_start)) 
+        self.context.contours, _ = cv2.findContours(
+            crop, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE, offset=(x_start, y_start)
+        )
         if len(self.context.contours) == 0:
-            self.signals.message.emit("Was not able to find any contours. \n"
-                                      "Try changing the ROI or image editing "
-                                      "parameters")
+            self.signals.message.emit(
+                "Was not able to find any contours. \n"
+                "Try changing the ROI or image editing parameters"
+            )
         else:
-            contours = [] # Did I intend to leave out the first contours detected above?
+            contours = (
+                []
+            )  # Did I intend to leave out the first contours detected above?
             kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
             empty = False
             while not empty:
                 crop = cv2.erode(crop, kernel, iterations=1)
-                c, h = cv2.findContours(crop, cv2.RETR_EXTERNAL,
-                                        cv2.CHAIN_APPROX_SIMPLE,
-                                        offset=(x_start, y_start))
+                c, _ = cv2.findContours(
+                    crop,
+                    cv2.RETR_EXTERNAL,
+                    cv2.CHAIN_APPROX_SIMPLE,
+                    offset=(x_start, y_start),
+                )
                 for cont in c:
                     contours.append(cont)
                 if len(c) == 0:
@@ -1256,35 +1264,51 @@ class JetImageFeed(QObject):
         y = np.asarray(list(xypoints[0]))
         x = np.asarray(list(xypoints[1]))
         res = stats.linregress(x, y)
+        if res is None:
+            return False
+
         # for 95% confidence
         slope = res.slope
         intercept = res.intercept
         confidence_interval = 95
-        pvalue = res.pvalue  # if p-value is > .1 get another image and try again
+        # pvalue = res.pvalue  # if p-value is > .1 get another image and try again
         slope_err = res.stderr
         intercept_err = res.intercept_stderr
         alpha = 1 - (confidence_interval / 100)
-        critical_prob = 1 - alpha/2
+        # critical_prob = 1 - alpha/2
         degrees_of_freedom = len(com) - 2
-        tinv = lambda p, df: abs(stats.t.ppf(p/2., df))
+
+        def tinv(p, df):
+            return abs(stats.t.ppf(p/2., df))
+
         ts = tinv(alpha, degrees_of_freedom)
         y = np.append(y, [y_min, y_max])
-        if slope:
-            x_model = (y - intercept)*(1/slope)
-            x_model_plus = (y - intercept - ts*intercept_err)*(1 / (slope + ts*slope_err))
-            x_model_minus = (y - intercept + ts * intercept_err) * (1 / (slope - ts * slope_err))
-            yl = list(y)
-            i_max = yl.index(max(yl))
-            i_min = yl.index(min(yl))
-            self.context.best_fit_line = [[int(yl[i_min]), int(x_model[i_min])],
-                                  [int(yl[i_max]), int(x_model[i_max])]]
-            self.context.best_fit_line_plus = [[int(yl[i_min]), int(x_model_plus[i_min])],
-                                       [int(yl[i_max]), int(x_model_plus[i_max])]]
-            self.context.best_fit_line_minus = [[int(yl[i_min]), int(x_model_minus[i_min])],
-                                        [int(yl[i_max]), int(x_model_minus[i_max])]]
-            return True
-        else:
+        if not slope:
             return False
+
+        x_model = (y - intercept) * (1 / slope)
+        x_model_plus = (y - intercept - ts * intercept_err) * (
+            1 / (slope + ts * slope_err)
+        )
+        x_model_minus = (y - intercept + ts * intercept_err) * (
+            1 / (slope - ts * slope_err)
+        )
+        yl = list(y)
+        i_max = yl.index(max(yl))
+        i_min = yl.index(min(yl))
+        self.context.best_fit_line = [
+            [int(yl[i_min]), int(x_model[i_min])],
+            [int(yl[i_max]), int(x_model[i_max])],
+        ]
+        self.context.best_fit_line_plus = [
+            [int(yl[i_min]), int(x_model_plus[i_min])],
+            [int(yl[i_max]), int(x_model_plus[i_max])],
+        ]
+        self.context.best_fit_line_minus = [
+            [int(yl[i_min]), int(x_model_minus[i_min])],
+            [int(yl[i_max]), int(x_model_minus[i_max])],
+        ]
+        return True
 
     def run_image_thread(self):
         """
@@ -1300,8 +1324,10 @@ class JetImageFeed(QObject):
             if self.connected:
                 if self.context.live_data:
                     image_array = caget(self.cam_name + ':IMAGE1:ArrayData')
-                    image = np.reshape(image_array, (self.array_size_y_viewer,
-                                           self.array_size_x_viewer))
+                    image = np.reshape(
+                        image_array,
+                        (self.array_size_y_viewer, self.array_size_x_viewer),
+                    )
                 else:
                     self.cam_name.gen_image()
                     image = self.cam_name.jet_im
@@ -1510,7 +1536,7 @@ class MotorThread(QObject):
         if not self.connected:
             try:
                 self.connect_to_motor()
-            except:
+            except Exception:
                 self.mode = "sleep"
         if self.connected:
             if m == 'sleep' and self.mode == 'run':
@@ -1573,7 +1599,7 @@ class MotorThread(QObject):
         """
         if self.live:
             self.motor_name = self.context.PV_DICT.get('motor', None)
-            self.signals.message.emit("Trying to connect to: "+ self.motor_name)
+            self.signals.message.emit(f"Trying to connect to: {self.motor_name}")
             try:
                 self.motor = Motor(self.motor_name, name='jet_x')
                 time.sleep(1)
@@ -1585,7 +1611,7 @@ class MotorThread(QObject):
                 self.signals.message.emit(f"Could not connect to the PVs for the motor, {type(e).__name__}")
             else:
                 self.connected = False
-                self.signals.message.emit(f"Could not connect to the PVs for the motor.")
+                self.signals.message.emit("Could not connect to the PVs for the motor.")
         elif not self.live:
             self.motor = SimulatedMotor(self.context, self.signals)
             self.context.update_motor_position(self.motor.position)

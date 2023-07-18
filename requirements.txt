@@ -10,3 +10,5 @@ opencv-python
 matplotlib
 pyyaml
 cf-units
+PyQt5
+qimage2ndarray

@@ -4,6 +4,6 @@ ipython
 matplotlib
 numpydoc
 sphinx
-sphinx_rtd_theme
-doctr
-doctr-versions-menu
+sphinx_rtd_theme>=1.2.0
+docs-versions-menu
+sphinxcontrib-jquery

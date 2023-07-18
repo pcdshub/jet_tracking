@@ -1,6 +1,7 @@
-from PyQt5.QtWidgets import QGraphicsLineItem, QGraphicsScene, QGraphicsItem, QGraphicsRectItem
-from PyQt5.QtCore import QPointF, Qt, pyqtSignal, QRectF
-from PyQt5.QtGui import QPen, QBrush, QColor, QPainter, QPainterPath
+from PyQt5.QtCore import QPointF, QRectF, Qt, pyqtSignal
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPainterPath, QPen
+from PyQt5.QtWidgets import (QGraphicsItem, QGraphicsLineItem,
+                             QGraphicsRectItem, QGraphicsScene)
 
 
 class GraphicsScene(QGraphicsScene):
@@ -282,7 +283,7 @@ class HLineItem(QGraphicsLineItem):
 class VLineItem(QGraphicsLineItem):
 
     def __init__(self):
-        super(VLineItem, self).__init__()
+        super().__init__()
         self.setPen(QPen(Qt.blue, 3))
         self.setFlag(QGraphicsLineItem.ItemIsMovable)
         self.setCursor(Qt.OpenHandCursor)

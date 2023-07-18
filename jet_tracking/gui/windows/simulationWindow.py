@@ -1,6 +1,7 @@
-from gui.views.simultationView import SimulationView
-from gui.windows.simWindowUi import SimWindow_Ui
 from PyQt5.QtWidgets import QMainWindow
+
+from ..views.simultationView import SimulationView
+from ..windows.simWindowUi import SimWindow_Ui
 
 
 class SimWindow(QMainWindow, SimWindow_Ui):
@@ -18,7 +19,7 @@ class SimWindow(QMainWindow, SimWindow_Ui):
         signals: the signals class
 
         """
-        super(SimWindow, self).__init__()
+        super().__init__()
         self.signals = signals
         self.context = context
         self.setupUi(self)

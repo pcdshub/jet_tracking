@@ -1,8 +1,9 @@
 import logging
 
-from gui.widgets.editorWidget import EditorWidget
-from gui.widgets.jetImageWidget import JetImageWidget
 from PyQt5.QtWidgets import QHBoxLayout, QWidget
+
+from ..widgets.editorWidget import EditorWidget
+from ..widgets.jetImageWidget import JetImageWidget
 
 log = logging.getLogger('pydm')
 log.setLevel('CRITICAL')
@@ -10,7 +11,7 @@ log.setLevel('CRITICAL')
 
 class JetImageView(QWidget):
     def __init__(self, context, signals):
-        super(JetImageView, self).__init__()
+        super().__init__()
         self.signals = signals
         self.context = context
         self.camera = ""

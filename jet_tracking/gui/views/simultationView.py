@@ -1,11 +1,12 @@
-from gui.widgets.simControlWidget import SimWidget
 from PyQt5.QtWidgets import QHBoxLayout, QWidget
+
+from ..widgets.simControlWidget import SimWidget
 
 
 class SimulationView(QWidget):
 
     def __init__(self, context, signals, parent=None):
-        super(SimulationView, self).__init__(parent)
+        super().__init__(parent)
         self.signals = signals
         self.context = context
         self.parent = parent

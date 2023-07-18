@@ -1,19 +1,28 @@
 import logging
-import sys
-from context import Context
-from gui.views.jetImageView import JetImageView
-from gui.views.jetTrackerView import JetTrackerView
-from gui.windows.mainWindowUi import Ui_MainWindow
-from gui.windows.simulationWindow import SimWindow
+
 from PyQt5.Qt import Qt
 from PyQt5.QtCore import QCoreApplication, QSize
 from PyQt5.QtWidgets import (QAction, QLabel, QMainWindow, QSizePolicy,
                              QTabWidget)
-from signals import Signals
-sys.path.append('/cds/group/pcds/epics-dev/ajshack/jet_tracking/jet_tracking/pyqt-stylesheets/')
-import pyqtcss
+
+from ...context import Context
+from ...signals import Signals
+from ..views.jetImageView import JetImageView
+from ..views.jetTrackerView import JetTrackerView
+from ..windows.mainWindowUi import Ui_MainWindow
+from ..windows.simulationWindow import SimWindow
 
 log = logging.getLogger("jet_tracker")
+
+
+try:
+    from ...pyqt_stylesheets import pyqtcss  # noqa: E402  # isort: skip
+except ImportError:
+    pyqtcss = None
+    log.exception(
+        "Failed to import pyqt-stylesheets. "
+        "Did you not clone recursively?"
+    )
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -44,12 +53,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             jetTrackerView (class): connects the first tab view to the main window
             jetImageView (class): connects the second tab view to the main window
         """
-        super(MainWindow, self).__init__()
+        super().__init__()
         log.debug("Supplying Thread information from init of MainWindow.")
         self.setAttribute(Qt.WA_AlwaysStackOnTop)
         self.setMinimumSize(QSize(700, 300))
         self.resize(QSize(1800, 1100))
-        self.setStyleSheet(pyqtcss.get_style("dark_orange"))
+        if pyqtcss is not None:
+            self.setStyleSheet(pyqtcss.get_style("dark_orange"))
+        else:
+            log.info("Optional dependency pyqtcss is unavailable")
+
         self.signals = Signals()
         self.context = Context(self.signals)
         self.setupUi(self)

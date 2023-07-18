@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 
 
 def read_noise(image, amount, gain=1):
@@ -36,6 +36,5 @@ def jet_display(img, mp, jet_center, pix_per_mm, x_size):
     kernel = np.ones((3, 3), np.uint8)
     blackhat = cv2.morphologyEx(img, cv2.MORPH_BLACKHAT, kernel)
     final_image = img + blackhat + erode
-    #final_image = img
+    # final_image = img
     return final_image
-

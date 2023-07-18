@@ -2,14 +2,11 @@ import ctypes
 import logging
 import os
 import sys
-import pathlib
 
-from gui.windows.mainWindow import MainWindow
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import QApplication
 
-# Append stylesheet path
-sys.path.append('/cds/group/pcds/epics-dev/ajshack/jet_tracking/jet_tracking/pyqt-stylesheets/')
+from .gui.windows.mainWindow import MainWindow
 
 # create logger
 log = logging.getLogger('jet_tracker')
@@ -41,17 +38,17 @@ class App(QApplication):
             sys_argv(list): Command - line arguments passed to the application.
 
         """
-        super(App, self).__init__(sys_argv)
+        super().__init__(sys_argv)
         log.debug("Supplying Thread information from init of QApplication")
         self.setAttribute(Qt.AA_EnableHighDpiScaling)
         self.setStyle("Fusion")
         self.mainWindow = MainWindow()
         self.mainWindow.setWindowTitle("jet-tracker")
-        #__location__ = os.getcwd()
-        #File = open(__location__ + '\jt_configs\Geoo.qss', 'r')
-        #with File:
-        #    qss = File.read()
-        #    self.setStyleSheet(qss)
+        # __location__ = os.getcwd()
+        # File = open(__location__ + '\jt_configs\Geoo.qss', 'r')
+        # with File:
+        #     qss = File.read()
+        #     self.setStyleSheet(qss)
         self.mainWindow.show()
 
     @staticmethod

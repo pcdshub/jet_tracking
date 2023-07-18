@@ -1,9 +1,10 @@
 import logging
 
-from gui.widgets.controlWidget import ControlsWidget
-from gui.widgets.graphWidget import GraphsWidget
 from PyQt5.Qt import Qt
 from PyQt5.QtWidgets import QDockWidget, QHBoxLayout, QSizePolicy, QWidget
+
+from ..widgets.controlWidget import ControlsWidget
+from ..widgets.graphWidget import GraphsWidget
 
 pydm_log = logging.getLogger('pydm')
 pydm_log.setLevel('CRITICAL')
@@ -31,7 +32,7 @@ class JetTrackerView(QWidget):
         Adds the controlsDock and graphWidget to the mainLayout.
         Sets the layout of the widget using the setLayout method.
         """
-        super(JetTrackerView, self).__init__(parent)
+        super().__init__(parent)
         self.signals = signals
         self.context = context
         self.parent = parent

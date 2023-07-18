@@ -1,11 +1,11 @@
-from gui.widgets.basicWidgets import (CollapsibleBox, Label,
-                                      LineEdit, QHLine)
-from PyQt5.QtWidgets import (QButtonGroup, QFrame, QGridLayout, QHBoxLayout,
-                             QLCDNumber, QPushButton, QRadioButton,
-                             QSizePolicy, QTextEdit, QVBoxLayout, QComboBox)
+from PyQt5.QtWidgets import (QButtonGroup, QComboBox, QFrame, QGridLayout,
+                             QHBoxLayout, QLCDNumber, QPushButton,
+                             QRadioButton, QSizePolicy, QTextEdit, QVBoxLayout)
+
+from ..widgets.basicWidgets import CollapsibleBox, Label, LineEdit, QHLine
 
 
-class Controls_Ui(object):
+class Controls_Ui:
 
     def setupUi(self, obj):
         #####################################################################
@@ -300,21 +300,27 @@ class Controls_Ui(object):
         #####################################################################
 
         obj.lbl_status = Label("Status")
-        obj.lbl_status.setStyleSheet("qproperty-alignment: AlignCenter;"
-                                     "border: 1px solid #FF17365D;"
-                                     "background-color: #FF17365D;"
-                                     "font-size: 28px;")
+        obj.lbl_status.setStyleSheet(
+            "qproperty-alignment: AlignCenter;"
+            "border: 1px solid #FF17365D;"
+            "background-color: #FF17365D;"
+            "font-size: 28px;"
+        )
 
         obj.lbl_monitor = Label("Monitor")
-        obj.lbl_monitor.setStyleSheet("qproperty-alignment: AlignCenter;"
-                                      "border: 1px solid #FF17365D;"
-                                      "background-color: #FF17365D;")
+        obj.lbl_monitor.setStyleSheet(
+            "qproperty-alignment: AlignCenter;"
+            "border: 1px solid #FF17365D;"
+            "background-color: #FF17365D;"
+        )
         obj.lbl_monitor_status = Label("Not Started")
 
         obj.lbl_tracking = Label("Tracking")
-        obj.lbl_tracking.setStyleSheet("qproperty-alignment: AlignCenter;"
-                                      "border: 1px solid #FF17365D;"
-                                      "background-color: #FF17365D;")
+        obj.lbl_tracking.setStyleSheet(
+            "qproperty-alignment: AlignCenter;"
+            "border: 1px solid #FF17365D;"
+            "background-color: #FF17365D;"
+        )
         obj.lbl_tracking_status = Label("False")
         obj.lbl_tracking_status.setStyleSheet("background-color: red;")
 

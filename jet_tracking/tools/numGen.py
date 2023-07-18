@@ -2,7 +2,7 @@ import math
 import random
 
 
-class SimulationGenerator(object):
+class SimulationGenerator:
     def __init__(self, context, signals):
 
         # initial values from the control widget
@@ -92,9 +92,12 @@ class SimulationGenerator(object):
             # calculates length of chord of a circle if on jet or sets diff
             # to 0 (plus noise) if off jet
             if abs(self.motor_position - self.center) < self.radius:
-                val["diff"] = (self.max * ((2 * math.sqrt(self.radius ** 2 -
-                               abs(self.motor_position - self.center) ** 2)) /
-                               (2 * self.radius)) * (1 + self.bg * (a - 0.5)))
+                v0 = self.radius ** 2 - abs(self.motor_position - self.center) ** 2
+                val["diff"] = (
+                    self.max
+                    * ((2 * math.sqrt(v0)) / (2 * self.radius))
+                    * (1 + self.bg * (a - 0.5))
+                )
                 val["dropped"] = False
                 val["i0"] = self.peak_intensity * 1 + self.bg * (c - 0.5)
 

@@ -1,12 +1,14 @@
 import logging
-
-from gui.widgets.graphWidgetUi import GraphsUi
-from PyQt5.QtWidgets import QFrame
-from PyQt5.QtCore import Qt
-import numpy as np
-from collections import deque
-import pyqtgraph as pg
 import warnings
+from collections import deque
+
+import numpy as np
+import pyqtgraph as pg
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QFrame
+
+from ..widgets.graphWidgetUi import GraphsUi
+
 warnings.filterwarnings('ignore')
 
 log = logging.getLogger(__name__)
@@ -15,7 +17,7 @@ log = logging.getLogger(__name__)
 class GraphsWidget(QFrame, GraphsUi):
 
     def __init__(self, context, signals):
-        super(GraphsWidget, self).__init__()
+        super().__init__()
         self.signals = signals
         self.context = context
         self.setupUi(self)
@@ -116,18 +118,18 @@ class GraphsWidget(QFrame, GraphsUi):
             self.y_ratio[count] = buf['ratio'][-2]
             self.old_vals_ratio.append(self.y_ratio.popleft())
             self.y_ratio.append(np.nan)
-            #self.y_ave[count] = buf['ratio'][-1]
-            #self.old_ave.append(self.y_ave.popleft())
-            #self.y_ave.append(np.nan)
+            # self.y_ave[count] = buf['ratio'][-1]
+            # self.old_ave.append(self.y_ave.popleft())
+            # self.y_ave.append(np.nan)
         else:
             self.y_diff[count] = buf['diff']
             self.y_i0[count] = buf['i0']
             self.y_ratio[count] = buf['ratio'][-2]
-            #self.y_ave[count] = buf['ratio'][-1]
+            # self.y_ave[count] = buf['ratio'][-1]
         self.line_diff.setData(self.x_axis, list(self.y_diff))
         self.line_i0.setData(self.x_axis, list(self.y_i0))
         self.line_ratio.setData(self.x_axis, list(self.y_ratio))
-        #self.line_ave.setData(self.x_axis, list(self.y_ave))
+        # self.line_ave.setData(self.x_axis, list(self.y_ave))
 
     def plot_calibration(self):
         self.line_diff_low.setData(self.x_axis, self.diff_low_range)
@@ -147,12 +149,15 @@ class GraphsWidget(QFrame, GraphsUi):
         new_num_points = int(new_display_time * new_rr)
         n_nan_new = int(new_num_points * 1/4)
         if old_num_points < new_num_points:
-            new_points_diff = list(self.y_diff)[:int(new_num_points * 3/4)+1] + \
-                                 [np.nan for _ in range(n_nan_new)]
-            new_points_i0 = list(self.y_i0)[:int(new_num_points * 3/4)+1] + \
-                               [np.nan for _ in range(n_nan_new)]
-            new_points_ratio = list(self.y_ratio)[:int(new_num_points * 3/4)+1] + \
-                                  [np.nan for _ in range(n_nan_new)]
+            new_points_diff = list(self.y_diff)[: int(new_num_points * 3 / 4) + 1] + [
+                np.nan for _ in range(n_nan_new)
+            ]
+            new_points_i0 = list(self.y_i0)[: int(new_num_points * 3 / 4) + 1] + [
+                np.nan for _ in range(n_nan_new)
+            ]
+            new_points_ratio = list(self.y_ratio)[: int(new_num_points * 3 / 4) + 1] + [
+                np.nan for _ in range(n_nan_new)
+            ]
             n = new_num_points - len(new_points_diff)
             if len(self.old_vals_diff) >= n:
                 for i in range(n):

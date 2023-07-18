@@ -8,13 +8,15 @@ from pathlib import Path
 import psana
 import yaml
 from mpi4py import MPI
-from mpi_master import MpiMaster
-from mpi_worker import MpiWorker
+
+from .mpi_master import MpiMaster
+from .mpi_worker import MpiWorker
 
 fpath = os.path.dirname(os.path.abspath(__file__))
 fpathup = '/'.join(fpath.split('/')[:-1])
 sys.path.append(fpathup)
-from utils import get_evr_w_codes, get_r_masks  # NOQA
+
+from utils import get_r_masks  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +61,7 @@ cal_files.sort(key=os.path.getmtime)
 if cal_files:
     cal_file_path = cal_files[-1]
     # cal_file_path = ''.join([jt_dir, cal_file])
-    print('Calibration file: {}'.format(cal_file_path))
+    print(f'Calibration file: {cal_file_path}')
     with open(cal_file_path) as f:
         cal_results = json.load(f)
 else:

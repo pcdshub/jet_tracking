@@ -1,6 +1,6 @@
 import logging
 
-from jet_tracking.signals import Signals
+from ..signals import Signals
 
 logger = logging.getLogger(__name__)
 

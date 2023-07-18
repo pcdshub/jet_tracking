@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QMenuBar
 
 
-class Ui_MainWindow(object):
+class Ui_MainWindow:
     """This class represents the user interface (UI) definition for the main window of the application."""
     def setupUi(self, obj):
         """

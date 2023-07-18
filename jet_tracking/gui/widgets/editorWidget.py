@@ -1,10 +1,11 @@
 import logging
 from collections import deque
-import cv2
-from datastream import JetImageFeed
-from gui.widgets.editorWidgetUi import Editor_Ui
-from PyQt5.QtWidgets import QFrame, QFileDialog
+
 from PyQt5.QtCore import QThread
+from PyQt5.QtWidgets import QFrame
+
+from ...datastream import JetImageFeed
+from ..widgets.editorWidgetUi import Editor_Ui
 
 log = logging.getLogger(__name__)
 
@@ -12,7 +13,7 @@ log = logging.getLogger(__name__)
 class EditorWidget(QFrame, Editor_Ui):
 
     def __init__(self, context, signals):
-        super(EditorWidget, self).__init__()
+        super().__init__()
         self.signals = signals
         self.context = context
         self.setupUi(self)
@@ -83,13 +84,13 @@ class EditorWidget(QFrame, Editor_Ui):
         if self.worker_image.connected and not self.worker_image.paused:
             self.context.calibrate_image()
         else:
-            self.signals.message.emit("The image feed is not live or the" 
-                                      "application is stopped try to connect" 
+            self.signals.message.emit("The image feed is not live or the"
+                                      "application is stopped try to connect"
                                       "camera")
-    
+
     def search(self):
         self.context.run_image_search()
-    
+
     def reset_all(self):
         self.sliders = {'dilate': deque([None], 5),
                         'erode': deque([None], 5),
@@ -101,7 +102,7 @@ class EditorWidget(QFrame, Editor_Ui):
                         'left threshold': deque([110], 5),
                         'right threshold': deque([255], 5)}
         self.signals.imageProcessing.emit(self.sliders)
-    
+
     def display_message(self, message):
         pt = self.text_area.toPlainText()
         if pt.split('\n')[-1] == message.split('\n')[-1]:
@@ -180,7 +181,7 @@ class EditorWidget(QFrame, Editor_Ui):
         self.slider_open.setEnabled(not enabled)
         self.sliders['open'].append(None)
         self.signals.imageProcessing.emit(self.sliders)
-        
+
     def terminate_all(self):
         self.signals.stopImageThread.emit(True)
         self.thread1.quit()

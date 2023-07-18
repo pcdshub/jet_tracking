@@ -16,10 +16,11 @@ following functions:
 """
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 
-class LinearTernary(object):
+class LinearTernary:
     def __init__(self, motor_thread, context, signals):
         self.motor_thread = motor_thread
         self.context = context
@@ -45,7 +46,7 @@ class LinearTernary(object):
                 self.done = True
 
 
-class DynamicLinear(object):
+class DynamicLinear:
     def __init__(self, motor_thread, context, signals):
         self.motor_thread = motor_thread
         self.context = context
@@ -144,7 +145,7 @@ class DynamicLinear(object):
                     self.step = 1
 
 
-class BasicScan(object):
+class BasicScan:
     def __init__(self, motor_thread, context, signals):
         self.motor_thread = motor_thread
         self.context = context
@@ -262,7 +263,7 @@ class BasicScan(object):
                     self.step = 1
 
 
-class TernarySearch(object):
+class TernarySearch:
     def __init__(self, motor_thread, context, signals):
         self.motor_thread = motor_thread
         self.signals = signals
@@ -369,4 +370,3 @@ class TernarySearch(object):
             self.low = self.mid1
             self.high = self.high
             self.max_value = i2
-

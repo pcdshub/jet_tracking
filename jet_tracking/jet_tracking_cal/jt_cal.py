@@ -249,8 +249,8 @@ def peak_fig(signal, hist, edges, med, low, high):
     """General histogram plotter with peak location and
     left/right limits plotted"""
     fig = figure(
-        title='Used Intensity Distribution for {0}. \
-            Low/Hi: {1}/{2}'.format(signal, low, high),
+        title='Used Intensity Distribution for {}. \
+            Low/Hi: {}/{}'.format(signal, low, high),
         x_axis_label='Intensity Values',
         y_axis_label='Counts'
     )
@@ -364,14 +364,14 @@ if __name__ == '__main__':
     if ffb:
         ds_name += ':dir='+FFB_LOC+f'{hutch}/{exp}/xtc'
     try:
-        print('Make datasource with {}'.format(ds_name))
+        print(f'Make datasource with {ds_name}')
         ds = psana.MPIDataSource(ds_name)
     except Exception as e:
-        logger.warning('Could not use MPI Data Source: {}'.format(e))
+        logger.warning(f'Could not use MPI Data Source: {e}')
         sys.exit()
 
     # Setup smd saver
-    jt_file = 'run{}_jt_cal.h5'.format(run)
+    jt_file = f'run{run}_jt_cal.h5'
     if ffb:
         jt_file_path = ''.join([FFB_LOC, hutch, '/', exp, '/scratch/',
                                 jt_file])
@@ -379,7 +379,7 @@ if __name__ == '__main__':
         jt_file_path = ''.join([SD_LOC, hutch, '/', exp, '/scratch/',
                                 jt_file])
     if rank == 0:
-        logger.info('Will save small data to {}'.format(jt_file_path))
+        logger.info(f'Will save small data to {jt_file_path}')
     smd = ds.small_data(jt_file_path, gather_interval=100)
 
     # Get the detectors from the config
@@ -394,18 +394,18 @@ if __name__ == '__main__':
         evr = psana.Detector(evr_name)
         masks = get_r_masks(det_map['shape'], cal_params['azav_bins'])
     except Exception as e:
-        logger.warning('Unable to create psana detectors: {}'.format(e))
+        logger.warning(f'Unable to create psana detectors: {e}')
         sys.exit()
 
     if rank == 0:
         logger.info(f"Gathering small data for exp: {exp}, run: {run}, events:"
                     f" {cal_params['events']}")
-        logger.info('Detectors Available: {}'.format(psana.DetNames()))
+        logger.info(f'Detectors Available: {psana.DetNames()}')
 
     # Iterate through and pull out small data
     for evt_idx, evt in enumerate(ds.events()):
         if evt_idx % 10 == 0:
-            print('Event: {}'.format(evt_idx))
+            print(f'Event: {evt_idx}')
         try:
             if event_code not in evr.eventCodes(evt):
                 continue
@@ -439,7 +439,7 @@ if __name__ == '__main__':
             smd.event(azav=azav, i0=i0_data, jet_peak=max_jet_val,
                       jet_loc=max_jet_idx)
         except Exception as e:
-            logger.info('Unable to process event {}: {}'.format(evt_idx, e))
+            logger.info(f'Unable to process event {evt_idx}: {e}')
 
         if evt_idx > num_events:
             break
@@ -528,7 +528,7 @@ if __name__ == '__main__':
             'jet_peak_std': jet_peak_std
         }
 
-        logger.info('Results: {}'.format(results))
+        logger.info(f'Results: {results}')
 
         # Set report directory
         results_dir = ''.join([SD_LOC, hutch, '/', exp,
@@ -538,11 +538,11 @@ if __name__ == '__main__':
         calib_dir = ''.join([SD_LOC, hutch, '/', exp, '/calib/jt_results/'])
 
         if not os.path.isdir(results_dir):
-            logger.info('Creating Path {}'.format(results_dir))
+            logger.info(f'Creating Path {results_dir}')
             os.makedirs(results_dir)
 
         if not os.path.isdir(calib_dir):
-            logger.info('Creating Path {}'.format(calib_dir))
+            logger.info(f'Creating Path {calib_dir}')
             os.makedirs(calib_dir)
 
         # Write metadata to file
@@ -562,21 +562,21 @@ if __name__ == '__main__':
             with open(res_file, 'w') as f:
                 results = {k: str(v) for k, v in results.items()}
                 json.dump(results, f)
-            logger.info('Saved calibration to {}'.format(res_file))
+            logger.info(f'Saved calibration to {res_file}')
         except Exception as e:
             logger.warning(f'Unable to write to {hutch}opr experiment '
                            f'directory: {e}')
 
         # Accumulate plots and write report
         gspec = pn.GridSpec(sizing_mode='stretch_both',
-                            name='JT Cal Results: Run {}'.format(run))
+                            name=f'JT Cal Results: Run {run}')
         gspec[0:3, 0:3] = p
         gspec[4:6, 0:3] = p1
         gspec[7:12, 0:3] = p2
         tabs = pn.Tabs(gspec)
 
         report_file = ''.join([results_dir, '/report.html'])
-        logger.info('Saving report to {}'.format(report_file))
+        logger.info(f'Saving report to {report_file}')
         tabs.save(report_file)
 
         logger.info('finished with jet tracking calibration')

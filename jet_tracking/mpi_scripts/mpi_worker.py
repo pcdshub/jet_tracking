@@ -10,7 +10,7 @@ logging.basicConfig(level=logging.DEBUG, format=f)
 logger = logging.getLogger(__name__)
 
 
-class MpiWorker(object):
+class MpiWorker:
     """This worker will collect events and do whatever
     necessary processing, then send to master"""
     def __init__(self, ds, detector, ipm, jet_cam, jet_cam_axis, evr, r_mask,
@@ -169,7 +169,7 @@ class MpiWorker(object):
                 self.comm.Isend(packet, dest=0, tag=self.rank)
             # else:
             except Exception as e:
-                logger.warning('Unable to Process Event: {}'.format(e))
+                logger.warning(f'Unable to Process Event: {e}')
                 continue
 
     def start_msg_thread(self, data_port=1235):

@@ -2,10 +2,11 @@ import logging
 
 import matplotlib.pyplot as plt
 import numpy as np
-from datastream import MotorThread, StatusThread
-from gui.widgets.controlWidgetUi import Controls_Ui
 from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QFrame, QMessageBox
+
+from ...datastream import MotorThread, StatusThread
+from ..widgets.controlWidgetUi import Controls_Ui
 
 log = logging.getLogger('jet_tracker')
 
@@ -25,7 +26,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             signals: The signals object for emitting and receiving signals.
 
         """
-        super(ControlsWidget, self).__init__()
+        super().__init__()
         log.debug("Supplying Thread information from init of Controls Widget")
         self.signals = signals
         self.context = context
@@ -197,7 +198,7 @@ class ControlsWidget(QFrame, Controls_Ui):
             self.signals.stopMotorThread.emit(False)
             self.signals.message.emit("The motor was stopped"
                                       "either press start or connect motor")
-            #self.context.update_tracking(False)
+            # self.context.update_tracking(False)
             self.set_tracking_status('disabled', "red")
         else:
             self.signals.message.emit("The motor is not running")
@@ -363,8 +364,10 @@ class ControlsWidget(QFrame, Controls_Ui):
             go_to (str): The new data viewing option.
         """
         self.msg.setWindowTitle("Data Viewing Changes")
-        self.msg.setText(f"Would you like to change the \n"
-                    f"data from {go_from} to {go_to}?")
+        self.msg.setText(
+            f"Would you like to change the \n"
+            f"data from {go_from} to {go_to}?"
+        )
         self.msg.show()
 
     def popup_clicked(self, i):
@@ -377,10 +380,10 @@ class ControlsWidget(QFrame, Controls_Ui):
         if i.text() == "&Yes":
             self._stop()
             self.signals.message.emit("Must press start to run in this new mode")
-            if self.bttngrp1.checkedId() == 1: # live
+            if self.bttngrp1.checkedId() == 1:  # live
                 self.context.update_live_graphing(True)
                 self.context.update_live_motor(True)
-            if self.bttngrp1.checkedId() == 0: # simulated
+            if self.bttngrp1.checkedId() == 0:  # simulated
                 self.context.update_live_graphing(False)
                 self.context.update_live_motor(False)
         else:

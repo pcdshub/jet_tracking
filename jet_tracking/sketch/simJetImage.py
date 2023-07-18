@@ -1,9 +1,9 @@
 import numpy as np
-import cv2
-from tools.imGen import read_noise, jet_display
+
+from ..tools.imGen import jet_display
 
 
-class SimulatedImage(object):
+class SimulatedImage:
     """SimulatedImage class generates and manages a simulated image.
 
     Args:
@@ -62,6 +62,3 @@ class SimulatedImage(object):
         self.jet_im = np.full((self.y_size, self.x_size), 0, dtype=np.uint8)
         self.jet_im = jet_display(self.jet_im, self.motor_position, self.context.jet_center,
                                   self.pix_per_mm, self.x_size)
-
-
-

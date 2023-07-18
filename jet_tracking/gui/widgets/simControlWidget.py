@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QFrame
-from gui.widgets.simControlWidgetUi import SimUi
-from datastream import StatusThread, MotorThread
 import logging
+
+from PyQt5.QtWidgets import QFrame
+
+from ..widgets.simControlWidgetUi import SimUi
 
 log = logging.getLogger(__name__)
 
@@ -9,7 +10,7 @@ log = logging.getLogger(__name__)
 class SimWidget(QFrame, SimUi):
 
     def __init__(self, context, signals):
-        super(SimWidget, self).__init__()
+        super().__init__()
         self.signals = signals
         self.context = context
         self.setupUi(self)
