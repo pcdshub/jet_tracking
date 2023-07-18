@@ -21,12 +21,6 @@ Table of Contents
 
 .. toctree::
    :maxdepth: 2
-   :caption: Devices
-
-   devices.rst
-
-.. toctree::
-   :maxdepth: 2
    :caption: Presentations and Posters
 
    presentations.rst
