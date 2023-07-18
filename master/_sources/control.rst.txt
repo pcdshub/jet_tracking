@@ -3,8 +3,6 @@
 Jet Control Overview
 ####################
 
-.. currentmodule:: jet_tracking.jet_control
-
 To start IPython for CXI hutch-python3:
 
 .. code-block:: bash
@@ -17,25 +15,3 @@ IPython as follows:
 .. code-block:: bash
 
     cxi3
-
-
-JetControl
-==========
-Jet tracking control class.
-
-.. autosummary::
-    :nosignatures:
-    :toctree: generated
-
-    JetControl
-
-Attributes
-----------
-
-.. autosummary::
-    :toctree: generated/
-
-    JetControl.set_beam
-    JetControl.calibrate
-    JetControl.jet_calculate
-    JetControl.jet_move

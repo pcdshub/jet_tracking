@@ -1,20 +1,22 @@
+
+
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en" data-content_root="./">
 <head>
-  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Jet Tracking Shared Memory Application &mdash; PCDS Jet Tracking 0.1.0.post127+g6e0240e documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <!--[if lt IE 9]>
-    <script src="_static/js/html5shiv.min.js"></script>
-  <![endif]-->
+  <title>Jet Tracking Shared Memory Application &mdash; PCDS Jet Tracking 0.1.1.dev210+g0d9b0d5 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
   
-        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
-        <script src="_static/jquery.js"></script>
-        <script src="_static/underscore.js"></script>
-        <script src="_static/doctools.js"></script>
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=df59cc64"></script>
+      <script src="_static/doctools.js?v=9a2dae69"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/docs-versions-menu.js?v=3d6a1aea"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -27,14 +29,15 @@
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
         <div class="wy-side-nav-search" >
-            <a href="index.html" class="icon icon-home"> PCDS Jet Tracking
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            PCDS Jet Tracking
           </a>
-              <div class="version">
-                0.1.0.post127+g6e0240e
-              </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
-    <input type="text" name="q" placeholder="Search docs" />
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
   </form>
@@ -55,10 +58,6 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pvNotepad.html">Epics pvNotepad configuration</a></li>
-</ul>
-<p class="caption" role="heading"><span class="caption-text">Devices</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="devices.html">Jet Tracking Classes</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Presentations and Posters</span></p>
 <ul>
@@ -83,8 +82,8 @@
         <div class="rst-content">
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
-      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
-      <li>Jet Tracking Shared Memory Application</li>
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Jet Tracking Shared Memory Application</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/shared_memory.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -95,53 +94,45 @@
            <div itemprop="articleBody">
              
   <section id="jet-tracking-shared-memory-application">
-<span id="shared-memory"></span><h1>Jet Tracking Shared Memory Application<a class="headerlink" href="#jet-tracking-shared-memory-application" title="Permalink to this headline"></a></h1>
+<span id="shared-memory"></span><h1>Jet Tracking Shared Memory Application<a class="headerlink" href="#jet-tracking-shared-memory-application" title="Link to this heading"></a></h1>
 <p>Information from detectors controlled by the LCLS Daq is output to EPICS PVs through
 a psana shared memory application.</p>
 <section id="sc1-experiments">
-<h2>SC1 Experiments<a class="headerlink" href="#sc1-experiments" title="Permalink to this headline"></a></h2>
+<h2>SC1 Experiments<a class="headerlink" href="#sc1-experiments" title="Link to this heading"></a></h2>
 <p>In the standard CXI configuration for the 1 um SC1 chamber,
 the following will start a psana shared memory application for the DSC CSPAD
 detector and output information to epics PVs with the base
 <code class="docutils literal notranslate"><span class="pre">CXI:SC1:DIFFRACT</span></code>.</p>
 <p>Normally this application will be run for the primary CXI experiment on
 <code class="docutils literal notranslate"><span class="pre">daq-cxi-mon01</span></code> with:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/reg/g/pcds/pyps/apps/hutch-python/cxi/cxi/jet_tracking/psana2epics.sh --alias<span class="o">=</span><span class="s1">&#39;DscCsPad&#39;</span> --pvbase<span class="o">=</span><span class="s1">&#39;CXI:SC1:DIFFRACT&#39;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/reg/g/pcds/pyps/apps/hutch-python/cxi/cxi/jet_tracking/psana2epics.sh<span class="w"> </span>--alias<span class="o">=</span><span class="s1">&#39;DscCsPad&#39;</span><span class="w"> </span>--pvbase<span class="o">=</span><span class="s1">&#39;CXI:SC1:DIFFRACT&#39;</span>
 </pre></div>
 </div>
 <p>To check the processing event rate with the Daq running, use the
 <code class="docutils literal notranslate"><span class="pre">caEventRate</span></code> on any CXI control room machine:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>caEventRate CXI:SC1:DIFFRACT:TOTAL_ADU.VAL
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>caEventRate<span class="w"> </span>CXI:SC1:DIFFRACT:TOTAL_ADU.VAL
 </pre></div>
 </div>
 </section>
 <section id="sc2-experiments">
-<h2>SC2 Experiments<a class="headerlink" href="#sc2-experiments" title="Permalink to this headline"></a></h2>
+<h2>SC2 Experiments<a class="headerlink" href="#sc2-experiments" title="Link to this heading"></a></h2>
 <p>For the 100 nm SC2 chamber, the primary Daq and <code class="docutils literal notranslate"><span class="pre">daq-cxi-mon01</span></code> will
 generally be used, and the shared memory application can be started as follows:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/reg/g/pcds/pyps/apps/hutch-python/cxi/cxi/jet_tracking/psana2epics.sh --alias<span class="o">=</span><span class="s1">&#39;DsaCsPad&#39;</span> --pvbase<span class="o">=</span><span class="s1">&#39;CXI:SC2:DIFFRACT&#39;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/reg/g/pcds/pyps/apps/hutch-python/cxi/cxi/jet_tracking/psana2epics.sh<span class="w"> </span>--alias<span class="o">=</span><span class="s1">&#39;DsaCsPad&#39;</span><span class="w"> </span>--pvbase<span class="o">=</span><span class="s1">&#39;CXI:SC2:DIFFRACT&#39;</span>
 </pre></div>
 </div>
 </section>
 <section id="sc3-experiments">
-<h2>SC3 Experiments<a class="headerlink" href="#sc3-experiments" title="Permalink to this headline"></a></h2>
+<h2>SC3 Experiments<a class="headerlink" href="#sc3-experiments" title="Link to this heading"></a></h2>
 <p>For experiments in the SC3 Serial Sample Chamber (a.k.a., SSC chamber), the
 secondary Daq will generally be used, and the shared memory application will
 run on <code class="docutils literal notranslate"><span class="pre">daq-cxi-mon06</span></code>.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/reg/g/pcds/pyps/apps/hutch-python/cxi/cxi/jet_tracking/psana2epics.sh --alias<span class="o">=</span><span class="s1">&#39;DsdCsPad&#39;</span> --pvbase<span class="o">=</span><span class="s1">&#39;CXI:SC3:DIFFRACT&#39;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>/reg/g/pcds/pyps/apps/hutch-python/cxi/cxi/jet_tracking/psana2epics.sh<span class="w"> </span>--alias<span class="o">=</span><span class="s1">&#39;DsdCsPad&#39;</span><span class="w"> </span>--pvbase<span class="o">=</span><span class="s1">&#39;CXI:SC3:DIFFRACT&#39;</span>
 </pre></div>
 </div>
 </section>
 <section id="api">
-<h2>API<a class="headerlink" href="#api" title="Permalink to this headline"></a></h2>
-<table class="longtable docutils align-default">
-<colgroup>
-<col style="width: 10%" />
-<col style="width: 90%" />
-</colgroup>
-<tbody>
-</tbody>
-</table>
+<h2>API<a class="headerlink" href="#api" title="Link to this heading"></a></h2>
 </section>
 </section>
 
@@ -156,7 +147,7 @@ run on <code class="docutils literal notranslate"><span class="pre">daq-cxi-mon0
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2022, SLAC National Accelerator Laboratory.</p>
+    <p>&#169; Copyright 2025, SLAC National Accelerator Laboratory.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

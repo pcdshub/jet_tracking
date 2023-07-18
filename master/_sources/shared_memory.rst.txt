@@ -58,9 +58,3 @@ run on ``daq-cxi-mon06``.
 
 API
 ---
-
-.. autosummary::
-    :nosignatures:
-    :toctree: generated/
-
-    output_cspad_sum
